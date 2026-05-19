@@ -24,6 +24,6 @@ The wielder and the sword are one.`,
 		SilenceUsage: true,
 	}
 
-	root.AddCommand(serveCmd(), agentsCmd(), modelsCmd(), jailCmd(), searchCmd(), commitCmd(), versionCmd())
+	root.AddCommand(serveCmd(), agentsCmd(), modelsCmd(), jailCmd(), searchCmd(), commitCmd(), versionCmd(), orchestratorCmd(), sessionCmd())
 	return root.ExecuteContext(ctx)
 }
