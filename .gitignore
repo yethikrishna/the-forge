@@ -1,0 +1,35 @@
+# Binaries
+forge
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output
+out/
+
+# Dependency directories
+vendor/
+
+# Go workspace
+go.work
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Source repos (cloned for analysis, not part of the project)
+source/
+
+# Build artifacts
+*.o
+*.a
