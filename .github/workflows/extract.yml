@@ -1,0 +1,16 @@
+name: Extract Source
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'forge-v1.0.0-src.tar.gz'
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: tar xzf forge-v1.0.0-src.tar.gz && rm forge-v1.0.0-src.tar.gz
+      - run: git config user.name "github-actions[bot]" && git config user.email "github-actions[bot]@users.noreply.github.com"
+      - run: git add -A && git commit -m "feat: Forge v1.0.0 extracted" && git push
