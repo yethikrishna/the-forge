@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [linux, darwin]
+        arch: [amd64, arm64]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Build
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+        run: |
+          go build -ldflags "-X github.com/forge/sword/cmd.forgeVersion=${{ github.ref_name }} -X github.com/forge/sword/cmd.buildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o forge-${{ matrix.os }}-${{ matrix.arch }} .
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Test
+        run: go test ./...
+
+  release:
+    needs: [build, test]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: linux
+            arch: amd64
+          - os: linux
+            arch: arm64
+          - os: darwin
+            arch: amd64
+          - os: darwin
+            arch: arm64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+      - name: Build release binary
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+        run: |
+          go build -ldflags "-s -w -X github.com/forge/sword/cmd.forgeVersion=${{ github.ref_name }} -X github.com/forge/sword/cmd.buildTime=$(date -u +%Y-%m-%dT%H:%M:%SZ)" -o forge-${{ matrix.os }}-${{ matrix.arch }} .
+      - name: Upload release binary
+        uses: softprops/action-gh-release@v2
+        with:
+          files: forge-${{ matrix.os }}-${{ matrix.arch }}

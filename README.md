@@ -6,61 +6,133 @@ The Forge melts down the Coder arsenal into a single mythic sword. It orchestrat
 
 **The wielder and the sword are one.**
 
-## What It Does
-
-- **Controls every AI agent** — Claude Code, Codex, Gemini, Aider, Goose, Amp, Cursor CLI, Auggie, Amazon Q, OpenCode — through a single HTTP API (AgentAPI)
-- **Routes to any model** — OpenAI, Anthropic, Google, xAI, Azure — without vendor lock-in (via anyclaude)
-- **Jails every operation** — network sandboxing with httpjail (default-deny policy)
-- **Provides the IDE** — VS Code in browser (code-server)
-- **Searches code semantically** — HNSW vector search
-- **Commits intelligently** — AI-powered git commits (aicommit)
-- **Transfers artifacts** — P2P encrypted file transfer (wush)
-
 ## Install
 
 ```bash
-# Build from source (requires Go 1.23+)
-go build -o forge .
+# One-liner install
+curl -fsSL https://raw.githubusercontent.com/yethikrishna/the-forge/main/install.sh | bash
 
-# Or download the binary
-# (releases coming soon)
+# Or build from source (requires Go 1.23+)
+git clone https://github.com/yethikrishna/the-forge.git
+cd the-forge
+make build
 ```
 
-## Usage
+## Quick Start
 
 ```bash
 # Start with Claude Code (default)
 forge serve -- claude
 
-# Route Claude Code through OpenAI
-forge serve -m openai/gpt-5-mini -- claude
-
-# Use ACP transport
-forge serve --acp -- claude
-
-# Sandbox with httpjail
-forge serve --jail --jail-rule=github.com -- claude
-
-# Run Codex
-forge serve --agent=codex -- codex
+# Run multiple agents concurrently
+forge orchestrate --agents claude:3284,codex:3285
 
 # List supported agents
 forge agents
 
-# Detect installed tools
+# Detect what's installed on your system
 forge agents detect
 
 # List available models
 forge models
 
-# Run command in network jail
+# Save a session for later
+forge session save http://localhost:3284
+```
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `forge serve` | Start a single agent with orchestration |
+| `forge orchestrate` | Run multiple agents concurrently with unified API |
+| `forge agents` | List and detect supported AI agents |
+| `forge models` | List available LLM models across providers |
+| `forge jail` | Run commands in httpjail network sandbox |
+| `forge search` | Semantic code search via HNSW |
+| `forge commit` | AI-powered git commits |
+| `forge session` | Save, list, resume agent sessions |
+| `forge version` | Show version and architecture |
+
+## Examples
+
+### Single Agent
+
+```bash
+# Default: Claude Code with Anthropic
+forge serve -- claude
+
+# Route Claude Code through OpenAI
+forge serve -m openai/gpt-5-mini -- claude
+
+# Use ACP transport (agent-client-protocol)
+forge serve --acp -- claude
+
+# Sandbox with httpjail (only github.com allowed)
+forge serve --jail --jail-rule=github.com -- claude
+
+# Run Codex
+forge serve --agent=codex -- codex
+
+# Run Gemini
+forge serve --agent=gemini -- gemini
+```
+
+### Multi-Agent Orchestration
+
+```bash
+# Run Claude and Codex side by side
+forge orchestrate --agents claude:3284,codex:3285
+
+# Run three agents with auto port assignment
+forge orchestrate --agents claude,codex,gemini --base-port 3284
+
+# All agents sandboxed
+forge orchestrate --agents claude,codex --jail
+```
+
+The orchestrator exposes a unified HTTP API:
+
+```bash
+# List running agents
+curl http://localhost:8080/agents
+
+# Send message to Claude agent
+curl -X POST http://localhost:8080/message/claude \
+  -H "Content-Type: application/json" \
+  -d '{"content": "Write a hello world in Go"}'
+
+# Get conversation from Codex agent
+curl http://localhost:8080/messages/codex
+```
+
+### Session Management
+
+```bash
+# Save current conversation
+forge session save http://localhost:3284
+
+# Save with a custom ID
+forge session save http://localhost:3284 --id my-session
+
+# List saved sessions
+forge session list
+
+# Resume a session
+forge session resume my-session
+
+# Delete a session
+forge session delete my-session
+```
+
+### Security
+
+```bash
+# Run any command in a network sandbox
 forge jail --rule=github.com -- curl https://github.com
 
-# AI-powered git commit
-forge commit
-
-# Semantic code search
-forge search "authentication logic"
+# Allow only specific hosts
+forge jail --js "r.host === 'api.openai.com' || r.host === 'github.com'" -- my-agent
 ```
 
 ## Architecture
@@ -106,20 +178,27 @@ forge search "authentication logic"
 | wush | [coder/wush](https://github.com/coder/wush) | P2P encrypted file transfer |
 | aicommit | [coder/aicommit](https://github.com/coder/aicommit) | AI-powered git commit messages |
 | guts | [coder/guts](https://github.com/coder/guts) | Git AST manipulation |
-| quartz | [coder/quartz](https://github.com/coder/quartz) | Clock/time mocking and scheduling |
-| redjet | [coder/redjet](https://github.com/coder/redjet) | Pipeline-optimized Redis client |
-| slog | [coder/slog](https://github.com/coder/slog) | Structured logging |
 | claudecode.nvim | [coder/claudecode.nvim](https://github.com/coder/claudecode.nvim) | Neovim integration for Claude Code |
 
-## Why The Forge Beats The Competition
+## Why The Forge
 
 | Competitor | Their Weakness | Our Sword |
 |-----------|---------------|-----------|
-| OpenAI Codex | Locked to OpenAI models, no protocol standard | anyclaude routes to ANY model, ACP is open protocol |
-| Anthropic Claude Code | Locked to Claude, no multi-agent orchestration | AgentAPI controls Claude AND every other agent |
-| Cursor IDE | Closed protocol, single IDE | ACP works in ANY editor, code-server gives browser IDE |
-| vly.ai | Proprietary agent loop | Open agent loop via AgentAPI + ACP, composable |
-| Google Labs | Google-only models, no security sandboxing | aisdk-go is model-agnostic, httpjail sandboxes everything |
+| OpenAI Codex | Locked to OpenAI models | anyclaude routes to ANY model |
+| Anthropic Claude Code | Locked to Claude, single agent | AgentAPI controls ALL agents |
+| Cursor IDE | Closed protocol, single IDE | ACP works in ANY editor |
+| vly.ai | Proprietary agent loop | Open via AgentAPI + ACP |
+| Google Labs | Google-only, no sandboxing | Model-agnostic + httpjail |
+
+## Development
+
+```bash
+make build          # Build the binary
+make install        # Install to /usr/local/bin
+make test           # Run tests
+make release        # Cross-compile for all platforms
+make version        # Show version info
+```
 
 ## License
 
