@@ -5,9 +5,11 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/forge/sword/internal/pretty"
 	"github.com/forge/sword/internal/prompt"
+	"github.com/forge/sword/internal/prompttest"
 	"github.com/spf13/cobra"
 )
 
@@ -286,6 +288,110 @@ Examples:
 				return nil
 			},
 		},
+
+		&cobra.Command{
+			Use:   "test [regression-file]",
+			Short: "Run prompt regression tests",
+			Long: `Run regression tests against prompt templates.
+Test that prompts produce expected outputs across models.
+
+Examples:
+  forge prompt test regression.json
+  forge prompt test --response "Hello world" regression.json
+  forge prompt test --dry-run regression.json`,
+			Args:  cobra.ExactArgs(1),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				suite, err := prompttest.LoadTestSuite(args[0])
+				if err != nil {
+					return err
+				}
+
+				dryRun, _ := cmd.Flags().GetBool("dry-run")
+				staticResp, _ := cmd.Flags().GetString("response")
+				verbose, _ := cmd.Flags().GetBool("verbose")
+
+				fmt.Println(pretty.HeaderLine(fmt.Sprintf("Prompt Regression: %s", suite.Name)))
+				fmt.Println()
+
+				sr := prompttest.SuiteResult{SuiteName: suite.Name}
+				start := time.Now()
+
+				for _, tc := range suite.Tests {
+					models := tc.Models
+					if len(models) == 0 {
+						if tc.Model != "" {
+							models = []string{tc.Model}
+						} else {
+							models = []string{"default"}
+						}
+					}
+
+					for _, model := range models {
+						sr.Total++
+
+						if dryRun {
+							fmt.Printf("  %s %s @ %s\n", pretty.Sprint(pretty.Info, "→"), tc.Name, model)
+							sr.Skipped++
+							continue
+						}
+
+						result := prompttest.RunTest(tc, model, func(prompt string) (string, error) {
+							if staticResp != "" {
+								return staticResp, nil
+							}
+							return "Echo: " + prompt, nil
+						})
+
+						sr.Results = append(sr.Results, result)
+
+						switch result.Status {
+						case prompttest.ResultPass:
+							sr.Passed++
+							fmt.Printf("  %s %s @ %s (%s)\n",
+								pretty.Sprint(pretty.Success, pretty.Checkmark),
+								tc.Name, model, result.Duration.Truncate(time.Millisecond))
+						case prompttest.ResultFail:
+							sr.Failed++
+							fmt.Printf("  %s %s @ %s (%s)\n",
+								pretty.Sprint(pretty.Error, pretty.Cross),
+								tc.Name, model, result.Duration.Truncate(time.Millisecond))
+							for _, c := range result.Checks {
+								if !c.Passed {
+									fmt.Printf("    %s %s: %s\n", pretty.Sprint(pretty.Error, "✗"), c.Type, c.Message)
+								}
+							}
+						case prompttest.ResultError:
+							sr.Errored++
+							fmt.Printf("  %s %s @ %s: %s\n",
+								pretty.Sprint(pretty.Warning, "⚠"),
+								tc.Name, model, result.Error)
+						}
+
+						if verbose && result.Response != "" {
+							lines := strings.Split(result.Response, "\n")
+							for i, line := range lines {
+								if i >= 5 {
+									fmt.Printf("        %s\n", pretty.Sprint(pretty.DimF, "..."))
+									break
+								}
+								fmt.Printf("        %s\n", pretty.Sprint(pretty.DimF, line))
+							}
+						}
+					}
+				}
+
+				sr.Duration = time.Since(start)
+				fmt.Println()
+				fmt.Printf("  %s %d/%d passed, %d failed, %d errors (%s)\n",
+					pretty.Sprint(pretty.BoldF, "Results:"),
+					sr.Passed, sr.Total, sr.Failed, sr.Errored, sr.Duration.Truncate(time.Millisecond))
+
+				if sr.Failed > 0 || sr.Errored > 0 {
+					return fmt.Errorf("%d test(s) failed", sr.Failed+sr.Errored)
+				}
+				return nil
+			},
+		},
 	)
 
 	// Add flags to subcommands
@@ -294,6 +400,9 @@ Examples:
 	cmd.Commands()[4].Flags().String("description", "", "Template description")
 	cmd.Commands()[4].Flags().String("model", "", "Suggested model")
 	cmd.Commands()[4].Flags().StringSlice("tags", nil, "Tags")
+	cmd.Commands()[6].Flags().Bool("dry-run", false, "Show tests without running")
+	cmd.Commands()[6].Flags().String("response", "", "Static response for testing")
+	cmd.Commands()[6].Flags().BoolP("verbose", "v", false, "Show full responses")
 
 	return cmd
 }

@@ -110,7 +110,7 @@ All 18 utility packages implemented and tested.
 
 ## Phase 2.5: Prompt Engineering
 - [x] Prompt template management — `forge prompt` with .forge/prompts/ directory, variable interpolation, frontmatter
-- [ ] Prompt regression testing
+- [x] Prompt regression testing — `forge prompt test` with multi-model comparison and expectation checks
 - [ ] Prompt cost optimizer
 
 ## Phase 2.5: Workflow Integrations
