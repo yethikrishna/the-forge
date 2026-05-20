@@ -201,6 +201,8 @@ All 18 utility packages implemented and tested.
 - [ ] **Security Scanning Hooks** — pre/post agent run hooks integrated with `forge jail`
 - [ ] **Forgefile v2** — TOML multi-agent workflow syntax (GitHub Actions for AI agents)
 - [ ] **Web Dashboard Real-Time** — WebSocket agent monitoring, cost charts, trace viewer
+- [ ] **Scheduled Memory Review (\"Dreaming\")** — `forge memory review` auto-extracts patterns from past sessions between runs (à la Claude Code with Claude 2026)
+- [ ] **Rubric-Based Output Grading** — extend `forge test` with rubric scoring; below-threshold triggers re-runs (à la Claude Outcomes)
 
 ### P2 — Next Quarter
 - [ ] **Enterprise Auth (RBAC + SSO)** — OIDC/SAML for `forge serve`

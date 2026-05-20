@@ -1,7 +1,7 @@
 # Trend Report — The Forge
 
-**Generated:** 2026-05-20 23:14 UTC  
-**Previous:** 2026-05-20 21:20 UTC  
+**Generated:** 2026-05-20 23:42 UTC  
+**Previous:** 2026-05-20 23:14 UTC  
 **Purpose:** Cross-reference current market signals with The Forge roadmap to prioritize next-phase features.
 
 ---
@@ -74,7 +74,14 @@ Three significant new signals emerged today:
 - **Implication:** HITL features are a real differentiator.
 - *Sources:* Information Matters, fungies.io, MIT Sloan
 
-### 1.10 Open-Source Tools Trending (GitHub, May 2026)
+### 1.10 Anthropic "Code with Claude 2026" (May 8) — Dreaming & Outcomes
+- **Dreaming (Scheduled Memory Review):** Agents automatically review past sessions between runs, extract patterns (recurring bugs, team preferences), and update shared orchestration memory. Enables persistent learning without manual intervention.
+- **Outcomes (Rubric-Based Grading Agent):** Independent grading agent scores outputs against user-defined rubrics. Below-threshold results flag issues and trigger re-runs. Internal benchmarks: ~8–10% quality gains.
+- **Add-ins:** Embed Claude directly inside tools (IDEs, productivity apps) for richer context.
+- **Implication:** Forge's `forge memory` + `forge test` could evolve toward scheduled memory review and rubric-based output grading. These are differentiation opportunities.
+- *Source:* MindStudio, Anthropic
+
+### 1.11 Open-Source Tools Trending (GitHub, May 2026)
 - **opencode** (+1,764 stars/28d), **Dify** (~111k), **OpenHands** (~60k), **codegraph**, **superpowers** (obra).
 - Ollama (~147k), llama.cpp (~90k) still foundational.
 - *Sources:* OSSInsight, GitHub Trending, ByteByteGo
@@ -93,6 +100,7 @@ Three significant new signals emerged today:
 | Local models | `forge api` gateway | Add Command A+ preset to `forge init --local` |
 | Agent roles | Not yet | Standard practice — planner/coder/tester/reviewer |
 | Human-in-the-loop | Not yet | 71% don't trust AI code fully |
+| Anthropic Dreaming/Outcomes | `forge memory` + `forge test` exist | Add scheduled memory review + rubric grading |
 | Code knowledge graph | `forge index` exists | Enhance with codegraph-style relationships |
 | Web dashboard | `forge dashboard` exists | Needs real-time WebSocket monitoring |
 | Plugin ecosystem | `forge plugin` exists | Marketplace + WASM plugins |
@@ -118,6 +126,8 @@ Three significant new signals emerged today:
 8. **Security Scanning Hooks** — pre/post agent run hooks integrated with `forge jail`.
 9. **Forgefile v2** — TOML multi-agent workflow syntax (GitHub Actions for AI agents).
 10. **Web Dashboard Real-Time** — WebSocket agent monitoring, cost charts, trace viewer.
+11. **Scheduled Memory Review ("Dreaming")** — `forge memory review` automatically extracts patterns from past sessions between runs (à la Claude Code with Claude 2026).
+12. **Rubric-Based Output Grading** — extend `forge test` with rubric scoring; below-threshold triggers re-runs (à la Claude Outcomes).
 
 ### P2 — Next Quarter
 11. **Enterprise Auth (RBAC + SSO)** — OIDC/SAML for `forge serve`. Microsoft AF and Warp Oz both have this.
@@ -185,6 +195,7 @@ forge init --local        # zero cloud, zero cost
 | 1 | 2026-05-20 20:07 | Baseline: MCP, Mastra, VoltAgent, enterprise adoption |
 | 2 | 2026-05-20 21:20 | Warp Oz, Microsoft AF 1.0, MCP 110M downloads, codegraph |
 | 3 | 2026-05-20 23:14 | Gartner IDE prediction, Antigravity 2.0, Command A+, Optimizely growth |
+| 4 | 2026-05-20 23:42 | Anthropic Dreaming/Outcomes (Code with Claude 2026) — no other new signals |
 
 ---
 
