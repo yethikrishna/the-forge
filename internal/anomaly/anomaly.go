@@ -1,425 +1,411 @@
-// Package anomaly provides cost anomaly detection for agent usage.
-// Detect spending spikes, budget overruns, and unusual patterns before they hurt.
+// Package anomaly provides cost anomaly detection for agent operations.
+// Monitors spending patterns, detects unusual cost spikes, and triggers
+// alerts with configurable thresholds and hard budget stops.
 //
-// The best budget is one you don't blow through.
+// Watch the wallet.
 package anomaly
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
+	"os"
+	"path/filepath"
+	"sync"
 	"time"
 )
 
-// Severity of an anomaly.
+// AnomalyType represents the type of cost anomaly.
+type AnomalyType string
+
+const (
+	AnomalySpike      AnomalyType = "spike"       // Sudden cost increase
+	AnomalyTrend      AnomalyType = "trend"       // Gradual upward trend
+	AnomalyBudget     AnomalyType = "budget"      // Budget threshold exceeded
+	AnomalyRateChange AnomalyType = "rate_change" // Rate of spending changed
+)
+
+// Severity represents how severe an anomaly is.
 type Severity string
 
 const (
-	SevLow      Severity = "low"
-	SevWarning  Severity = "warning"
-	SevCritical Severity = "critical"
+	SeverityLow      Severity = "low"
+	SeverityMedium   Severity = "medium"
+	SeverityHigh     Severity = "high"
+	SeverityCritical Severity = "critical"
 )
 
 // Anomaly represents a detected cost anomaly.
 type Anomaly struct {
-	ID          string    `json:"id"`
-	Type        Type      `json:"type"`
-	Severity    Severity  `json:"severity"`
-	Message     string    `json:"message"`
-	Value       float64   `json:"value"`
-	Threshold   float64   `json:"threshold"`
-	Source      string    `json:"source,omitempty"`
-	DetectedAt  time.Time `json:"detected_at"`
-	Suggestion  string    `json:"suggestion"`
+	ID          string                 `json:"id"`
+	Type        AnomalyType            `json:"type"`
+	Severity    Severity               `json:"severity"`
+	AgentID     string                 `json:"agent_id,omitempty"`
+	Model       string                 `json:"model,omitempty"`
+	Description string                 `json:"description"`
+	Expected    float64                `json:"expected"`
+	Actual      float64                `json:"actual"`
+	Timestamp   time.Time              `json:"timestamp"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 }
 
-// Type of anomaly.
-type Type string
-
-const (
-	TypeSpike       Type = "spike"       // Sudden cost increase
-	TypeBudgetOver  Type = "budget_over"  // Budget exceeded
-	TypeRateHigh    Type = "rate_high"    // High per-minute rate
-	TypeTrendUp     Type = "trend_up"     // Upward trend over window
-	TypeModelCost   Type = "model_cost"   // Single model dominates cost
-	TypeAgentRunaway Type = "agent_runaway" // Agent spending abnormally
-)
-
-// Budget represents a cost budget.
-type Budget struct {
-	Name      string    `json:"name"`
-	Limit     float64   `json:"limit"`     // USD
-	Spent     float64   `json:"spent"`     // USD
-	Period    string    `json:"period"`    // daily, weekly, monthly
-	StartDate time.Time `json:"start_date"`
-	HardStop  bool      `json:"hard_stop"` // true = block when exceeded
+// CostRecord represents a single cost record.
+type CostRecord struct {
+	AgentID    string    `json:"agent_id"`
+	Model      string    `json:"model"`
+	Amount     float64   `json:"amount"`
+	TokensIn   int       `json:"tokens_in"`
+	TokensOut  int       `json:"tokens_out"`
+	Timestamp  time.Time `json:"timestamp"`
+	SessionID  string    `json:"session_id"`
 }
 
-// Remaining returns how much budget is left.
-func (b *Budget) Remaining() float64 {
-	r := b.Limit - b.Spent
-	if r < 0 {
-		return 0
-	}
-	return r
-}
-
-// PercentUsed returns the percentage of budget used.
-func (b *Budget) PercentUsed() float64 {
-	if b.Limit == 0 {
-		return 100
-	}
-	return (b.Spent / b.Limit) * 100
-}
-
-// IsOver returns true if budget is exceeded.
-func (b *Budget) IsOver() bool {
-	return b.Spent >= b.Limit
-}
-
-// IsNearLimit returns true if over the given threshold percentage.
-func (b *Budget) IsNearLimit(pct float64) bool {
-	return b.PercentUsed() >= pct
-}
-
-// CostPoint is a single cost data point.
-type CostPoint struct {
-	Timestamp time.Time `json:"timestamp"`
-	Amount    float64   `json:"amount"`    // USD
-	Agent     string    `json:"agent,omitempty"`
-	Model     string    `json:"model,omitempty"`
-	TokensIn  int       `json:"tokens_in,omitempty"`
-	TokensOut int       `json:"tokens_out,omitempty"`
+// BudgetConfig defines budget limits.
+type BudgetConfig struct {
+	DailyLimit   float64 `json:"daily_limit"`
+	WeeklyLimit  float64 `json:"weekly_limit"`
+	MonthlyLimit float64 `json:"monthly_limit"`
+	PerAgentLimit float64 `json:"per_agent_limit"`
+	HardStop     bool    `json:"hard_stop"` // Stop all agents when exceeded
 }
 
 // Detector detects cost anomalies.
 type Detector struct {
-	Budgets   []Budget
-	Points    []CostPoint
-	SpikeMultiplier float64 // default 3.0
-	RatePerMinute   float64 // USD/min threshold, default 1.0
-	TrendWindow     int     // data points for trend, default 10
-	HistoryMinutes  int     // minutes of history to keep, default 60
+	mu       sync.Mutex
+	dir      string
+	records  []CostRecord
+	anomalies []Anomaly
+	budget   BudgetConfig
+	baseline map[string]baselineStats // agent → baseline
 }
 
-// NewDetector creates a detector with sensible defaults.
-func NewDetector() *Detector {
+type baselineStats struct {
+	AvgDaily float64 `json:"avg_daily"`
+	StdDev   float64 `json:"std_dev"`
+	Count    int     `json:"count"`
+}
+
+// NewDetector creates a cost anomaly detector.
+func NewDetector(dir string, budget BudgetConfig) *Detector {
 	return &Detector{
-		SpikeMultiplier: 3.0,
-		RatePerMinute:   1.0,
-		TrendWindow:     10,
-		HistoryMinutes:  60,
+		dir:      dir,
+		records:  make([]CostRecord, 0),
+		anomalies: make([]Anomaly, 0),
+		budget:   budget,
+		baseline: make(map[string]baselineStats),
 	}
 }
 
-// AddBudget adds a budget to monitor.
-func (d *Detector) AddBudget(b Budget) {
-	d.Budgets = append(d.Budgets, b)
+// Record records a cost event.
+func (d *Detector) Record(record CostRecord) []Anomaly {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if record.Timestamp.IsZero() {
+		record.Timestamp = time.Now()
+	}
+
+	d.records = append(d.records, record)
+
+	// Update baseline
+	d.updateBaseline(record.AgentID)
+
+	// Check for anomalies
+	var detected []Anomaly
+
+	// 1. Check budget limits
+	if budgetAnomaly := d.checkBudget(record); budgetAnomaly != nil {
+		detected = append(detected, *budgetAnomaly)
+		d.anomalies = append(d.anomalies, *budgetAnomaly)
+	}
+
+	// 2. Check for spikes (cost significantly above baseline)
+	if spikeAnomaly := d.checkSpike(record); spikeAnomaly != nil {
+		detected = append(detected, *spikeAnomaly)
+		d.anomalies = append(d.anomalies, *spikeAnomaly)
+	}
+
+	// 3. Check per-agent limits
+	if agentAnomaly := d.checkPerAgent(record); agentAnomaly != nil {
+		detected = append(detected, *agentAnomaly)
+		d.anomalies = append(d.anomalies, *agentAnomaly)
+	}
+
+	return detected
 }
 
-// Record records a cost data point.
-func (d *Detector) Record(point CostPoint) {
-	d.Points = append(d.Points, point)
-	// Trim old points
-	cutoff := time.Now().Add(-time.Duration(d.HistoryMinutes) * time.Minute)
-	start := 0
-	for i, p := range d.Points {
-		if p.Timestamp.After(cutoff) {
-			start = i
-			break
+// updateBaseline updates baseline statistics for an agent.
+func (d *Detector) updateBaseline(agentID string) {
+	var total float64
+	var count int
+
+	for _, r := range d.records {
+		if r.AgentID == agentID {
+			total += r.Amount
+			count++
 		}
 	}
-	if start > 0 {
-		d.Points = d.Points[start:]
+
+	if count == 0 {
+		return
+	}
+
+	avg := total / float64(count)
+
+	// Compute standard deviation
+	var sumSqDiff float64
+	for _, r := range d.records {
+		if r.AgentID == agentID {
+			diff := r.Amount - avg
+			sumSqDiff += diff * diff
+		}
+	}
+
+	stdDev := 0.0
+	if count > 1 {
+		stdDev = math.Sqrt(sumSqDiff / float64(count-1))
+	}
+
+	d.baseline[agentID] = baselineStats{
+		AvgDaily: avg,
+		StdDev:   stdDev,
+		Count:    count,
 	}
 }
 
-// Check runs all anomaly checks and returns detected anomalies.
-func (d *Detector) Check() []Anomaly {
-	var anomalies []Anomaly
+// checkBudget checks if budget limits are exceeded.
+func (d *Detector) checkBudget(record CostRecord) *Anomaly {
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
-	anomalies = append(anomalies, d.checkSpikes()...)
-	anomalies = append(anomalies, d.checkBudgets()...)
-	anomalies = append(anomalies, d.checkRate()...)
-	anomalies = append(anomalies, d.checkTrend()...)
-	anomalies = append(anomalies, d.checkModelDominance()...)
+	var todayTotal, weekTotal, monthTotal float64
+	weekStart := today.AddDate(0, 0, -int(today.Weekday()))
+	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
 
-	return anomalies
+	for _, r := range d.records {
+		if r.Timestamp.After(today) {
+			todayTotal += r.Amount
+		}
+		if r.Timestamp.After(weekStart) {
+			weekTotal += r.Amount
+		}
+		if r.Timestamp.After(monthStart) {
+			monthTotal += r.Amount
+		}
+	}
+
+	if d.budget.DailyLimit > 0 && todayTotal > d.budget.DailyLimit {
+		return &Anomaly{
+			Type:        AnomalyBudget,
+			Severity:    d.budgetSeverity(todayTotal, d.budget.DailyLimit),
+			Description: fmt.Sprintf("Daily budget exceeded: $%.2f / $%.2f", todayTotal, d.budget.DailyLimit),
+			Expected:    d.budget.DailyLimit,
+			Actual:      todayTotal,
+			Timestamp:   now,
+		}
+	}
+
+	if d.budget.WeeklyLimit > 0 && weekTotal > d.budget.WeeklyLimit {
+		return &Anomaly{
+			Type:        AnomalyBudget,
+			Severity:    d.budgetSeverity(weekTotal, d.budget.WeeklyLimit),
+			Description: fmt.Sprintf("Weekly budget exceeded: $%.2f / $%.2f", weekTotal, d.budget.WeeklyLimit),
+			Expected:    d.budget.WeeklyLimit,
+			Actual:      weekTotal,
+			Timestamp:   now,
+		}
+	}
+
+	return nil
 }
 
-// ShouldBlock returns true if any hard-stop budget is exceeded.
-func (d *Detector) ShouldBlock() bool {
-	for _, b := range d.Budgets {
-		if b.HardStop && b.IsOver() {
+// checkSpike checks if a cost record is significantly above baseline.
+func (d *Detector) checkSpike(record CostRecord) *Anomaly {
+	baseline, ok := d.baseline[record.AgentID]
+	if !ok || baseline.Count < 5 {
+		return nil // Not enough data for baseline
+	}
+
+	// Z-score anomaly detection
+	if baseline.StdDev > 0 {
+		zScore := (record.Amount - baseline.AvgDaily) / baseline.StdDev
+		if zScore > 3.0 {
+			return &Anomaly{
+				Type:        AnomalySpike,
+				Severity:    d.zScoreSeverity(zScore),
+				AgentID:     record.AgentID,
+				Model:       record.Model,
+				Description: fmt.Sprintf("Cost spike for %s: $%.4f (z-score: %.1f, expected ~$%.4f)", record.AgentID, record.Amount, zScore, baseline.AvgDaily),
+				Expected:    baseline.AvgDaily,
+				Actual:      record.Amount,
+				Timestamp:   record.Timestamp,
+			}
+		}
+	}
+
+	return nil
+}
+
+// checkPerAgent checks per-agent budget limits.
+func (d *Detector) checkPerAgent(record CostRecord) *Anomaly {
+	if d.budget.PerAgentLimit <= 0 {
+		return nil
+	}
+
+	var agentTotal float64
+	now := time.Now()
+	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, now.Location())
+
+	for _, r := range d.records {
+		if r.AgentID == record.AgentID && r.Timestamp.After(monthStart) {
+			agentTotal += r.Amount
+		}
+	}
+
+	if agentTotal > d.budget.PerAgentLimit {
+		return &Anomaly{
+			Type:        AnomalyBudget,
+			Severity:    SeverityHigh,
+			AgentID:     record.AgentID,
+			Description: fmt.Sprintf("Agent %s exceeded monthly limit: $%.2f / $%.2f", record.AgentID, agentTotal, d.budget.PerAgentLimit),
+			Expected:    d.budget.PerAgentLimit,
+			Actual:      agentTotal,
+			Timestamp:   now,
+		}
+	}
+
+	return nil
+}
+
+// ShouldHardStop returns true if the hard stop budget is exceeded.
+func (d *Detector) ShouldHardStop() bool {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if !d.budget.HardStop {
+		return false
+	}
+
+	for _, a := range d.anomalies {
+		if a.Type == AnomalyBudget && a.Severity == SeverityCritical {
 			return true
 		}
 	}
 	return false
 }
 
-// checkSpikes detects sudden cost increases.
-func (d *Detector) checkSpikes() []Anomaly {
-	if len(d.Points) < 5 {
-		return nil
+// Anomalies returns recent anomalies.
+func (d *Detector) Anomalies(limit int) []Anomaly {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if limit <= 0 || limit > len(d.anomalies) {
+		limit = len(d.anomalies)
 	}
 
-	// Calculate baseline average
-	total := 0.0
-	for _, p := range d.Points {
-		total += p.Amount
-	}
-	avg := total / float64(len(d.Points))
-
-	if avg == 0 {
-		return nil
+	start := len(d.anomalies) - limit
+	if start < 0 {
+		start = 0
 	}
 
-	var anomalies []Anomaly
-	// Check last 3 points for spikes
-	recent := d.Points
-	if len(recent) > 3 {
-		recent = recent[len(recent)-3:]
-	}
-
-	for _, p := range recent {
-		if p.Amount > avg*d.SpikeMultiplier {
-			anomalies = append(anomalies, Anomaly{
-				ID:         fmt.Sprintf("spike-%d", p.Timestamp.Unix()),
-				Type:       TypeSpike,
-				Severity:   SevWarning,
-				Message:    fmt.Sprintf("Cost spike: $%.4f (%.1fx above average $%.4f)", p.Amount, p.Amount/avg, avg),
-				Value:      p.Amount,
-				Threshold:  avg * d.SpikeMultiplier,
-				Source:     p.Agent,
-				DetectedAt: time.Now(),
-				Suggestion: "Check if an agent is stuck in a loop or processing an unusually large request",
-			})
-		}
-	}
-
-	return anomalies
+	result := make([]Anomaly, len(d.anomalies[start:]))
+	copy(result, d.anomalies[start:])
+	return result
 }
 
-// checkBudgets detects budget overruns.
-func (d *Detector) checkBudgets() []Anomaly {
-	var anomalies []Anomaly
+// DailySpend returns today's total spend.
+func (d *Detector) DailySpend() float64 {
+	d.mu.Lock()
+	defer d.mu.Unlock()
 
-	for _, b := range d.Budgets {
-		if b.IsOver() {
-			anomalies = append(anomalies, Anomaly{
-				ID:         fmt.Sprintf("budget-over-%s", b.Name),
-				Type:       TypeBudgetOver,
-				Severity:   SevCritical,
-				Message:    fmt.Sprintf("Budget '%s' exceeded: $%.2f / $%.2f (%.0f%%)", b.Name, b.Spent, b.Limit, b.PercentUsed()),
-				Value:      b.Spent,
-				Threshold:  b.Limit,
-				DetectedAt: time.Now(),
-				Suggestion: fmt.Sprintf("Stop non-essential agents or increase the %s budget", b.Name),
-			})
-		} else if b.IsNearLimit(80) {
-			anomalies = append(anomalies, Anomaly{
-				ID:         fmt.Sprintf("budget-near-%s", b.Name),
-				Type:       TypeBudgetOver,
-				Severity:   SevWarning,
-				Message:    fmt.Sprintf("Budget '%s' at %.0f%%: $%.2f / $%.2f", b.Name, b.PercentUsed(), b.Spent, b.Limit),
-				Value:      b.Spent,
-				Threshold:  b.Limit,
-				DetectedAt: time.Now(),
-				Suggestion: fmt.Sprintf("Consider reducing agent usage or increasing the %s budget", b.Name),
-			})
+	now := time.Now()
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+
+	var total float64
+	for _, r := range d.records {
+		if r.Timestamp.After(today) {
+			total += r.Amount
 		}
 	}
-
-	return anomalies
+	return total
 }
 
-// checkRate detects high spending rates.
-func (d *Detector) checkRate() []Anomaly {
-	if len(d.Points) < 2 {
-		return nil
+// SpendByAgent returns spend broken down by agent.
+func (d *Detector) SpendByAgent() map[string]float64 {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	spend := make(map[string]float64)
+	for _, r := range d.records {
+		spend[r.AgentID] += r.Amount
 	}
-
-	// Calculate rate over last 5 minutes
-	cutoff := time.Now().Add(-5 * time.Minute)
-	var recentSum float64
-	var recentCount int
-	for _, p := range d.Points {
-		if p.Timestamp.After(cutoff) {
-			recentSum += p.Amount
-			recentCount++
-		}
-	}
-
-	if recentCount == 0 {
-		return nil
-	}
-
-	// Rate in USD per minute
-	rate := recentSum / 5.0
-
-	if rate > d.RatePerMinute {
-		return []Anomaly{{
-			ID:         fmt.Sprintf("rate-%d", time.Now().Unix()),
-			Type:       TypeRateHigh,
-			Severity:   SevWarning,
-			Message:    fmt.Sprintf("High spending rate: $%.4f/min (threshold: $%.4f/min)", rate, d.RatePerMinute),
-			Value:      rate,
-			Threshold:  d.RatePerMinute,
-			DetectedAt: time.Now(),
-			Suggestion: "Multiple agents may be running simultaneously. Consider throttling or queuing requests",
-		}}
-	}
-
-	return nil
+	return spend
 }
 
-// checkTrend detects upward spending trends.
-func (d *Detector) checkTrend() []Anomaly {
-	if len(d.Points) < d.TrendWindow {
-		return nil
+// Save persists detector state.
+func (d *Detector) Save() error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	if err := os.MkdirAll(d.dir, 0o755); err != nil {
+		return err
 	}
 
-	window := d.Points
-	if len(window) > d.TrendWindow {
-		window = window[len(window)-d.TrendWindow:]
+	data, err := json.MarshalIndent(struct {
+		Records   []CostRecord `json:"records"`
+		Anomalies []Anomaly    `json:"anomalies"`
+		Budget    BudgetConfig `json:"budget"`
+		Baseline  map[string]baselineStats `json:"baseline"`
+	}{
+		Records:   d.records,
+		Anomalies: d.anomalies,
+		Budget:    d.budget,
+		Baseline:  d.baseline,
+	}, "", "  ")
+	if err != nil {
+		return err
 	}
 
-	// Simple linear regression
-	n := float64(len(window))
-	sumX := 0.0
-	sumY := 0.0
-	sumXY := 0.0
-	sumX2 := 0.0
-
-	for i, p := range window {
-		x := float64(i)
-		y := p.Amount
-		sumX += x
-		sumY += y
-		sumXY += x * y
-		sumX2 += x * x
-	}
-
-	denom := n*sumX2 - sumX*sumX
-	if denom == 0 {
-		return nil
-	}
-
-	slope := (n*sumXY - sumX*sumY) / denom
-
-	// If slope is positive and significant (cost is increasing)
-	avgY := sumY / n
-	if avgY > 0 && slope > 0 {
-		relativeSlope := slope / avgY
-		if relativeSlope > 0.1 { // cost increasing significantly per data point
-			return []Anomaly{{
-				ID:         fmt.Sprintf("trend-%d", time.Now().Unix()),
-				Type:       TypeTrendUp,
-				Severity:   SevLow,
-				Message:    fmt.Sprintf("Upward cost trend detected: spending increasing by $%.4f per request", slope),
-				Value:      slope,
-				DetectedAt: time.Now(),
-				Suggestion: "Monitor agent usage patterns. Recent requests may be more expensive than earlier ones",
-			}}
-		}
-	}
-
-	return nil
+	return os.WriteFile(filepath.Join(d.dir, "anomaly.json"), data, 0o644)
 }
 
-// checkModelDominance detects when a single model dominates cost.
-func (d *Detector) checkModelDominance() []Anomaly {
-	if len(d.Points) < 5 {
-		return nil
-	}
-
-	modelCost := make(map[string]float64)
-	total := 0.0
-	for _, p := range d.Points {
-		if p.Model != "" {
-			modelCost[p.Model] += p.Amount
-			total += p.Amount
-		}
-	}
-
-	if total == 0 {
-		return nil
-	}
-
-	var anomalies []Anomaly
-	for model, cost := range modelCost {
-		pct := (cost / total) * 100
-		if pct > 80 {
-			anomalies = append(anomalies, Anomaly{
-				ID:         fmt.Sprintf("model-%s", model),
-				Type:       TypeModelCost,
-				Severity:   SevLow,
-				Message:    fmt.Sprintf("Model '%s' accounts for %.0f%% of cost ($%.2f)", model, pct, cost),
-				Value:      cost,
-				Threshold:  total * 0.8,
-				DetectedAt: time.Now(),
-				Suggestion: fmt.Sprintf("Consider routing some requests to cheaper models to reduce '%s' costs", model),
-			})
-		}
-	}
-
-	return anomalies
-}
-
-// ForecastRemainingBudget estimates when the budget will run out.
-func ForecastRemainingBudget(budget Budget, points []CostPoint) *Forecast {
-	if len(points) == 0 || budget.Limit == 0 {
-		return nil
-	}
-
-	remaining := budget.Remaining()
-	if remaining <= 0 {
-		return &Forecast{
-			BudgetName:    budget.Name,
-			WillExhaust:   true,
-			ExhaustAt:     time.Now(),
-			EstimatedCost: budget.Spent,
-			Confidence:    1.0,
-		}
-	}
-
-	// Calculate spending rate
-	total := 0.0
-	minTime := points[0].Timestamp
-	maxTime := points[len(points)-1].Timestamp
-	for _, p := range points {
-		total += p.Amount
-		if p.Timestamp.Before(minTime) {
-			minTime = p.Timestamp
-		}
-		if p.Timestamp.After(maxTime) {
-			maxTime = p.Timestamp
-		}
-	}
-
-	duration := maxTime.Sub(minTime).Minutes()
-	if duration == 0 {
-		return nil
-	}
-
-	ratePerMin := total / duration
-	minutesLeft := remaining / ratePerMin
-
-	return &Forecast{
-		BudgetName:    budget.Name,
-		WillExhaust:   true,
-		ExhaustAt:     time.Now().Add(time.Duration(minutesLeft) * time.Minute),
-		EstimatedCost: budget.Limit,
-		MinutesLeft:   int(math.Round(minutesLeft)),
-		Confidence:    0.7,
+// budgetSeverity maps budget overrun ratio to severity.
+func (d *Detector) budgetSeverity(actual, limit float64) Severity {
+	ratio := actual / limit
+	switch {
+	case ratio > 2.0:
+		return SeverityCritical
+	case ratio > 1.5:
+		return SeverityHigh
+	case ratio > 1.2:
+		return SeverityMedium
+	default:
+		return SeverityLow
 	}
 }
 
-// Forecast predicts when a budget will be exhausted.
-type Forecast struct {
-	BudgetName    string    `json:"budget_name"`
-	WillExhaust   bool      `json:"will_exhaust"`
-	ExhaustAt     time.Time `json:"exhaust_at"`
-	EstimatedCost float64   `json:"estimated_cost"`
-	MinutesLeft   int       `json:"minutes_left"`
-	Confidence    float64   `json:"confidence"`
+// zScoreSeverity maps z-score to severity.
+func (d *Detector) zScoreSeverity(z float64) Severity {
+	switch {
+	case z > 5.0:
+		return SeverityCritical
+	case z > 4.0:
+		return SeverityHigh
+	case z > 3.5:
+		return SeverityMedium
+	default:
+		return SeverityLow
+	}
+}
+
+// FormatAnomaly renders an anomaly for display.
+func FormatAnomaly(a Anomaly) string {
+	severity := string(a.Severity)
+	if a.Severity == SeverityCritical {
+		severity = "🔴 CRITICAL"
+	} else if a.Severity == SeverityHigh {
+		severity = "🟠 HIGH"
+	}
+	return fmt.Sprintf("[%s] %s: %s (expected: $%.2f, actual: $%.2f)",
+		severity, a.Type, a.Description, a.Expected, a.Actual)
 }

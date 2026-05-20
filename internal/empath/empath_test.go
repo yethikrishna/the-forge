@@ -1,188 +1,301 @@
 package empath
 
 import (
+	"strings"
 	"testing"
 )
 
-func TestAnalyzeNeutral(t *testing.T) {
-	d := NewDetector(t.TempDir())
-	state := d.Analyze("Can you help me write a function to sort an array?")
+func TestAnalyzeCalm(t *testing.T) {
+	a := NewAnalyzer()
+	result := a.Analyze("What's the weather today?")
 
-	if state.Level != FrustrationNone {
-		t.Errorf("expected none, got %s", state.Level)
+	if result.Level != LevelCalm {
+		t.Errorf("expected calm, got %s (score: %.1f)", result.Level, result.Score)
 	}
-	if state.MessageCount != 1 {
-		t.Errorf("expected 1 message, got %d", state.MessageCount)
+	if result.Score > 10 {
+		t.Errorf("calm message should have low score, got %.1f", result.Score)
+	}
+}
+
+func TestAnalyzeFrustrated(t *testing.T) {
+	a := NewAnalyzer()
+	result := a.Analyze("This is SO FRUSTRATING! I've tried everything and it still doesn't work!!!")
+
+	if result.Level != LevelFrustrated && result.Level != LevelAngry {
+		t.Errorf("expected frustrated/angry, got %s (score: %.1f)", result.Level, result.Score)
+	}
+	if len(result.Signals) == 0 {
+		t.Error("expected frustration signals")
+	}
+}
+
+func TestAnalyzeAngry(t *testing.T) {
+	a := NewAnalyzer()
+	result := a.Analyze("THIS IS COMPLETE GARBAGE!!! I HATE THIS STUPID THING!!! WTF!!!")
+
+	if result.Level != LevelAngry {
+		t.Errorf("expected angry, got %s (score: %.1f)", result.Level, result.Score)
+	}
+	if !result.Strategy.Escalate {
+		t.Error("angry user should trigger escalation")
+	}
+	if !result.Strategy.Acknowledge {
+		t.Error("should acknowledge frustration")
+	}
+}
+
+func TestAnalyzeKeywordDetection(t *testing.T) {
+	a := NewAnalyzer()
+
+	keywords := []string{"frustrated", "annoyed", "angry", "hate this", "terrible", "useless", "broken", "wtf"}
+	for _, kw := range keywords {
+		result := a.Analyze("I am " + kw)
+		found := false
+		for _, sig := range result.Signals {
+			if sig.Type == "keyword" {
+				found = true
+			}
+		}
+		if !found {
+			t.Errorf("expected keyword signal for: %s", kw)
+		}
 	}
 }
 
 func TestAnalyzeCaps(t *testing.T) {
-	d := NewDetector(t.TempDir())
-	state := d.Analyze("WHY IS THIS NOT WORKING???")
+	a := NewAnalyzer()
+	result := a.Analyze("THIS DOES NOT WORK AT ALL")
 
-	if state.Score == 0 {
-		t.Error("expected non-zero score for caps")
+	found := false
+	for _, sig := range result.Signals {
+		if sig.Type == "caps" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected caps detection")
 	}
 }
 
-func TestAnalyzeImpatience(t *testing.T) {
-	d := NewDetector(t.TempDir())
-	state := d.Analyze("This is so frustrating, why isn't it working?")
+func TestAnalyzePunctuation(t *testing.T) {
+	a := NewAnalyzer()
+	result := a.Analyze("Why doesn't this work???!!!")
 
-	if state.Score == 0 {
-		t.Error("expected non-zero score for impatience")
+	found := false
+	for _, sig := range result.Signals {
+		if sig.Type == "punctuation" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected punctuation detection")
 	}
 }
 
-func TestAnalyzeShortResponse(t *testing.T) {
-	d := NewDetector(t.TempDir())
-	d.Analyze("Hello, can you help me?")
-	d.Analyze("I need a sorting function")
-	d.Analyze("no")
+func TestAnalyzeUrgency(t *testing.T) {
+	a := NewAnalyzer()
+	result := a.Analyze("I need this fixed ASAP, it's urgent!")
 
-	state := d.State()
-	if state.ShortResponseCount == 0 {
-		t.Error("expected short response count > 0")
+	found := false
+	for _, sig := range result.Signals {
+		if sig.Type == "urgency" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected urgency detection")
 	}
 }
 
-func TestAnalyzeRepeat(t *testing.T) {
-	d := NewDetector(t.TempDir())
-	d.Analyze("Sort the array in descending order")
-	state := d.Analyze("Sort the array in descending order")
+func TestAnalyzeNegativity(t *testing.T) {
+	a := NewAnalyzer()
+	result := a.Analyze("Why does it keep failing? I can't figure this out.")
 
-	if state.RepeatCount == 0 {
-		t.Error("expected repeat count > 0")
+	found := false
+	for _, sig := range result.Signals {
+		if sig.Type == "pattern" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected negative pattern detection")
 	}
 }
 
-func TestRecordError(t *testing.T) {
-	d := NewDetector(t.TempDir())
-	d.RecordError("connection timeout")
+func TestAnalyzeRepetition(t *testing.T) {
+	a := NewAnalyzer()
+	result := a.Analyze("tried tried tried tried tried again")
 
-	state := d.State()
-	if state.ErrorCount != 1 {
-		t.Errorf("expected 1 error, got %d", state.ErrorCount)
+	found := false
+	for _, sig := range result.Signals {
+		if sig.Type == "repetition" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected repetition detection")
 	}
 }
 
-func TestEscalatingFrustration(t *testing.T) {
-	d := NewDetector(t.TempDir())
-
-	d.Analyze("Can you help me with this?")
-	if d.State().Level != FrustrationNone {
-		t.Error("expected none at start")
+func TestStrategyAngry(t *testing.T) {
+	s := generateStrategy(LevelAngry, 80, nil)
+	if s.Tone != "empathetic" {
+		t.Errorf("expected empathetic tone, got %s", s.Tone)
 	}
-
-	for i := 0; i < 5; i++ {
-		d.Analyze("THIS IS SO FRUSTRATING AND BROKEN AND TERRIBLE")
-		d.RecordError("error")
+	if !s.Escalate {
+		t.Error("should escalate")
 	}
-
-	state := d.State()
-	if state.Level == FrustrationNone {
-		t.Errorf("expected escalated frustration, got %s (score: %.1f)", state.Level, state.Score)
+	if !s.Acknowledge {
+		t.Error("should acknowledge")
+	}
+	if s.MaxWords == 0 {
+		t.Error("should have word limit")
 	}
 }
 
-func TestAdaptiveConfig(t *testing.T) {
-	d := NewDetector(t.TempDir())
-
-	cfg := d.GetAdaptiveConfig()
-	if cfg.ResponseStyle != "normal" {
-		t.Errorf("expected normal, got %s", cfg.ResponseStyle)
+func TestStrategyFrustrated(t *testing.T) {
+	s := generateStrategy(LevelFrustrated, 55, nil)
+	if s.Tone != "supportive" {
+		t.Errorf("expected supportive tone, got %s", s.Tone)
 	}
-
-	// Trigger significant frustration
-	for i := 0; i < 5; i++ {
-		d.Analyze("THIS IS TERRIBLE AND BROKEN AND FRUSTRATING")
-		d.RecordError("error")
-	}
-
-	cfg = d.GetAdaptiveConfig()
-	if cfg.ResponseStyle == "normal" {
-		t.Errorf("expected adapted style, got %s (score: %.1f)", cfg.ResponseStyle, d.State().Score)
+	if !s.SlowDown {
+		t.Error("should slow down")
 	}
 }
 
-func TestCriticalFrustration(t *testing.T) {
-	d := NewDetector(t.TempDir())
-
-	// Heavy frustration signals — need many to reach critical
-	for i := 0; i < 30; i++ {
-		d.Analyze("THIS IS RIDICULOUS AND TERRIBLE AND FRUSTRATING AND BROKEN AND USELESS")
-		d.RecordError("error")
-	}
-
-	state := d.State()
-	if state.Level != FrustrationCritical {
-		t.Errorf("expected critical, got %s (score: %.1f)", state.Level, state.Score)
-	}
-
-	cfg := d.GetAdaptiveConfig()
-	if cfg.ResponseStyle != "handoff" {
-		t.Errorf("expected handoff, got %s", cfg.ResponseStyle)
+func TestStrategyAnnoyed(t *testing.T) {
+	s := generateStrategy(LevelAnnoyed, 30, nil)
+	if s.Tone != "calm" {
+		t.Errorf("expected calm tone, got %s", s.Tone)
 	}
 }
 
-func TestReset(t *testing.T) {
-	d := NewDetector(t.TempDir())
-	d.Analyze("THIS IS SO FRUSTRATING!!!")
-	d.RecordError("error")
-
-	d.Reset()
-	state := d.State()
-
-	if state.Level != FrustrationNone {
-		t.Errorf("expected none after reset, got %s", state.Level)
-	}
-	if state.Score != 0 {
-		t.Errorf("expected score 0 after reset, got %.1f", state.Score)
+func TestStrategyNeutral(t *testing.T) {
+	s := generateStrategy(LevelCalm, 0, nil)
+	if s.Tone != "direct" {
+		t.Errorf("expected direct tone, got %s", s.Tone)
 	}
 }
 
-func TestSaveAndLoad(t *testing.T) {
-	dir := t.TempDir()
-	d := NewDetector(dir)
-	d.Analyze("This is frustrating")
-	d.RecordError("error")
+func TestTrendEscalating(t *testing.T) {
+	a := NewAnalyzer()
+	a.Analyze("hello")
+	a.Analyze("this is a bit annoying")
+	a.Analyze("I'm getting frustrated now")
+	a.Analyze("THIS IS TERRIBLE")
+	a.Analyze("I HATE THIS SO MUCH!!!")
 
-	if err := d.Save(); err != nil {
-		t.Fatal(err)
-	}
-
-	d2 := NewDetector(dir)
-	if err := d2.Load(); err != nil {
-		t.Fatal(err)
-	}
-
-	state := d2.State()
-	if state.MessageCount != 1 {
-		t.Errorf("expected 1 message after load, got %d", state.MessageCount)
+	trend := a.Trend()
+	if trend != "escalating" {
+		t.Errorf("expected escalating, got %s", trend)
 	}
 }
 
-func TestFormatState(t *testing.T) {
-	state := State{Level: FrustrationLow, Score: 15.3, MessageCount: 5, ErrorCount: 1}
-	output := FormatState(state)
-	if output == "" {
-		t.Error("expected non-empty output")
+func TestTrendDeescalating(t *testing.T) {
+	a := NewAnalyzer()
+	a.Analyze("I HATE THIS!!!")
+	a.Analyze("ok still frustrated")
+	a.Analyze("maybe it's ok")
+	a.Analyze("thanks that helped")
+	a.Analyze("great, works now")
+
+	trend := a.Trend()
+	if trend != "deescalating" {
+		t.Errorf("expected deescalating, got %s", trend)
 	}
 }
 
-func TestFormatConfig(t *testing.T) {
-	cfg := AdaptiveConfig{ResponseStyle: "supportive", MaxRetries: 2, ShowProgress: true, OfferAlternatives: true}
-	output := FormatConfig(cfg)
-	if output == "" {
-		t.Error("expected non-empty output")
+func TestTrendStable(t *testing.T) {
+	a := NewAnalyzer()
+	a.Analyze("hello")
+	a.Analyze("how are you")
+	a.Analyze("thanks")
+
+	trend := a.Trend()
+	if trend != "stable" {
+		t.Errorf("expected stable, got %s", trend)
 	}
 }
 
-func TestSimilarity(t *testing.T) {
-	if similarity("sort the array", "sort the array") != 1.0 {
-		t.Error("expected 1.0 for identical")
+func TestHistory(t *testing.T) {
+	a := NewAnalyzer()
+	a.Analyze("hello")
+	a.Analyze("this is fine")
+	a.Analyze("WHY ISN'T THIS WORKING!!!")
+
+	history := a.History()
+	if len(history) != 3 {
+		t.Errorf("expected 3 history entries, got %d", len(history))
 	}
-	if similarity("hello world", "completely different") > 0.3 {
-		t.Error("expected low similarity")
+}
+
+func TestHistoryMaxLimit(t *testing.T) {
+	a := NewAnalyzer()
+	a.maxHistory = 5
+
+	for i := 0; i < 10; i++ {
+		a.Analyze("message")
+	}
+
+	history := a.History()
+	if len(history) > 5 {
+		t.Errorf("history should be capped at %d, got %d", 5, len(history))
+	}
+}
+
+func TestScoreToLevel(t *testing.T) {
+	tests := []struct {
+		score   float64
+		level   FrustrationLevel
+	}{
+		{0, LevelCalm},
+		{5, LevelCalm},
+		{30, LevelAnnoyed},
+		{55, LevelFrustrated},
+		{80, LevelAngry},
+	}
+	for _, tt := range tests {
+		got := scoreToLevel(tt.score)
+		if got != tt.level {
+			t.Errorf("score %.0f: expected %s, got %s", tt.score, tt.level, got)
+		}
+	}
+}
+
+func TestIsAllUpper(t *testing.T) {
+	if !isAllUpper("HELLO") {
+		t.Error("HELLO should be all upper")
+	}
+	if isAllUpper("Hello") {
+		t.Error("Hello should not be all upper")
+	}
+}
+
+func TestIsNormalWord(t *testing.T) {
+	if !isNormalWord("API") {
+		t.Error("API should be normal")
+	}
+	if isNormalWord("HELLO") {
+		t.Error("HELLO should not be normal")
+	}
+}
+
+func TestFormatAnalysis(t *testing.T) {
+	a := NewAnalyzer()
+	result := a.Analyze("This is really frustrating!!!")
+
+	s := FormatAnalysis(result)
+	if !strings.Contains(s, "Level:") {
+		t.Error("should contain level")
+	}
+	if !strings.Contains(s, "Score:") {
+		t.Error("should contain score")
+	}
+}
+
+func TestCalculateScoreEmpty(t *testing.T) {
+	score := calculateScore(nil)
+	if score != 0 {
+		t.Errorf("empty signals should score 0, got %.1f", score)
 	}
 }

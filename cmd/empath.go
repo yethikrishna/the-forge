@@ -7,6 +7,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var empathAnalyzer = empath.NewAnalyzer()
+
 func empathCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "empath",
@@ -20,22 +22,16 @@ recommend adaptive behavior.
 
 Examples:
   forge empath analyze "This is so frustrating!!!"
-  forge empath status
-  forge empath reset`,
+  forge empath trend`,
 		SilenceUsage: true,
 	}
 
 	cmd.AddCommand(
 		empathAnalyzeCmd(),
-		empathStatusCmd(),
-		empathResetCmd(),
+		empathTrendCmd(),
 	)
 
 	return cmd
-}
-
-func getDetector() *empath.Detector {
-	return empath.NewDetector(getForgeDir() + "/empath")
 }
 
 func empathAnalyzeCmd() *cobra.Command {
@@ -44,79 +40,45 @@ func empathAnalyzeCmd() *cobra.Command {
 		Short: "Analyze a message for frustration signals",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			d := getDetector()
-			state := d.Analyze(args[0])
-			cfg := d.GetAdaptiveConfig()
+			analysis := empathAnalyzer.Analyze(args[0])
 
-			fmt.Printf("Frustration Level: %s (score: %.1f/100)\n", state.Level, state.Score)
-			fmt.Printf("Recommended Style: %s\n", cfg.ResponseStyle)
-			fmt.Printf("Max Retries:       %d\n", cfg.MaxRetries)
-			fmt.Printf("Offer Alternatives: %v\n", cfg.OfferAlternatives)
-			if cfg.SlowDown {
-				fmt.Println("  ⚠ Slow down and be more supportive")
-			}
-			if cfg.ResponseStyle == "handoff" {
-				fmt.Println("  🔴 Consider escalating to human support")
-			}
+			fmt.Printf("Score: %.1f/100\n", analysis.Score)
+			fmt.Printf("Level: %s\n", analysis.Level)
 
-			if len(state.Signals) > 0 {
-				fmt.Printf("\nSignals detected (%d):\n", len(state.Signals))
-				for _, s := range state.Signals {
+			if len(analysis.Signals) > 0 {
+				fmt.Printf("\nSignals (%d):\n", len(analysis.Signals))
+				for _, s := range analysis.Signals {
 					fmt.Printf("  %s (weight: %.1f)\n", s.Type, s.Weight)
 				}
 			}
 
-			d.Save()
+			if analysis.Strategy.SlowDown {
+				fmt.Println("\n  ⚠ Slow down and be more supportive")
+			}
+			if analysis.Level == "high" || analysis.Level == "critical" {
+				fmt.Println("  🔴 Consider escalating to human support")
+			}
+
 			return nil
 		},
 	}
 	return cmd
 }
 
-func empathStatusCmd() *cobra.Command {
+func empathTrendCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "status",
-		Short: "Show current frustration state",
+		Use:   "trend",
+		Short: "Show frustration trend",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			d := getDetector()
+			trend := empathAnalyzer.Trend()
+			history := empathAnalyzer.History()
 
-			// Try to load previous state
-			d.Load()
-
-			state := d.State()
-			cfg := d.GetAdaptiveConfig()
-
-			fmt.Println("User Frustration State")
-			fmt.Println("=====================")
-			fmt.Printf("  Level:     %s\n", state.Level)
-			fmt.Printf("  Score:     %.1f/100\n", state.Score)
-			fmt.Printf("  Messages:  %d\n", state.MessageCount)
-			fmt.Printf("  Errors:    %d\n", state.ErrorCount)
-			fmt.Printf("  Repeats:   %d\n", state.RepeatCount)
-			fmt.Printf("  Short:     %d\n", state.ShortResponseCount)
-			fmt.Println()
-			fmt.Println("Adaptive Config")
-			fmt.Println("===============")
-			fmt.Printf("  Style:       %s\n", cfg.ResponseStyle)
-			fmt.Printf("  Max Retries: %d\n", cfg.MaxRetries)
-			fmt.Printf("  Progress:    %v\n", cfg.ShowProgress)
-			fmt.Printf("  Alternatives: %v\n", cfg.OfferAlternatives)
-			fmt.Printf("  Slow Down:   %v\n", cfg.SlowDown)
-			return nil
-		},
-	}
-	return cmd
-}
-
-func empathResetCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "reset",
-		Short: "Reset frustration state (after successful resolution)",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			d := getDetector()
-			d.Reset()
-			d.Save()
-			fmt.Println("Frustration state reset.")
+			fmt.Printf("Trend: %s\n", trend)
+			if len(history) > 0 {
+				fmt.Printf("Recent scores: %v\n", history)
+			} else {
+				fmt.Println("No analysis history yet. Use: forge empath analyze <message>")
+			}
 			return nil
 		},
 	}

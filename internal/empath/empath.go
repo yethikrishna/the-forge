@@ -1,361 +1,485 @@
-// Package empath provides user frustration detection and adaptive response.
-// Analyzes conversation patterns, error frequency, and sentiment indicators
-// to detect user frustration and adjust agent behavior accordingly.
+// Package empath detects user frustration from message patterns
+// and suggests adaptive response strategies.
 //
-// Read the room.
+// Read the room. Read the user.
 package empath
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
+	"math"
+	"regexp"
 	"strings"
-	"sync"
 	"time"
+	"unicode"
 )
 
-// FrustrationLevel represents the detected frustration level.
+// FrustrationLevel represents how frustrated a user seems.
 type FrustrationLevel string
 
 const (
-	FrustrationNone    FrustrationLevel = "none"
-	FrustrationLow     FrustrationLevel = "low"
-	FrustrationMedium  FrustrationLevel = "medium"
-	FrustrationHigh    FrustrationLevel = "high"
-	FrustrationCritical FrustrationLevel = "critical"
+	LevelCalm       FrustrationLevel = "calm"
+	LevelNeutral    FrustrationLevel = "neutral"
+	LevelAnnoyed    FrustrationLevel = "annoyed"
+	LevelFrustrated FrustrationLevel = "frustrated"
+	LevelAngry      FrustrationLevel = "angry"
 )
 
-// Signal represents a frustration signal detected in user input.
+// Signal represents a detected frustration signal.
 type Signal struct {
-	Type      string    `json:"type"`
-	Weight    float64   `json:"weight"`
-	Message   string    `json:"message"`
-	Timestamp time.Time `json:"timestamp"`
+	Type    string  `json:"type"`    // "keyword", "pattern", "caps", "punctuation", "repetition", "urgency"
+	Match   string  `json:"match"`   // what was matched
+	Weight  float64 `json:"weight"`  // 0-1, how strong
+	Message string  `json:"message"` // human-readable description
 }
 
-// State tracks the user's emotional state over a session.
-type State struct {
-	Level              FrustrationLevel `json:"level"`
-	Score              float64          `json:"score"`
-	Signals            []Signal         `json:"signals"`
-	LastMessageAt      time.Time        `json:"last_message_at"`
-	MessageCount       int              `json:"message_count"`
-	ErrorCount         int              `json:"error_count"`
-	RepeatCount        int              `json:"repeat_count"`
-	ShortResponseCount int              `json:"short_response_count"`
-	SessionStart       time.Time        `json:"session_start"`
+// Analysis is the result of analyzing a message for frustration.
+type Analysis struct {
+	Level      FrustrationLevel `json:"level"`
+	Score      float64          `json:"score"`      // 0-100
+	Signals    []Signal         `json:"signals"`
+	Confidence float64          `json:"confidence"` // 0-1
+	Strategy   Strategy         `json:"strategy"`
 }
 
-// AdaptiveConfig defines how the agent should adapt to frustration.
-type AdaptiveConfig struct {
-	Level             FrustrationLevel `json:"level"`
-	ResponseStyle     string           `json:"response_style"`
-	MaxRetries        int              `json:"max_retries"`
-	ShowProgress      bool             `json:"show_progress"`
-	OfferAlternatives bool             `json:"offer_alternatives"`
-	SlowDown          bool             `json:"slow_down"`
+// Strategy is the recommended response strategy.
+type Strategy struct {
+	Tone          string   `json:"tone"`           // "empathetic", "calm", "direct", "supportive"
+	Avoid         []string `json:"avoid"`          // things to avoid saying
+	Suggestions   []string `json:"suggestions"`    // response suggestions
+	Escalate      bool     `json:"escalate"`       // whether to escalate to human
+	SlowDown      bool     `json:"slow_down"`      // take extra care in response
+	Acknowledge   bool     `json:"acknowledge"`    // explicitly acknowledge frustration
+	MaxWords      int      `json:"max_words"`      // suggested response length (0 = no limit)
 }
 
-// Detector detects user frustration from messages and events.
-type Detector struct {
-	mu           sync.Mutex
-	state        State
-	dir          string
-	prevMessages []string
+// Analyzer detects frustration in messages.
+type Analyzer struct {
+	history   []messageEntry
+	maxHistory int
 }
 
-// NewDetector creates a frustration detector.
-func NewDetector(dir string) *Detector {
-	return &Detector{
-		state: State{
-			Level:        FrustrationNone,
-			Score:        0,
-			Signals:      make([]Signal, 0),
-			SessionStart: time.Now(),
-		},
-		dir:          dir,
-		prevMessages: make([]string, 0),
+type messageEntry struct {
+	Text      string
+	Timestamp time.Time
+	Score     float64
+}
+
+// NewAnalyzer creates a frustration analyzer.
+func NewAnalyzer() *Analyzer {
+	return &Analyzer{
+		maxHistory: 50,
 	}
 }
 
-// Analyze processes a user message and updates frustration state.
-func (d *Detector) Analyze(message string) State {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	d.state.MessageCount++
-	d.state.LastMessageAt = time.Now()
-
-	signals := d.detectSignals(message)
-	d.state.Signals = append(d.state.Signals, signals...)
-
-	for _, s := range signals {
-		switch s.Type {
-		case "repeat":
-			d.state.RepeatCount++
-		case "short_response":
-			d.state.ShortResponseCount++
-		}
-	}
-
-	d.recalculate()
-
-	d.prevMessages = append(d.prevMessages, normalize(message))
-	if len(d.prevMessages) > 10 {
-		d.prevMessages = d.prevMessages[len(d.prevMessages)-10:]
-	}
-
-	return d.state
-}
-
-// RecordError records an error event.
-func (d *Detector) RecordError(errMsg string) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	d.state.ErrorCount++
-	d.state.Signals = append(d.state.Signals, Signal{
-		Type:      "error_loop",
-		Weight:    0.5,
-		Message:   errMsg,
-		Timestamp: time.Now(),
-	})
-
-	d.recalculate()
-}
-
-func (d *Detector) detectSignals(message string) []Signal {
+// Analyze analyzes a single message for frustration signals.
+func (a *Analyzer) Analyze(message string) Analysis {
 	var signals []Signal
-	now := time.Now()
 
-	// ALL CAPS
-	upperCount := 0
-	for _, c := range message {
-		if c >= 'A' && c <= 'Z' {
-			upperCount++
-		}
-	}
-	if len(message) > 5 && float64(upperCount)/float64(len(message)) > 0.7 {
-		signals = append(signals, Signal{
-			Type: "caps", Weight: 0.6, Message: message, Timestamp: now,
-		})
+	// 1. Keyword detection
+	signals = append(signals, a.detectKeywords(message)...)
+
+	// 2. CAPS detection (shouting)
+	signals = append(signals, a.detectCaps(message)...)
+
+	// 3. Excessive punctuation
+	signals = append(signals, a.detectPunctuation(message)...)
+
+	// 4. Repetition patterns
+	signals = append(signals, a.detectRepetition(message)...)
+
+	// 5. Urgency indicators
+	signals = append(signals, a.detectUrgency(message)...)
+
+	// 6. Negative sentiment patterns
+	signals = append(signals, a.detectNegativity(message)...)
+
+	// Calculate score
+	score := calculateScore(signals)
+
+	// Determine level
+	level := scoreToLevel(score)
+
+	// Calculate confidence based on signal count
+	confidence := math.Min(float64(len(signals))/3.0, 1.0)
+	if len(signals) == 0 {
+		confidence = 0.5 // neutral confidence for calm messages
 	}
 
-	// Impatience keywords
-	impatienceWords := []string{
-		"hurry", "faster", "come on", "quickly", "now",
-		"seriously", "wtf", "ugh", "argh", "grr",
-		"still waiting", "taking forever", "useless",
-		"not working", "broken", "sucks", "terrible",
-		"frustrating", "annoying", "ridiculous",
+	// Generate strategy
+	strategy := generateStrategy(level, score, signals)
+
+	// Store in history
+	a.history = append(a.history, messageEntry{
+		Text:      message,
+		Timestamp: time.Now(),
+		Score:     score,
+	})
+	if len(a.history) > a.maxHistory {
+		a.history = a.history[len(a.history)-a.maxHistory:]
 	}
-	normMsg := strings.ToLower(message)
-	for _, word := range impatienceWords {
-		if strings.Contains(normMsg, word) {
+
+	return Analysis{
+		Level:      level,
+		Score:      score,
+		Signals:    signals,
+		Confidence: confidence,
+		Strategy:   strategy,
+	}
+}
+
+// Trend returns the frustration trend over recent messages.
+func (a *Analyzer) Trend() string {
+	if len(a.history) < 3 {
+		return "stable"
+	}
+
+	recent := a.history
+	if len(a.history) > 5 {
+		recent = a.history[len(a.history)-5:]
+	}
+
+	// Simple trend: compare first half avg to second half avg
+	mid := len(recent) / 2
+	firstHalf := avg(recent[:mid])
+	secondHalf := avg(recent[mid:])
+
+	diff := secondHalf - firstHalf
+	if diff > 15 {
+		return "escalating"
+	}
+	if diff < -15 {
+		return "deescalating"
+	}
+	return "stable"
+}
+
+// History returns recent frustration scores.
+func (a *Analyzer) History() []float64 {
+	scores := make([]float64, len(a.history))
+	for i, h := range a.history {
+		scores[i] = h.Score
+	}
+	return scores
+}
+
+func (a *Analyzer) detectKeywords(msg string) []Signal {
+	var signals []Signal
+	lower := strings.ToLower(msg)
+
+	keywords := map[string]float64{
+		"frustrated":    0.8,
+		"frustrating":   0.8,
+		"annoyying":     0.7,
+		"annoyed":       0.7,
+		"angry":         0.9,
+		"hate":          0.7,
+		"stupid":        0.8,
+		"useless":       0.8,
+		"terrible":      0.8,
+		"horrible":      0.8,
+		"worst":         0.7,
+		"garbage":       0.8,
+		"broken":        0.6,
+		"doesn't work":  0.6,
+		"doesn't help":  0.7,
+		"not working":   0.6,
+		"again":         0.5,
+		"still":         0.4,
+		"ugh":           0.6,
+		"argh":          0.7,
+		"wtf":           0.8,
+		"give up":       0.9,
+		"waste of time": 0.8,
+		"no help":       0.7,
+		"this sucks":    0.8,
+		"unacceptable":  0.8,
+	}
+
+	for kw, weight := range keywords {
+		if strings.Contains(lower, kw) {
 			signals = append(signals, Signal{
-				Type: "impatience", Weight: 0.8, Message: word, Timestamp: now,
+				Type:    "keyword",
+				Match:   kw,
+				Weight:  weight,
+				Message: "Frustration keyword detected: " + kw,
 			})
-			break
 		}
 	}
 
-	// Short response
-	words := strings.Fields(message)
-	if len(words) <= 3 && d.state.MessageCount > 2 {
-		signals = append(signals, Signal{
-			Type: "short_response", Weight: 0.4, Message: message, Timestamp: now,
-		})
+	return signals
+}
+
+func (a *Analyzer) detectCaps(msg string) []Signal {
+	var signals []Signal
+
+	words := strings.Fields(msg)
+	if len(words) == 0 {
+		return nil
 	}
 
-	// Repeat messages
-	normCurrent := normalize(message)
-	for _, prev := range d.prevMessages {
-		if similarity(normCurrent, prev) > 0.8 && normCurrent != "" {
-			signals = append(signals, Signal{
-				Type: "repeat", Weight: 0.6, Message: message, Timestamp: now,
-			})
-			break
+	capsCount := 0
+	for _, w := range words {
+		if len(w) > 2 && isAllUpper(w) && !isNormalWord(w) {
+			capsCount++
 		}
 	}
 
-	// Multiple punctuation
-	if strings.Count(message, "???") > 0 || strings.Count(message, "!!!") > 0 {
+	ratio := float64(capsCount) / float64(len(words))
+	if ratio > 0.5 && capsCount > 0 {
 		signals = append(signals, Signal{
-			Type: "caps", Weight: 0.2, Message: message, Timestamp: now,
+			Type:    "caps",
+			Match:   "SHOUTING",
+			Weight:  math.Min(ratio, 1.0),
+			Message: "Excessive capitalization detected (shouting)",
 		})
 	}
 
 	return signals
 }
 
-func (d *Detector) recalculate() {
+func (a *Analyzer) detectPunctuation(msg string) []Signal {
+	var signals []Signal
+
+	// Multiple exclamation marks
+	re := regexp.MustCompile(`!{3,}`)
+	if matches := re.FindAllString(msg, -1); len(matches) > 0 {
+		signals = append(signals, Signal{
+			Type:    "punctuation",
+			Match:   matches[0],
+			Weight:  math.Min(float64(len(matches[0]))/5.0, 0.8),
+			Message: "Multiple exclamation marks",
+		})
+	}
+
+	// Multiple question marks
+	re2 := regexp.MustCompile(`\?{3,}`)
+	if matches := re2.FindAllString(msg, -1); len(matches) > 0 {
+		signals = append(signals, Signal{
+			Type:    "punctuation",
+			Match:   matches[0],
+			Weight:  0.5,
+			Message: "Multiple question marks (confusion/urgency)",
+		})
+	}
+
+	return signals
+}
+
+func (a *Analyzer) detectRepetition(msg string) []Signal {
+	var signals []Signal
+	lower := strings.ToLower(msg)
+	words := strings.Fields(lower)
+
+	if len(words) < 3 {
+		return nil
+	}
+
+	// Check for repeated phrases
+	wordCount := make(map[string]int)
+	for _, w := range words {
+		wordCount[w]++
+	}
+
+	maxRepeat := 0
+	repeatWord := ""
+	for w, c := range wordCount {
+		if c > maxRepeat && len(w) > 3 {
+			maxRepeat = c
+			repeatWord = w
+		}
+	}
+
+	if maxRepeat >= 3 {
+		signals = append(signals, Signal{
+			Type:    "repetition",
+			Match:   repeatWord,
+			Weight:  math.Min(float64(maxRepeat)/5.0, 0.7),
+			Message: "Word repetition detected (emphasis/frustration)",
+		})
+	}
+
+	return signals
+}
+
+func (a *Analyzer) detectUrgency(msg string) []Signal {
+	var signals []Signal
+	lower := strings.ToLower(msg)
+
+	urgencyPatterns := map[string]float64{
+		"asap":       0.7,
+		"urgent":     0.8,
+		"emergency":  0.9,
+		"now":        0.6,
+		"immediately": 0.8,
+		"right now":  0.7,
+		"hurry":      0.7,
+		"quickly":    0.5,
+		"help me":    0.6,
+		"help":       0.3,
+	}
+
+	for pattern, weight := range urgencyPatterns {
+		if strings.Contains(lower, pattern) {
+			signals = append(signals, Signal{
+				Type:    "urgency",
+				Match:   pattern,
+				Weight:  weight,
+				Message: "Urgency indicator: " + pattern,
+			})
+		}
+	}
+
+	return signals
+}
+
+func (a *Analyzer) detectNegativity(msg string) []Signal {
+	var signals []Signal
+	lower := strings.ToLower(msg)
+
+	negativePatterns := []struct {
+		regex  string
+		weight float64
+		label  string
+	}{
+		{`(never|not|no)\s+(works?|helps?|good)`, 0.7, "negative assessment"},
+		{`i\s+(can't|cannot|don't)\s+(get|make|figure|understand)`, 0.7, "negative capability"},
+		{`(why|how)\s+(does\s+)?(it\s+)?(keep|always|still)`, 0.6, "complaint pattern"},
+		{`(tried|attempted)\s+\d+\s+times`, 0.7, "repeated failure"},
+	}
+
+	for _, p := range negativePatterns {
+		re := regexp.MustCompile(p.regex)
+		if re.MatchString(lower) {
+			signals = append(signals, Signal{
+				Type:    "pattern",
+				Match:   p.label,
+				Weight:  p.weight,
+				Message: "Negative pattern: " + p.label,
+			})
+		}
+	}
+
+	return signals
+}
+
+func calculateScore(signals []Signal) float64 {
+	if len(signals) == 0 {
+		return 0
+	}
+
 	var totalWeight float64
-	now := time.Now()
-
-	for _, s := range d.state.Signals {
-		age := now.Sub(s.Timestamp).Minutes()
-		decay := 1.0
-		if age > 5 {
-			decay = 1.0 / (1.0 + age/10.0)
-		}
-		totalWeight += s.Weight * decay
+	for _, s := range signals {
+		totalWeight += s.Weight
 	}
 
-	errorFactor := float64(d.state.ErrorCount) * 0.3
-	repeatFactor := float64(d.state.RepeatCount) * 0.4
-	shortFactor := float64(d.state.ShortResponseCount) * 0.2
+	// Normalize: more signals = higher score, but with diminishing returns
+	raw := totalWeight / (1 + totalWeight*0.2)
+	score := raw * 50 // scale to 0-100ish
 
-	d.state.Score = minVal(totalWeight+errorFactor+repeatFactor+shortFactor, 100)
+	return math.Min(math.Round(score*100)/100, 100)
+}
 
+func scoreToLevel(score float64) FrustrationLevel {
 	switch {
-	case d.state.Score < 10:
-		d.state.Level = FrustrationNone
-	case d.state.Score < 25:
-		d.state.Level = FrustrationLow
-	case d.state.Score < 50:
-		d.state.Level = FrustrationMedium
-	case d.state.Score < 75:
-		d.state.Level = FrustrationHigh
+	case score >= 75:
+		return LevelAngry
+	case score >= 50:
+		return LevelFrustrated
+	case score >= 25:
+		return LevelAnnoyed
+	case score > 5:
+		return LevelNeutral
 	default:
-		d.state.Level = FrustrationCritical
+		return LevelCalm
 	}
 }
 
-// GetAdaptiveConfig returns the recommended agent behavior.
-func (d *Detector) GetAdaptiveConfig() AdaptiveConfig {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	cfg := AdaptiveConfig{
-		Level:        d.state.Level,
-		ShowProgress: true,
+func generateStrategy(level FrustrationLevel, score float64, signals []Signal) Strategy {
+	switch level {
+	case LevelAngry:
+		return Strategy{
+			Tone:        "empathetic",
+			Avoid:       []string{"defensiveness", "minimizing", "technical jargon", "long explanations"},
+			Suggestions: []string{"Acknowledge the frustration directly", "Offer a concrete solution or escalation path", "Keep response short and action-oriented"},
+			Escalate:    true,
+			SlowDown:    true,
+			Acknowledge: true,
+			MaxWords:    50,
+		}
+	case LevelFrustrated:
+		return Strategy{
+			Tone:        "supportive",
+			Avoid:       []string{"long explanations", "blame", "generic advice"},
+			Suggestions: []string{"Acknowledge the difficulty", "Provide a direct solution", "Offer to try a different approach"},
+			Escalate:    score > 60,
+			SlowDown:    true,
+			Acknowledge: true,
+			MaxWords:    100,
+		}
+	case LevelAnnoyed:
+		return Strategy{
+			Tone:        "calm",
+			Avoid:       []string{"repeating previous answers", "unnecessary detail"},
+			Suggestions: []string{"Be direct and concise", "Focus on the solution", "Skip the explanation if not asked"},
+			Acknowledge: score > 30,
+			MaxWords:    150,
+		}
+	default:
+		return Strategy{
+			Tone:        "direct",
+			Avoid:       []string{},
+			Suggestions: []string{"Normal response mode"},
+			MaxWords:    0,
+		}
 	}
+}
 
-	switch d.state.Level {
-	case FrustrationNone:
-		cfg.ResponseStyle = "normal"
-		cfg.MaxRetries = 3
-	case FrustrationLow:
-		cfg.ResponseStyle = "concise"
-		cfg.MaxRetries = 2
-		cfg.OfferAlternatives = true
-	case FrustrationMedium:
-		cfg.ResponseStyle = "supportive"
-		cfg.MaxRetries = 2
-		cfg.OfferAlternatives = true
-		cfg.SlowDown = true
-	case FrustrationHigh:
-		cfg.ResponseStyle = "supportive"
-		cfg.MaxRetries = 1
-		cfg.OfferAlternatives = true
-		cfg.SlowDown = true
-	case FrustrationCritical:
-		cfg.ResponseStyle = "handoff"
-		cfg.MaxRetries = 0
-		cfg.OfferAlternatives = true
-		cfg.SlowDown = true
+func isAllUpper(s string) bool {
+	for _, r := range s {
+		if unicode.IsLetter(r) && !unicode.IsUpper(r) {
+			return false
+		}
 	}
-
-	return cfg
+	return len(s) > 0
 }
 
-// State returns the current emotional state.
-func (d *Detector) State() State {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return d.state
+func isNormalWord(s string) bool {
+	// Words that are naturally all-caps
+	normals := map[string]bool{"I": true, "A": true, "OK": true, "YES": true, "NO": true, "API": true, "URL": true, "HTTP": true, "JSON": true, "CLI": true, "AI": true, "FAQ": true, "TODO": true}
+	return normals[s]
 }
 
-// Reset resets the frustration state.
-func (d *Detector) Reset() {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.state = State{
-		Level:        FrustrationNone,
-		Score:        0,
-		Signals:      make([]Signal, 0),
-		SessionStart: time.Now(),
-	}
-	d.prevMessages = make([]string, 0)
-}
-
-// Save persists the emotional state.
-func (d *Detector) Save() error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	if err := os.MkdirAll(d.dir, 0o755); err != nil {
-		return err
-	}
-
-	data, err := json.MarshalIndent(d.state, "", "  ")
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(filepath.Join(d.dir, "empath.json"), data, 0o644)
-}
-
-// Load reads the emotional state from disk.
-func (d *Detector) Load() error {
-	data, err := os.ReadFile(filepath.Join(d.dir, "empath.json"))
-	if err != nil {
-		return err
-	}
-
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	return json.Unmarshal(data, &d.state)
-}
-
-// FormatState renders the emotional state for display.
-func FormatState(s State) string {
-	return fmt.Sprintf("Level: %s  Score: %.1f/100  Messages: %d  Errors: %d  Repeats: %d",
-		s.Level, s.Score, s.MessageCount, s.ErrorCount, s.RepeatCount)
-}
-
-// FormatConfig renders the adaptive config for display.
-func FormatConfig(c AdaptiveConfig) string {
-	return fmt.Sprintf("Style: %s  MaxRetries: %d  Progress: %v  Alternatives: %v  SlowDown: %v",
-		c.ResponseStyle, c.MaxRetries, c.ShowProgress, c.OfferAlternatives, c.SlowDown)
-}
-
-func normalize(s string) string {
-	return strings.ToLower(strings.TrimSpace(s))
-}
-
-func similarity(a, b string) float64 {
-	if a == "" || b == "" {
+func avg(entries []messageEntry) float64 {
+	if len(entries) == 0 {
 		return 0
 	}
-
-	wordsA := make(map[string]bool)
-	wordsB := make(map[string]bool)
-	for _, w := range strings.Fields(a) {
-		wordsA[w] = true
+	var sum float64
+	for _, e := range entries {
+		sum += e.Score
 	}
-	for _, w := range strings.Fields(b) {
-		wordsB[w] = true
-	}
+	return sum / float64(len(entries))
+}
 
-	intersection := 0
-	for w := range wordsA {
-		if wordsB[w] {
-			intersection++
+// FormatAnalysis formats an analysis for display.
+func FormatAnalysis(a Analysis) string {
+	s := fmt.Sprintf("Level:       %s\n", a.Level)
+	s += fmt.Sprintf("Score:       %.1f/100\n", a.Score)
+	s += fmt.Sprintf("Confidence:  %.0f%%\n", a.Confidence*100)
+	s += fmt.Sprintf("Strategy:    %s\n", a.Strategy.Tone)
+
+	if len(a.Signals) > 0 {
+		s += fmt.Sprintf("\nSignals (%d):\n", len(a.Signals))
+		for _, sig := range a.Signals {
+			s += fmt.Sprintf("  [%s] %s (weight: %.1f)\n", sig.Type, sig.Message, sig.Weight)
 		}
 	}
 
-	union := len(wordsA) + len(wordsB) - intersection
-	if union == 0 {
-		return 0
+	if a.Strategy.Acknowledge {
+		s += "\n→ Acknowledge frustration before responding\n"
+	}
+	if a.Strategy.Escalate {
+		s += "→ Consider escalating to human support\n"
 	}
 
-	return float64(intersection) / float64(union)
-}
-
-func minVal(a, b float64) float64 {
-	if a < b {
-		return a
-	}
-	return b
+	return s
 }

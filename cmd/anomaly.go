@@ -19,66 +19,26 @@ for your agent infrastructure.
 
 Examples:
   forge anomaly check
-  forge anomaly forecast`,
+  forge anomaly spend --amount=0.50 --agent=coder --model=gpt-4
+  forge anomaly status`,
 	}
 
 	cmd.AddCommand(
 		anomalyCheckCmd(),
-		anomalyForecastCmd(),
-		anomalyBudgetCmd(),
 		anomalySpendCmd(),
+		anomalyStatusCmd(),
+		anomalyBudgetCmd(),
 	)
 
 	return cmd
 }
 
-func anomalyBudgetCmd() *cobra.Command {
-	var name string
-	var limit float64
-	var period string
-	var hardStop bool
-
-	cmd := &cobra.Command{
-		Use:   "budget",
-		Short: "Set a cost budget",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if name == "" || limit <= 0 {
-				return fmt.Errorf("--name and positive --limit are required")
-			}
-			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Budget set: %s $%.2f/%s (hard-stop: %v)", name, limit, period, hardStop)))
-			return nil
-		},
-	}
-
-	cmd.Flags().StringVar(&name, "name", "", "Budget name")
-	cmd.Flags().Float64Var(&limit, "limit", 0, "Budget limit in USD")
-	cmd.Flags().StringVar(&period, "period", "daily", "Budget period (daily, weekly, monthly)")
-	cmd.Flags().BoolVar(&hardStop, "hard-stop", false, "Block agents when budget exceeded")
-
-	return cmd
-}
-
-func anomalySpendCmd() *cobra.Command {
-	var amount float64
-	var agent, model string
-
-	cmd := &cobra.Command{
-		Use:   "spend",
-		Short: "Record a cost data point",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if amount <= 0 {
-				return fmt.Errorf("--amount must be positive")
-			}
-			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Recorded: $%.4f (agent=%s, model=%s)", amount, agent, model)))
-			return nil
-		},
-	}
-
-	cmd.Flags().Float64Var(&amount, "amount", 0, "Amount in USD")
-	cmd.Flags().StringVar(&agent, "agent", "", "Agent name")
-	cmd.Flags().StringVar(&model, "model", "", "Model name")
-
-	return cmd
+func getAnomalyDetector() *anomaly.Detector {
+	return anomaly.NewDetector(getForgeDir()+"/anomaly", anomaly.BudgetConfig{
+		DailyLimit:   50.0,
+		WeeklyLimit:  250.0,
+		MonthlyLimit: 1000.0,
+	})
 }
 
 func anomalyCheckCmd() *cobra.Command {
@@ -88,20 +48,9 @@ func anomalyCheckCmd() *cobra.Command {
 		Use:   "check",
 		Short: "Check for cost anomalies",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			detector := anomaly.NewDetector()
-			detector.AddBudget(anomaly.Budget{Name: "daily", Limit: 10, Spent: 8.50})
+			detector := getAnomalyDetector()
 
-			now := time.Now()
-			for i := 0; i < 10; i++ {
-				detector.Record(anomaly.CostPoint{
-					Timestamp: now.Add(-time.Duration(10-i) * time.Minute),
-					Amount:    0.01,
-					Agent:     "coder",
-					Model:     "gpt-4",
-				})
-			}
-
-			anomalies := detector.Check()
+			anomalies := detector.Anomalies(20)
 
 			if asJSON {
 				data, _ := json.MarshalIndent(anomalies, "", "  ")
@@ -116,9 +65,7 @@ func anomalyCheckCmd() *cobra.Command {
 
 			fmt.Println(pretty.HeaderLine("Cost Anomalies"))
 			for _, a := range anomalies {
-				sevStr := sevAnomalyColor(a.Severity, string(a.Severity))
-				fmt.Printf("  %s [%s] %s\n", sevStr, a.Type, a.Message)
-				fmt.Printf("    %s\n", a.Suggestion)
+				fmt.Printf("  %s\n", anomaly.FormatAnomaly(a))
 			}
 			return nil
 		},
@@ -128,44 +75,123 @@ func anomalyCheckCmd() *cobra.Command {
 	return cmd
 }
 
-func anomalyForecastCmd() *cobra.Command {
+func anomalySpendCmd() *cobra.Command {
+	var amount float64
+	var agent, model string
+
 	cmd := &cobra.Command{
-		Use:   "forecast",
-		Short: "Forecast budget exhaustion",
+		Use:   "spend",
+		Short: "Record a cost data point",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			budget := anomaly.Budget{Name: "daily", Limit: 50, Spent: 25}
-			now := time.Now()
-			points := []anomaly.CostPoint{
-				{Timestamp: now.Add(-10 * time.Minute), Amount: 2.5},
-				{Timestamp: now.Add(-5 * time.Minute), Amount: 2.5},
-				{Timestamp: now, Amount: 2.5},
+			if amount <= 0 {
+				return fmt.Errorf("--amount must be positive")
 			}
 
-			fc := anomaly.ForecastRemainingBudget(budget, points)
-			if fc == nil {
-				fmt.Println("Insufficient data for forecast")
-				return nil
+			detector := getAnomalyDetector()
+			detected := detector.Record(anomaly.CostRecord{
+				AgentID:   agent,
+				Model:     model,
+				Amount:    amount,
+				Timestamp: time.Now(),
+			})
+
+			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Recorded: $%.4f (agent=%s, model=%s)", amount, agent, model)))
+
+			if len(detected) > 0 {
+				fmt.Println("\nAnomalies detected:")
+				for _, a := range detected {
+					fmt.Printf("  %s\n", anomaly.FormatAnomaly(a))
+				}
 			}
 
-			fmt.Println(pretty.HeaderLine("Budget Forecast"))
-			fmt.Printf("  Budget:     %s ($%.2f / $%.2f)\n", fc.BudgetName, budget.Spent, budget.Limit)
-			fmt.Printf("  Remaining:  $%.2f\n", budget.Remaining())
-			fmt.Printf("  Exhaust at: %s\n", fc.ExhaustAt.Format("15:04 MST"))
-			fmt.Printf("  Time left:  ~%d minutes\n", fc.MinutesLeft)
-			fmt.Printf("  Confidence: %.0f%%\n", fc.Confidence*100)
+			if detector.ShouldHardStop() {
+				fmt.Println(pretty.Sprint(pretty.RedF, "HARD STOP: Budget exceeded. All agents should stop."))
+			}
+
+			detector.Save()
 			return nil
 		},
 	}
+
+	cmd.Flags().Float64Var(&amount, "amount", 0, "Amount in USD")
+	cmd.Flags().StringVar(&agent, "agent", "default", "Agent name")
+	cmd.Flags().StringVar(&model, "model", "", "Model name")
 	return cmd
 }
 
-func sevAnomalyColor(s anomaly.Severity, text string) string {
-	switch s {
-	case anomaly.SevCritical:
-		return pretty.Sprint(pretty.RedF, text)
-	case anomaly.SevWarning:
-		return pretty.Sprint(pretty.YellowF, text)
-	default:
-		return pretty.Sprint(pretty.CyanF, text)
+func anomalyStatusCmd() *cobra.Command {
+	var asJSON bool
+
+	cmd := &cobra.Command{
+		Use:   "status",
+		Short: "Show cost monitoring status",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			detector := getAnomalyDetector()
+
+			dailySpend := detector.DailySpend()
+			spendByAgent := detector.SpendByAgent()
+			anomalies := detector.Anomalies(5)
+
+			if asJSON {
+				data, _ := json.MarshalIndent(map[string]interface{}{
+					"daily_spend":     dailySpend,
+					"spend_by_agent":  spendByAgent,
+					"recent_anomalies": anomalies,
+					"hard_stop":       detector.ShouldHardStop(),
+				}, "", "  ")
+				fmt.Println(string(data))
+				return nil
+			}
+
+			fmt.Println(pretty.HeaderLine("Cost Monitoring"))
+			fmt.Printf("  Daily spend: $%.2f\n", dailySpend)
+			fmt.Printf("  Hard stop:   %v\n", detector.ShouldHardStop())
+
+			if len(spendByAgent) > 0 {
+				fmt.Println("\n  Spend by agent:")
+				for agent, spend := range spendByAgent {
+					fmt.Printf("    %-20s $%.2f\n", agent, spend)
+				}
+			}
+
+			if len(anomalies) > 0 {
+				fmt.Printf("\n  Recent anomalies (%d):\n", len(anomalies))
+				for _, a := range anomalies {
+					fmt.Printf("    %s\n", anomaly.FormatAnomaly(a))
+				}
+			}
+
+			return nil
+		},
 	}
+
+	cmd.Flags().BoolVar(&asJSON, "json", false, "Output as JSON")
+	return cmd
+}
+
+func anomalyBudgetCmd() *cobra.Command {
+	var daily, weekly, monthly, perAgent float64
+	var hardStop bool
+
+	cmd := &cobra.Command{
+		Use:   "budget",
+		Short: "Configure budget limits",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println(pretty.HeaderLine("Budget Configuration"))
+			fmt.Printf("  Daily:     $%.2f\n", daily)
+			fmt.Printf("  Weekly:    $%.2f\n", weekly)
+			fmt.Printf("  Monthly:   $%.2f\n", monthly)
+			fmt.Printf("  Per-agent: $%.2f\n", perAgent)
+			fmt.Printf("  Hard stop: %v\n", hardStop)
+			return nil
+		},
+	}
+
+	cmd.Flags().Float64Var(&daily, "daily", 50, "Daily budget limit (USD)")
+	cmd.Flags().Float64Var(&weekly, "weekly", 250, "Weekly budget limit (USD)")
+	cmd.Flags().Float64Var(&monthly, "monthly", 1000, "Monthly budget limit (USD)")
+	cmd.Flags().Float64Var(&perAgent, "per-agent", 100, "Per-agent monthly limit (USD)")
+	cmd.Flags().BoolVar(&hardStop, "hard-stop", false, "Stop all agents when budget exceeded")
+
+	return cmd
 }
