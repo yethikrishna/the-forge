@@ -1,269 +1,303 @@
-package mcp_test
+package mcp
 
 import (
-	"context"
 	"encoding/json"
+	"strings"
 	"testing"
-
-	"github.com/forge/sword/internal/mcp"
 )
 
-func TestInitialize(t *testing.T) {
-	server := mcp.NewServer("test-forge", "0.4.0")
-
-	req := mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      1,
-		Method:  "initialize",
-	}
-
-	resp := server.HandleRequest(context.Background(), req)
+func TestHandleInitialize(t *testing.T) {
+	s := NewServer("forge", "1.0.0")
+	req := JSONRPCRequest{JSONRPC: "2.0", ID: 1, Method: "initialize"}
+	resp := s.Handle(req)
 
 	if resp.Error != nil {
-		t.Fatalf("initialize error: %s", resp.Error.Message)
+		t.Fatalf("unexpected error: %v", resp.Error)
 	}
-	if resp.ID != 1 {
-		t.Errorf("expected ID 1, got %v", resp.ID)
+
+	result, ok := resp.Result.(map[string]interface{})
+	if !ok {
+		t.Fatal("expected map result")
+	}
+
+	if result["protocolVersion"] != Version {
+		t.Errorf("expected version %s, got %v", Version, result["protocolVersion"])
+	}
+
+	info, ok := result["serverInfo"].(ServerInfo)
+	if !ok {
+		t.Fatal("expected serverInfo")
+	}
+	if info.Name != "forge" {
+		t.Errorf("expected name forge, got %s", info.Name)
 	}
 }
 
-func TestPing(t *testing.T) {
-	server := mcp.NewServer("test-forge", "0.4.0")
+func TestHandlePing(t *testing.T) {
+	s := NewServer("forge", "1.0.0")
+	req := JSONRPCRequest{JSONRPC: "2.0", ID: 2, Method: "ping"}
+	resp := s.Handle(req)
 
-	req := mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      2,
-		Method:  "ping",
-	}
-
-	resp := server.HandleRequest(context.Background(), req)
 	if resp.Error != nil {
-		t.Fatalf("ping error: %s", resp.Error.Message)
+		t.Fatalf("unexpected error: %v", resp.Error)
+	}
+}
+
+func TestHandleMethodNotFound(t *testing.T) {
+	s := NewServer("forge", "1.0.0")
+	req := JSONRPCRequest{JSONRPC: "2.0", ID: 3, Method: "nonexistent"}
+	resp := s.Handle(req)
+
+	if resp.Error == nil {
+		t.Fatal("expected error for unknown method")
+	}
+	if resp.Error.Code != ErrorMethodNotFound {
+		t.Errorf("expected method not found error, got %d", resp.Error.Code)
+	}
+}
+
+func TestHandleRaw(t *testing.T) {
+	s := NewServer("forge", "1.0.0")
+
+	data := []byte(`{"jsonrpc":"2.0","id":1,"method":"ping"}`)
+	resp := s.HandleRaw(data)
+
+	if resp.Error != nil {
+		t.Fatalf("unexpected error: %v", resp.Error)
+	}
+}
+
+func TestHandleRawInvalid(t *testing.T) {
+	s := NewServer("forge", "1.0.0")
+
+	data := []byte(`{invalid json}`)
+	resp := s.HandleRaw(data)
+
+	if resp.Error == nil {
+		t.Fatal("expected error for invalid JSON")
+	}
+	if resp.Error.Code != ErrorParseError {
+		t.Errorf("expected parse error, got %d", resp.Error.Code)
 	}
 }
 
 func TestRegisterTool(t *testing.T) {
-	server := mcp.NewServer("test-forge", "0.4.0")
+	s := NewServer("forge", "1.0.0")
 
-	server.RegisterTool("test/tool", "A test tool",
-		map[string]interface{}{"type": "object"},
-		func(_ context.Context, _ json.RawMessage) (string, error) {
-			return "tool result", nil
-		},
-	)
+	called := false
+	s.RegisterTool(Tool{
+		Name:        "test_tool",
+		Description: "A test tool",
+		InputSchema: map[string]interface{}{"type": "object"},
+	}, func(args map[string]interface{}) (ToolResult, error) {
+		called = true
+		return ToolResult{
+			Content: []ContentBlock{{Type: "text", Text: "done"}},
+		}, nil
+	})
 
 	// List tools
-	req := mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      3,
-		Method:  "tools/list",
-	}
+	req := JSONRPCRequest{JSONRPC: "2.0", ID: 4, Method: "tools/list"}
+	resp := s.Handle(req)
 
-	resp := server.HandleRequest(context.Background(), req)
-	if resp.Error != nil {
-		t.Fatalf("tools/list error: %s", resp.Error.Message)
+	result := resp.Result.(map[string]interface{})
+	tools := result["tools"].([]Tool)
+	if len(tools) != 1 {
+		t.Fatalf("expected 1 tool, got %d", len(tools))
+	}
+	if tools[0].Name != "test_tool" {
+		t.Errorf("expected test_tool, got %s", tools[0].Name)
 	}
 
 	// Call tool
-	callParams, _ := json.Marshal(map[string]interface{}{
-		"name":      "test/tool",
-		"arguments": map[string]interface{}{},
+	params, _ := json.Marshal(map[string]interface{}{
+		"name": "test_tool",
+		"arguments": map[string]interface{}{"key": "value"},
 	})
-	req = mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      4,
-		Method:  "tools/call",
-		Params:  callParams,
-	}
+	req2 := JSONRPCRequest{JSONRPC: "2.0", ID: 5, Method: "tools/call", Params: params}
+	resp2 := s.Handle(req2)
 
-	resp = server.HandleRequest(context.Background(), req)
-	if resp.Error != nil {
-		t.Fatalf("tools/call error: %s", resp.Error.Message)
+	if resp2.Error != nil {
+		t.Fatalf("tool call failed: %v", resp2.Error)
+	}
+	if !called {
+		t.Error("tool handler should have been called")
 	}
 }
 
-func TestToolNotFound(t *testing.T) {
-	server := mcp.NewServer("test-forge", "0.4.0")
+func TestCallUnknownTool(t *testing.T) {
+	s := NewServer("forge", "1.0.0")
 
-	callParams, _ := json.Marshal(map[string]interface{}{
-		"name":      "nonexistent",
-		"arguments": map[string]interface{}{},
+	params, _ := json.Marshal(map[string]interface{}{
+		"name": "unknown_tool",
 	})
-	req := mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      5,
-		Method:  "tools/call",
-		Params:  callParams,
-	}
+	req := JSONRPCRequest{JSONRPC: "2.0", ID: 6, Method: "tools/call", Params: params}
+	resp := s.Handle(req)
 
-	resp := server.HandleRequest(context.Background(), req)
-	if resp.Error == nil {
-		t.Error("should error for nonexistent tool")
+	result, ok := resp.Result.(ToolResult)
+	if !ok {
+		t.Fatal("expected ToolResult")
+	}
+	if !result.IsError {
+		t.Error("expected error result for unknown tool")
 	}
 }
 
 func TestRegisterResource(t *testing.T) {
-	server := mcp.NewServer("test-forge", "0.4.0")
+	s := NewServer("forge", "1.0.0")
 
-	server.RegisterResource("forge://test", "Test Resource", "A test resource", "text/plain",
-		func(_ context.Context, _ string) (string, string, error) {
-			return "resource content", "text/plain", nil
-		},
-	)
-
-	// List resources
-	req := mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      6,
-		Method:  "resources/list",
-	}
-
-	resp := server.HandleRequest(context.Background(), req)
-	if resp.Error != nil {
-		t.Fatalf("resources/list error: %s", resp.Error.Message)
-	}
-
-	// Read resource
-	readParams, _ := json.Marshal(map[string]interface{}{
-		"uri": "forge://test",
+	s.RegisterResource(Resource{
+		URI:         "forge://config",
+		Name:        "Forge Config",
+		Description: "Current configuration",
+		MimeType:    "application/json",
 	})
-	req = mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      7,
-		Method:  "resources/read",
-		Params:  readParams,
-	}
 
-	resp = server.HandleRequest(context.Background(), req)
-	if resp.Error != nil {
-		t.Fatalf("resources/read error: %s", resp.Error.Message)
+	req := JSONRPCRequest{JSONRPC: "2.0", ID: 7, Method: "resources/list"}
+	resp := s.Handle(req)
+
+	result := resp.Result.(map[string]interface{})
+	resources := result["resources"].([]Resource)
+	if len(resources) != 1 {
+		t.Fatalf("expected 1 resource, got %d", len(resources))
+	}
+	if resources[0].URI != "forge://config" {
+		t.Errorf("expected forge://config, got %s", resources[0].URI)
 	}
 }
 
 func TestRegisterPrompt(t *testing.T) {
-	server := mcp.NewServer("test-forge", "0.4.0")
+	s := NewServer("forge", "1.0.0")
 
-	server.RegisterPrompt("test/prompt", "A test prompt", []mcp.PromptArg{
-		{Name: "query", Description: "Search query", Required: true},
-	}, func(_ context.Context, args map[string]string) ([]mcp.PromptMessage, error) {
-		return []mcp.PromptMessage{
-			{Role: "user", Content: mcp.TextContent{Type: "text", Text: "Query: " + args["query"]}},
-		}, nil
+	s.RegisterPrompt(Prompt{
+		Name:        "code_review",
+		Description: "Review code for issues",
+		Arguments: []PromptArg{
+			{Name: "code", Description: "Code to review", Required: true},
+		},
 	})
 
-	// List prompts
-	req := mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      8,
-		Method:  "prompts/list",
-	}
+	req := JSONRPCRequest{JSONRPC: "2.0", ID: 8, Method: "prompts/list"}
+	resp := s.Handle(req)
 
-	resp := server.HandleRequest(context.Background(), req)
-	if resp.Error != nil {
-		t.Fatalf("prompts/list error: %s", resp.Error.Message)
+	result := resp.Result.(map[string]interface{})
+	prompts := result["prompts"].([]Prompt)
+	if len(prompts) != 1 {
+		t.Fatalf("expected 1 prompt, got %d", len(prompts))
 	}
-
-	// Get prompt
-	getParams, _ := json.Marshal(map[string]interface{}{
-		"name":      "test/prompt",
-		"arguments": map[string]string{"query": "hello"},
-	})
-	req = mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      9,
-		Method:  "prompts/get",
-		Params:  getParams,
-	}
-
-	resp = server.HandleRequest(context.Background(), req)
-	if resp.Error != nil {
-		t.Fatalf("prompts/get error: %s", resp.Error.Message)
+	if prompts[0].Name != "code_review" {
+		t.Errorf("expected code_review, got %s", prompts[0].Name)
 	}
 }
 
-func TestMethodNotFound(t *testing.T) {
-	server := mcp.NewServer("test-forge", "0.4.0")
-
-	req := mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      10,
-		Method:  "nonexistent/method",
+func TestForgeBuiltins(t *testing.T) {
+	tools := ForgeBuiltins()
+	if len(tools) == 0 {
+		t.Error("expected built-in tools")
 	}
 
-	resp := server.HandleRequest(context.Background(), req)
-	if resp.Error == nil {
-		t.Error("should error for unknown method")
-	}
-	if resp.Error.Code != -32601 {
-		t.Errorf("expected -32601, got %d", resp.Error.Code)
-	}
-}
-
-func TestForgeTools(t *testing.T) {
-	server := mcp.NewServer("test-forge", "0.4.0")
-	server.RegisterForgeTools()
-
-	// List should have tools
-	req := mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      11,
-		Method:  "tools/list",
+	names := make(map[string]bool)
+	for _, tool := range tools {
+		names[tool.Name] = true
+		if tool.Description == "" {
+			t.Errorf("tool %s should have a description", tool.Name)
+		}
 	}
 
-	resp := server.HandleRequest(context.Background(), req)
-	if resp.Error != nil {
-		t.Fatalf("tools/list error: %s", resp.Error.Message)
+	if !names["forge_run"] {
+		t.Error("expected forge_run tool")
+	}
+	if !names["forge_build"] {
+		t.Error("expected forge_build tool")
+	}
+	if !names["forge_search"] {
+		t.Error("expected forge_search tool")
 	}
 }
 
-func TestForgeResources(t *testing.T) {
-	server := mcp.NewServer("test-forge", "0.4.0")
-	server.RegisterForgeResources()
+func TestFormatServerInfo(t *testing.T) {
+	s := NewServer("forge", "1.0.0")
+	s.RegisterTool(Tool{Name: "test", Description: "Test"}, nil)
 
-	req := mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      12,
-		Method:  "resources/list",
+	output := FormatServerInfo(s)
+	if !strings.Contains(output, "forge") {
+		t.Error("expected server name in output")
 	}
-
-	resp := server.HandleRequest(context.Background(), req)
-	if resp.Error != nil {
-		t.Fatalf("resources/list error: %s", resp.Error.Message)
+	if !strings.Contains(output, "Tools: 1") {
+		t.Error("expected tool count in output")
 	}
 }
 
-func TestForgePrompts(t *testing.T) {
-	server := mcp.NewServer("test-forge", "0.4.0")
-	server.RegisterForgePrompts()
-
-	req := mcp.JSONRPCRequest{
-		JSONRPC: "2.0",
-		ID:      13,
-		Method:  "prompts/list",
+func TestFormatTools(t *testing.T) {
+	tools := []Tool{
+		{Name: "forge_run", Description: "Run an agent"},
+		{Name: "forge_build", Description: "Build project"},
 	}
 
-	resp := server.HandleRequest(context.Background(), req)
-	if resp.Error != nil {
-		t.Fatalf("prompts/list error: %s", resp.Error.Message)
+	output := FormatTools(tools)
+	if !strings.Contains(output, "forge_run") {
+		t.Error("expected tool name in output")
 	}
 }
 
-func TestIsMCPRequest(t *testing.T) {
-	tests := []struct {
-		data     string
-		expected bool
-	}{
-		{`{"jsonrpc":"2.0","method":"initialize","id":1}`, true},
-		{`{"jsonrpc":"2.0","method":"ping","id":2}`, true},
-		{`{"jsonrpc":"2.0","method":"tools/list","id":3}`, true},
-		{`{"method":"random"}`, false},
-		{`not json`, false},
+func TestJSONRPCRequestSerialization(t *testing.T) {
+	req := JSONRPCRequest{
+		JSONRPC: "2.0",
+		ID:      42,
+		Method:  "tools/call",
+		Params:  json.RawMessage(`{"name":"test"}`),
 	}
 
-	for _, tt := range tests {
-		result := mcp.IsMCPRequest([]byte(tt.data))
-		if result != tt.expected {
-			t.Errorf("IsMCPRequest(%s): expected %v, got %v", tt.data[:20], tt.expected, result)
+	data, err := json.Marshal(req)
+	if err != nil {
+		t.Fatalf("Marshal failed: %v", err)
+	}
+
+	var req2 JSONRPCRequest
+	if err := json.Unmarshal(data, &req2); err != nil {
+		t.Fatalf("Unmarshal failed: %v", err)
+	}
+
+	if req2.Method != "tools/call" {
+		t.Errorf("expected tools/call, got %s", req2.Method)
+	}
+}
+
+func TestToolResultSerialization(t *testing.T) {
+	result := ToolResult{
+		Content: []ContentBlock{
+			{Type: "text", Text: "Hello from tool"},
+		},
+		IsError: false,
+	}
+
+	data, err := json.Marshal(result)
+	if err != nil {
+		t.Fatalf("Marshal failed: %v", err)
+	}
+
+	var result2 ToolResult
+	if err := json.Unmarshal(data, &result2); err != nil {
+		t.Fatalf("Unmarshal failed: %v", err)
+	}
+
+	if result2.Content[0].Text != "Hello from tool" {
+		t.Errorf("unexpected content: %s", result2.Content[0].Text)
+	}
+}
+
+func TestRPCErrorCodes(t *testing.T) {
+	codes := map[string]int{
+		"parse":     ErrorParseError,
+		"invalid":   ErrorInvalidRequest,
+		"notFound":  ErrorMethodNotFound,
+		"params":    ErrorInvalidParams,
+		"internal":  ErrorInternal,
+	}
+
+	for name, code := range codes {
+		if code >= 0 {
+			t.Errorf("%s error code should be negative, got %d", name, code)
 		}
 	}
 }

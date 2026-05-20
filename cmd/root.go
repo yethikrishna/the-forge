@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	forgeVersion = "0.6.1"
+	forgeVersion = "0.7.0"
 	buildTime    = "unknown"
 )
 
