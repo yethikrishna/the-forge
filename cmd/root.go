@@ -105,6 +105,8 @@ The wielder and the sword are one.`,
 		achievementCmd(),
 		seedCmd(),
 		quickstartCmd(),
+		ciCmd(),
+		errteachCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
