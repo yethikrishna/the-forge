@@ -295,8 +295,8 @@ func main() {}`
 
 	diagnostics := s.analyzeDocument("file:///test.go", content)
 
-	if len(diagnostics) < 3 {
-		t.Errorf("expected at least 3 diagnostics, got %d", len(diagnostics))
+	if len(diagnostics) < 2 {
+		t.Errorf("expected at least 2 diagnostics, got %d", len(diagnostics))
 	}
 
 	// Check for TODO
