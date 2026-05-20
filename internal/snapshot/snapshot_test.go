@@ -1,205 +1,364 @@
-package snapshot_test
+package snapshot
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
-
-	"github.com/forge/sword/internal/snapshot"
+	"time"
 )
 
-func TestCreate(t *testing.T) {
-	dir := t.TempDir()
-	store := snapshot.NewStore(dir)
-
-	snap, err := store.Create("test-snapshot")
-	if err != nil {
-		t.Fatalf("create: %v", err)
+func TestGenerateID(t *testing.T) {
+	id := generateID("test-snapshot")
+	if !strings.HasPrefix(id, "test-snapshot-") {
+		t.Errorf("expected prefix 'test-snapshot-', got %s", id)
 	}
 
-	if snap.ID == "" {
-		t.Error("snapshot should have an ID")
+	id2 := generateID("")
+	if !strings.HasPrefix(id2, "snap-") {
+		t.Errorf("expected prefix 'snap-', got %s", id2)
 	}
-	if snap.Label != "test-snapshot" {
-		t.Errorf("expected label 'test-snapshot', got %s", snap.Label)
-	}
-	if snap.CreatedAt.IsZero() {
-		t.Error("snapshot should have a creation time")
+
+	// IDs should be unique
+	if id == id2 {
+		t.Error("expected unique IDs")
 	}
 }
 
-func TestCreateWithFiles(t *testing.T) {
-	dir := t.TempDir()
-	store := snapshot.NewStore(dir)
-
-	// Create a test file
-	testFile := filepath.Join(dir, "test.txt")
-	os.WriteFile(testFile, []byte("hello world"), 0o644)
-
-	snap, err := store.Create("with-files",
-		snapshot.WithFiles(testFile),
-	)
-	if err != nil {
-		t.Fatalf("create: %v", err)
+func TestSanitizeName(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"Hello World", "hello-world"},
+		{"my_snapshot", "my-snapshot"},
+		{"snapshot-123", "snapshot-123"},
+		{"UPPERCASE", "uppercase"},
+		{"special!@#chars", "specialchars"},
+		{strings.Repeat("a", 50), strings.Repeat("a", 32)},
 	}
 
-	if len(snap.Files) == 0 {
-		t.Error("should have captured files")
-	}
-}
-
-func TestCreateWithTags(t *testing.T) {
-	dir := t.TempDir()
-	store := snapshot.NewStore(dir)
-
-	snap, err := store.Create("tagged",
-		snapshot.WithTags("v1", "release"),
-		snapshot.WithNotes("initial release"),
-	)
-	if err != nil {
-		t.Fatalf("create: %v", err)
-	}
-
-	if len(snap.Tags) != 2 {
-		t.Errorf("expected 2 tags, got %d", len(snap.Tags))
-	}
-	if snap.Notes != "initial release" {
-		t.Errorf("expected notes, got %s", snap.Notes)
-	}
-}
-
-func TestList(t *testing.T) {
-	dir := t.TempDir()
-	store := snapshot.NewStore(dir)
-
-	store.Create("first")
-	store.Create("second")
-	store.Create("third")
-
-	snaps, err := store.List()
-	if err != nil {
-		t.Fatalf("list: %v", err)
-	}
-
-	if len(snaps) != 3 {
-		t.Errorf("expected 3 snapshots, got %d", len(snaps))
-	}
-
-	// Should be newest first
-	if snaps[0].Label != "third" {
-		t.Errorf("expected newest first, got %s", snaps[0].Label)
-	}
-}
-
-func TestGet(t *testing.T) {
-	dir := t.TempDir()
-	store := snapshot.NewStore(dir)
-
-	snap, _ := store.Create("test")
-	retrieved, err := store.Get(snap.ID)
-	if err != nil {
-		t.Fatalf("get: %v", err)
-	}
-
-	if retrieved.Label != "test" {
-		t.Errorf("expected label 'test', got %s", retrieved.Label)
-	}
-}
-
-func TestGetNotFound(t *testing.T) {
-	dir := t.TempDir()
-	store := snapshot.NewStore(dir)
-
-	_, err := store.Get("nonexistent")
-	if err == nil {
-		t.Error("should error for nonexistent snapshot")
-	}
-}
-
-func TestDelete(t *testing.T) {
-	dir := t.TempDir()
-	store := snapshot.NewStore(dir)
-
-	snap, _ := store.Create("to-delete")
-	err := store.Delete(snap.ID)
-	if err != nil {
-		t.Fatalf("delete: %v", err)
-	}
-
-	_, err = store.Get(snap.ID)
-	if err == nil {
-		t.Error("should be deleted")
-	}
-}
-
-func TestRestore(t *testing.T) {
-	dir := t.TempDir()
-	store := snapshot.NewStore(dir)
-
-	// Create a test file
-	testFile := filepath.Join(dir, "restore-test.txt")
-	os.WriteFile(testFile, []byte("original content"), 0o644)
-
-	snap, _ := store.Create("restore-test",
-		snapshot.WithFiles(testFile),
-	)
-
-	// Modify the file
-	os.WriteFile(testFile, []byte("modified content"), 0o644)
-
-	// Restore
-	err := store.Restore(snap.ID, snapshot.WithOverwrite(true))
-	if err != nil {
-		t.Fatalf("restore: %v", err)
-	}
-
-	// Verify content
-	data, _ := os.ReadFile(testFile)
-	if string(data) != "original content" {
-		t.Errorf("expected 'original content', got '%s'", string(data))
-	}
-}
-
-func TestDiff(t *testing.T) {
-	dir := t.TempDir()
-	store := snapshot.NewStore(dir)
-
-	testFile := filepath.Join(dir, "diff-test.txt")
-
-	// Create first snapshot
-	os.WriteFile(testFile, []byte("version 1"), 0o644)
-	snap1, _ := store.Create("v1", snapshot.WithFiles(testFile))
-
-	// Create second snapshot
-	os.WriteFile(testFile, []byte("version 2"), 0o644)
-	snap2, _ := store.Create("v2", snapshot.WithFiles(testFile))
-
-	// Diff
-	diffs, err := store.Diff(snap1.ID, snap2.ID)
-	if err != nil {
-		t.Fatalf("diff: %v", err)
-	}
-
-	if len(diffs) == 0 {
-		t.Error("should have diffs")
-	}
-
-	for path, d := range diffs {
-		if d.Status != "modified" {
-			t.Errorf("expected modified, got %s for %s", d.Status, path)
+	for _, tt := range tests {
+		result := sanitizeName(tt.input)
+		if result != tt.expected {
+			t.Errorf("sanitizeName(%q) = %q, want %q", tt.input, result, tt.expected)
 		}
 	}
 }
 
-func TestCreateNoGit(t *testing.T) {
-	dir := t.TempDir()
-	store := snapshot.NewStore(dir)
+func TestCreateAndList(t *testing.T) {
+	tmpDir := t.TempDir()
+	workDir := filepath.Join(tmpDir, "project")
+	os.MkdirAll(workDir, 0o755)
 
-	snap, err := store.Create("no-git", snapshot.WithGit(false))
+	// Create some files
+	os.WriteFile(filepath.Join(workDir, "main.go"), []byte("package main\n"), 0o644)
+	os.WriteFile(filepath.Join(workDir, "go.mod"), []byte("module test\n"), 0o644)
+
+	store := NewStore(filepath.Join(tmpDir, "snapshots"), workDir)
+
+	cp, err := store.Create("initial", WithCaptureEnv(false))
 	if err != nil {
-		t.Fatalf("create: %v", err)
+		t.Fatalf("Create failed: %v", err)
 	}
 
-	// GitCommit may be empty if not in a git repo
-	_ = snap.GitCommit
+	if cp.Name != "initial" {
+		t.Errorf("expected name 'initial', got %s", cp.Name)
+	}
+	if cp.Status != StatusActive {
+		t.Errorf("expected status active, got %s", cp.Status)
+	}
+	if cp.FileCount < 2 {
+		t.Errorf("expected at least 2 files, got %d", cp.FileCount)
+	}
+	if cp.Checksum == "" {
+		t.Error("expected non-empty checksum")
+	}
+
+	// Verify it's in the list
+	checkpoints, err := store.List()
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	if len(checkpoints) != 1 {
+		t.Fatalf("expected 1 checkpoint, got %d", len(checkpoints))
+	}
+	if checkpoints[0].ID != cp.ID {
+		t.Errorf("expected ID %s, got %s", cp.ID, checkpoints[0].ID)
+	}
 }
+
+func TestGetByIDOrName(t *testing.T) {
+	tmpDir := t.TempDir()
+	workDir := filepath.Join(tmpDir, "project")
+	os.MkdirAll(workDir, 0o755)
+	os.WriteFile(filepath.Join(workDir, "test.txt"), []byte("hello"), 0o644)
+
+	store := NewStore(filepath.Join(tmpDir, "snapshots"), workDir)
+	cp, err := store.Create("my-snap", WithCaptureEnv(false))
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	// Get by ID
+	found, err := store.Get(cp.ID)
+	if err != nil {
+		t.Fatalf("Get by ID failed: %v", err)
+	}
+	if found.ID != cp.ID {
+		t.Errorf("expected ID %s, got %s", cp.ID, found.ID)
+	}
+
+	// Get by name
+	found, err = store.Get("my-snap")
+	if err != nil {
+		t.Fatalf("Get by name failed: %v", err)
+	}
+	if found.Name != "my-snap" {
+		t.Errorf("expected name 'my-snap', got %s", found.Name)
+	}
+
+	// Get non-existent
+	_, err = store.Get("does-not-exist")
+	if err == nil {
+		t.Error("expected error for non-existent snapshot")
+	}
+}
+
+func TestDelete(t *testing.T) {
+	tmpDir := t.TempDir()
+	workDir := filepath.Join(tmpDir, "project")
+	os.MkdirAll(workDir, 0o755)
+	os.WriteFile(filepath.Join(workDir, "test.txt"), []byte("hello"), 0o644)
+
+	store := NewStore(filepath.Join(tmpDir, "snapshots"), workDir)
+	cp, err := store.Create("to-delete", WithCaptureEnv(false))
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	// Verify files exist
+	archivePath := filepath.Join(store.Dir, cp.ID+".tar.gz")
+	metaPath := filepath.Join(store.Dir, cp.ID+".json")
+	if _, err := os.Stat(archivePath); os.IsNotExist(err) {
+		t.Fatal("archive should exist before delete")
+	}
+	if _, err := os.Stat(metaPath); os.IsNotExist(err) {
+		t.Fatal("metadata should exist before delete")
+	}
+
+	// Delete
+	if err := store.Delete(cp.ID); err != nil {
+		t.Fatalf("Delete failed: %v", err)
+	}
+
+	// Verify files are gone
+	if _, err := os.Stat(archivePath); !os.IsNotExist(err) {
+		t.Error("archive should be deleted")
+	}
+	if _, err := os.Stat(metaPath); !os.IsNotExist(err) {
+		t.Error("metadata should be deleted")
+	}
+
+	// Verify it's gone from list
+	checkpoints, _ := store.List()
+	if len(checkpoints) != 0 {
+		t.Errorf("expected 0 checkpoints after delete, got %d", len(checkpoints))
+	}
+}
+
+func TestRestore(t *testing.T) {
+	tmpDir := t.TempDir()
+	workDir := filepath.Join(tmpDir, "project")
+	os.MkdirAll(workDir, 0o755)
+
+	// Create initial file
+	os.WriteFile(filepath.Join(workDir, "data.txt"), []byte("original"), 0o644)
+
+	store := NewStore(filepath.Join(tmpDir, "snapshots"), workDir)
+	cp, err := store.Create("before-change", WithCaptureEnv(false))
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	// Modify the file
+	os.WriteFile(filepath.Join(workDir, "data.txt"), []byte("modified"), 0o644)
+
+	// Verify it's modified
+	data, _ := os.ReadFile(filepath.Join(workDir, "data.txt"))
+	if string(data) != "modified" {
+		t.Fatalf("file should be modified before restore")
+	}
+
+	// Restore
+	restored, err := store.Restore(cp.ID)
+	if err != nil {
+		t.Fatalf("Restore failed: %v", err)
+	}
+	if restored.Status != StatusRestored {
+		t.Errorf("expected status restored, got %s", restored.Status)
+	}
+
+	// Verify file is back to original
+	data, _ = os.ReadFile(filepath.Join(workDir, "data.txt"))
+	if string(data) != "original" {
+		t.Errorf("expected 'original', got %q", string(data))
+	}
+}
+
+func TestDiff(t *testing.T) {
+	tmpDir := t.TempDir()
+	workDir := filepath.Join(tmpDir, "project")
+	os.MkdirAll(workDir, 0o755)
+
+	// Create initial state
+	os.WriteFile(filepath.Join(workDir, "a.txt"), []byte("aaa"), 0o644)
+	os.WriteFile(filepath.Join(workDir, "b.txt"), []byte("bbb"), 0o644)
+
+	store := NewStore(filepath.Join(tmpDir, "snapshots"), workDir)
+	cpA, err := store.Create("snap-a", WithCaptureEnv(false))
+	if err != nil {
+		t.Fatalf("Create A failed: %v", err)
+	}
+
+	// Modify state
+	os.WriteFile(filepath.Join(workDir, "a.txt"), []byte("AAA"), 0o644)
+	os.Remove(filepath.Join(workDir, "b.txt"))
+	os.WriteFile(filepath.Join(workDir, "c.txt"), []byte("ccc"), 0o644)
+
+	cpB, err := store.Create("snap-b", WithCaptureEnv(false))
+	if err != nil {
+		t.Fatalf("Create B failed: %v", err)
+	}
+
+	// Diff
+	diff, err := store.Diff(cpA.ID, cpB.ID)
+	if err != nil {
+		t.Fatalf("Diff failed: %v", err)
+	}
+
+	if !strings.Contains(diff, "Modified") {
+		t.Error("diff should mention modified files")
+	}
+	if !strings.Contains(diff, "Added") || !strings.Contains(diff, "c.txt") {
+		t.Error("diff should mention added file c.txt")
+	}
+	if !strings.Contains(diff, "Deleted") || !strings.Contains(diff, "b.txt") {
+		t.Error("diff should mention deleted file b.txt")
+	}
+}
+
+func TestCaptureEnvVars(t *testing.T) {
+	// Set a test env var
+	os.Setenv("FORGE_TEST_VAR", "hello")
+	defer os.Unsetenv("FORGE_TEST_VAR")
+
+	os.Setenv("FORGE_SECRET_KEY", "supersecret")
+	defer os.Unsetenv("FORGE_SECRET_KEY")
+
+	env := captureEnvVars()
+
+	if env["FORGE_TEST_VAR"] != "hello" {
+		t.Errorf("expected FORGE_TEST_VAR=hello, got %s", env["FORGE_TEST_VAR"])
+	}
+
+	if env["FORGE_SECRET_KEY"] != "••••••••" {
+		t.Error("secret env vars should be redacted")
+	}
+}
+
+func TestManifestSerialization(t *testing.T) {
+	ts := time.Date(2026, 5, 20, 0, 0, 0, 0, time.UTC)
+	m := &Manifest{
+		Checkpoint: Checkpoint{
+			ID:        "test-123",
+			Name:      "test",
+			Timestamp: ts,
+			Status:    StatusActive,
+			WorkDir:   "/tmp/project",
+			FileCount: 2,
+			TotalSize: 1024,
+		},
+		Files: []FileEntry{
+			{Path: "main.go", Size: 512, Checksum: "abc123"},
+			{Path: "go.mod", Size: 512, Checksum: "def456"},
+		},
+		GitDiff:   "diff content",
+		GitStatus: "M main.go",
+	}
+
+	data, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		t.Fatalf("Marshal failed: %v", err)
+	}
+
+	var m2 Manifest
+	if err := json.Unmarshal(data, &m2); err != nil {
+		t.Fatalf("Unmarshal failed: %v", err)
+	}
+
+	if m2.Checkpoint.ID != "test-123" {
+		t.Errorf("expected ID test-123, got %s", m2.Checkpoint.ID)
+	}
+	if len(m2.Files) != 2 {
+		t.Errorf("expected 2 files, got %d", len(m2.Files))
+	}
+	if m2.GitDiff != "diff content" {
+		t.Errorf("expected git diff 'diff content', got %s", m2.GitDiff)
+	}
+}
+
+func TestCreateWithTags(t *testing.T) {
+	tmpDir := t.TempDir()
+	workDir := filepath.Join(tmpDir, "project")
+	os.MkdirAll(workDir, 0o755)
+
+	store := NewStore(filepath.Join(tmpDir, "snapshots"), workDir)
+	cp, err := store.Create("tagged",
+		WithCaptureEnv(false),
+		WithTags([]string{"pre-deploy", "v1.0"}),
+		WithAgent("forge-builder"),
+		WithSession("sess-abc"),
+	)
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	if len(cp.Tags) != 2 {
+		t.Errorf("expected 2 tags, got %d", len(cp.Tags))
+	}
+	if cp.Agent != "forge-builder" {
+		t.Errorf("expected agent forge-builder, got %s", cp.Agent)
+	}
+	if cp.Session != "sess-abc" {
+		t.Errorf("expected session sess-abc, got %s", cp.Session)
+	}
+}
+
+func TestNameOrID(t *testing.T) {
+	cp := &Checkpoint{ID: "snap-123", Name: "my-snapshot"}
+	if cp.NameOrID() != "my-snapshot" {
+		t.Errorf("expected 'my-snapshot', got %s", cp.NameOrID())
+	}
+
+	cp2 := &Checkpoint{ID: "snap-456"}
+	if cp2.NameOrID() != "snap-456" {
+		t.Errorf("expected 'snap-456', got %s", cp2.NameOrID())
+	}
+}
+
+func TestListEmpty(t *testing.T) {
+	tmpDir := t.TempDir()
+	store := NewStore(filepath.Join(tmpDir, "snapshots"), filepath.Join(tmpDir, "project"))
+
+	checkpoints, err := store.List()
+	if err != nil {
+		t.Fatalf("List on empty store failed: %v", err)
+	}
+	if len(checkpoints) != 0 {
+		t.Errorf("expected 0 checkpoints, got %d", len(checkpoints))
+	}
+}
+
+
