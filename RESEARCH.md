@@ -341,3 +341,86 @@ No new coding agent launches, protocol changes, or framework releases since the 
 - https://www.morningstar.com/news/pr-newswire/20260520ne64356/rapdev-launches-agentic-platform-operator-a-governed-ai-agent-platform-for-operating-servicenow-at-scale
 - https://www.interactsoftware.com/news/spring-launch-2026/
 - https://www.manh.com/our-insights/resources/blog/momentum-2026-welcome-agentic-era
+
+---
+
+## 2026-05-20 (22:02 UTC) — Incremental Update
+
+### 1. Fetch.ai — Agent Economy Platform (May 20)
+
+Fetch.ai launched a new platform giving AI agents their own economy — autonomous economic activity (transactions, negotiations, value exchange) among agents. Announced May 20 from Cambridge, UK & Silicon Valley.
+
+- Relevance: emerging pattern of agent-to-agent commerce, not just agent-to-tool or agent-to-agent task delegation
+- Could influence how the-forge handles agent resource allocation and cost tracking
+
+### 2. Google Search — Agentic Features (I/O 2026)
+
+Google highlighted new AI agent capabilities in Search: "use agents just by asking a question." Part of broader I/O 2026 agentic push (Gemini models, Antigravity, CodeMender).
+
+- Trend: search as the discovery layer for agents — users don't need to know which agent to invoke
+
+### 3. Competitive Analysis — Unified Agentic AI Platforms (2026 Landscape)
+
+Comprehensive comparison of the major enterprise unified platforms:
+
+| Platform | Best For | Key Differentiator | Scale |
+|----------|----------|--------------------|-------|
+| **Salesforce Agentforce** | CRM & customer workflows | 500+ connectors, $800M ARR | Thousands of enterprise deals |
+| **Microsoft Copilot Studio** | Microsoft-centric enterprises | 1,400+ connectors via Power Platform | 160k orgs, 400k+ agents |
+| **ServiceNow AI Agents** | IT & enterprise service mgmt | Hundreds certified integrations | Restructured pricing around autonomous tiers |
+| **Kore.ai** | Model-agnostic CX/EX | 300+ pre-built agents, advanced governance | Large enterprise deployments |
+| **UiPath Agentic Automation** | RPA + hybrid automation | 300+ connectors (RPA + API) | Strong in regulated industries |
+| **eZintegrations Goldfinch AI** | High-volume API/DB integrations | 5,000+ endpoints | Broadest connectivity |
+
+**Key competitive dynamics:**
+- Big Three (Salesforce, Microsoft, ServiceNow) dominate via existing customer bases but face lock-in criticism
+- Kore.ai and UiPath lead for agnostic/cross-platform deployments
+- Differentiation now on: autonomy level, integration breadth, governance/compliance, pricing model
+- Pricing shifting toward outcome-based / autonomous-tier models
+- 2–10x productivity gains reported in customer support and operations
+
+### 4. Production Deployment Lessons from Major Frameworks
+
+**LangGraph** (production leader — LinkedIn, Uber, Klarna):
+- Move from MemorySaver → PostgresSaver/AsyncPostgresSaver for production state
+- Deploy via FastAPI + Docker on Cloud Run or Fly.io; Redis/Postgres for checkpoints, LangSmith for observability
+- Keep nodes small/focused; invest in sophisticated routing beyond simple supervisor patterns
+- State management and checkpointing are the "unsexy" critical parts
+
+**CrewAI** (2 billion agentic workflows processed):
+- Start with 100% human review, gradually reduce oversight
+- Default in-memory execution fails in production — implement proper error handling to prevent cascading failures
+- Large virtual environments (~1 GB) inflate container costs — optimize packaging
+- Observability, evaluations, and tool governance are as important as agent logic
+
+**Microsoft Agent Framework** (AutoGen + Semantic Kernel convergence):
+- AutoGen entering maintenance mode; unified framework is the path forward
+- Strong for .NET/C# stacks and M365/enterprise integrations
+- Deploy Semantic Kernel in Azure (ACI, AKS, Container Apps) with Key Vault secrets
+- Skills should be stateless where possible; add custom observability
+
+**Cross-cutting production lessons:**
+- **State & persistence** — universal requirement; choose durable checkpointers early
+- **Observability** — LangSmith, Langfuse, or Azure-native tools are non-negotiable
+- **Resiliency** — start conservative with oversight; implement retries, fallbacks, error isolation
+- **Infrastructure** — Docker + K8s/Cloud Run, cost/latency monitoring, secrets management
+- **Evaluation & guardrails** — shift from raw capability to evals, prompt injection protection, compliance
+- Frameworks with explicit control and enterprise integrations (LangGraph, Microsoft) have clearest path to scale
+
+### 5. Agentic AI Summit — August 2026
+
+Berkeley RDI's Agentic AI Weekly mentions an upcoming **Agentic AI Summit** scheduled for August 2026. Worth tracking for major announcements.
+
+### Sources
+
+- https://x.com/Fetch_ai/status/2057114826506195223
+- https://blog.google/products-and-platforms/products/search/search-io-2026/
+- https://ezintegrations.ai/agentic-ai-platform-comparison/
+- https://www.marktechpost.com/2026/05/19/best-enterprise-level-agentic-ai-platforms-for-2026/
+- https://slack.com/blog/productivity/best-agentic-ai-platforms-for-2026-what-they-are-and-how-to-choose-one
+- https://www.langchain.com/blog/building-langgraph
+- https://eastondev.com/blog/en/posts/ai/20260424-langgraph-agent-architecture/
+- https://crewai.com/blog/lessons-from-2-billion-agentic-workflows
+- https://47billion.com/blog/ai-agents-in-production-frameworks-protocols-and-what-actually-works-in-2026/
+- https://cloudsummit.eu/blog/microsoft-agent-framework-production-ready-convergence-autogen-semantic-kernel
+- https://berkeleyrdi.substack.com/p/agentic-ai-weekly-berkeley-rdi-may-e16
