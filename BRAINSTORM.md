@@ -718,3 +718,311 @@ MCP is the dominant protocol (tens of millions of downloads). Forge already has 
 ---
 
 *"The CVEs of May 2026 proved that agents without real sandboxes are just RCE with extra steps. Forge must lead on security."*
+
+---
+
+## 2026-05-20 21:03 UTC — Brainstorm Session #3
+
+*Project state: ~35.5K Go lines, 59 internal packages, 50 cmd files, 37+ commands. Massive growth since session #2 — otel, pubsub, breed, snapshot, review, workspace, schedule, prompt, errcode, gitwrap, undo, agenttest, queue all now exist.*
+
+*Sessions #1 and #2 generated ~90 ideas. Most quick wins and many medium-effort items are now shipped. This session focuses on: (1) deeper system-level thinking, (2) features that create lock-in and network effects, (3) production readiness gaps, (4) areas the competition is actively building right now.*
+
+---
+
+### A. Production Readiness — What Blocks Real Teams?
+
+**A1. Graceful Degradation & Resilience Patterns**
+- Circuit breaker per provider: if OpenAI 500s 3x in a row, auto-fallback to Anthropic
+- Bulkheading: isolate agent failures so one bad agent doesn't tank the whole forge
+- Rate limit awareness: read `Retry-After` headers, queue requests instead of failing
+- Cost-aware retry: on failure, retry with a cheaper model first, escalate only if needed
+- Dead letter queue: failed agent tasks land in `forge queue dead-letters` for inspection
+- **Why:** Production systems fail in cascading ways. Forge needs resilience patterns baked in, not bolted on.
+
+**A2. State Machine for Agent Lifecycle**
+- Explicit state machine: `idle → queued → starting → running → pausing → paused → resuming → completing → completed → failed → retrying → dead`
+- Every state transition is an event on the pub/sub bus
+- State persistence: survive process restarts
+- Timeout per state: `starting` has 60s timeout, `running` has configurable timeout
+- `forge agents lifecycle <id>` shows full state history
+- **Why:** 59 packages but no formal lifecycle model. Agents are stuck in "running" with no way to know if they're actually alive.
+
+**A3. Health Checking & Liveness Probes**
+- `GET /healthz` and `GET /readyz` endpoints on `forge serve`
+- Per-agent health: heartbeat mechanism, last-response-time tracking
+- Agent watchdog: if no response in N seconds, mark unhealthy, trigger routing failover
+- Kubernetes-compatible: proper startup/readiness/liveness probe semantics
+- **Why:** `forge serve` can't run in production without health checks. Basic ops requirement.
+
+**A4. Rate Limiting & Quota Management**
+- Token bucket per provider, per model, per agent, per user
+- `forge config set rate-limit.openai 100rpm`
+- Queue overflow behavior: reject vs queue vs downgrade model
+- Shared rate limit pools for teams (team-wide OpenAI limit)
+- **Why:** Provider rate limits are the #1 operational pain for teams running multiple agents.
+
+---
+
+### B. Network Effects & Platform Play
+
+**B1. Forge Registry — Community Agent Marketplace**
+- `forge registry publish` — publish your Agentfile to a community registry
+- `forge registry search "code review"` — find community agents
+- `forge registry install @user/agent-name` — install from registry
+- Star ratings, download counts, version pinning
+- Verified badges for security-reviewed agents
+- Revenue share: paid agents for enterprise use cases
+- **Why:** npm has 2M packages. If Forge agents become shareable, the network effect is enormous. First mover advantage.
+
+**B2. Agent Composition Protocol**
+- Standard protocol for agents calling other agents
+- `forge compose` — define composite agents from existing agents:
+  ```yaml
+  compose:
+    name: full-code-review
+    agents:
+      - security-scanner@1.2
+      - style-checker@latest
+      - test-writer@2.0
+    merge: consensus  # or first-success, majority-vote
+  ```
+- Composed agents are first-class: they have their own Agentfile, memory, cost tracking
+- **Why:** Individual agents are limited. Composed agents are unstoppable. Composition is the force multiplier.
+
+**B3. Team Sharing & Collaboration**
+- `forge team create my-team` — create a team space
+- Share agents, prompts, pipelines, and cost budgets across team members
+- Shared memory: agents learn from the whole team's interactions
+- `forge team sync` — sync configurations across team members' machines
+- **Why:** Solo developers try tools. Teams adopt tools. Team features drive stickiness.
+
+---
+
+### C. Deep Architecture — The Hard Problems
+
+**C1. Event Sourcing for Agent Sessions**
+- Don't just record events — store them as the source of truth (event sourcing pattern)
+- Current state is always derived by replaying events
+- Enables: time travel (already have replay), audit queries, debugging, analytics
+- Snapshot periodically for performance (CQRS read model)
+- `forge session rebuild <id>` — rebuild session state from event log
+- **Why:** The replay package records events but doesn't use them as the source of truth. Event sourcing would make replay, undo, audit, and analytics all natural byproducts of one pattern.
+
+**C2. Plugin Dependency Graph & Isolation**
+- Plugins declare dependencies on other plugins
+- Topological sort for load order
+- Plugin sandboxing: each plugin runs in isolated Go context with limited API surface
+- Plugin capability model: a plugin requests capabilities (fs.read, net.http, agent.call)
+- Capability violations are runtime errors, not silent failures
+- **Why:** As plugins grow, dependency conflicts and security issues are inevitable. Solve it now.
+
+**C3. Streaming Architecture Overhaul**
+- Every agent response is a stream, not a batch response
+- Unified stream protocol: SSE for HTTP, WebSocket for browser, gRPC-stream for inter-service
+- Back-pressure: if a consumer is slow, the stream adapts (doesn't buffer infinitely)
+- Stream composition: merge multiple agent streams into one unified output
+- `forge chat --stream=raw` dumps the full token stream for debugging
+- **Why:** Agents are increasingly streaming-first. The aisdk package handles this for models, but the internal architecture should stream everything.
+
+**C4. Configuration Inheritance & Profiles**
+- Base config in forge.yaml, override per-environment:
+  ```yaml
+  profiles:
+    dev:
+      models: [ollama/*]
+      cost_cap: none
+    staging:
+      models: [openai/gpt-4.1-mini]
+      cost_cap: $10/day
+    production:
+      models: [anthropic/claude-sonnet-4]
+      cost_cap: $50/day
+      require_approval: true
+  ```
+- `FORGE_PROFILE=production forge serve`
+- Profile inheritance: production extends staging extends dev
+- **Why:** Every real team has dev/staging/production. Config management shouldn't mean editing YAML for each.
+
+---
+
+### D. AI-Native Developer Experience
+
+**D1. `forge suggest` — Context-Aware Agent Suggestions**
+- Analyze the current file, git diff, or recent errors
+- Suggest which agent and model to use: "Based on the TypeScript error, try forge chat -m gpt-4.1 with the debug agent"
+- Learn from past interactions: "Last time you had a similar error, Claude Sonnet solved it in 8 seconds for $0.03"
+- `forge suggest --watch` — continuously monitor for opportunities
+- **Why:** The hardest part of using AI tools is knowing which tool to use for which problem. Forge should figure that out.
+
+**D2. `forge explain error` — Intelligent Error Interpretation**
+- Feed any error (compiler, runtime, test failure) to Forge
+- Cross-reference with codebase context (not just the error message)
+- "This NilPointerDeref happens because getUser() returns nil when the database connection fails (see database.go:142)"
+- Link to relevant agent sessions that touched the failing code
+- **Why:** Errors are where developers spend the most time. AI error explanation that understands your codebase is transformative.
+
+**D3. Natural Language forge.yaml**
+- `forge config edit --natural` — interactive mode that builds config from conversation
+- "I want to use Claude for code review and GPT for tests, with a $20/day budget"
+- → Generates the forge.yaml automatically
+- Round-trippable: read existing forge.yaml, describe changes, write back
+- **Why:** YAML configuration is a barrier. Natural language config generation is uniquely possible for an AI agent tool.
+
+**D4. `forge dashboard` — TUI Mode (bubbletea)**
+- Full terminal dashboard built with bubbletea/lipgloss
+- Panes: running agents (with live status), cost tracker, recent sessions, logs tail
+- Keyboard shortcuts: `s` start agent, `k` kill, `r` restart, `u` undo last, `?` help
+- `forge dashboard` launches an interactive TUI, not just a web page
+- **Why:** The web dashboard is good for teams. The TUI is essential for individual developers who live in the terminal. lazygit for agents.
+
+---
+
+### E. Enterprise Features — Closing the Gaps
+
+**E1. Multi-Tenancy in `forge serve`**
+- Tenant isolation: each team/project gets isolated agents, memory, cost tracking
+- Tenant-scoped API keys
+- Resource quotas per tenant (max agents, max cost, max concurrent tasks)
+- Tenant admin UI in the web dashboard
+- **Why:** `forge serve` without multi-tenancy is a single-user tool. Multi-tenancy makes it a platform.
+
+**E2. Compliance Report Generation**
+- `forge compliance soc2` — generate a SOC2 compliance report from audit logs
+- Pre-built templates for SOC2, HIPAA, GDPR, ISO 27001
+- Maps Forge controls to compliance requirements
+- "Evidence: All agent actions in the last 90 days are logged with tamper-proof audit trail (forge.audit)"
+- **Why:** Compliance is the gatekeeper for enterprise adoption. Auto-generated reports eliminate weeks of manual work.
+
+**E3. Data Residency & Sovereignty Controls**
+- Configure which providers/regions agent data can flow through
+- `forge config set data-residency eu-only` — restrict to EU-based model providers
+- Block data egress to non-compliant regions
+- Audit log of every data flow with geographic annotation
+- **Why:** GDPR, EU AI Act, and similar regulations require data residency controls. No agent tool offers this.
+
+**E4. Secret Management Integration**
+- Integrate with HashiCorp Vault, AWS Secrets Manager, Azure Key Vault
+- Agent API keys stored in vault, never on disk
+- Just-in-time secret injection into agent environments
+- Secret rotation without agent restart
+- **Why:** Enterprises don't store API keys in config files. Forge needs enterprise secret management.
+
+---
+
+### F. Novel — Things Nobody Has Thought Of
+
+**F1. `forge dream` — Offline Agent Improvement**
+- When no user tasks are pending, agents enter "dream mode"
+- Analyze past sessions for patterns: common errors, successful strategies, cost optimizations
+- Update prompt templates, adjust routing weights, prune stale memory entries
+- Pre-index recent code changes for faster future queries
+- Generate a "dream report": "While you were away, I improved 3 prompt templates and found a routing optimization that saves $4.50/day"
+- **Why:** Compute is wasted when agents are idle. Dream mode turns idle time into continuous improvement.
+
+**F2. `forge lineage` — Code Provenance Tracking**
+- Track the lineage of every line of code: which agent wrote it, which model, which prompt, which session
+- `forge lineage auth.go:42` → "Written by Claude Sonnet 4 in session abc123, prompt: 'add OAuth2 support'"
+- `forge lineage --blame` → git blame enhanced with agent metadata
+- Cross-reference with test failures: "This failing test was written by a different agent than the code it tests"
+- **Why:** In a world where agents write 50%+ of code, provenance is essential. Which agent wrote the bug? Which agent approved it?
+
+**F3. `forge debate` — Adversarial Agent Deliberation**
+- Spawn two agents with opposing instructions on the same task
+- Agent A: "Implement feature X" → Agent B: "Find every problem with Agent A's implementation"
+- Iterate: Agent A refines based on Agent B's critique
+- Deliver the final result with the full debate as context
+- **Why:** Red teaming produces better results than single-agent execution. This is constitutional AI made practical.
+
+**F4. `forge migrate` — Agent Migration Between Models**
+- Seamlessly migrate a running agent from one model to another
+- Transfer conversation context, memory, and tool state
+- A/B comparison: run same task on old and new model simultaneously
+- Cost/performance analysis of the migration
+- **Why:** Models improve constantly. Teams need to evaluate and migrate without losing agent context.
+
+**F5. `forge contract-test` — Behavioral Contracts for Agents**
+- Define behavioral contracts: "This agent MUST run tests before committing" or "This agent MUST NOT modify files outside src/"
+- Runtime enforcement: contract violations trigger alerts and can auto-rollback
+- Contract testing in CI: validate agents still meet their contracts
+- Contract versioning: contracts evolve alongside agents
+- **Why:** Agent behavior is currently implicit and trust-based. Contracts make behavior explicit and enforceable.
+
+**F6. `forge archaeology` — Deep Code History Mining**
+- Combine git history + agent session history + test results
+- "This function has been rewritten 7 times by 4 different agents. Each rewrite fixed a different bug but introduced a new one."
+- Identify code at risk: "Functions with high agent churn rate tend to have the most bugs"
+- Suggest stability improvements based on historical patterns
+- **Why:** As agents write more code, understanding the history becomes critical. No tool connects git history with agent history.
+
+---
+
+### G. Integration Deep Cuts
+
+**G1. Git Worktree Integration for Parallel Agents**
+- `forge orchestrate --strategy=worktree` — each agent gets its own git worktree
+- No merge conflicts between parallel agents
+- `forge merge --strategy=agent` — AI-assisted merge of worktree branches
+- Clean up worktrees after merge
+- **Why:** Windsurf and Codex both use worktrees for parallel agents. Forge should make this automatic, not manual.
+
+**G2. Language Server Protocol (LSP) Server**
+- Forge as an LSP server: any editor that supports LSP (Neovim, Emacs, Sublime, Helix) gets Forge features
+- Code actions: "Explain with agent", "Refactor with agent", "Generate tests with agent"
+- Diagnostics: show agent warnings inline (security issues, style violations)
+- Hover: "This function was written by Claude Sonnet 4 (forge lineage)"
+- **Why:** LSP is the universal editor integration protocol. One implementation → every editor supported.
+
+**G3. GitHub App (not just Actions)**
+- Forge as a GitHub App: webhook-driven, not just CI
+- Auto-comment on PRs with agent review
+- @forge-bot commands in issues: "@forge-bot implement this" → agent creates a PR
+- PR labels from agent quality scoring: `forge:high-quality`, `forge:needs-review`
+- **Why:** GitHub Apps are more powerful than Actions. Continuous agent engagement, not just CI-time.
+
+**G4. Docker Compose Integration**
+- `forge.yaml` can define services (like docker-compose) that agents need
+- `forge env up` — start database, redis, mock APIs alongside the agent
+- Agent gets the service URLs injected as environment variables
+- Tear down automatically when agent completes
+- **Why:** Agents that test code need running services. Manual setup is friction. Auto-provision is magic.
+
+---
+
+### H. Updated Priority Matrix
+
+| Feature | Impact | Effort | Phase | Notes |
+|---------|--------|--------|-------|-------|
+| Agent lifecycle state machine | CRITICAL | MED | Now | Foundation for everything |
+| Health checks (HTTP endpoints) | CRITICAL | LOW | Now | Blocks production use |
+| Circuit breaker per provider | HIGH | MED | 1.5 | Resilience |
+| Rate limiting & quotas | HIGH | MED | 1.5 | Multi-agent ops |
+| Configuration profiles | HIGH | LOW | 1.5 | Dev/staging/prod |
+| forge lineage (code provenance) | HIGH | MED | 2 | Unique differentiator |
+| Forge Registry (marketplace) | HIGH | VERY HIGH | 3 | Network effect |
+| Event sourcing for sessions | MED | HIGH | 2 | Architectural upgrade |
+| LSP server | HIGH | HIGH | 3 | Universal editor support |
+| forge dream (idle improvement) | MED | MED | 2 | Novel, low risk |
+| forge debate (adversarial) | MED | MED | 2 | Quality improvement |
+| Multi-tenancy | HIGH | HIGH | 3 | Enterprise platform |
+| Compliance reports | MED | MED | 3 | Enterprise checkbox |
+| Data residency controls | MED | MED | 3 | EU/regulated markets |
+| forge suggest | HIGH | MED | 2 | DX killer feature |
+| forge dashboard (TUI) | MED | HIGH | 2.5 | Power user magnet |
+| Git worktree auto-management | MED | MED | 2 | Parallel agents |
+| Docker Compose integration | MED | MED | 2 | Testing environments |
+
+---
+
+### I. Session #3 Quick Wins
+
+1. **Agent lifecycle state machine** — Formal states + transitions in `internal/lifecycle`. ~400 lines.
+2. **Health check endpoints** — `GET /healthz`, `GET /readyz` on `forge serve`. ~100 lines.
+3. **Configuration profiles** — `profiles:` section in forge.yaml with `FORGE_PROFILE` env var. ~200 lines.
+4. **Provider circuit breaker** — Track failures per provider, auto-fallback. ~250 lines.
+5. **Rate limiter** — Token bucket per provider/agent. ~200 lines.
+6. **`forge lineage` (basic)** — Git notes or custom ref storing agent metadata per commit. ~300 lines.
+7. **Dead letter queue** — Failed tasks go to inspectable queue instead of disappearing. ~150 lines.
+
+---
+
+*"35K lines is a prototype. 100K lines with production resilience is a product. The gap between them is state machines, health checks, circuit breakers, and error codes."*

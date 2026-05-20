@@ -68,6 +68,7 @@ The wielder and the sword are one.`,
 		workspaceCmd(),
 		errorsCmd(),
 		reviewCmd(),
+		docsCmd(),
 		reviewCmd(),
 	)
 	return root.ExecuteContext(ctx)
