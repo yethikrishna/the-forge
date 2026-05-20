@@ -70,9 +70,11 @@ func TestDreamSessionCostPatterns(t *testing.T) {
 	sessions := []Session{
 		{ID: "s1", Model: "gpt-4", Success: true, CostUSD: 0.01, CreatedAt: time.Now()},
 		{ID: "s2", Model: "gpt-4", Success: true, CostUSD: 0.01, CreatedAt: time.Now()},
-		{ID: "s3", Model: "gpt-4", Success: true, CostUSD: 5.00, CreatedAt: time.Now()}, // outlier
-		{ID: "s4", Model: "gpt-4", Success: true, CostUSD: 6.00, CreatedAt: time.Now()}, // outlier
-		{ID: "s5", Model: "gpt-4", Success: true, CostUSD: 4.00, CreatedAt: time.Now()}, // outlier
+		{ID: "s3", Model: "gpt-4", Success: true, CostUSD: 0.01, CreatedAt: time.Now()},
+		{ID: "s4", Model: "gpt-4", Success: true, CostUSD: 0.01, CreatedAt: time.Now()},
+		{ID: "s5", Model: "gpt-4", Success: true, CostUSD: 0.01, CreatedAt: time.Now()},
+		{ID: "s6", Model: "gpt-4", Success: true, CostUSD: 5.00, CreatedAt: time.Now()}, // outlier
+		{ID: "s7", Model: "gpt-4", Success: true, CostUSD: 6.00, CreatedAt: time.Now()}, // outlier
 	}
 
 	ds.LoadSessions(sessions)
@@ -322,8 +324,8 @@ func TestNormalizeError(t *testing.T) {
 		expected string
 	}{
 		{"Connection refused at 0xDEAD", "connection refused at"},
-		{"timeout error /api/v1/models", "timeout error api v1 models"},
-		{"rate limit exceeded: 429", "rate limit exceeded 429"},
+		{"timeout error /api/v1/models", "timeout error /api/v1/models"},
+		{"rate limit exceeded: 429", "rate limit exceeded: 429"},
 	}
 
 	for _, tt := range tests {

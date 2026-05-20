@@ -1026,3 +1026,267 @@ MCP is the dominant protocol (tens of millions of downloads). Forge already has 
 ---
 
 *"35K lines is a prototype. 100K lines with production resilience is a product. The gap between them is state machines, health checks, circuit breakers, and error codes."*
+
+---
+
+## 2026-05-20 21:33 UTC — Brainstorm Session #4
+
+*Project state: ~50K Go lines, 76 internal packages, 62 cmd files, 43+ commands. Sessions #1–3 ideas largely shipped. The project is now feature-rich but approaching the complexity ceiling — time to focus on polish, performance, documentation, community adoption, and the critical path from prototype to trusted product.*
+
+---
+
+### A. Performance & Scale — Making It Real
+
+**A1. Benchmark Suite (`forge bench`)**
+- Built-in performance benchmarks for every core operation
+- `forge bench` → measures: index speed (files/sec), search latency (p50/p95/p99), chat TTFT (time-to-first-token), pipeline throughput, memory overhead
+- Historical tracking: `forge bench --compare=last` shows regression/improvement
+- CI integration: `forge bench --threshold=10%` fails if any metric regresses >10%
+- **Why:** 50K lines with no benchmarks means performance regressions go undetected. Every serious Go project has benchmarks.
+
+**A2. Memory-Efficient Indexing**
+- Current `forge index` loads everything into memory (fine for small repos, breaks on large monorepos)
+- Streaming indexer: process files in chunks, use mmap for large files
+- Incremental indexing: only re-index changed files (use git diff to detect)
+- Disk-backed index: SQLite FTS5 or custom format for repos >100K files
+- Index sharding: split large indexes across multiple files for parallel search
+- **Why:** "Works on my 10-file project" doesn't cut it. Forge needs to handle linux kernel-sized codebases.
+
+**A3. Connection Pooling & Keep-Alive for Provider APIs**
+- Reuse HTTP connections to OpenAI, Anthropic, Google APIs
+- Connection pool per provider with configurable size
+- Automatic retry on connection reset
+- Batch API support: combine multiple small requests into one batch call
+- **Why:** Every request currently opens a new connection. At 100+ req/min this adds latency and costs money.
+
+**A4. Lazy Loading of Internal Packages**
+- 76 packages all linked into one binary. Not all needed for every command.
+- Measure: which packages contribute most to binary size and startup time
+- Build tags: `go build -tags minimal` for a lightweight build with only core commands
+- Plugin architecture for heavy packages (MCP, dashboard, workspace) — load on demand
+- **Why:** A 12MB binary is fine. A 50MB binary that takes 2s to start is not. Get ahead of this.
+
+---
+
+### B. Documentation & Discoverability — If It's Not Documented, It Doesn't Exist
+
+**B1. Auto-Generated Command Reference**
+- Extract help text from every Cobra command → generate a full command reference
+- `forge docs generate` → outputs Markdown for every command with flags, examples, see-also
+- Include in README and documentation site
+- Keep in sync automatically (CI fails if docs are stale)
+- **Why:** 43+ commands with no centralized reference. Users can't discover what Forge can do.
+
+**B2. Interactive Tutorial System**
+- `forge learn` → interactive tutorials that teach Forge step by step
+- "Learn how to: Run your first agent → Build a pipeline → Set up scheduling → Debug with replay"
+- Each tutorial is a guided walkthrough with checkpoints
+- Progress tracking: `forge learn progress` shows completion
+- Community-contributable: tutorials live in `.forge/tutorials/`
+- **Why:** Documentation is passive. Tutorials are active. Active learning drives adoption.
+
+**B3. Example Gallery (`forge examples`)**
+- Curated collection of real-world Forgefiles, pipelines, and agent configurations
+- `forge examples list` → browse by category (web-dev, data-science, devops, mobile)
+- `forge examples clone code-review-pipeline` → copy to current project
+- Each example has a README explaining what it does and how to customize
+- **Why:** Users don't start from blank. They start from examples. Make the best patterns easy to find.
+
+**B4. Architecture Decision Records (ADRs)**
+- Formal ADRs for major architectural decisions
+- Stored in `docs/adr/` as Markdown
+- ADR template: Context → Decision → Consequences → Alternatives Considered
+- `forge docs adr` → list all ADRs
+- **Why:** 76 packages means many decisions were made. Future contributors need to understand WHY, not just WHAT.
+
+---
+
+### C. Testing & Reliability — Trust Through Verification
+
+**C1. Integration Test Harness**
+- `internal/integration/` — tests that exercise full command flows against real-ish backends
+- Mock provider server: fake OpenAI/Anthropic API that returns canned responses
+- Test matrix: every command × mock provider → pass/fail/timeout
+- `make test-integration` → runs the full suite
+- **Why:** Unit tests verify packages. Integration tests verify the product. Both are needed.
+
+**C2. Chaos Testing for Agent Orchestration**
+- Inject failures: provider timeouts, network partitions, OOM kills, disk full
+- Verify graceful degradation: does circuit breaker work? Does fallback switch models?
+- `forge test --chaos` → run tests with random failure injection
+- **Why:** Production is chaos. If Forge can't handle failures in testing, it can't handle them in production.
+
+**C3. Fuzz Testing for Security-Critical Paths**
+- Fuzz: prompt inputs, YAML config parsing, sandbox boundaries, MCP protocol messages
+- `go test -fuzz=FuzzParseYAML` → find crashes before attackers do
+- Especially critical: `internal/secrets`, `internal/sandbox`, `internal/mcp`
+- **Why:** The CVE wave hit parsing and boundary code. Fuzz testing catches these before disclosure.
+
+**C4. Test Coverage Reporting**
+- `make coverage` → generate coverage report with `go test -coverprofile`
+- Per-package coverage tracking
+- Coverage badge in README
+- CI gate: PRs must not decrease coverage
+- Target: 70%+ coverage on Phase 1.5+ packages
+- **Why:** "Go test coverage > 80%" is in the TODO but there's no infrastructure to measure or enforce it.
+
+---
+
+### D. Community & Adoption — The Growth Engine
+
+**D1. `forge feedback` — One-Command Bug Reports**
+- `forge feedback bug "chat command hangs on large files"` → opens GitHub issue with:
+  - OS/arch, Go version, Forge version
+  - forge.yaml (sanitized — secrets redacted)
+  - Recent logs from `~/.forge/logs/`
+  - `forge doctor` output
+- `forge feedback feature "Add support for Gemini 3"` → opens feature request
+- **Why:** Friction in reporting bugs = bugs go unreported. One command = more feedback = better product.
+
+**D2. Telemetry (Opt-In, Privacy-First)**
+- `forge config set telemetry enabled` — explicit opt-in, default off
+- Anonymous usage data: commands used (no args), models used (no prompts), errors encountered (no content)
+- Purpose: identify pain points, prioritize fixes, measure adoption
+- Full transparency: `forge telemetry show` displays exactly what would be sent
+- Local-only mode: `forge telemetry local` writes to file, user reviews before sending
+- **Why:** You can't improve what you can't measure. But privacy must come first.
+
+**D3. Changelog Automation**
+- `forge changelog generate` → generates CHANGELOG.md from git history + conventional commits
+- Sections: Features, Fixes, Breaking Changes, Performance, Security
+- Link to relevant GitHub issues/PRs
+- `forge release notes v0.6.0` → release-specific notes
+- **Why:** Version 0.5.0 with no changelog. Users need to know what changed.
+
+**D4. Community Templates Repository**
+- `github.com/yethikrishna/forge-templates` — community-contributed Forgefiles
+- Templates for: React app, Go API, Python ML, monorepo, microservices, data pipeline
+- `forge init --template=react-app` → pulls from community repo
+- Community PRs for new templates
+- **Why:** Zero-to-running in 30 seconds requires pre-built templates. Community templates scale faster than core team.
+
+**D5. "30 Days of Forge" Content Plan**
+- Pre-written content for each day of a launch month:
+  - Day 1: "What is Forge?" (intro post)
+  - Day 5: "forge chat — Talk to any model" (deep dive)
+  - Day 10: "forge pipeline — Agent workflows" (tutorial)
+  - Day 15: "forge jail — Secure agent execution" (security focus)
+  - Day 20: "forge vs Claude Code vs Codex" (comparison)
+  - Day 30: "What we learned building Forge" (retrospective)
+- Auto-schedule: queue all 30 as GitHub Discussions + Twitter threads
+- **Why:** Launches need momentum. 30 days of content creates sustained attention.
+
+---
+
+### E. Developer Experience — The Last Mile
+
+**E1. Smart Shell Aliases**
+- `forge setup aliases` → creates shell aliases for common workflows:
+  - `fc` → `forge chat`
+  - `fs` → `forge serve`
+  - `fp` → `forge pipeline run`
+  - `fd` → `forge doctor`
+  - `fup` → `forge undo --last`
+- Detects shell (bash/zsh/fish) and installs to correct rc file
+- **Why:** Power users type 10K commands/day. 5 characters vs 20 = real time savings.
+
+**E2. Contextual Help Improvements**
+- `forge help serve` → show help + common examples + related commands
+- `forge --suggest` → based on current directory and git status, suggest useful commands
+- "You're in a git repo with a forge.yaml. Try: forge serve, forge pipeline list, forge status"
+- **Why:** Help that's contextual is 10× more useful than generic help.
+
+**E3. Progress Indicators for Long Operations**
+- Spinner for agent calls (with elapsed time)
+- Progress bar for indexing (with file count and ETA)
+- Cost ticker during chat: "Spent $0.03 so far ($0.12/min at current rate)"
+- Cancel with Ctrl+C: always graceful, never corrupt state
+- **Why:** A frozen terminal with no feedback feels broken. Progress indicators feel professional.
+
+**E4. `forge config init --interactive` — Guided Setup Wizard**
+- Step-by-step: "Which providers do you have API keys for?" → "What's your default model?" → "Cost budget per day?"
+- Validates each key as entered (actually calls the provider)
+- Generates forge.yaml with explanations for each setting
+- **Why:** First-run experience is make-or-break. A wizard ensures users succeed in minute one.
+
+---
+
+### F. Architectural Debt — Clean Up Before It's Too Late
+
+**F1. Unified Error Handling**
+- Standardize on `internal/errcode` everywhere (it exists but isn't used consistently)
+- Every error path returns a typed error with code, message, and fix suggestion
+- No more `fmt.Errorf("something went wrong")` — always actionable
+- **Why:** Mixed error patterns across 76 packages create maintenance nightmares. Standardize now.
+
+**F2. Logging Standardization**
+- Wire `internal/slog` into every package (exists, not used everywhere)
+- Structured logging with consistent fields: package, command, agent, model, duration
+- Log levels configurable: `forge config set log.level debug`
+- Log rotation: `~/.forge/logs/forge-2026-05-20.log` with automatic cleanup
+- **Why:** Debugging 76 packages with inconsistent logging is impossible. Fix it before launch.
+
+**F3. Configuration Validation Schema**
+- JSON Schema for forge.yaml (auto-generated from Go types)
+- `forge config validate` → comprehensive validation with helpful error messages
+- IDE integration: schema file for autocomplete in VS Code / JetBrains
+- **Why:** Misconfigured forge.yaml is the #1 source of "it doesn't work" reports.
+
+**F4. API Versioning for `forge serve`**
+- Version all HTTP endpoints: `/api/v1/agents`, `/api/v1/sessions`
+- Version header: `Accept: application/vnd.forge.v1+json`
+- Migration guide for each version bump
+- **Why:** Unversioned APIs can't evolve without breaking clients. Version from day one.
+
+---
+
+### G. Novel Ideas — Session #4
+
+**G1. `forge telepathy` — Agent Intent Prediction**
+- Analyze the developer's recent actions (files opened, commands run, errors encountered)
+- Predict what they'll ask the agent next and pre-warm the context
+- Pre-load relevant code into agent context before the user even asks
+- "I noticed you opened auth.go and ran tests that failed. I've pre-loaded the auth module context."
+- **Why:** The #1 latency in AI coding is context loading. Pre-loading eliminates it.
+
+**G2. `forge fingerprint` — Code Style Fingerprinting**
+- Analyze existing codebase to build a "style fingerprint": naming conventions, error patterns, test style, comment density, import organization
+- New agent-generated code automatically matches the project's style
+- `forge fingerprint show` → display the detected style rules
+- **Why:** Agent code that doesn't match project style gets rejected in review. Style matching makes agent output production-ready.
+
+**G3. `forge immune` — Automatic Regression Detection**
+- After every agent action, automatically run affected tests
+- If tests fail, auto-revert the change and flag for human review
+- Builds an "immune system" that rejects bad agent changes automatically
+- Track which types of changes are most likely to break tests
+- **Why:** Trust isn't just about security — it's about not breaking things. An immune system makes agents safe to run autonomously.
+
+**G4. `forge mirror` — Real-Time Agent Collaboration**
+- Two developers share an agent session in real-time
+- Both see agent output simultaneously, can both steer the agent
+- Useful for pair programming, mentoring, code review walkthroughs
+- Web-based: share a link, anyone can observe and contribute
+- **Why:** Remote teams need collaborative AI tools. No agent tool supports real-time multi-user sessions.
+
+**G5. `forge distill` — Agent Output Compression for Context Windows**
+- When agent context is getting full, automatically distill older conversation into summaries
+- Smart distillation: keep code diffs verbatim, summarize discussions, prune redundant tool outputs
+- Configurable strategy: keep last N messages, summarize older, keep all code
+- **Why:** Context windows fill up. Manual summarization is tedious. Auto-distillation keeps sessions productive indefinitely.
+
+---
+
+### H. Session #4 Quick Wins
+
+1. **Auto-generated command reference** — `forge docs generate` from Cobra help text. ~200 lines.
+2. **Changelog generation** — `forge changelog` from conventional commits. ~300 lines.
+3. **Shell aliases** — `forge setup aliases` for common workflows. ~100 lines.
+4. **Progress indicators** — wire spinners into chat, indexing, pipeline. ~200 lines using internal/cli.
+5. **JSON Schema for forge.yaml** — generate from Go types. ~150 lines + schema file.
+6. **Logging standardization pass** — wire internal/slog into all packages. Mechanical, high value.
+7. **Coverage reporting** — `make coverage` target. ~50 lines Makefile addition.
+
+---
+
+*"50K lines is when prototypes become products. The next 50K should be polish, not features. Ship less, ship better."*

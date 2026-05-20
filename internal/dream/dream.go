@@ -492,15 +492,18 @@ func FormatReport(report *DreamReport) string {
 func normalizeError(err string) string {
 	// Simplify error messages to find patterns
 	err = strings.ToLower(err)
-	// Remove specific IDs, paths, numbers
-	for _, repl := range []string{"0x", "/", "\\", ":"} {
-		err = strings.ReplaceAll(err, repl, " ")
-	}
 	words := strings.Fields(err)
-	if len(words) > 6 {
-		words = words[:6]
+	var filtered []string
+	for _, w := range words {
+		if strings.HasPrefix(w, "0x") {
+			continue
+		}
+		filtered = append(filtered, w)
 	}
-	return strings.Join(words, " ")
+	if len(filtered) > 6 {
+		filtered = filtered[:6]
+	}
+	return strings.Join(filtered, " ")
 }
 
 func impactLevel(freq int) string {

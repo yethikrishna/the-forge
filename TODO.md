@@ -120,6 +120,52 @@ All 18 utility packages implemented and tested.
 - [x] `forge docs` — documentation agent
 - [ ] Jira/Linear/Notion integration
 
+## Phase 2.5: Polish & Reliability (From Brainstorm #4)
+
+### Performance
+- [ ] `forge bench` — built-in benchmark suite for core operations with regression tracking
+- [ ] Memory-efficient indexing — streaming/incremental/disk-backed for large repos
+- [ ] Connection pooling for provider APIs — HTTP keep-alive, batch API support
+- [ ] Lazy loading of heavy packages — build tags for minimal binary, plugin-on-demand
+
+### Documentation & Discoverability
+- [ ] Auto-generated command reference — `forge docs generate` from Cobra help text
+- [ ] `forge learn` — interactive tutorial system with guided walkthroughs
+- [ ] `forge examples` — curated example gallery with clone-and-run Forgefiles
+- [ ] Architecture Decision Records (ADRs) — `docs/adr/` with formal decision records
+
+### Testing & Reliability
+- [ ] Integration test harness — mock provider server, full command flow testing
+- [ ] Chaos testing — inject provider timeouts, network failures, verify graceful degradation
+- [ ] Fuzz testing for security-critical paths — YAML parsing, sandbox boundaries, MCP messages
+- [ ] Test coverage reporting — `make coverage` with per-package tracking and CI gate
+
+### Community & Adoption
+- [ ] `forge feedback` — one-command bug report with system info, logs, and doctor output
+- [ ] Opt-in telemetry (privacy-first) — `forge telemetry show` reveals exactly what's sent
+- [ ] `forge changelog` — auto-generate CHANGELOG.md from conventional commits
+- [ ] Community templates repository — `forge init --template=react-app` from community repo
+- [ ] "30 Days of Forge" content plan — pre-written launch content for blog/social
+
+### Developer Experience
+- [ ] `forge setup aliases` — smart shell aliases for common workflows (fc, fs, fp, fd)
+- [ ] Contextual help — `forge --suggest` based on current directory and git status
+- [ ] Progress indicators — spinners, progress bars, cost ticker for long operations
+- [ ] `forge config init --interactive` — guided setup wizard with key validation
+
+### Architectural Debt
+- [ ] Unified error handling — standardize on `internal/errcode` across all packages
+- [ ] Logging standardization — wire `internal/slog` into every package
+- [ ] JSON Schema for forge.yaml — auto-generated from Go types, IDE autocomplete
+- [ ] API versioning for `forge serve` — `/api/v1/` prefix, version header, migration guides
+
+### Novel Features (Session #4)
+- [ ] `forge telepathy` — agent intent prediction, pre-warm context before user asks
+- [ ] `forge fingerprint` — code style fingerprinting for project-consistent agent output
+- [ ] `forge immune` — automatic regression detection (run tests after agent changes, auto-revert on failure)
+- [ ] `forge mirror` — real-time multi-user agent collaboration sessions
+- [ ] `forge distill` — auto-compress older context into summaries when context window fills
+
 ## Phase 3: Polish & Release
 - [ ] CI/CD pipeline
 - [ ] Cross-platform builds
