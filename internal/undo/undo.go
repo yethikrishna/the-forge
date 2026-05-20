@@ -223,7 +223,7 @@ func (j *Journal) undoFileRename(snap *Snapshot) error {
 	return fmt.Errorf("file rename undo requires original path metadata")
 }
 
-func (j *journal)) undoGitCommit(snap *Snapshot) error {
+func (j *Journal) undoGitCommit(snap *Snapshot) error {
 	if snap.CommitHash == "" {
 		return fmt.Errorf("no commit hash recorded")
 	}
