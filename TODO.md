@@ -1,67 +1,67 @@
 # TODO.md — The Forge Development Tracker
 
 ## Phase 0: Internal Utility Packages ✅
-- [x] Set up Go toolchain
-- [x] `internal/slog` — Structured logging wrapper
-- [x] `internal/retry` — Retry logic with exponential backoff
-- [x] `internal/pretty` — Terminal styling/colors
-- [x] `internal/cli` — CLI helpers (progress spinners, prompts)
-- [x] `internal/timer` — Command timing utilities
-- [x] `internal/bigdur` — Duration parsing (human-friendly)
-- [x] `internal/flog` — Formatted logging
-- [x] `internal/hat` — HTTP API testing helpers
-- [x] `internal/quartz` — Deterministic time/clock mocking
-- [x] `internal/redjet` — Redis client wrapper
-- [x] `internal/yamux` — Connection multiplexing
-- [x] `internal/websocket` — WebSocket library
-- [x] `internal/serpent` — CLI framework enhancement
-- [x] `internal/hnsw` — Vector search (HNSW algorithm)
-- [x] `internal/clistat` — Resource monitoring
-- [x] `internal/wsep` — Command execution protocol
-- [x] `internal/exectrace` — eBPF process tracing
+All 18 utility packages implemented and tested.
 
 ## Phase 0: Core Packages ✅
 - [x] `internal/acp` — Agent Client Protocol SDK
 - [x] `internal/aisdk` — AI SDK streaming
 - [x] `internal/agentapi` — Agent process management
 - [x] `internal/aibridge` — AI request routing
+- [x] `internal/boundary` — Process isolation
+- [x] `internal/envbuilder` — Dockerfile dev environments
+- [x] `internal/wgtunnel` — WireGuard tunnels
+- [x] `internal/wush` — P2P file transfer
+- [x] `internal/aicommit` — AI git commits
+- [x] `internal/watcher` — File watcher
 
-## Phase 0: Core Packages (In Progress)
-- [ ] `internal/boundary` — Process isolation
-- [ ] `internal/envbuilder` — Dockerfile dev environments
-- [ ] `internal/wgtunnel` — WireGuard tunnels
-- [ ] `internal/wush` — P2P file transfer
-- [ ] `internal/ssh` — SSH server
-- [ ] `internal/desktop` — Portable desktop
-- [ ] `internal/aicommit` — AI git commits (native Go)
-
-## Phase 1: New Commands (In Progress)
+## Phase 1: Commands ✅ (21 commands)
+- [x] `forge serve` — Agent API server
+- [x] `forge agents` — Agent management
+- [x] `forge models` — Model listing
+- [x] `forge jail` — Network sandboxing
+- [x] `forge search` — Semantic code search
+- [x] `forge commit` — AI-powered commits
+- [x] `forge version` — Version info
+- [x] `forge orchestrate` — Multi-agent execution
+- [x] `forge session` — Session management
 - [x] `forge chat` — Interactive terminal chat
 - [x] `forge cost` — LLM pricing comparison
 - [x] `forge init` — Project scaffolding
 - [x] `forge api` — Unified LLM gateway
-- [ ] `forge acp` — ACP protocol bridge
-- [ ] `forge env` — Dev environments from Dockerfiles
-- [ ] `forge transfer` — P2P file transfer
+- [x] `forge doctor` — Environment diagnostics
+- [x] `forge env` — Dev environments
+- [x] `forge transfer` — P2P file transfer
+- [x] `forge index` — RAG codebase indexing
+- [x] `forge run` — Forgefile task execution
+- [x] `forge exec` — Sandboxed execution
+- [x] `forge watch` — File change detection
+- [x] `forge plugin` — Plugin management
+- [x] `forge acp` — ACP protocol bridge
+
+## Phase 1.5: Wiring & Polish (Next Up)
+- [ ] Replace shell-out patterns in serve/orchestrate with native agentapi calls
+- [ ] Add Forgefile parser (TOML config)
+- [ ] Wire internal/slog into all commands
+- [ ] Add --json output flag for machine-readable output
+- [ ] Integration tests for each command
+- [ ] Configuration management via forge.yaml
+- [ ] Model alias system in aibridge
+
+## Phase 2: New Features
+- [ ] Web dashboard UI
+- [ ] Plugin marketplace
+- [ ] Agent cost tracking dashboard
+- [ ] Session replay
+- [ ] Multi-agent routing strategies
+- [ ] Template system for new projects
 - [ ] `forge mux` — Parallel agent desktop
 - [ ] `forge blink` — Self-hosted bots
-- [ ] `forge index` — RAG codebase indexing
-- [ ] `forge exec` — Sandboxed code execution
-- [x] `forge watch` — File change detection
-- [ ] `forge plugin` — Plugin management
-- [ ] `forge run` — Execute Forgefile tasks
 - [ ] `forge desktop` — Linux desktop for agents
-- [x] `forge doctor` — Environment health check
-
-## Phase 2: Polish & Integration
-- [ ] Wire internal packages into existing commands
-- [ ] Replace shell-out patterns with native Go implementations
-- [ ] Add integration tests
-- [ ] Add configuration management (Forgefile parsing)
-- [ ] Web dashboard UI
 
 ## Current Stats
-- ~10,600 lines of Go
-- 23 internal packages
-- 15 commands
+- ~13,125 lines of Go
+- 27+ internal packages
+- 21 commands
 - Build: ✅ Vet: ✅
+- Version: 0.3.0
