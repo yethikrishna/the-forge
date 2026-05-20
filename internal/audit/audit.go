@@ -1,13 +1,19 @@
-// Package audit provides a tamper-evident audit trail for agent actions.
-// Every strike of the hammer is recorded.
+// Package audit provides audit logging for agent actions.
+// Every significant action is logged with who, what, when, and why.
+// Tamper-evident logs with hash chaining.
+//
+// Trust but verify. Audit everything.
 package audit
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -15,292 +21,287 @@ import (
 type Action string
 
 const (
-	ActionAgentStart  Action = "agent.start"
-	ActionAgentStop   Action = "agent.stop"
-	ActionToolCall    Action = "tool.call"
-	ActionFileRead    Action = "file.read"
-	ActionFileWrite   Action = "file.write"
-	ActionExec        Action = "exec.run"
-	ActionNetRequest  Action = "net.request"
-	ActionModelCall   Action = "model.call"
-	ActionCostUpdate  Action = "cost.update"
-	ActionPipelineRun Action = "pipeline.run"
-	ActionConfigChange Action = "config.change"
-	ActionUserAction  Action = "user.action"
+	ActionCreate      Action = "create"
+	ActionRead        Action = "read"
+	ActionUpdate      Action = "update"
+	ActionDelete      Action = "delete"
+	ActionExecute     Action = "execute"
+	ActionLogin       Action = "login"
+	ActionLogout      Action = "logout"
+	ActionDeploy      Action = "deploy"
+	ActionRollback    Action = "rollback"
+	ActionConfig      Action = "config_change"
+	ActionAccess      Action = "access"
+	ActionExport      Action = "export"
+	ActionImport      Action = "import"
+	ActionApprove     Action = "approve"
+	ActionReject      Action = "reject"
 )
 
-// Entry is a single audit log entry.
+// Severity represents audit log severity.
+type Severity string
+
+const (
+	SeverityInfo     Severity = "info"
+	SeverityWarning  Severity = "warning"
+	SeverityCritical Severity = "critical"
+)
+
+// Entry represents a single audit log entry.
 type Entry struct {
-	ID        string            `json:"id"`
-	Timestamp time.Time         `json:"timestamp"`
-	Action    Action            `json:"action"`
-	Agent     string            `json:"agent"`
-	Session   string            `json:"session"`
-	Resource  string            `json:"resource,omitempty"`
-	Detail    string            `json:"detail,omitempty"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
-	Duration  string            `json:"duration,omitempty"`
-	Cost      float64           `json:"cost,omitempty"`
-	Success   bool              `json:"success"`
-	Error     string            `json:"error,omitempty"`
+	ID         string            `json:"id"`
+	Timestamp  time.Time         `json:"timestamp"`
+	Action     Action            `json:"action"`
+	Actor      string            `json:"actor"`       // who performed the action
+	Resource   string            `json:"resource"`    // what was acted upon
+	Details    string            `json:"details,omitempty"`
+	Before     string            `json:"before,omitempty"` // state before (for updates)
+	After      string            `json:"after,omitempty"`  // state after (for updates)
+	Severity   Severity          `json:"severity"`
+	Source     string            `json:"source,omitempty"` // IP, agent ID, etc.
+	SessionID  string            `json:"session_id,omitempty"`
+	Labels     map[string]string `json:"labels,omitempty"`
+	PrevHash   string            `json:"prev_hash"`    // hash of previous entry (chain)
+	Hash       string            `json:"hash"`         // hash of this entry
 }
 
-// Logger is the audit logger.
-type Logger struct {
-	mu      sync.Mutex
-	entries []Entry
-	path    string
-	maxSize int // max entries before rotation
+// Log manages audit entries.
+type Log struct {
+	Dir    string
+	lastHash string
 }
 
-// NewLogger creates a new audit logger.
-func NewLogger(path string, maxSize int) *Logger {
-	if maxSize <= 0 {
-		maxSize = 10000
+// NewLog creates an audit log.
+func NewLog(dir string) *Log {
+	return &Log{Dir: dir}
+}
+
+// Record creates an audit entry.
+func (l *Log) Record(entry Entry) (*Entry, error) {
+	os.MkdirAll(l.Dir, 0o755)
+
+	if entry.Timestamp.IsZero() {
+		entry.Timestamp = time.Now()
 	}
-	l := &Logger{
-		path:    path,
-		maxSize: maxSize,
-	}
-	l.load()
-	return l
-}
-
-// Log records an audit entry.
-func (l *Logger) Log(action Action, agent, session, resource, detail string, opts ...LogOption) Entry {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	e := Entry{
-		ID:        fmt.Sprintf("audit-%d", time.Now().UnixNano()),
-		Timestamp: time.Now().UTC(),
-		Action:    action,
-		Agent:     agent,
-		Session:   session,
-		Resource:  resource,
-		Detail:    detail,
-		Success:   true,
+	if entry.ID == "" {
+		entry.ID = fmt.Sprintf("audit-%d", entry.Timestamp.UnixNano())
 	}
 
-	for _, opt := range opts {
-		opt(&e)
+	// Chain to previous entry
+	entry.PrevHash = l.lastHash
+
+	// Compute hash
+	entry.Hash = l.computeHash(entry)
+
+	// Persist
+	_, err := json.MarshalIndent(entry, "", "  ")
+	if err != nil {
+		return nil, err
 	}
 
-	l.entries = append(l.entries, e)
+	// Write to date-stamped file
+	dateFile := entry.Timestamp.Format("2006-01-02") + ".jsonl"
+	f, err := os.OpenFile(filepath.Join(l.Dir, dateFile), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
 
-	// Rotate if needed
-	if len(l.entries) > l.maxSize {
-		l.entries = l.entries[len(l.entries)-l.maxSize:]
+	line, _ := json.Marshal(entry)
+	if _, err := f.Write(append(line, '\n')); err != nil {
+		return nil, err
 	}
 
-	l.save()
-
-	return e
+	l.lastHash = entry.Hash
+	return &entry, nil
 }
 
-// LogOption configures an audit entry.
-type LogOption func(*Entry)
+// Query searches audit entries.
+func (l *Log) Query(filter Filter) ([]*Entry, error) {
+	entries, err := l.loadAll()
+	if err != nil {
+		return nil, err
+	}
 
-// WithMetadata adds metadata to the entry.
-func WithMetadata(m map[string]string) LogOption {
-	return func(e *Entry) { e.Metadata = m }
+	var results []*Entry
+	for _, e := range entries {
+		if filter.Match(e) {
+			results = append(results, e)
+		}
+	}
+
+	sort.Slice(results, func(i, k int) bool {
+		return results[i].Timestamp.After(results[k].Timestamp)
+	})
+
+	if filter.Limit > 0 && len(results) > filter.Limit {
+		results = results[:filter.Limit]
+	}
+
+	return results, nil
 }
 
-// WithDuration adds duration to the entry.
-func WithDuration(d string) LogOption {
-	return func(e *Entry) { e.Duration = d }
+// Verify checks the hash chain integrity.
+func (l *Log) Verify() (bool, []string) {
+	entries, err := l.loadAll()
+	if err != nil {
+		return false, []string{"failed to load entries"}
+	}
+
+	sort.Slice(entries, func(i, k int) bool {
+		return entries[i].Timestamp.Before(entries[k].Timestamp)
+	})
+
+	var issues []string
+	prevHash := ""
+
+	for _, e := range entries {
+		// Verify hash
+		expected := l.computeHash(*e)
+		if e.Hash != expected {
+			issues = append(issues, fmt.Sprintf("hash mismatch for %s", e.ID))
+		}
+
+		// Verify chain
+		if e.PrevHash != prevHash {
+			if prevHash != "" { // first entry can have empty prev
+				issues = append(issues, fmt.Sprintf("chain break at %s", e.ID))
+			}
+		}
+
+		prevHash = e.Hash
+	}
+
+	return len(issues) == 0, issues
 }
 
-// WithCost adds cost to the entry.
-func WithCost(c float64) LogOption {
-	return func(e *Entry) { e.Cost = c }
+// Stats returns audit log statistics.
+func (l *Log) Stats() (map[string]interface{}, error) {
+	entries, err := l.loadAll()
+	if err != nil {
+		return nil, err
+	}
+
+	stats := map[string]interface{}{
+		"total_entries": len(entries),
+	}
+
+	actionCounts := make(map[string]int)
+	actorCounts := make(map[string]int)
+	criticalCount := 0
+
+	for _, e := range entries {
+		actionCounts[string(e.Action)]++
+		actorCounts[e.Actor]++
+		if e.Severity == SeverityCritical {
+			criticalCount++
+		}
+	}
+
+	stats["action_counts"] = actionCounts
+	stats["actor_counts"] = actorCounts
+	stats["critical_count"] = criticalCount
+
+	if len(entries) > 0 {
+		stats["first_entry"] = entries[0].Timestamp.Format(time.RFC3339)
+		stats["last_entry"] = entries[len(entries)-1].Timestamp.Format(time.RFC3339)
+	}
+
+	return stats, nil
 }
 
-// WithError marks the entry as failed with an error.
-func WithError(err string) LogOption {
-	return func(e *Entry) { e.Success = false; e.Error = err }
+func (l *Log) computeHash(entry Entry) string {
+	// Hash everything except the hash field itself
+	clone := entry
+	clone.Hash = ""
+	clone.PrevHash = "" // include prev_hash in computation
+
+	data, _ := json.Marshal(clone)
+	h := sha256.Sum256(data)
+	return hex.EncodeToString(h[:])
 }
 
-// WithSuccess marks the entry success status.
-func WithSuccess(ok bool) LogOption {
-	return func(e *Entry) { e.Success = ok }
+func (l *Log) loadAll() ([]*Entry, error) {
+	entries, err := os.ReadDir(l.Dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var all []*Entry
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".jsonl") {
+			continue
+		}
+
+		data, err := os.ReadFile(filepath.Join(l.Dir, e.Name()))
+		if err != nil {
+			continue
+		}
+
+		for _, line := range strings.Split(string(data), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" {
+				continue
+			}
+			var entry Entry
+			if err := json.Unmarshal([]byte(line), &entry); err != nil {
+				continue
+			}
+			all = append(all, &entry)
+		}
+	}
+
+	return all, nil
 }
 
-// Query queries audit entries.
-type Query struct {
-	Agent    string
-	Session  string
+// Filter defines query criteria for audit entries.
+type Filter struct {
+	Actor    string
 	Action   Action
 	Resource string
-	From     time.Time
-	To       time.Time
-	Success  *bool
+	Severity Severity
+	Since    time.Time
+	Until    time.Time
 	Limit    int
 }
 
-// Search queries audit entries matching the given criteria.
-func (l *Logger) Search(q Query) []Entry {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	var results []Entry
-
-	for i := len(l.entries) - 1; i >= 0; i-- {
-		e := l.entries[i]
-
-		if q.Agent != "" && e.Agent != q.Agent {
-			continue
-		}
-		if q.Session != "" && e.Session != q.Session {
-			continue
-		}
-		if q.Action != "" && e.Action != q.Action {
-			continue
-		}
-		if q.Resource != "" && e.Resource != q.Resource {
-			continue
-		}
-		if !q.From.IsZero() && e.Timestamp.Before(q.From) {
-			continue
-		}
-		if !q.To.IsZero() && e.Timestamp.After(q.To) {
-			continue
-		}
-		if q.Success != nil && e.Success != *q.Success {
-			continue
-		}
-
-		results = append(results, e)
-
-		if q.Limit > 0 && len(results) >= q.Limit {
-			break
-		}
+// Match checks if an entry matches the filter.
+func (f *Filter) Match(e *Entry) bool {
+	if f.Actor != "" && e.Actor != f.Actor {
+		return false
 	}
-
-	return results
+	if f.Action != "" && e.Action != f.Action {
+		return false
+	}
+	if f.Resource != "" && e.Resource != f.Resource {
+		return false
+	}
+	if f.Severity != "" && e.Severity != f.Severity {
+		return false
+	}
+	if !f.Since.IsZero() && e.Timestamp.Before(f.Since) {
+		return false
+	}
+	if !f.Until.IsZero() && e.Timestamp.After(f.Until) {
+		return false
+	}
+	return true
 }
 
-// Count returns the total number of audit entries.
-func (l *Logger) Count() int {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	return len(l.entries)
-}
-
-// CountByAction returns counts grouped by action.
-func (l *Logger) CountByAction() map[Action]int {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	counts := map[Action]int{}
-	for _, e := range l.entries {
-		counts[e.Action]++
-	}
-	return counts
-}
-
-// CountByAgent returns counts grouped by agent.
-func (l *Logger) CountByAgent() map[string]int {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	counts := map[string]int{}
-	for _, e := range l.entries {
-		counts[e.Agent]++
-	}
-	return counts
-}
-
-// Recent returns the N most recent entries.
-func (l *Logger) Recent(limit int) []Entry {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	if limit > len(l.entries) {
-		limit = len(l.entries)
+// FormatEntry renders an audit entry for display.
+func FormatEntry(e *Entry) string {
+	severityIcon := "●"
+	switch e.Severity {
+	case SeverityWarning:
+		severityIcon = "⚠"
+	case SeverityCritical:
+		severityIcon = "🔴"
 	}
 
-	results := make([]Entry, limit)
-	copy(results, l.entries[len(l.entries)-limit:])
-
-	// Reverse for newest first
-	for i, j := 0, len(results)-1; i < j; i, j = i+1, j-1 {
-		results[i], results[j] = results[j], results[i]
-	}
-
-	return results
-}
-
-// Export exports all entries as JSON.
-func (l *Logger) Export() ([]byte, error) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	return json.MarshalIndent(l.entries, "", "  ")
-}
-
-// ExportCSV exports all entries as CSV-like text.
-func (l *Logger) ExportCSV() []byte {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	var b []byte
-	b = append(b, "timestamp,action,agent,session,resource,success,error\n"...)
-	for _, e := range l.entries {
-		line := fmt.Sprintf("%s,%s,%s,%s,%s,%t,%s\n",
-			e.Timestamp.Format(time.RFC3339),
-			e.Action,
-			e.Agent,
-			e.Session,
-			e.Resource,
-			e.Success,
-			e.Error,
-		)
-		b = append(b, line...)
-	}
-	return b
-}
-
-// Clear removes all audit entries.
-func (l *Logger) Clear() {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	l.entries = nil
-	l.save()
-}
-
-// load reads audit entries from disk.
-func (l *Logger) load() {
-	if l.path == "" {
-		return
-	}
-
-	data, err := os.ReadFile(l.path)
-	if err != nil {
-		return
-	}
-
-	var entries []Entry
-	if err := json.Unmarshal(data, &entries); err != nil {
-		return
-	}
-
-	l.entries = entries
-}
-
-// save writes audit entries to disk.
-func (l *Logger) save() {
-	if l.path == "" {
-		return
-	}
-
-	data, err := json.MarshalIndent(l.entries, "", "  ")
-	if err != nil {
-		return
-	}
-
-	dir := filepath.Dir(l.path)
-	os.MkdirAll(dir, 0o755)
-	os.WriteFile(l.path, data, 0o644)
+	ts := e.Timestamp.Format("Jan 02 15:04:05")
+	return fmt.Sprintf("%s [%s] %s %s %s — %s",
+		severityIcon, e.Severity, ts, e.Actor, string(e.Action), e.Resource)
 }

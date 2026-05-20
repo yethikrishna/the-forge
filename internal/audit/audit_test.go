@@ -1,244 +1,322 @@
-package audit_test
+package audit
 
 import (
-	"fmt"
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 	"time"
-
-	"github.com/forge/sword/internal/audit"
 )
 
-func TestLog(t *testing.T) {
-	logger := audit.NewLogger("", 100)
+func TestRecord(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
 
-	e := logger.Log(audit.ActionAgentStart, "claude", "s1", "", "Agent started")
-	if e.ID == "" {
-		t.Error("entry should have an ID")
-	}
-	if e.Action != audit.ActionAgentStart {
-		t.Errorf("expected agent.start, got %s", e.Action)
-	}
-	if !e.Success {
-		t.Error("should be successful by default")
-	}
-}
-
-func TestLogWithOptions(t *testing.T) {
-	logger := audit.NewLogger("", 100)
-
-	e := logger.Log(audit.ActionModelCall, "claude", "s1", "sonnet", "Model call",
-		audit.WithCost(0.05),
-		audit.WithDuration("2s"),
-		audit.WithMetadata(map[string]string{"tokens": "1500"}),
-	)
-
-	if e.Cost != 0.05 {
-		t.Errorf("expected 0.05, got %f", e.Cost)
-	}
-	if e.Duration != "2s" {
-		t.Errorf("expected 2s, got %s", e.Duration)
-	}
-	if e.Metadata["tokens"] != "1500" {
-		t.Error("metadata not set")
-	}
-}
-
-func TestLogWithError(t *testing.T) {
-	logger := audit.NewLogger("", 100)
-
-	e := logger.Log(audit.ActionExec, "claude", "s1", "bash", "Command failed",
-		audit.WithError("exit code 1"),
-	)
-
-	if e.Success {
-		t.Error("should not be successful with error")
-	}
-	if e.Error != "exit code 1" {
-		t.Errorf("expected 'exit code 1', got %s", e.Error)
-	}
-}
-
-func TestSearch(t *testing.T) {
-	logger := audit.NewLogger("", 100)
-
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "Started")
-	logger.Log(audit.ActionModelCall, "claude", "s1", "sonnet", "Called model")
-	logger.Log(audit.ActionAgentStart, "reviewer", "s2", "", "Started")
-	logger.Log(audit.ActionFileWrite, "claude", "s1", "main.go", "Wrote file")
-
-	// Search by agent
-	results := logger.Search(audit.Query{Agent: "claude"})
-	if len(results) != 3 {
-		t.Errorf("expected 3, got %d", len(results))
-	}
-
-	// Search by action
-	results = logger.Search(audit.Query{Action: audit.ActionAgentStart})
-	if len(results) != 2 {
-		t.Errorf("expected 2, got %d", len(results))
-	}
-
-	// Search by session
-	results = logger.Search(audit.Query{Session: "s1"})
-	if len(results) != 3 {
-		t.Errorf("expected 3, got %d", len(results))
-	}
-
-	// Search with limit
-	results = logger.Search(audit.Query{Agent: "claude", Limit: 1})
-	if len(results) != 1 {
-		t.Errorf("expected 1, got %d", len(results))
-	}
-}
-
-func TestSearchByTime(t *testing.T) {
-	logger := audit.NewLogger("", 100)
-
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "First")
-
-	from := time.Now().UTC().Add(-time.Hour)
-	to := time.Now().UTC().Add(time.Hour)
-
-	results := logger.Search(audit.Query{From: from, To: to})
-	if len(results) != 1 {
-		t.Errorf("expected 1, got %d", len(results))
-	}
-}
-
-func TestSearchBySuccess(t *testing.T) {
-	logger := audit.NewLogger("", 100)
-
-	logger.Log(audit.ActionExec, "claude", "s1", "", "OK")
-	logger.Log(audit.ActionExec, "claude", "s1", "", "FAIL", audit.WithError("bad"))
-
-	failed := false
-	results := logger.Search(audit.Query{Success: &failed})
-	if len(results) != 1 {
-		t.Errorf("expected 1 failure, got %d", len(results))
-	}
-}
-
-func TestCount(t *testing.T) {
-	logger := audit.NewLogger("", 100)
-
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "")
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "")
-	logger.Log(audit.ActionModelCall, "claude", "s1", "", "")
-
-	if logger.Count() != 3 {
-		t.Errorf("expected 3, got %d", logger.Count())
-	}
-}
-
-func TestCountByAction(t *testing.T) {
-	logger := audit.NewLogger("", 100)
-
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "")
-	logger.Log(audit.ActionAgentStart, "reviewer", "s2", "", "")
-	logger.Log(audit.ActionModelCall, "claude", "s1", "", "")
-
-	counts := logger.CountByAction()
-	if counts[audit.ActionAgentStart] != 2 {
-		t.Errorf("expected 2, got %d", counts[audit.ActionAgentStart])
-	}
-	if counts[audit.ActionModelCall] != 1 {
-		t.Errorf("expected 1, got %d", counts[audit.ActionModelCall])
-	}
-}
-
-func TestCountByAgent(t *testing.T) {
-	logger := audit.NewLogger("", 100)
-
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "")
-	logger.Log(audit.ActionAgentStart, "reviewer", "s2", "", "")
-	logger.Log(audit.ActionModelCall, "claude", "s1", "", "")
-
-	counts := logger.CountByAgent()
-	if counts["claude"] != 2 {
-		t.Errorf("expected 2, got %d", counts["claude"])
-	}
-	if counts["reviewer"] != 1 {
-		t.Errorf("expected 1, got %d", counts["reviewer"])
-	}
-}
-
-func TestRecent(t *testing.T) {
-	logger := audit.NewLogger("", 100)
-
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "1")
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "2")
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "3")
-
-	results := logger.Recent(2)
-	if len(results) != 2 {
-		t.Errorf("expected 2, got %d", len(results))
-	}
-	// Most recent first
-	if results[0].Detail != "3" {
-		t.Errorf("expected most recent first, got %s", results[0].Detail)
-	}
-}
-
-func TestExport(t *testing.T) {
-	logger := audit.NewLogger("", 100)
-
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "test")
-
-	data, err := logger.Export()
+	entry, err := log.Record(Entry{
+		Action:   ActionCreate,
+		Actor:    "agent-builder",
+		Resource: "session-123",
+		Severity: SeverityInfo,
+	})
 	if err != nil {
-		t.Fatalf("export error: %v", err)
+		t.Fatalf("Record failed: %v", err)
 	}
-	if len(data) == 0 {
-		t.Error("export should return data")
+
+	if entry.ID == "" {
+		t.Error("expected auto-generated ID")
 	}
-}
-
-func TestExportCSV(t *testing.T) {
-	logger := audit.NewLogger("", 100)
-
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "test")
-
-	csv := logger.ExportCSV()
-	if len(csv) == 0 {
-		t.Error("CSV export should return data")
+	if entry.Hash == "" {
+		t.Error("expected computed hash")
+	}
+	if entry.Timestamp.IsZero() {
+		t.Error("expected auto-set timestamp")
 	}
 }
 
-func TestClear(t *testing.T) {
-	logger := audit.NewLogger("", 100)
+func TestRecordChaining(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
 
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "")
-	if logger.Count() != 1 {
-		t.Error("should have 1 entry")
-	}
+	e1, _ := log.Record(Entry{Action: ActionCreate, Actor: "a1", Severity: SeverityInfo})
+	e2, _ := log.Record(Entry{Action: ActionUpdate, Actor: "a1", Severity: SeverityInfo})
 
-	logger.Clear()
-	if logger.Count() != 0 {
-		t.Error("should be 0 after clear")
+	if e2.PrevHash != e1.Hash {
+		t.Error("entries should be chained")
 	}
 }
 
-func TestRotation(t *testing.T) {
-	logger := audit.NewLogger("", 5) // max 5 entries
+func TestRecordWithDetails(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
+
+	entry, _ := log.Record(Entry{
+		Action:   ActionUpdate,
+		Actor:    "admin",
+		Resource: "config.yaml",
+		Before:   "timeout: 30s",
+		After:    "timeout: 60s",
+		Details:  "Increased timeout for stability",
+		Severity: SeverityWarning,
+		Source:   "10.0.0.1",
+		Labels:   map[string]string{"env": "production"},
+	})
+
+	if entry.Before != "timeout: 30s" {
+		t.Errorf("unexpected before: %s", entry.Before)
+	}
+	if entry.Source != "10.0.0.1" {
+		t.Errorf("unexpected source: %s", entry.Source)
+	}
+}
+
+func TestQueryByActor(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
+
+	log.Record(Entry{Action: ActionCreate, Actor: "alice", Severity: SeverityInfo})
+	log.Record(Entry{Action: ActionCreate, Actor: "bob", Severity: SeverityInfo})
+	log.Record(Entry{Action: ActionUpdate, Actor: "alice", Severity: SeverityInfo})
+
+	results, err := log.Query(Filter{Actor: "alice"})
+	if err != nil {
+		t.Fatalf("Query failed: %v", err)
+	}
+	if len(results) != 2 {
+		t.Errorf("expected 2 results for alice, got %d", len(results))
+	}
+}
+
+func TestQueryByAction(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
+
+	log.Record(Entry{Action: ActionCreate, Actor: "a1", Severity: SeverityInfo})
+	log.Record(Entry{Action: ActionDelete, Actor: "a1", Severity: SeverityCritical})
+	log.Record(Entry{Action: ActionCreate, Actor: "a2", Severity: SeverityInfo})
+
+	results, _ := log.Query(Filter{Action: ActionCreate})
+	if len(results) != 2 {
+		t.Errorf("expected 2 create actions, got %d", len(results))
+	}
+}
+
+func TestQueryBySeverity(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
+
+	log.Record(Entry{Action: ActionCreate, Actor: "a1", Severity: SeverityInfo})
+	log.Record(Entry{Action: ActionDelete, Actor: "a1", Severity: SeverityCritical})
+
+	results, _ := log.Query(Filter{Severity: SeverityCritical})
+	if len(results) != 1 {
+		t.Errorf("expected 1 critical, got %d", len(results))
+	}
+}
+
+func TestQueryWithTimeRange(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
+
+	now := time.Now()
+	log.Record(Entry{Action: ActionCreate, Actor: "a1", Severity: SeverityInfo, Timestamp: now.Add(-2 * time.Hour)})
+	log.Record(Entry{Action: ActionCreate, Actor: "a1", Severity: SeverityInfo, Timestamp: now.Add(-1 * time.Hour)})
+	log.Record(Entry{Action: ActionCreate, Actor: "a1", Severity: SeverityInfo, Timestamp: now})
+
+	results, _ := log.Query(Filter{
+		Since: now.Add(-90 * time.Minute),
+		Until: now.Add(1 * time.Minute),
+	})
+	if len(results) != 2 {
+		t.Errorf("expected 2 results in time range, got %d", len(results))
+	}
+}
+
+func TestQueryWithLimit(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
 
 	for i := 0; i < 10; i++ {
-		logger.Log(audit.ActionAgentStart, "claude", "s1", "", fmt.Sprintf("entry-%d", i))
+		log.Record(Entry{Action: ActionCreate, Actor: "a1", Severity: SeverityInfo})
 	}
 
-	if logger.Count() != 5 {
-		t.Errorf("expected 5 after rotation, got %d", logger.Count())
+	results, _ := log.Query(Filter{Limit: 5})
+	if len(results) != 5 {
+		t.Errorf("expected 5 with limit, got %d", len(results))
 	}
 }
 
-func TestPersistence(t *testing.T) {
-	dir := t.TempDir()
-	path := dir + "/audit.json"
+func TestVerifyIntegrity(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
 
-	logger := audit.NewLogger(path, 100)
-	logger.Log(audit.ActionAgentStart, "claude", "s1", "", "persisted")
+	log.Record(Entry{Action: ActionCreate, Actor: "a1", Severity: SeverityInfo})
+	log.Record(Entry{Action: ActionUpdate, Actor: "a1", Severity: SeverityInfo})
+	log.Record(Entry{Action: ActionDelete, Actor: "a1", Severity: SeverityCritical})
 
-	logger2 := audit.NewLogger(path, 100)
-	if logger2.Count() != 1 {
-		t.Errorf("expected 1 after reload, got %d", logger2.Count())
+	valid, issues := log.Verify()
+	if !valid {
+		t.Errorf("expected valid chain, got issues: %v", issues)
+	}
+}
+
+func TestVerifyTamperedEntry(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
+
+	log.Record(Entry{Action: ActionCreate, Actor: "a1", Severity: SeverityInfo})
+
+	// Tamper with the file
+	dateFile := time.Now().Format("2006-01-02") + ".jsonl"
+	path := filepath.Join(tmpDir, dateFile)
+	data, _ := os.ReadFile(path)
+	tampered := strings.ReplaceAll(string(data), "a1", "hacker")
+	os.WriteFile(path, []byte(tampered), 0o644)
+
+	valid, issues := log.Verify()
+	if valid {
+		t.Error("expected invalid chain after tampering")
+	}
+	if len(issues) == 0 {
+		t.Error("expected integrity issues")
+	}
+}
+
+func TestStats(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
+
+	log.Record(Entry{Action: ActionCreate, Actor: "alice", Severity: SeverityInfo})
+	log.Record(Entry{Action: ActionDelete, Actor: "bob", Severity: SeverityCritical})
+	log.Record(Entry{Action: ActionUpdate, Actor: "alice", Severity: SeverityWarning})
+
+	stats, err := log.Stats()
+	if err != nil {
+		t.Fatalf("Stats failed: %v", err)
+	}
+
+	if stats["total_entries"].(int) != 3 {
+		t.Errorf("expected 3 entries, got %v", stats["total_entries"])
+	}
+	if stats["critical_count"].(int) != 1 {
+		t.Errorf("expected 1 critical, got %v", stats["critical_count"])
+	}
+}
+
+func TestStatsEmpty(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
+
+	stats, err := log.Stats()
+	if err != nil {
+		t.Fatalf("Stats on empty failed: %v", err)
+	}
+	if stats["total_entries"].(int) != 0 {
+		t.Errorf("expected 0 entries, got %v", stats["total_entries"])
+	}
+}
+
+func TestQueryEmpty(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
+
+	results, err := log.Query(Filter{})
+	if err != nil {
+		t.Fatalf("Query on empty failed: %v", err)
+	}
+	if len(results) != 0 {
+		t.Errorf("expected 0 results, got %d", len(results))
+	}
+}
+
+func TestFormatEntry(t *testing.T) {
+	entry := &Entry{
+		Action:    ActionDelete,
+		Actor:     "admin",
+		Resource:  "database",
+		Severity:  SeverityCritical,
+		Timestamp: time.Now(),
+	}
+
+	output := FormatEntry(entry)
+	if !strings.Contains(output, "admin") {
+		t.Error("expected actor in output")
+	}
+	if !strings.Contains(output, "delete") {
+		t.Error("expected action in output")
+	}
+}
+
+func TestEntrySerialization(t *testing.T) {
+	entry := Entry{
+		ID:        "audit-test",
+		Action:    ActionDeploy,
+		Actor:     "ci-pipeline",
+		Resource:  "app:v2.0",
+		Severity:  SeverityWarning,
+		Source:    "github-actions",
+		SessionID: "sess-123",
+		Labels:    map[string]string{"env": "staging"},
+		Timestamp: time.Now(),
+	}
+
+	data, err := json.Marshal(entry)
+	if err != nil {
+		t.Fatalf("Marshal failed: %v", err)
+	}
+
+	var e2 Entry
+	if err := json.Unmarshal(data, &e2); err != nil {
+		t.Fatalf("Unmarshal failed: %v", err)
+	}
+
+	if e2.Actor != "ci-pipeline" {
+		t.Errorf("expected ci-pipeline, got %s", e2.Actor)
+	}
+}
+
+func TestMultipleDateFiles(t *testing.T) {
+	tmpDir := t.TempDir()
+	log := NewLog(tmpDir)
+
+	now := time.Now()
+	yesterday := now.Add(-24 * time.Hour)
+
+	// Entries on different dates
+	log.Record(Entry{Action: ActionCreate, Actor: "a1", Severity: SeverityInfo, Timestamp: yesterday})
+	log.Record(Entry{Action: ActionCreate, Actor: "a1", Severity: SeverityInfo, Timestamp: now})
+
+	results, _ := log.Query(Filter{})
+	if len(results) != 2 {
+		t.Errorf("expected 2 results across date files, got %d", len(results))
+	}
+}
+
+func TestFilterMatch(t *testing.T) {
+	entry := &Entry{
+		Action:   ActionCreate,
+		Actor:    "alice",
+		Resource: "file.txt",
+		Severity: SeverityInfo,
+	}
+
+	tests := []struct {
+		name   string
+		filter Filter
+		match  bool
+	}{
+		{"no filter", Filter{}, true},
+		{"matching actor", Filter{Actor: "alice"}, true},
+		{"non-matching actor", Filter{Actor: "bob"}, false},
+		{"matching action", Filter{Action: ActionCreate}, true},
+		{"matching severity", Filter{Severity: SeverityInfo}, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.filter.Match(entry) != tt.match {
+				t.Errorf("filter %s: expected %v", tt.name, tt.match)
+			}
+		})
 	}
 }

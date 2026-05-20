@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	forgeVersion = "0.6.0"
+	forgeVersion = "0.6.1"
 	buildTime    = "unknown"
 )
 
@@ -77,6 +77,7 @@ The wielder and the sword are one.`,
 		agentgraphCmd(),
 		feedbackCmd(),
 		tokenizerCmd(),
+		auditCmd(),
 		pairCmd(),
 		promptCmd(),
 		dreamCmd(),

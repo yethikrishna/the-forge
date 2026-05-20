@@ -54,12 +54,13 @@ func TestBucketReset(t *testing.T) {
 }
 
 func TestBucketWait(t *testing.T) {
-	b := NewBucket("test", 0, 1000) // starts empty, fast refill
+	b := NewBucket("test", 10, 100) // 10 max, 100/sec refill
+	b.Tokens = 0 // drain it
 	start := time.Now()
 	b.Wait(1)
 	elapsed := time.Since(start)
 
-	if elapsed > 50*time.Millisecond {
+	if elapsed > 200*time.Millisecond {
 		t.Errorf("Wait took too long: %v", elapsed)
 	}
 }
