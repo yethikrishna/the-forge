@@ -1290,3 +1290,280 @@ MCP is the dominant protocol (tens of millions of downloads). Forge already has 
 ---
 
 *"50K lines is when prototypes become products. The next 50K should be polish, not features. Ship less, ship better."*
+
+---
+
+## 2026-05-20 22:04 UTC — Brainstorm Session #5
+
+*Project state: ~58K Go lines, 86 internal packages, 69 cmd files, 50+ commands. Sessions #1–4 generated ~130+ ideas. Nearly all quick wins and most medium-effort items are shipped. The project is now a comprehensive platform with multi-tenancy, RBAC, LSP server, worktree management, Docker Compose integration, capability registry, compliance reporting, and more.*
+
+*This session pivots away from feature ideation toward: (1) the protocol wars and Forge's positioning, (2) real-world deployment patterns that teams will actually use, (3) developer psychology and why tools succeed or fail, (4) the rough edges that separate "impressive demo" from "daily driver".*
+
+---
+
+### A. Protocol Strategy — Winning the Interop War
+
+Three protocols dominate: MCP (tool connectivity), A2A (agent-to-agent), ACP (enterprise REST). Forge supports MCP and ACP. The protocol question isn't "which to support" but "how to be the bridge."
+
+**A1. Universal Protocol Bridge**
+- Forge as the single translation layer between all three protocols
+- MCP client → Forge → A2A agent: use any MCP tool from an A2A-compatible agent
+- A2A agent → Forge → MCP tool: A2A agents can access the entire MCP ecosystem
+- ACP REST → Forge → MCP/A2A: enterprise systems talk REST, Forge translates to agent-native protocols
+- `forge bridge --protocols=mcp,a2a,acp` — start the universal bridge
+- **Why:** Nobody bridges these protocols. Teams running A2A agents can't use MCP tools. Teams with MCP can't talk to A2A agents. Forge as the bridge is the most strategically valuable position in the ecosystem.
+
+**A2. MCP Server Discovery Protocol**
+- `forge mcp discover` — scan local network and known registries for MCP servers
+- Auto-configure: found a Postgres MCP server? Add it to the Forge tool catalog
+- Health monitoring: periodically check discovered servers, remove dead ones
+- DNS-SD or mDNS for local network discovery
+- **Why:** MCP servers are proliferating but discovery is manual. Auto-discovery makes Forge the hub that connects everything.
+
+**A3. Agent Identity & Trust Layer**
+- Every agent gets a cryptographic identity (public key hash)
+- Agent manifests: signed declarations of capabilities, data access, and permissions
+- Trust registry: `forge trust list` — which agents are trusted and why
+- Trust propagation: "Agent A trusts Agent B" — build a web of trust
+- Revocation: `forge trust revoke <agent-id>` — immediately untrust an agent
+- **Why:** In multi-agent systems, you need to know WHO is acting. Identity is the foundation of accountability.
+
+---
+
+### B. Real Deployment Patterns — How Teams Will Actually Use This
+
+**B1. "Forge as CI" — Agent-Native CI/CD**
+- Not GitHub Actions running Forge — Forge IS the CI system
+- `forge ci watch` — watch for pushes, automatically run agent-powered review + test
+- Agent-native pipeline: code push → agent review → agent writes tests → agent runs tests → agent fixes failures → auto-merge if all pass
+- Cost-controlled: `cost_cap: $0.50 per PR`
+- Notification: Slack/Discord/GitHub comment with results
+- **Why:** Current CI runs shell scripts. Agent-native CI runs AI agents that understand code. It's a fundamentally different (better) approach.
+
+**B2. "Forge as Code Review Bot" — The Trojan Horse**
+- Single-purpose deployment: Forge as an automated code reviewer on GitHub/GitLab
+- Zero configuration: install the GitHub App, it starts reviewing PRs
+- Uses Forge's multi-model approach for cross-verification
+- Cost: ~$0.01-0.05 per review (using fast/cheap models)
+- Upsell: "Want more? Install Forge CLI for full agent orchestration"
+- **Why:** Teams won't install a 50-command platform on day one. But they'll install a code review bot. It's the wedge that leads to full adoption.
+
+**B3. "Forge Desktop" — Electron Wrapper for Non-CLI Users**
+- Light Electron wrapper around `forge serve` + web dashboard
+- System tray icon with agent status
+- Desktop notifications for agent events
+- File watcher: drag a project folder onto Forge Desktop
+- One-click install (no Go toolchain needed)
+- **Why:** CLI-only tools miss 70% of developers. A desktop app (even a thin wrapper) dramatically expands the addressable market.
+
+**B4. "Forge Cloud" — Hosted Multi-Tenant SaaS**
+- `forge cloud login` — authenticate to hosted Forge instance
+- Teams share agents, memory, cost budgets in the cloud
+- No infrastructure required: Forge manages the compute, API keys, and scaling
+- Hybrid mode: sensitive code stays local, orchestration lives in cloud
+- **Why:** Not every team wants to run infrastructure. Hosted Forge captures the "I just want it to work" market.
+
+---
+
+### C. Developer Psychology — Why Tools Get Adopted or Abandoned
+
+**C1. The "5-Minute Win" Requirement**
+- Every new user must achieve something valuable within 5 minutes
+- `forge quickstart` — zero-config, interactive, guaranteed to work:
+  1. Detect available API keys
+  2. Pick the best model automatically
+  3. Open an interactive chat on the user's actual codebase
+  4. Within 2 minutes: "I've analyzed your project. Here are 3 things I can help with."
+- If it can't deliver value in 5 minutes, the onboarding is broken
+- **Why:** Every minute before first value is a minute the user might close the tab/uninstall. The 5-minute win is non-negotiable.
+
+**C2. Progressive Complexity — The "Invisible Ladder"**
+- Level 0: `forge chat` — works immediately, zero config
+- Level 1: `forge init` — generates forge.yaml, enables session management
+- Level 2: `forge pipeline` — multi-step workflows
+- Level 3: `forge orchestrate` — multi-agent coordination
+- Level 4: Custom plugins + Agentfile definitions
+- Level 5: `forge serve` — full platform deployment
+- Each level unlocks naturally from the previous one. No jumps.
+- **Why:** Tools that require Level 3 knowledge on day 1 fail. Tools that let you start at Level 0 and climb invisibly succeed. (This is how Docker won — `docker run` before `docker-compose` before Kubernetes.)
+
+**C3. Error Messages That Teach**
+- Every error includes: what happened + why + how to fix + related docs link
+- Example: `FORGE-E042: Model "gpt-5" not found. Did you mean "gpt-5-mini"? Run "forge models" to see available models. Docs: https://forge.dev/docs/models`
+- Errors should never make the user feel stupid
+- **Why:** The #1 predictor of tool abandonment is encountering an error and not knowing how to fix it. Teaching errors retain users.
+
+**C4. Celebrate Progress — Visible Achievement System**
+- `forge achievements` — track milestones:
+  - 🔨 First chat session
+  - ⚔️ First multi-agent orchestration
+  - 🛡️ First sandboxed execution
+  - 💰 First cost report
+  - 🏰 First pipeline with 5+ steps
+- `forge achievements --share` — generate a shareable badge/card
+- Optional: anonymous aggregate stats for community page
+- **Why:** Gamification works. Visible progress motivates continued use. Sharing creates virality.
+
+---
+
+### D. Rough Edges — The "Last 10%" That Makes It Feel Done
+
+**D1. Signal Handling & Graceful Shutdown**
+- Ctrl+C should never lose data or corrupt state
+- SIGTERM → graceful shutdown: save session state, finish current operations, clean up worktrees
+- SIGINT (first) → graceful stop. SIGINT (second) → force stop.
+- `forge serve` shutdown: drain connections, persist state, notify agents
+- **Why:** An agent tool that loses work on Ctrl+C is unusable in practice. This is a trust issue.
+
+**D2. File Locking for Concurrent Access**
+- Multiple agents modifying the same file → corruption
+- Advisory file locking: agent acquires lock before modifying, releases after
+- Conflict detection: "Agent B modified this file while Agent A was working on it"
+- Auto-merge when possible, flag for human review when not
+- **Why:** `forge orchestrate` runs parallel agents. Without file locking, parallel agents will step on each other.
+
+**D3. Deterministic Output for CI/Testing**
+- `--output=json` on every command — machine-readable, stable schema
+- `--output=quiet` — only errors, no spinner/progress
+- `--output=verbose` — full debug output
+- Deterministic ordering: sort all lists alphabetically/by timestamp
+- No ANSI codes in JSON output mode
+- **Why:** CI pipelines and scripts need stable, parseable output. Random ordering and color codes break them.
+
+**D4. Session Resumption After Crash**
+- If Forge crashes mid-session, `forge session resume` recovers:
+  - Reload conversation history from replay log
+  - Restore agent state from last checkpoint
+  - Resume from the last completed step in any running pipeline
+- Crash reporter: `forge session crash-report` — dumps diagnostic info
+- **Why:** Crashes happen. Losing 30 minutes of agent work to a crash is unacceptable. Crash recovery is the difference between "annoying" and "deal-breaker."
+
+**D5. Unicode & Encoding Handling**
+- Properly handle non-ASCII filenames and content (UTF-8 everywhere)
+- Handle Windows line endings (CRLF) gracefully
+- Sanitize agent output for the current terminal encoding
+- **Why:** International users exist. Non-ASCII code exists. These bugs are silent until someone hits them, then they're showstoppers.
+
+---
+
+### E. Edge Cases & Failure Modes — What Happens When Things Go Wrong
+
+**E1. Provider Outage Playbook**
+- Detect outage: provider returns 5xx for >30 seconds
+- Automatic actions:
+  1. Switch to fallback provider (circuit breaker)
+  2. Notify user: "OpenAI is experiencing issues. Switched to Anthropic."
+  3. Queue pending requests for retry when provider recovers
+  4. Generate incident report: timeline, impact, cost of fallback
+- `forge incidents` — view past provider incidents
+- **Why:** Provider outages are when users need Forge most. A tool that handles outages gracefully earns trust forever.
+
+**E2. Cost Anomaly Detection**
+- Track cost rate: $/minute per session
+- Alert if rate exceeds 3× the session average
+- Hard stop if daily budget exceeded (not just warning)
+- Root cause: "Cost spike caused by agent entering infinite retry loop on file parsing"
+- `forge cost anomalies` — list all detected anomalies
+- **Why:** A $500 surprise bill destroys trust permanently. Anomaly detection prevents this.
+
+**E3. Agent Runaway Detection**
+- Monitor agent behavior patterns:
+  - Same tool called >10 times in a row (stuck loop)
+  - No new files modified for >5 minutes (stalled)
+  - Token usage growing but no output (context explosion)
+  - File system writes exceeding 100MB (runaway file generation)
+- Auto-terminate and alert when runaway detected
+- **Why:** Runaway agents burn money and time. Detection prevents $100 mistakes from becoming $1000 mistakes.
+
+**E4. Disk Space & Resource Monitoring**
+- Monitor: disk usage, memory usage, open file descriptors, goroutine count
+- Warning at 80% of limits, hard stop at 95%
+- Auto-cleanup: old session logs, stale index files, orphaned worktrees
+- `forge system resources` — current resource usage
+- **Why:** Agents generating files can fill disks. Memory leaks in long-running processes. Monitor and self-heal.
+
+---
+
+### F. Novel Ideas — Session #5
+
+**F1. `forge archaeologist` — AI-Powered Git Forensics**
+- Beyond `git blame` — use AI to understand WHY code was written
+- Analyze commit messages, PR descriptions, linked issues, and agent session history
+- "This function was added in PR #234 to fix issue #189 (auth timeout). The agent used was Claude Sonnet 4."
+- Find dead code: "This function hasn't been called in any commit in 6 months"
+- Find suspicious code: "This code was written at 3am by an agent with no tests"
+- **Why:** Git tells you WHAT changed. Agents can tell you WHY. This is forensic analysis that no other tool provides.
+
+**F2. `forge tune` — Automatic Hyperparameter Optimization for Agents**
+- Tune agent parameters: temperature, top_p, max_tokens, system prompt, context window size
+- Bayesian optimization: systematically explore parameter space
+- Objective function: quality score (from eval) / cost (from cost tracking)
+- Pareto frontier: find the best quality/cost tradeoff
+- `forge tune --agent=code-reviewer --objective=quality-per-dollar`
+- **Why:** Everyone guesses agent parameters. Systematic optimization is 10× better than intuition.
+
+**F3. `forge seed` — Project Bootstrapping from Natural Language**
+- `forge seed "Build a REST API for a todo app with Go and PostgreSQL"`
+- Generates: project structure, go.mod, main.go, handlers, models, migrations, Dockerfile, forge.yaml, tests
+- Uses the best available agent + model for code generation
+- Generates a Forgefile tuned for the project type
+- Incremental: `forge seed --update` adds features to existing project
+- **Why:** `forge init` scaffolds from templates. `forge seed` generates from intent. Intent-based scaffolding is the future.
+
+**F4. `forge witness` — Cryptographic Proof of Agent Actions**
+- Every agent action produces a hash chain entry
+- Merkle tree of all actions in a session
+- `forge witness verify <session-id>` — verify no actions were tampered with
+- Export proof: "Here's cryptographic proof that agent X did Y at time Z"
+- Use case: compliance, auditing, dispute resolution, legal proceedings
+- **Why:** Audit logs can be tampered with. Cryptographic proofs can't. This is the difference between "trust us" and "verify mathematically."
+
+**F5. `forge empath` — User Frustration Detection**
+- Analyze user input patterns for frustration signals:
+  - Repeated similar queries ("try again", "no that's wrong")
+  - CAPS LOCK usage increasing
+  - Queries getting shorter and more imperative
+  - "why isn't this working" type messages
+- Respond: switch to more capable model, simplify output, offer human support
+- `forge empath report` — aggregate frustration analysis across sessions
+- **Why:** A frustrated user is about to churn. Detecting and responding to frustration is the ultimate retention feature.
+
+---
+
+### G. Strategic Positioning — The Meta Brainstorm
+
+**G1. "Forge as Infrastructure" — Don't Compete With Agents, Power Them**
+- Stop trying to be "the best agent" — be the infrastructure agents run on
+- Position: Forge is to AI agents what Linux is to applications
+- Every agent tool should benefit from Forge's sandboxing, cost tracking, and orchestration
+- If Claude Code uses Forge for sandboxing, Forge wins even when Forge isn't the primary interface
+- **Why:** Infrastructure has a wider moat than applications. The agent tool landscape will keep changing. Infrastructure is constant.
+
+**G2. "Forge as Standard" — Define the Open Agent Infrastructure Standard**
+- Publish the Agentfile specification as an independent standard
+- Create a working group: Google, Anthropic, OpenAI, Block (Goose), community
+- If Agentfile becomes the Dockerfile of AI agents, Forge owns the standard
+- **Why:** Standards outlive products. Docker didn't win by being the best container runtime — it won by owning the image format (Dockerfile).
+
+**G3. "Forge as Movement" — Open Source Community Strategy**
+- ForgeConf (virtual conference) within 6 months of launch
+- Forge Grants: fund community members building key integrations
+- University partnerships: free Forge Cloud for CS departments
+- "Forgemaster" certification: demonstrate Forge proficiency
+- **Why:** Communities outlive companies. If Forge has a thriving community, it can survive anything.
+
+---
+
+### H. Session #5 Quick Wins
+
+1. **Graceful shutdown handler** — SIGTERM/SIGINT handling with state persistence. ~200 lines in cmd/root.go.
+2. **File locking for concurrent agents** — Advisory locks before file modification. ~150 lines in internal/agentapi.
+3. **`--output=json` on all commands** — Standardized JSON output mode. ~300 lines across cmd/.
+4. **Cost anomaly detection** — Rate-based alerting with root cause analysis. ~200 lines in internal/cost.
+5. **Agent runaway detection** — Pattern-based detection with auto-terminate. ~250 lines.
+6. **`forge quickstart`** — 5-minute interactive onboarding. ~300 lines.
+7. **Achievement system** — Track milestones, generate shareable badges. ~200 lines.
+
+---
+
+*"86 packages is enough. The question isn't 'what else can we build?' — it's 'how do we make what we have indispensable?'"*
