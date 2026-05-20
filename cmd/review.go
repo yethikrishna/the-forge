@@ -10,6 +10,8 @@ import (
 
 func reviewCmd() *cobra.Command {
 	var storeDir string
+	var focus string
+	var strictness string
 
 	cmd := &cobra.Command{
 		Use:   "review",
@@ -17,104 +19,68 @@ func reviewCmd() *cobra.Command {
 		Long: `Every blade is inspected before it leaves the forge.
 
 Review code for security vulnerabilities, performance issues,
-style violations, and correctness problems using static analysis rules.
+style violations, and correctness problems.
 
 Examples:
-  forge review path ./my-project
-  forge review diff main..feature
-  forge review show review-123456789
-  forge review list`,
+  forge review diff HEAD~1
+  forge review diff main
+  forge review file ./main.go`,
 	}
 
 	cmd.PersistentFlags().StringVar(&storeDir, "store", ".forge/reviews", "Review storage directory")
+	cmd.PersistentFlags().StringVar(&focus, "focus", "all", "Review focus (security, performance, style, all)")
+	cmd.PersistentFlags().StringVar(&strictness, "strictness", "normal", "Strictness level (relaxed, normal, strict)")
 
 	cmd.AddCommand(
 		&cobra.Command{
-			Use:   "path [directory]",
-			Short: "Review all code in a directory",
+			Use:   "diff [ref]",
+			Short: "Review a git diff",
 			Args:  cobra.ExactArgs(1),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				r := review.NewReviewer(storeDir)
-				result, err := r.ReviewPath(args[0])
+				cfg := review.DefaultConfig()
+				r := review.NewReviewer(storeDir, cfg)
+
+				result, err := r.ReviewDiff(args[0])
 				if err != nil {
 					return err
 				}
 
 				fmt.Println(pretty.HeaderLine("Code Review"))
-				fmt.Print(review.FormatReview(result))
+				fmt.Printf("Target:   %s\n", result.Target)
+				fmt.Printf("Score:    %d/100\n", result.Score)
+				fmt.Printf("Approved: %v\n", result.Approved)
+				fmt.Printf("Summary:  %s\n", result.Summary)
+
+				if len(result.Comments) > 0 {
+					fmt.Printf("\nFindings (%d):\n", len(result.Comments))
+					for _, c := range result.Comments {
+						fmt.Printf("  [%s] %s:%d — %s\n", c.Severity, c.File, c.Line, c.Message)
+					}
+				}
 				return nil
 			},
 		},
 		&cobra.Command{
-			Use:   "diff [base..head]",
-			Short: "Review a git diff",
+			Use:   "file [path]",
+			Short: "Review a single file",
 			Args:  cobra.ExactArgs(1),
 			RunE: func(cmd *cobra.Command, args []string) error {
-				parts := splitDiffRef(args[0])
-				if len(parts) != 2 {
-					return fmt.Errorf("invalid diff ref, use base..head format")
-				}
+				cfg := review.DefaultConfig()
+				r := review.NewReviewer(storeDir, cfg)
 
-				r := review.NewReviewer(storeDir)
-				result, err := r.ReviewDiff(parts[0], parts[1])
+				result, err := r.ReviewFile(args[0])
 				if err != nil {
 					return err
 				}
 
-				fmt.Println(pretty.HeaderLine("Code Review (Diff)"))
-				fmt.Print(review.FormatReview(result))
-				return nil
-			},
-		},
-		&cobra.Command{
-			Use:   "show [id]",
-			Short: "Show a review result",
-			Args:  cobra.ExactArgs(1),
-			RunE: func(cmd *cobra.Command, args []string) error {
-				r := review.NewReviewer(storeDir)
-				result, err := r.Get(args[0])
-				if err != nil {
-					return err
-				}
-
-				fmt.Print(review.FormatReview(result))
-				return nil
-			},
-		},
-		&cobra.Command{
-			Use:   "list",
-			Short: "List all reviews",
-			RunE: func(cmd *cobra.Command, args []string) error {
-				r := review.NewReviewer(storeDir)
-				list, err := r.List()
-				if err != nil {
-					return err
-				}
-
-				if len(list) == 0 {
-					fmt.Println("No reviews found.")
-					return nil
-				}
-
-				fmt.Println(pretty.HeaderLine("Reviews"))
-				fmt.Printf("%-25s %-20s %-8s %s\n", "ID", "Target", "Score", "Findings")
-				for _, rev := range list {
-					fmt.Printf("%-25s %-20s %-8.1f %d\n",
-						rev.ID, rev.Target, rev.Score, len(rev.Findings))
-				}
+				fmt.Println(pretty.HeaderLine("File Review"))
+				fmt.Printf("Score:    %d/100\n", result.Score)
+				fmt.Printf("Approved: %v\n", result.Approved)
+				fmt.Printf("Summary:  %s\n", result.Summary)
 				return nil
 			},
 		},
 	)
 
 	return cmd
-}
-
-func splitDiffRef(ref string) []string {
-	for i := 0; i < len(ref)-1; i++ {
-		if ref[i] == '.' && ref[i+1] == '.' {
-			return []string{ref[:i], ref[i+2:]}
-		}
-	}
-	return nil
 }

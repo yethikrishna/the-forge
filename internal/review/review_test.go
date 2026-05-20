@@ -1,299 +1,359 @@
-package review_test
+package review
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
-
-	"github.com/forge/sword/internal/review"
 )
 
-func TestReviewPath(t *testing.T) {
-	dir := t.TempDir()
-	storeDir := t.TempDir()
-
-	// Create test file with issues
-	code := `package main
-
-import "fmt"
-
-func veryLongFunction() {
-	// This function is deliberately very long
-	line1 := 1
-	line2 := 2
-	line3 := 3
-	line4 := 4
-	line5 := 5
-	line6 := 6
-	line7 := 7
-	line8 := 8
-	line9 := 9
-	line10 := 10
-	line11 := 11
-	line12 := 12
-	line13 := 13
-	line14 := 14
-	line15 := 15
-	line16 := 16
-	line17 := 17
-	line18 := 18
-	line19 := 19
-	line20 := 20
-	line21 := 21
-	line22 := 22
-	line23 := 23
-	line24 := 24
-	line25 := 25
-	line26 := 26
-	line27 := 27
-	line28 := 28
-	line29 := 29
-	line30 := 30
-	line31 := 31
-	line32 := 32
-	line33 := 33
-	line34 := 34
-	line35 := 35
-	line36 := 36
-	line37 := 37
-	line38 := 38
-	line39 := 39
-	line40 := 40
-	line41 := 41
-	line42 := 42
-	line43 := 43
-	line44 := 44
-	line45 := 45
-	line46 := 46
-	line47 := 47
-	line48 := 48
-	line49 := 49
-	line50 := 50
-	_ = line1 + line2 + line3 + line4 + line5
-	_ = line6 + line7 + line8 + line9 + line10
-	_ = fmt.Sprintf("test")
-}
-
-func main() {
-	password := "hardcoded-secret"
-	_ = password
-}
-`
-	os.WriteFile(filepath.Join(dir, "main.go"), []byte(code), 0o644)
-
-	r := review.NewReviewer(storeDir)
-	result, err := r.ReviewPath(dir)
-	if err != nil {
-		t.Fatalf("review path: %v", err)
+func TestIsLikelySecret(t *testing.T) {
+	tests := []struct {
+		line      string
+		isSecret  bool
+	}{
+		{`api_key = "sk-abc123"`, true},
+		{`api_key = os.Getenv("API_KEY")`, false},
+		{`password = "secret123"`, true},
+		{`password = ""`, false},
+		{`private_key = nil`, false},
+		{`Authorization: Bearer token123`, true},
+		{`-----BEGIN RSA PRIVATE KEY-----`, true},
+		{`const apiKey = process.env.API_KEY`, false},
+		{`max_retries = 3`, false},
+		{`fmt.Println("hello")`, false},
 	}
 
-	if result.FilesReviewed == 0 {
-		t.Error("should review at least 1 file")
-	}
-	if result.LinesReviewed == 0 {
-		t.Error("should count lines")
+	for _, tt := range tests {
+		result := isLikelySecret(tt.line)
+		if result != tt.isSecret {
+			t.Errorf("isLikelySecret(%q) = %v, want %v", tt.line, result, tt.isSecret)
+		}
 	}
 }
 
-func TestReviewClean(t *testing.T) {
-	dir := t.TempDir()
-	storeDir := t.TempDir()
-
-	// Create clean code
-	code := `package main
-
-import "fmt"
-
-func hello() error {
-	fmt.Println("hello")
-	return nil
-}
-
-func main() {
-	if err := hello(); err != nil {
-		panic(err)
-	}
-}
-`
-	os.WriteFile(filepath.Join(dir, "clean.go"), []byte(code), 0o644)
-
-	r := review.NewReviewer(storeDir)
-	result, err := r.ReviewPath(dir)
-	if err != nil {
-		t.Fatalf("review path: %v", err)
+func TestIsDebugStatement(t *testing.T) {
+	tests := []struct {
+		line    string
+		isDebug bool
+	}{
+		{`fmt.Println("debug")`, true},
+		{`console.log("debug")`, true},
+		{`print("debug")`, true},
+		{`log.Printf("info: %s", msg)`, true},
+		{`return result`, false},
+		{`func main() {`, false},
+		{`// fmt.Println("commented")`, false},
 	}
 
-	// Clean code should have high score
-	if result.Score < 80 {
-		t.Errorf("clean code should score high, got %.1f", result.Score)
+	for _, tt := range tests {
+		result := isDebugStatement(tt.line)
+		if result != tt.isDebug {
+			t.Errorf("isDebugStatement(%q) = %v, want %v", tt.line, result, tt.isDebug)
+		}
 	}
 }
 
-func TestCalculateScore(t *testing.T) {
-	storeDir := t.TempDir()
-	r := review.NewReviewer(storeDir)
+func TestHasBareErrorReturn(t *testing.T) {
+	tests := []struct {
+		line  string
+		bare  bool
+	}{
+		{"return err", true},
+		{"return nil, err", true},
+		{"return fmt.Errorf(\"failed: %w\", err)", false},
+		{"return result, nil", false},
+	}
 
-	review_ := &review.Review{
-		Findings: []review.Finding{
-			{Severity: review.SeverityCritical},
-			{Severity: review.SeverityError},
-			{Severity: review.SeverityWarning},
+	for _, tt := range tests {
+		result := hasBareErrorReturn(tt.line)
+		if result != tt.bare {
+			t.Errorf("hasBareErrorReturn(%q) = %v, want %v", tt.line, result, tt.bare)
+		}
+	}
+}
+
+func TestReviewLine(t *testing.T) {
+	reviewer := NewReviewer("", DefaultConfig())
+
+	// Long line
+	longLine := strings.Repeat("a", 150)
+	comments := reviewer.reviewLine("test.go", 1, longLine)
+	found := false
+	for _, c := range comments {
+		if c.Rule == "max-line-length" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected max-line-length comment for long line")
+	}
+
+	// Secret
+	comments = reviewer.reviewLine("config.go", 1, `api_key = "sk-abc123"`)
+	found = false
+	for _, c := range comments {
+		if c.Rule == "no-secrets" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected no-secrets comment")
+	}
+
+	// Clean line
+	comments = reviewer.reviewLine("test.go", 1, `result := calculate(input)`)
+	if len(comments) != 0 {
+		t.Errorf("expected no comments for clean line, got %d", len(comments))
+	}
+}
+
+func TestComputeScore(t *testing.T) {
+	reviewer := NewReviewer("", DefaultConfig())
+
+	review := &Review{
+		Comments: []Comment{
+			{Severity: SevBlocking, Message: "blocking issue"},
+			{Severity: SevWarning, Message: "warning issue"},
+			{Severity: SevSuggestion, Message: "suggestion"},
+			{Severity: SevNit, Message: "nit"},
 		},
 	}
 
-	score := r.CalculateScore(review_)
-	if score <= 0 {
-		t.Error("should have some deduction")
+	score := reviewer.computeScore(review)
+	expected := 100 - 25 - 10 - 3 - 1 // 61
+	if score != expected {
+		t.Errorf("expected score %d, got %d", expected, score)
 	}
 }
 
-func TestCalculateScorePerfect(t *testing.T) {
-	storeDir := t.TempDir()
-	r := review.NewReviewer(storeDir)
+func TestIsApproved(t *testing.T) {
+	reviewer := NewReviewer("", DefaultConfig())
 
-	review_ := &review.Review{
-		Findings: []review.Finding{},
+	// Clean review should be approved
+	review := &Review{Score: 100, Comments: nil}
+	if !reviewer.isApproved(review) {
+		t.Error("expected clean review to be approved")
 	}
 
-	score := r.CalculateScore(review_)
-	if score != 100 {
-		t.Errorf("expected 100, got %.1f", score)
+	// Blocking comment should not be approved
+	review = &Review{Score: 90, Comments: []Comment{{Severity: SevBlocking}}}
+	if reviewer.isApproved(review) {
+		t.Error("expected blocking review to not be approved")
 	}
-}
 
-func TestGetReview(t *testing.T) {
-	dir := t.TempDir()
-	storeDir := t.TempDir()
-
-	code := `package main
-func main() {}`
-	os.WriteFile(filepath.Join(dir, "main.go"), []byte(code), 0o644)
-
-	r := review.NewReviewer(storeDir)
-	result, _ := r.ReviewPath(dir)
-
-	retrieved, err := r.Get(result.ID)
-	if err != nil {
-		t.Fatalf("get: %v", err)
-	}
-	if retrieved.ID != result.ID {
-		t.Error("should match")
+	// Low score should not be approved
+	review = &Review{Score: 50, Comments: []Comment{{Severity: SevWarning}}}
+	if reviewer.isApproved(review) {
+		t.Error("expected low-score review to not be approved")
 	}
 }
 
-func TestGetReviewNotFound(t *testing.T) {
-	storeDir := t.TempDir()
-	r := review.NewReviewer(storeDir)
+func TestGenerateSummary(t *testing.T) {
+	reviewer := NewReviewer("", DefaultConfig())
 
-	_, err := r.Get("nonexistent")
-	if err == nil {
-		t.Error("should error for nonexistent")
+	review := &Review{
+		FilesReviewed: 3,
+		Comments: []Comment{
+			{Severity: SevBlocking},
+			{Severity: SevWarning},
+			{Severity: SevSuggestion},
+			{Severity: SevNit},
+		},
+	}
+
+	summary := reviewer.generateSummary(review)
+	if !strings.Contains(summary, "blocking") {
+		t.Error("summary should mention blocking issues")
+	}
+	if !strings.Contains(summary, "1 warning") {
+		t.Error("summary should mention 1 warning")
+	}
+
+	// Clean review
+	review2 := &Review{FilesReviewed: 1}
+	summary2 := reviewer.generateSummary(review2)
+	if !strings.Contains(summary2, "Clean") {
+		t.Errorf("expected clean summary, got %s", summary2)
 	}
 }
 
-func TestListReviews(t *testing.T) {
-	dir := t.TempDir()
-	storeDir := t.TempDir()
+func TestShouldExclude(t *testing.T) {
+	reviewer := NewReviewer("", DefaultConfig())
 
-	code := `package main
-func main() {}`
-	os.WriteFile(filepath.Join(dir, "main.go"), []byte(code), 0o644)
-
-	r := review.NewReviewer(storeDir)
-	r.ReviewPath(dir)
-	r.ReviewPath(dir)
-
-	list, err := r.List()
-	if err != nil {
-		t.Fatalf("list: %v", err)
+	if !reviewer.shouldExclude("vendor/pkg/module.go") {
+		t.Error("expected vendor/ to be excluded")
 	}
-	if len(list) < 2 {
-		t.Errorf("expected at least 2, got %d", len(list))
+	if !reviewer.shouldExclude("node_modules/react/index.js") {
+		t.Error("expected node_modules/ to be excluded")
+	}
+	if reviewer.shouldExclude("main.go") {
+		t.Error("main.go should not be excluded")
+	}
+}
+
+func TestParseDiff(t *testing.T) {
+	diff := `diff --git a/main.go b/main.go
+@@ -1,3 +1,4 @@
+ package main
+ 
++import "fmt"
++
+ func main() {
+-    fmt.Println("hello")
++    fmt.Println("world")
+ }`
+
+	sections := parseDiff(diff)
+	if len(sections) != 1 {
+		t.Fatalf("expected 1 section, got %d", len(sections))
+	}
+	if sections[0].File != "main.go" {
+		t.Errorf("expected file main.go, got %s", sections[0].File)
+	}
+
+	// Check lines
+	added := 0
+	removed := 0
+	for _, l := range sections[0].Lines {
+		if l.Type == "+" {
+			added++
+		}
+		if l.Type == "-" {
+			removed++
+		}
+	}
+	if added != 2 {
+		t.Errorf("expected 2 added lines, got %d", added)
+	}
+	if removed != 1 {
+		t.Errorf("expected 1 removed line, got %d", removed)
+	}
+}
+
+func TestParseDiffMultipleFiles(t *testing.T) {
+	diff := `diff --git a/a.go b/a.go
+@@ -1 +1 @@
+-old
++new
+diff --git a/b.go b/b.go
+@@ -1 +1 @@
+-old2
++new2`
+
+	sections := parseDiff(diff)
+	if len(sections) != 2 {
+		t.Fatalf("expected 2 sections, got %d", len(sections))
 	}
 }
 
 func TestFormatReview(t *testing.T) {
-	rev := &review.Review{
-		ID:        "test-review",
-		Target:    "main..feature",
-		Score:     85.5,
-		FilesReviewed: 10,
-		LinesReviewed: 500,
-		Summary:   "Found 2 warning issues",
-		Findings: []review.Finding{
-			{File: "main.go", Line: 10, Severity: review.SeverityWarning, Category: review.CategoryStyle, Message: "Long function", Rule: "STYLE-001"},
+	review := &Review{
+		Score:    85,
+		Approved: true,
+		Summary:  "Found 1 suggestion(s) across 1 file(s)",
+		Comments: []Comment{
+			{File: "main.go", Line: 5, Severity: SevSuggestion, Message: "Consider using fmt.Errorf"},
 		},
 	}
 
-	formatted := review.FormatReview(rev)
-	if formatted == "" {
-		t.Error("should not be empty")
+	output := FormatReview(review)
+	if !strings.Contains(output, "APPROVED") {
+		t.Error("expected APPROVED in output")
+	}
+	if !strings.Contains(output, "85/100") {
+		t.Error("expected score in output")
+	}
+	if !strings.Contains(output, "main.go") {
+		t.Error("expected file name in output")
 	}
 }
 
-func TestIsCodeFile(t *testing.T) {
-	tests := []struct {
-		path    string
-		isCode  bool
-	}{
-		{"main.go", true},
-		{"app.py", true},
-		{"index.js", true},
-		{"image.png", false},
-		{"data.csv", false},
-		{"config.yaml", true},
+func TestReviewSerialization(t *testing.T) {
+	review := &Review{
+		ID:            "review-123",
+		Target:        "main",
+		Reviewer:      "forge-reviewer",
+		FilesReviewed: 2,
+		LinesAdded:    10,
+		LinesRemoved:  5,
+		Comments: []Comment{
+			{File: "a.go", Line: 10, Severity: SevWarning, Message: "Debug statement", Rule: "no-debug"},
+		},
+		Score:     90,
+		Approved:  true,
+		Summary:   "1 warning",
 	}
 
-	for _, tt := range tests {
-		result := isCodeFile(tt.path)
-		if result != tt.isCode {
-			t.Errorf("isCodeFile(%s): expected %v, got %v", tt.path, tt.isCode, result)
-		}
-	}
-}
-
-// unexported function test via ReviewPath
-func isCodeFile(path string) bool {
-	// Delegate to package's logic by checking extension
-	ext := filepath.Ext(path)
-	codeExts := map[string]bool{
-		".go": true, ".py": true, ".js": true, ".ts": true,
-		".yaml": true, ".yml": true, ".json": true,
-	}
-	return codeExts[ext]
-}
-
-func TestSeverityString(t *testing.T) {
-	tests := []struct {
-		sev    review.Severity
-		expect string
-	}{
-		{review.SeverityCritical, "critical"},
-		{review.SeverityError, "error"},
-		{review.SeverityWarning, "warning"},
-		{review.SeverityInfo, "info"},
+	data, err := json.MarshalIndent(review, "", "  ")
+	if err != nil {
+		t.Fatalf("Marshal failed: %v", err)
 	}
 
-	for _, tt := range tests {
-		if tt.sev.String() != tt.expect {
-			t.Errorf("expected %s, got %s", tt.expect, tt.sev.String())
-		}
+	var review2 Review
+	if err := json.Unmarshal(data, &review2); err != nil {
+		t.Fatalf("Unmarshal failed: %v", err)
+	}
+
+	if review2.ID != "review-123" {
+		t.Errorf("expected ID review-123, got %s", review2.ID)
+	}
+	if len(review2.Comments) != 1 {
+		t.Errorf("expected 1 comment, got %d", len(review2.Comments))
 	}
 }
 
-func TestCategoryString(t *testing.T) {
-	tests := []struct {
-		cat    review.Category
-		expect string
-	}{
-		{review.CategorySecurity, "security"},
-		{review.CategoryPerformance, "performance"},
-		{review.CategoryStyle, "style"},
+func TestSaveReview(t *testing.T) {
+	tmpDir := t.TempDir()
+	review := &Review{
+		ID:       "review-test",
+		Score:    100,
+		Approved: true,
+		Summary:  "Clean review",
 	}
 
-	for _, tt := range tests {
-		if tt.cat.String() != tt.expect {
-			t.Errorf("expected %s, got %s", tt.expect, tt.cat.String())
-		}
+	err := SaveReview(review, tmpDir)
+	if err != nil {
+		t.Fatalf("SaveReview failed: %v", err)
+	}
+
+	// Check file exists
+	path := filepath.Join(tmpDir, "review-test.json")
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		t.Error("review file should exist")
+	}
+}
+
+func TestDefaultConfig(t *testing.T) {
+	cfg := DefaultConfig()
+	if cfg.MaxLineLength != 120 {
+		t.Errorf("expected max line length 120, got %d", cfg.MaxLineLength)
+	}
+	if !cfg.RequireTests {
+		t.Error("expected RequireTests to be true")
+	}
+	if !cfg.BlockSecrets {
+		t.Error("expected BlockSecrets to be true")
+	}
+}
+
+func TestScoreMinimum(t *testing.T) {
+	reviewer := NewReviewer("", DefaultConfig())
+	review := &Review{
+		Comments: []Comment{
+			{Severity: SevBlocking},
+			{Severity: SevBlocking},
+			{Severity: SevBlocking},
+			{Severity: SevBlocking},
+			{Severity: SevBlocking},
+		},
+	}
+	score := reviewer.computeScore(review)
+	if score < 0 {
+		t.Errorf("score should not be negative, got %d", score)
+	}
+	if score != 0 {
+		t.Errorf("expected score 0, got %d", score)
 	}
 }
