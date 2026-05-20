@@ -1,6 +1,7 @@
 package audit_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 

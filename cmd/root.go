@@ -55,6 +55,7 @@ The wielder and the sword are one.`,
 		pipelineCmd(),
 		memoryCmd(),
 		authCmd(),
+		dashboardCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
