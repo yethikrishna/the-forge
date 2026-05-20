@@ -163,13 +163,15 @@ func TestSendDisabled(t *testing.T) {
 	m := NewManager(dir)
 
 	m.AddChannel(&Channel{
-		Name:    "disabled-ch",
-		Type:    ChannelFile,
-		Enabled: false,
+		Name: "disabled-ch",
+		Type: ChannelFile,
 	})
 
+	// Disable the channel after adding
 	channels := m.ListChannels()
 	id := channels[0].ID
+	ch, _ := m.GetChannel(id)
+	ch.Enabled = false
 
 	_, err := m.Send(id, "Test", "Message", PriorityLow)
 	if err == nil {

@@ -262,7 +262,11 @@ type LevelProgress struct {
 func (l *Ladder) OverallProgress() float64 {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	return l.overallProgress()
+}
 
+// overallProgress is the lock-free internal version.
+func (l *Ladder) overallProgress() float64 {
 	total := len(l.Milestones)
 	if total == 0 {
 		return 0

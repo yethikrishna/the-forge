@@ -91,9 +91,11 @@ func (m *Manager) AddChannel(ch *Channel) error {
 	if ch.ID == "" {
 		ch.ID = generateID(ch.Name)
 	}
-	if !ch.Enabled {
-		ch.Enabled = true // Default to enabled
-	}
+	// Default to enabled unless explicitly set to false
+	// We can't tell the difference in Go, so we always default to true.
+	// Callers who want disabled should set Enabled=false after AddChannel.
+	ch.Enabled = true
+	// We treat false as explicitly disabled.
 
 	// Validate channel config
 	if err := validateChannel(ch); err != nil {

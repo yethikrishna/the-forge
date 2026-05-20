@@ -3,12 +3,14 @@ package cmd
 import (
 	"context"
 
+	"github.com/forge/sword/internal/output"
 	"github.com/spf13/cobra"
 )
 
 var (
 	forgeVersion = "1.1.0"
 	buildTime    = "unknown"
+	outputFormat string
 )
 
 func Execute(ctx context.Context) error {
@@ -23,6 +25,8 @@ jails every operation for security, and provides a unified workspace.
 The wielder and the sword are one.`,
 		SilenceUsage: true,
 	}
+
+	root.PersistentFlags().StringVarP(&outputFormat, "output", "o", "default", "Output format: json, quiet, verbose, default")
 
 	root.AddCommand(
 		serveCmd(),
@@ -107,6 +111,17 @@ The wielder and the sword are one.`,
 		quickstartCmd(),
 		ciCmd(),
 		errteachCmd(),
+		notifyCmd(),
+		levelCmd(),
 	)
 	return root.ExecuteContext(ctx)
+}
+
+// getOutputFormat returns the output manager for the current command.
+func getOutputFormat() output.Format {
+	f, err := output.ParseFormat(outputFormat)
+	if err != nil {
+		return output.FormatDefault
+	}
+	return f
 }

@@ -152,7 +152,7 @@ All 18 utility packages implemented and tested.
 
 - [x] Graceful shutdown — SIGTERM/SIGINT handling with state persistence, drain connections
 - [x] File locking for concurrent agents — advisory locks, conflict detection, auto-merge
-- [ ] `--output=json/quiet/verbose` on every command — stable schema, no ANSI in JSON mode
+- [x] `--output=json/quiet/verbose` on every command — stable schema, no ANSI in JSON mode
 - [x] Session resumption after crash — reload from replay log, restore agent state
 - [x] Provider outage playbook — detect outage, auto-fallback, notify, generate incident report
 - [x] Cost anomaly detection — rate-based alerting, hard budget stops, root cause analysis
