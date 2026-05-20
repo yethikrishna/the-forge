@@ -466,3 +466,55 @@ All other May 20 announcements (Informatica, Acceldata, RapDev, Fetch.ai, Gartne
 - https://www.youtube.com/watch?v=RUs0U_CNwlY
 - https://www.databricks.com/blog/governing-ai-agents-scale-unity-catalog
 - https://dev.to/alexmercedcoder/ai-weekly-google-reshapes-the-coding-stack-claude-pulls-ahead-and-the-agent-protocol-stack-17co
+
+---
+
+## 2026-05-20 (23:56 UTC) — Late Night Update
+
+### 1. NSA — MCP Security Design Considerations (May 2026, Ver 1.0)
+
+Major new government guidance: **NSA released "Model Context Protocol (MCP): Security Design Considerations for AI-Driven Automation"** (CSI, May 2026).
+
+Key findings:
+- MCP adoption has outpaced its security model, creating new attack surfaces
+- **Arbitrary Code Execution (ACE)** risks via insecure tool invocation, dynamic code execution, poor input validation (CWE-77, 78, 94, 95)
+- No built-in auth/authz — no mandatory RBAC or session lifecycle controls
+- Context leakage, prompt injection through serialized data, implicit trust between agents/tools
+- Token/session replay and hijacking vulnerabilities
+- "MCP itself cannot enforce these security principles at the protocol level" — implementers must add their own controls
+
+Recommendations:
+- Strong trust boundaries and least-privilege access
+- Parameter validation, schema enforcement, sandboxing (containers, seccomp)
+- Message signing/verification and output filtering/monitoring
+- Comprehensive logging to SIEM for anomaly detection
+- Regular vulnerability scanning and patching
+
+**Relevance for the-forge:** This is the authoritative government security baseline for MCP-based agent systems. Any platform claiming enterprise readiness must implement these controls. Should inform the-forge's MCP server implementation and sandboxing architecture.
+
+### 2. Google Antigravity (I/O 2026 Developer Keynote Details)
+
+Expanded details from the developer keynote:
+- **Antigravity** (formerly Gemini CLI) upgraded to an agent-first development platform
+- Enhanced multi-agent workflow orchestration, subagents, and sandboxing built in
+- Production-ready agent building capabilities
+- Google positioning this as their answer to Claude Code + Cursor combined
+
+### 3. Docker — AI Coding Agent Security Horror Stories
+
+Docker published a report on AI coding agent security risks, specifically citing MCP servers as a new attack surface for:
+- Supply-chain poisoning
+- RCE through malicious MCP tool definitions
+- Data exfiltration via compromised tool responses
+- Aligns with NSA guidance and the vm2/Semantic Kernel CVEs from earlier in May
+
+### 4. Google I/O On-Demand Sessions (May 21)
+
+Google I/O on-demand sessions, codelabs, and additional technical details scheduled for release May 21. May contain further agent-related announcements.
+
+### Sources
+
+- https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf
+- https://developers.googleblog.com/all-the-news-from-the-google-io-2026-developer-keynote/
+- https://techcrunch.com/2026/05/19/how-to-use-googles-new-ai-agents-to-go-beyond-your-standard-searches/
+- https://www.docker.com/blog/ai-coding-agent-horror-stories-security-risks/
