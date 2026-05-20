@@ -155,7 +155,7 @@ All 18 utility packages implemented and tested.
 - [ ] `--output=json/quiet/verbose` on every command — stable schema, no ANSI in JSON mode
 - [ ] Session resumption after crash — reload from replay log, restore agent state
 - [ ] Provider outage playbook — detect outage, auto-fallback, notify, generate incident report
-- [ ] Cost anomaly detection — rate-based alerting, hard budget stops, root cause analysis
+- [x] Cost anomaly detection — rate-based alerting, hard budget stops, root cause analysis
 - [ ] Agent runaway detection — stuck loop/stalled/context explosion detection with auto-terminate
 - [ ] Disk/memory/goroutine resource monitoring with auto-cleanup
 
