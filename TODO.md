@@ -142,6 +142,47 @@ All 18 utility packages implemented and tested.
 - [ ] Git worktree auto-management for parallel agents
 - [ ] Docker Compose integration for test environments
 
+## Phase 3.5: Protocol Strategy (From Brainstorm #5)
+
+- [ ] Universal Protocol Bridge — `forge bridge` translating between MCP ↔ A2A ↔ ACP
+- [ ] MCP Server Discovery — `forge mcp discover` auto-find local/network MCP servers
+- [ ] Agent Identity & Trust Layer — cryptographic agent identities, signed manifests, trust registry
+
+## Phase 3.5: Production Hardening (From Brainstorm #5)
+
+- [ ] Graceful shutdown — SIGTERM/SIGINT handling with state persistence, drain connections
+- [ ] File locking for concurrent agents — advisory locks, conflict detection, auto-merge
+- [ ] `--output=json/quiet/verbose` on every command — stable schema, no ANSI in JSON mode
+- [ ] Session resumption after crash — reload from replay log, restore agent state
+- [ ] Provider outage playbook — detect outage, auto-fallback, notify, generate incident report
+- [ ] Cost anomaly detection — rate-based alerting, hard budget stops, root cause analysis
+- [ ] Agent runaway detection — stuck loop/stalled/context explosion detection with auto-terminate
+- [ ] Disk/memory/goroutine resource monitoring with auto-cleanup
+
+## Phase 3.5: Developer Adoption (From Brainstorm #5)
+
+- [ ] `forge quickstart` — 5-minute interactive onboarding with guaranteed first win
+- [ ] Achievement system — track milestones (first chat, first pipeline, first orchestration)
+- [ ] Error messages that teach — every error includes fix suggestion + docs link
+- [ ] Progressive complexity ladder — Level 0 (chat) through Level 5 (serve), documented path
+
+## Phase 3.5: Novel Features (From Brainstorm #5)
+
+- [ ] `forge archaeologist` — AI-powered git forensics (why was code written, dead code detection)
+- [ ] `forge tune` — Bayesian hyperparameter optimization for agents (temp, top_p, system prompt)
+- [ ] `forge seed` — project bootstrapping from natural language intent
+- [ ] `forge witness` — cryptographic proof of agent actions (Merkle tree, tamper verification)
+- [ ] `forge empath` — user frustration detection with adaptive response
+
+## Phase 3.5: Strategic (From Brainstorm #5)
+
+- [ ] "Forge as CI" — agent-native CI system (not GitHub Actions running Forge)
+- [ ] Code Review Bot as Trojan Horse — single-purpose GitHub App, wedge to full adoption
+- [ ] Forge Desktop (Electron wrapper) — system tray, drag-and-drop, no CLI required
+- [ ] Forge Cloud — hosted multi-tenant SaaS with hybrid mode
+- [ ] Agentfile standard working group — publish spec independently
+- [ ] ForgeConf virtual conference plan
+
 ## Phase 4: Polish & Release
 - [ ] CI/CD pipeline (GitHub Actions)
 - [ ] Cross-platform builds
