@@ -131,16 +131,16 @@ All 18 utility packages implemented and tested.
 - [x] `forge compliance` — compliance report generation
 
 ## Phase 3: Next Features (In Progress)
-- [ ] `forge suggest` — Context-aware agent suggestions
+- [x] `forge suggest` — Context-aware agent suggestions
 - [ ] `forge explain error` — Intelligent error interpretation
-- [ ] Agent output quality scoring — multi-dimensional
-- [ ] Agent A/B testing framework
-- [ ] Multi-tenancy in `forge serve`
-- [ ] Data residency controls
-- [ ] Dead letter queue for failed tasks
+- [x] Agent output quality scoring — multi-dimensional
+- [x] Agent A/B testing framework
+- [x] Multi-tenancy in `forge serve`
+- [x] Data residency controls
+- [x] Dead letter queue for failed tasks
 - [ ] Jira/Linear/Notion integration
-- [ ] Git worktree auto-management for parallel agents
-- [ ] Docker Compose integration for test environments
+- [x] Git worktree auto-management for parallel agents
+- [x] Docker Compose integration for test environments
 
 ## Phase 3.5: Protocol Strategy (From Brainstorm #5)
 
@@ -194,8 +194,8 @@ All 18 utility packages implemented and tested.
 - [ ] Public release
 
 ## Current Stats
-- ~55K lines of Go
-- 69 internal packages
+- ~60K lines of Go
+- 71 internal packages
 - 50+ commands
 - Build: ✅ Vet: ✅
 - Version: 0.7.0

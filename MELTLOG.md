@@ -138,3 +138,22 @@ review, docs, mcp, explain, config
 - ~53K lines of Go
 - 79 internal packages
 - Build: ✅ Vet: ✅
+
+---
+
+## Session 2026-05-20 22:00 UTC — Phase 3 Quality & Testing
+
+### Added
+- `internal/quality` — Multi-dimensional agent output quality scoring (correctness, completeness, style, security, efficiency, readability, testability), letter grades (A+ through F), weighted scoring, trend analysis, report persistence
+- `internal/abtest` — Agent A/B testing framework with experiment lifecycle (draft→running→completed), variant management, statistical significance testing, auto-completion when sample size met, analysis with confidence metrics
+- `internal/tenant` — Multi-tenancy with RBAC, API key management (scoped read/write/admin), resource quotas (agents, concurrent, cost/day, cost/month, requests/min), usage tracking with daily/monthly resets, HTTP middleware for auth/quota/residency enforcement, REST API for tenant management, data residency controls
+- `cmd/quality.go` — `forge quality` command with evaluate, report, list, trend subcommands
+- `cmd/abtest.go` — `forge abtest` command with create, start, record, analyze, list, complete, cancel subcommands
+- `cmd/tenant.go` — `forge tenant` command with create, list, get, update, delete, key, usage, suspend, resume subcommands
+
+### Stats
+- **Lines of Go:** ~60,600
+- **Internal packages:** 89
+- **Commands:** 55+
+- **Build:** ✅ **Vet:** ✅
+- **Version:** 0.9.0
