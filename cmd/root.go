@@ -38,6 +38,7 @@ The wielder and the sword are one.`,
 		costCmd(),
 		initCmd(),
 		apiCmd(),
+		doctorCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
