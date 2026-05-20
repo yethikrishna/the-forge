@@ -118,6 +118,8 @@ The wielder and the sword are one.`,
 		levelCmd(),
 		sbomCmd(),
 		gitserveCmd(),
+		migrateCmd(),
+		consensusCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
