@@ -424,3 +424,45 @@ Berkeley RDI's Agentic AI Weekly mentions an upcoming **Agentic AI Summit** sche
 - https://47billion.com/blog/ai-agents-in-production-frameworks-protocols-and-what-actually-works-in-2026/
 - https://cloudsummit.eu/blog/microsoft-agent-framework-production-ready-convergence-autogen-semantic-kernel
 - https://berkeleyrdi.substack.com/p/agentic-ai-weekly-berkeley-rdi-may-e16
+
+---
+
+## 2026-05-20 (23:24 UTC) — Final Daily Update
+
+### 1. Google Gemini Spark (I/O 2026)
+
+Announced during Google I/O (May 19–20):
+- **24/7 personal AI agent** with deep Gmail, Docs, and Workspace integration
+- Positioned as a proactive "information agent" that monitors topics in the background
+- Persistent, context-aware — always on, always learning
+- Relevance: represents the consumer end of the spectrum the-forge could target — personal persistent agents
+
+### 2. Databricks — Governing AI Agents at Scale with Unity Catalog
+
+- Released guidance on governing AI agents using **Unity Catalog + Unity AI Gateway**
+- MCP servers registered once in Unity Catalog can be invoked from any framework with consistent permissions and full audit trails
+- Key pattern: **register once, govern everywhere** — MCP tool servers as first-class governed assets
+- Relevance for the-forge: this is the enterprise governance model for MCP-based agent stacks. Any serious agent platform needs this level of tool governance.
+
+### 3. MCP as De-Facto Standard — Industry Confirmation
+
+Multiple May 20 sources confirm MCP has crossed the chasm:
+- Now backed by OpenAI, Google, Microsoft, AWS, Salesforce (not just Anthropic)
+- Described as "USB port for agents" in industry coverage
+- Databricks, Informatica shipping production MCP implementations with governance
+- Reduces custom integration work across frameworks (LangGraph, CrewAI, AutoGen, Google ADK all adding native MCP)
+- A2A building on top of MCP as the tool layer
+
+### 4. CDO Survey Data Point
+
+Informatica cited a 2026 CDO survey: **76% of data leaders say governance hasn't kept pace with AI adoption**. This governance gap is the primary enterprise blocker for agent adoption — and the primary opportunity for platforms like the-forge that bake governance in.
+
+### No Other New Developments
+
+All other May 20 announcements (Informatica, Acceldata, RapDev, Fetch.ai, Gartner, IMDA, Manhattan Associates) covered in previous updates. No new coding agent launches, sandbox CVEs, or protocol changes.
+
+### Sources
+
+- https://www.youtube.com/watch?v=RUs0U_CNwlY
+- https://www.databricks.com/blog/governing-ai-agents-scale-unity-catalog
+- https://dev.to/alexmercedcoder/ai-weekly-google-reshapes-the-coding-stack-claude-pulls-ahead-and-the-agent-protocol-stack-17co
