@@ -313,6 +313,11 @@ func parseFrontmatter(tmpl *Template, frontmatter string) {
 		key := strings.TrimSpace(line[:idx])
 		val := strings.TrimSpace(line[idx+1:])
 
+		// Strip surrounding quotes
+		if (strings.HasPrefix(val, "\"") && strings.HasSuffix(val, "\"")) || (strings.HasPrefix(val, "'") && strings.HasSuffix(val, "'")) {
+			val = val[1 : len(val)-1]
+		}
+
 		switch key {
 		case "description":
 			tmpl.Description = val

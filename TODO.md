@@ -109,7 +109,7 @@ All 18 utility packages implemented and tested.
 - [ ] Agent A/B testing framework
 
 ## Phase 2.5: Prompt Engineering
-- [ ] Prompt template management — `.forge/prompts/`
+- [x] Prompt template management — `forge prompt` with .forge/prompts/ directory, variable interpolation, frontmatter
 - [ ] Prompt regression testing
 - [ ] Prompt cost optimizer
 
