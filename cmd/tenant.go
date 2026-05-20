@@ -7,186 +7,94 @@ import (
 	"path/filepath"
 	"text/tabwriter"
 
+	"github.com/forge/sword/internal/pretty"
+	"github.com/forge/sword/internal/tenant"
 	"github.com/spf13/cobra"
-	"github.com/yethikrishna/the-forge/internal/tenant"
 )
 
 func tenantCmd() *cobra.Command {
+	var tenantDir string
+
 	cmd := &cobra.Command{
 		Use:   "tenant",
 		Short: "Manage multi-tenant workspaces",
-		Long: `Manage tenants for forge serve with isolated agents, memory, cost tracking,
-and resource quotas. Each tenant gets their own API keys and usage limits.
+		Long: `Manage tenants for forge serve with isolated agents, sessions,
+cost tracking, and resource quotas.
 
 Examples:
-  forge tenant create acme-corp --max-agents=10
+  forge tenant create acme-corp --plan pro
   forge tenant list
-  forge tenant get tn-abc123
-  forge tenant key create tn-abc123 --name=ci-key --scopes=read,write
-  forge tenant usage tn-abc123`,
-		SilenceUsage: true,
+  forge tenant get <id>
+  forge tenant suspend <id>
+  forge tenant activate <id>
+  forge tenant member add <tenant-id> <user-id> --role admin
+  forge tenant member list <tenant-id>`,
 	}
 
-	cmd.AddCommand(
-		tenantCreateCmd(),
-		tenantListCmd(),
-		tenantGetCmd(),
-		tenantDeleteCmd(),
-		tenantKeyCmd(),
-		tenantUsageCmd(),
-		tenantSuspendCmd(),
-		tenantResumeCmd(),
-		tenantUpdateCmd(),
-	)
-
-	return cmd
-}
-
-func getTenantStore() (*tenant.Store, error) {
-	dir := filepath.Join(getForgeDir(), "tenants")
-	return tenant.NewStore(dir)
-}
-
-func tenantCreateCmd() *cobra.Command {
-	var displayName string
-	var maxAgents int
-	var maxConcurrent int
-	var maxCostDay float64
-	var maxCostMonth float64
-	var maxRequests int
-	var maxSessions int
-	var dataResidency string
-
-	cmd := &cobra.Command{
+	createCmd := &cobra.Command{
 		Use:   "create <name>",
 		Short: "Create a new tenant",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := getTenantStore()
+			store := getTenantStore(tenantDir)
+			plan, _ := cmd.Flags().GetString("plan")
+
+			t, err := store.Create(args[0], plan)
 			if err != nil {
 				return err
 			}
 
-			quota := tenant.Quota{
-				MaxAgents:       maxAgents,
-				MaxConcurrent:   maxConcurrent,
-				MaxCostPerDay:   maxCostDay,
-				MaxCostPerMonth: maxCostMonth,
-				MaxRequests:     maxRequests,
-				MaxSessions:     maxSessions,
-				DataResidency:   dataResidency,
-			}
-
-			t, err := store.Create(args[0], quota)
-			if err != nil {
-				return err
-			}
-
-			if displayName != "" {
-				store.Update(t.ID, func(tt *tenant.Tenant) error {
-					tt.DisplayName = displayName
-					return nil
-				})
-			}
-
-			// Create default API key
-			key, err := store.CreateAPIKey(t.ID, "default", []string{"read", "write"})
-			if err != nil {
-				return fmt.Errorf("failed to create API key: %w", err)
-			}
-
-			fmt.Printf("Tenant created: %s (%s)\n", t.Name, t.ID)
-			fmt.Printf("API Key: %s\n", key.Key)
-			fmt.Println("\n⚠️  Save this API key — it won't be shown again.")
-			fmt.Printf("\nSet it in requests:\n")
-			fmt.Printf("  Authorization: Bearer %s\n", key.Key)
-			fmt.Printf("  X-Forge-API-Key: %s\n", key.Key)
+			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Tenant created: %s (%s) [%s]", t.Name, t.ID, t.Plan)))
 			return nil
 		},
 	}
+	createCmd.Flags().String("plan", "free", "Plan (free, pro, enterprise)")
 
-	cmd.Flags().StringVar(&displayName, "display-name", "", "Human-readable name")
-	cmd.Flags().IntVar(&maxAgents, "max-agents", 0, "Max agents (0=unlimited)")
-	cmd.Flags().IntVar(&maxConcurrent, "max-concurrent", 0, "Max concurrent runs (0=unlimited)")
-	cmd.Flags().Float64Var(&maxCostDay, "max-cost-day", 0, "Max cost per day in USD (0=unlimited)")
-	cmd.Flags().Float64Var(&maxCostMonth, "max-cost-month", 0, "Max cost per month in USD (0=unlimited)")
-	cmd.Flags().IntVar(&maxRequests, "max-requests", 0, "Max requests per minute (0=unlimited)")
-	cmd.Flags().IntVar(&maxSessions, "max-sessions", 0, "Max sessions (0=unlimited)")
-	cmd.Flags().StringVar(&dataResidency, "data-residency", "", "Data residency policy (us-only, eu-only)")
-
-	return cmd
-}
-
-func tenantListCmd() *cobra.Command {
-	var jsonOutput bool
-
-	cmd := &cobra.Command{
+	listCmd := &cobra.Command{
 		Use:   "list",
 		Short: "List all tenants",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := getTenantStore()
+			store := getTenantStore(tenantDir)
+			tenants, err := store.List()
 			if err != nil {
 				return err
 			}
 
-			tenants := store.List()
-			if jsonOutput {
-				data, _ := json.MarshalIndent(tenants, "", "  ")
-				fmt.Println(string(data))
-				return nil
-			}
-
 			if len(tenants) == 0 {
-				fmt.Println("No tenants found. Create one with: forge tenant create <name>")
+				fmt.Println(pretty.InfoLine("No tenants found"))
 				return nil
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "NAME\tID\tSTATUS\tAGENTS\tCOST/DAY\tKEYS")
+			fmt.Fprintln(w, "NAME\tID\tPLAN\tSTATUS\tAGENTS\tCOST LIMIT")
 			for _, t := range tenants {
-				agents := fmt.Sprintf("%d", t.Usage.ActiveAgents)
+				agents := "∞"
 				if t.Quota.MaxAgents > 0 {
-					agents = fmt.Sprintf("%d/%d", t.Usage.ActiveAgents, t.Quota.MaxAgents)
+					agents = fmt.Sprintf("%d", t.Quota.MaxAgents)
 				}
-				costDay := "unlimited"
-				if t.Quota.MaxCostPerDay > 0 {
-					costDay = fmt.Sprintf("$%.2f/$%.2f", t.Usage.CostToday, t.Quota.MaxCostPerDay)
+				cost := "∞"
+				if t.Quota.MaxCostUSD > 0 {
+					cost = fmt.Sprintf("$%.2f", t.Quota.MaxCostUSD)
 				}
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%d\n",
-					t.Name, t.ID, t.Status, agents, costDay, len(t.APIKeys))
+				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", t.Name, t.ID, t.Plan, t.Status, agents, cost)
 			}
 			w.Flush()
 			return nil
 		},
 	}
 
-	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
-
-	return cmd
-}
-
-func tenantGetCmd() *cobra.Command {
-	var jsonOutput bool
-
-	cmd := &cobra.Command{
+	getCmd := &cobra.Command{
 		Use:   "get <id>",
 		Short: "Get tenant details",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := getTenantStore()
+			store := getTenantStore(tenantDir)
+			t, err := store.Get(args[0])
 			if err != nil {
 				return err
 			}
 
-			// Try as ID first, then as name
-			t, err := store.Get(args[0])
-			if err != nil {
-				t, err = store.GetByName(args[0])
-				if err != nil {
-					return err
-				}
-			}
-
+			jsonOutput, _ := cmd.Flags().GetBool("json")
 			if jsonOutput {
 				data, _ := json.MarshalIndent(t, "", "  ")
 				fmt.Println(string(data))
@@ -197,334 +105,144 @@ func tenantGetCmd() *cobra.Command {
 			return nil
 		},
 	}
+	getCmd.Flags().Bool("json", false, "Output as JSON")
 
-	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
-
-	return cmd
-}
-
-func tenantDeleteCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "delete <id>",
-		Short: "Archive a tenant",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := getTenantStore()
-			if err != nil {
-				return err
-			}
-
-			if err := store.Delete(args[0]); err != nil {
-				return err
-			}
-
-			fmt.Printf("Tenant %s archived.\n", args[0])
-			return nil
-		},
-	}
-
-	return cmd
-}
-
-func tenantUpdateCmd() *cobra.Command {
-	var displayName string
-	var maxAgents int
-	var maxConcurrent int
-	var maxCostDay float64
-	var maxCostMonth float64
-	var maxRequests int
-	var dataResidency string
-
-	cmd := &cobra.Command{
+	updateCmd := &cobra.Command{
 		Use:   "update <id>",
 		Short: "Update tenant configuration",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := getTenantStore()
-			if err != nil {
-				return err
-			}
+			store := getTenantStore(tenantDir)
+			plan, _ := cmd.Flags().GetString("plan")
+			name, _ := cmd.Flags().GetString("name")
 
-			err = store.Update(args[0], func(t *tenant.Tenant) error {
-				if displayName != "" {
-					t.DisplayName = displayName
+			t, err := store.Update(args[0], func(t *tenant.Tenant) {
+				if name != "" {
+					t.Name = name
 				}
-				if cmd.Flags().Changed("max-agents") {
-					t.Quota.MaxAgents = maxAgents
+				if plan != "" {
+					t.Plan = plan
+					t.Quota = tenant.PlanDefaults(plan)
 				}
-				if cmd.Flags().Changed("max-concurrent") {
-					t.Quota.MaxConcurrent = maxConcurrent
-				}
-				if cmd.Flags().Changed("max-cost-day") {
-					t.Quota.MaxCostPerDay = maxCostDay
-				}
-				if cmd.Flags().Changed("max-cost-month") {
-					t.Quota.MaxCostPerMonth = maxCostMonth
-				}
-				if cmd.Flags().Changed("max-requests") {
-					t.Quota.MaxRequests = maxRequests
-				}
-				if cmd.Flags().Changed("data-residency") {
-					t.Quota.DataResidency = dataResidency
-				}
-				return nil
 			})
 			if err != nil {
 				return err
 			}
 
-			t, _ := store.Get(args[0])
-			fmt.Printf("Tenant %s updated.\n", t.Name)
+			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Tenant %s updated", t.Name)))
 			return nil
 		},
 	}
+	updateCmd.Flags().String("plan", "", "Change plan (free, pro, enterprise)")
+	updateCmd.Flags().String("name", "", "Change tenant name")
 
-	cmd.Flags().StringVar(&displayName, "display-name", "", "Human-readable name")
-	cmd.Flags().IntVar(&maxAgents, "max-agents", 0, "Max agents (0=unlimited)")
-	cmd.Flags().IntVar(&maxConcurrent, "max-concurrent", 0, "Max concurrent runs (0=unlimited)")
-	cmd.Flags().Float64Var(&maxCostDay, "max-cost-day", 0, "Max cost per day in USD (0=unlimited)")
-	cmd.Flags().Float64Var(&maxCostMonth, "max-cost-month", 0, "Max cost per month in USD (0=unlimited)")
-	cmd.Flags().IntVar(&maxRequests, "max-requests", 0, "Max requests per minute (0=unlimited)")
-	cmd.Flags().StringVar(&dataResidency, "data-residency", "", "Data residency policy")
-
-	return cmd
-}
-
-func tenantKeyCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "key",
-		Short: "Manage tenant API keys",
-	}
-
-	cmd.AddCommand(
-		tenantKeyCreateCmd(),
-		tenantKeyListCmd(),
-		tenantKeyRevokeCmd(),
-	)
-
-	return cmd
-}
-
-func tenantKeyCreateCmd() *cobra.Command {
-	var scopes []string
-
-	cmd := &cobra.Command{
-		Use:   "create <tenant-id>",
-		Short: "Create a new API key for a tenant",
+	deleteCmd := &cobra.Command{
+		Use:   "delete <id>",
+		Short: "Delete a tenant",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := getTenantStore()
-			if err != nil {
+			store := getTenantStore(tenantDir)
+			if err := store.Delete(args[0]); err != nil {
 				return err
 			}
-
-			name := "generated"
-			key, err := store.CreateAPIKey(args[0], name, scopes)
-			if err != nil {
-				return err
-			}
-
-			fmt.Printf("API Key created: %s\n", key.Key)
-			fmt.Printf("Key ID: %s\n", key.ID)
-			fmt.Printf("Scopes: %v\n", key.Scopes)
-			fmt.Println("\n⚠️  Save this API key — it won't be shown again.")
+			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Tenant %s deleted", args[0])))
 			return nil
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&scopes, "scopes", []string{"read", "write"}, "Key scopes (read, write, admin)")
+	suspendCmd := &cobra.Command{
+		Use:   "suspend <id>",
+		Short: "Suspend a tenant",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			store := getTenantStore(tenantDir)
+			_, err := store.Suspend(args[0])
+			if err != nil {
+				return err
+			}
+			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Tenant %s suspended", args[0])))
+			return nil
+		},
+	}
 
-	return cmd
-}
+	activateCmd := &cobra.Command{
+		Use:   "activate <id>",
+		Short: "Activate a tenant",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			store := getTenantStore(tenantDir)
+			_, err := store.Activate(args[0])
+			if err != nil {
+				return err
+			}
+			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Tenant %s activated", args[0])))
+			return nil
+		},
+	}
 
-func tenantKeyListCmd() *cobra.Command {
-	cmd := &cobra.Command{
+	// Member subcommands
+	memberCmd := &cobra.Command{
+		Use:   "member",
+		Short: "Manage tenant members",
+	}
+
+	memberAddCmd := &cobra.Command{
+		Use:   "add <tenant-id> <user-id>",
+		Short: "Add a member to a tenant",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			store := getTenantStore(tenantDir)
+			role, _ := cmd.Flags().GetString("role")
+
+			m, err := store.AddMember(args[0], args[1], tenant.Role(role))
+			if err != nil {
+				return err
+			}
+
+			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Added %s as %s", args[1], m.Role)))
+			return nil
+		},
+	}
+	memberAddCmd.Flags().String("role", "member", "Role (owner, admin, member, viewer)")
+
+	memberListCmd := &cobra.Command{
 		Use:   "list <tenant-id>",
-		Short: "List API keys for a tenant",
+		Short: "List tenant members",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := getTenantStore()
+			store := getTenantStore(tenantDir)
+			members, err := store.ListMembers(args[0])
 			if err != nil {
 				return err
 			}
 
-			t, err := store.Get(args[0])
-			if err != nil {
-				t, err = store.GetByName(args[0])
-				if err != nil {
-					return err
-				}
-			}
-
-			if len(t.APIKeys) == 0 {
-				fmt.Println("No API keys found.")
+			if len(members) == 0 {
+				fmt.Println(pretty.InfoLine("No members found"))
 				return nil
 			}
 
 			w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-			fmt.Fprintln(w, "ID\tNAME\tSCOPES\tCREATED\tLAST USED")
-			for _, k := range t.APIKeys {
-				lastUsed := "never"
-				if k.LastUsed != nil {
-					lastUsed = k.LastUsed.Format("2006-01-02 15:04")
-				}
-				fmt.Fprintf(w, "%s\t%s\t%v\t%s\t%s\n",
-					k.ID, k.Name, k.Scopes, k.CreatedAt.Format("2006-01-02"), lastUsed)
+			fmt.Fprintln(w, "USER\tROLE\tJOINED")
+			for _, m := range members {
+				fmt.Fprintf(w, "%s\t%s\t%s\n", m.UserID, m.Role, m.JoinedAt.Format("2006-01-02"))
 			}
 			w.Flush()
 			return nil
 		},
 	}
 
-	return cmd
-}
+	memberCmd.AddCommand(memberAddCmd, memberListCmd)
 
-func tenantKeyRevokeCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "revoke <tenant-id> <key-id>",
-		Short: "Revoke an API key",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := getTenantStore()
-			if err != nil {
-				return err
-			}
-
-			if err := store.RevokeAPIKey(args[0], args[1]); err != nil {
-				return err
-			}
-
-			fmt.Printf("API key %s revoked.\n", args[1])
-			return nil
-		},
-	}
+	cmd.AddCommand(createCmd, listCmd, getCmd, updateCmd, deleteCmd, suspendCmd, activateCmd, memberCmd)
+	cmd.PersistentFlags().StringVar(&tenantDir, "dir", "", "Tenant data directory (default: .forge/tenants)")
 
 	return cmd
 }
 
-func tenantUsageCmd() *cobra.Command {
-	var jsonOutput bool
-
-	cmd := &cobra.Command{
-		Use:   "usage <id>",
-		Short: "Show tenant resource usage",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := getTenantStore()
-			if err != nil {
-				return err
-			}
-
-			usage, err := store.GetUsage(args[0])
-			if err != nil {
-				return err
-			}
-
-			t, _ := store.Get(args[0])
-
-			if jsonOutput {
-				data, _ := json.MarshalIndent(map[string]interface{}{
-					"tenant_id": args[0],
-					"usage":     usage,
-					"quota":     t.Quota,
-				}, "", "  ")
-				fmt.Println(string(data))
-				return nil
-			}
-
-			fmt.Printf("Usage for %s (%s):\n\n", t.Name, t.ID)
-			fmt.Printf("  Active Agents:    %d", usage.ActiveAgents)
-			if t.Quota.MaxAgents > 0 {
-				fmt.Printf(" / %d", t.Quota.MaxAgents)
-			}
-			fmt.Println()
-
-			fmt.Printf("  Active Sessions:  %d", usage.ActiveSessions)
-			if t.Quota.MaxSessions > 0 {
-				fmt.Printf(" / %d", t.Quota.MaxSessions)
-			}
-			fmt.Println()
-
-			fmt.Printf("  Concurrent Runs:  %d", usage.ConcurrentRuns)
-			if t.Quota.MaxConcurrent > 0 {
-				fmt.Printf(" / %d", t.Quota.MaxConcurrent)
-			}
-			fmt.Println()
-
-			fmt.Printf("  Cost Today:       $%.4f", usage.CostToday)
-			if t.Quota.MaxCostPerDay > 0 {
-				fmt.Printf(" / $%.2f", t.Quota.MaxCostPerDay)
-			}
-			fmt.Println()
-
-			fmt.Printf("  Cost This Month:  $%.4f", usage.CostThisMonth)
-			if t.Quota.MaxCostPerMonth > 0 {
-				fmt.Printf(" / $%.2f", t.Quota.MaxCostPerMonth)
-			}
-			fmt.Println()
-
-			fmt.Printf("  Total Cost:       $%.4f\n", usage.TotalCost)
-			fmt.Printf("  Total Requests:   %d\n", usage.TotalRequests)
-
-			return nil
-		},
+func getTenantStore(flagDir string) *tenant.Store {
+	if flagDir != "" {
+		return tenant.NewStore(flagDir)
 	}
-
-	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
-
-	return cmd
-}
-
-func tenantSuspendCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "suspend <id>",
-		Short: "Suspend a tenant",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := getTenantStore()
-			if err != nil {
-				return err
-			}
-
-			err = store.Update(args[0], func(t *tenant.Tenant) error {
-				t.Status = "suspended"
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-
-			fmt.Printf("Tenant %s suspended.\n", args[0])
-			return nil
-		},
-	}
-
-	return cmd
-}
-
-func tenantResumeCmd() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "resume <id>",
-		Short: "Resume a suspended tenant",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			store, err := getTenantStore()
-			if err != nil {
-				return err
-			}
-
-			err = store.Update(args[0], func(t *tenant.Tenant) error {
-				t.Status = "active"
-				return nil
-			})
-			if err != nil {
-				return err
-			}
-
-			fmt.Printf("Tenant %s resumed.\n", args[0])
-			return nil
-		},
-	}
-
-	return cmd
+	wd, _ := os.Getwd()
+	return tenant.NewStore(filepath.Join(wd, ".forge", "tenants"))
 }
