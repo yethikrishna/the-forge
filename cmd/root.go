@@ -71,6 +71,7 @@ The wielder and the sword are one.`,
 		docsCmd(),
 		translateCmd(),
 		contractCmd(),
+		lineageCmd(),
 		pairCmd(),
 		promptCmd(),
 	)

@@ -128,6 +128,42 @@ All 18 utility packages implemented and tested.
 - [ ] Documentation website
 - [ ] Public release
 
+## Phase 4+ Trend-Driven Features
+*Updated 2026-05-21 from trend analysis (run 2)*
+
+### P0 — This Week
+- [ ] **MCP Tool Composer** — combine multiple MCP servers behind one Forge gateway (already started, prioritize completion)
+- [ ] **Observability: Trace Viewer** — OpenTelemetry spans exist; add `forge traces` CLI viewer + export to Jaeger/Zipkin
+- [ ] **`forge init --local`** — one-command Ollama + DeepSeek/Qwen preset, zero cloud dependency
+
+### P1 — Next 2 Weeks
+- [ ] **Agent Role System** — role definitions (planner, coder, tester, reviewer) for `forge orchestrate`
+- [ ] **Human-in-the-Loop** — `forge approve` command, pause/resume agent runs, escalation notifications
+- [ ] **Code Knowledge Graph** — enhance `forge index` with pre-indexed relationship graph (à la codegraph)
+
+### P2 — Next Month
+- [ ] **Security Scanning Hooks** — pre/post agent run hooks, integrate with `forge jail` sandbox
+- [ ] **Forgefile v2** — TOML multi-agent workflow syntax (GitHub Actions-style for AI agents)
+- [ ] **Web Dashboard Real-Time** — WebSocket-based agent monitoring, cost charts, trace viewer
+- [ ] **Enterprise Auth** — OIDC/SAML SSO for `forge serve`, RBAC for agents/sessions
+
+### P3 — Next Quarter
+- [ ] **Plugin Marketplace** — registry with publish/discover/install, versioning, ratings, WASM plugins
+- [ ] **A2A Protocol** — Google Agent-to-Agent for inter-framework communication
+- [ ] **Agent A/B Testing** — compare agent outputs across models/prompts automatically
+- [ ] **Agent Output Quality Scoring** — multi-dimensional scoring with configurable rubrics
+
+### Deprioritized / Pivoted
+- ~~`forge desktop`~~ → Focus on VS Code extension (MCP-native, VS Code supports MCP directly)
+- ~~`forge blink`~~ → Pivot to Forge-as-MCP-tool for existing bot/workflow platforms (n8n, Make Maia)
+- ~~`forge mux`~~ → `forge orchestrate` covers parallel agents; mux is niche
+
+### Competitive Watchlist
+- **Warp Oz** — cloud agent orchestration, GA, enterprise features. Counter: local-first, self-hosted
+- **Microsoft Agent Framework 1.0** — Azure-native, enterprise. Counter: Go binary, no cloud dependency
+- **opencode** — fast-growing agentic coding agent on GitHub. Monitor for integration potential
+- **codegraph** — pre-indexed code knowledge graph. Enhance `forge index` similarly
+
 ## Current Stats
 - ~37K lines of Go
 - 61 internal packages
