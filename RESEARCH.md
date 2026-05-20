@@ -224,3 +224,68 @@ This is a significant new entrant — xAI now has a coding agent to match Anthro
 - https://www.digitalapplied.com/blog/ai-agent-protocol-ecosystem-map-2026-mcp-a2a-acp-ucp
 - https://www.credal.ai/blog/what-happened-to-a2a-protocol
 - https://github.com/Zijian-Ni/awesome-ai-agents-2026
+
+---
+
+## 2026-05-20 (21:01 UTC) — Incremental Update
+
+### 1. Google I/O 2026 — Gemini 3.5 Flash & Agentic Announcements
+
+- **Gemini 3.5 Flash** now available — Google's strongest agentic and coding model. Strong benchmarks on Terminal-Bench, MCP Atlas, and multimodal understanding. Rolling out via Google AI Studio, Gemini Enterprise Agent Platform, and Antigravity (Google's IDE/agent surface).
+- **CodeMender** — new AI security agent on Google's Agent Platform for finding and fixing vulnerabilities.
+- **Antigravity** — Google's agent-first IDE surface, positioning against Cursor and Windsurf.
+
+### 2. Gartner Enterprise Coding Agents Report (May 20, 2026)
+
+Gartner released a major market report today:
+- By 2027, **>65% of engineering teams** using agentic coding will treat traditional IDEs as optional
+- Market entering "new phase of expansion and competitive realignment"
+- Shift toward automated platforms for control, governance, and validation
+- Implications: IDE-centric tooling (like the-forge's potential web dashboard) matters less than agent-native orchestration and governance layers
+
+### 3. Informatica/Salesforce — Headless MCP Data Layer (May 20)
+
+At Informatica World 2026:
+- **Native MCP support** for headless data management — any AI agent can invoke data management with zero code
+- **CLAIRE** as multi-agent intelligence layer across Salesforce, AWS, Azure, Databricks, Snowflake
+- Purpose-built agents: Data Quality Agent, Metadata Enrichment Agent, Data Steward Agent
+- **Agent Fabric Context Catalog** — industry's first unified catalog for enterprise data assets AND AI agents
+- Signals that MCP is becoming the default integration layer for enterprise data platforms
+
+### 4. Singapore IMDA — Agentic AI Governance Framework Update (May 20)
+
+- Updated Model AI Governance Framework for Agentic AI
+- Incorporated feedback from 60+ organizations (AWS, DBS, Google, Salesforce)
+- Added 10+ real-world agentic AI deployment case studies
+- Best practices for risk assessment, human accountability, transparency
+- Relevant for the-forge: governance patterns to consider for agent orchestration
+
+### 5. A2A Milestone — 150+ Organizations
+
+Linux Foundation press release (recent):
+- A2A protocol surpassed **150 supporting organizations**
+- Deep integrations into Google Cloud, Azure, AWS
+- Reached enterprise production use within its first year
+- MCP reports ~97 million monthly SDK downloads, tens of thousands of MCP servers
+
+### 6. GitHub Copilot Agent Now GA
+
+- GitHub Copilot Agent is now generally available
+- Handles feature implementation, bug fixes, and PR creation autonomously
+- Competes with Claude Code, Codex, Devin for autonomous coding workflows
+
+### 7. New Models Mentioned
+
+- **Devstral 2** — new coding-focused model (2026)
+- **Qwen3-Coder-Next** — new coding model from Alibaba
+- Both positioned as alternatives for open-source/self-hosted agent stacks
+
+### Sources
+
+- https://cloud.google.com/blog/products/ai-machine-learning/innovations-from-google-io-26-on-google-cloud
+- https://www.gartner.com/en/newsroom/press-releases/2026-05-20-gartner-says-the-market-for-enterprise-ai-coding-agents-is-entering-a-new-phase-of-expansion-and-competitive-realignment
+- https://www.informatica.com/about-us/news/news-releases/2026/05/20260520-informatica-from-salesforce-delivers-the-trusted-data-foundation-every-ai-agent-needs-now-across-every-surface-every-platform-everywhere.html
+- https://www.imda.gov.sg/resources/press-releases-factsheets-and-speeches/factsheets/2026/updated-model-ai-governance-framework-for-agentic-ai
+- https://www.linuxfoundation.org/press/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year
+- https://berkeleyrdi.substack.com/p/agentic-ai-weekly-berkeley-rdi-may-e16
+- https://blaxel.ai/blog/best-ai-agents

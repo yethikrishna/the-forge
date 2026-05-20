@@ -1,5 +1,8 @@
-// Package review provides agent-driven code review with PR integration.
-// Every blade is inspected before it leaves the forge.
+// Package review provides agent-driven code review capabilities.
+// Review diffs, generate review comments with severity levels,
+// and optionally post directly to GitHub/GitLab PRs.
+//
+// One agent writes, another reviews. The forge ensures quality.
 package review
 
 import (
@@ -8,539 +11,578 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
 
-// Severity represents review finding severity.
-type Severity int
+// Severity represents the severity level of a review comment.
+type Severity string
 
 const (
-	SeverityInfo Severity = iota
-	SeverityWarning
-	SeverityError
-	SeverityCritical
+	SevNit        Severity = "nit"
+	SevSuggestion Severity = "suggestion"
+	SevWarning    Severity = "warning"
+	SevBlocking   Severity = "blocking"
 )
 
-func (s Severity) String() string {
-	switch s {
-	case SeverityInfo:
-		return "info"
-	case SeverityWarning:
-		return "warning"
-	case SeverityError:
-		return "error"
-	case SeverityCritical:
-		return "critical"
-	default:
-		return "unknown"
-	}
+// Comment represents a single review comment.
+type Comment struct {
+	File     string   `json:"file"`
+	Line     int      `json:"line,omitempty"`
+	Severity Severity `json:"severity"`
+	Message  string   `json:"message"`
+	Suggestion string `json:"suggestion,omitempty"` // code suggestion
+	Rule     string   `json:"rule,omitempty"`       // rule that triggered the comment
 }
 
-// Category represents a review category.
-type Category int
-
-const (
-	CategorySecurity Category = iota
-	CategoryPerformance
-	CategoryStyle
-	CategoryCorrectness
-	CategoryMaintainability
-	CategoryTesting
-	CategoryDocumentation
-	CategoryComplexity
-)
-
-func (c Category) String() string {
-	switch c {
-	case CategorySecurity:
-		return "security"
-	case CategoryPerformance:
-		return "performance"
-	case CategoryStyle:
-		return "style"
-	case CategoryCorrectness:
-		return "correctness"
-	case CategoryMaintainability:
-		return "maintainability"
-	case CategoryTesting:
-		return "testing"
-	case CategoryDocumentation:
-		return "documentation"
-	case CategoryComplexity:
-		return "complexity"
-	default:
-		return "unknown"
-	}
-}
-
-// Finding is a single review finding.
-type Finding struct {
-	File      string   `json:"file"`
-	Line      int      `json:"line,omitempty"`
-	Severity  Severity `json:"severity"`
-	Category  Category `json:"category"`
-	Message   string   `json:"message"`
-	Suggestion string  `json:"suggestion,omitempty"`
-	Rule      string   `json:"rule,omitempty"`
-}
-
-// Review is a complete code review.
+// Review represents a complete code review result.
 type Review struct {
 	ID          string    `json:"id"`
-	Target      string    `json:"target"` // branch, commit, or path
-	Type        string    `json:"type"`   // diff, full, pr
-	Findings    []Finding `json:"findings"`
-	Score       float64   `json:"score"` // 0-100
-	Summary     string    `json:"summary"`
+	Target      string    `json:"target"`      // branch, commit, or PR
+	Reviewer    string    `json:"reviewer"`    // agent name
 	FilesReviewed int     `json:"files_reviewed"`
-	LinesReviewed int     `json:"lines_reviewed"`
-	CreatedAt   time.Time `json:"created_at"`
-	Duration    time.Duration `json:"duration"`
-	Reviewer    string    `json:"reviewer"`
+	LinesAdded    int     `json:"lines_added"`
+	LinesRemoved  int     `json:"lines_removed"`
+	Comments    []Comment `json:"comments"`
+	Summary     string    `json:"summary"`
+	Approved    bool      `json:"approved"`
+	Score       int       `json:"score"` // 0-100
+	Timestamp   time.Time `json:"timestamp"`
+	Duration    string    `json:"duration,omitempty"`
+}
+
+// Config defines review rules and policies.
+type Config struct {
+	MaxLineLength    int        `json:"max_line_length,omitempty"`
+	RequireTests     bool       `json:"require_tests"`
+	BlockSecrets     bool       `json:"block_secrets"`
+	BlockTODOs       bool       `json:"block_todos"`
+	RequiredDoc      bool       `json:"required_doc"`
+	StyleGuide       string     `json:"style_guide,omitempty"`
+	SeverityRules    map[string]Severity `json:"severity_rules,omitempty"`
+	ExcludePatterns  []string   `json:"exclude_patterns,omitempty"`
+}
+
+// DefaultConfig returns a sensible review configuration.
+func DefaultConfig() Config {
+	return Config{
+		MaxLineLength: 120,
+		RequireTests:  true,
+		BlockSecrets:  true,
+		BlockTODOs:    false,
+		RequiredDoc:   false,
+		ExcludePatterns: []string{"vendor/", "node_modules/", ".git/", "*.min.js", "*.lock"},
+	}
 }
 
 // Reviewer performs code reviews.
 type Reviewer struct {
-	rules    []Rule
-	storeDir string
+	WorkDir string
+	Config  Config
 }
 
-// Rule is a review rule.
-type Rule struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Category    Category `json:"category"`
-	Severity    Severity `json:"severity"`
-	Description string   `json:"description"`
-	Pattern     string   `json:"pattern,omitempty"` // regex pattern
-	Check       func(file string, content string) []Finding
+// NewReviewer creates a reviewer with the given config.
+func NewReviewer(workDir string, cfg Config) *Reviewer {
+	return &Reviewer{WorkDir: workDir, Config: cfg}
 }
 
-// NewReviewer creates a new code reviewer.
-func NewReviewer(storeDir string) *Reviewer {
-	r := &Reviewer{storeDir: storeDir}
-	r.rules = defaultRules()
-	return r
-}
-
-// ReviewDiff reviews the diff between two references.
-func (r *Reviewer) ReviewDiff(base, head string) (*Review, error) {
-	start := time.Now()
-
-	// Get changed files
-	changedFiles, err := r.getChangedFiles(base, head)
+// ReviewDiff reviews the diff between two refs (or the current unstaged/staged changes).
+// If targetRef is empty, reviews the working tree diff.
+func (r *Reviewer) ReviewDiff(targetRef string) (*Review, error) {
+	diff, err := r.getDiff(targetRef)
 	if err != nil {
-		return nil, fmt.Errorf("get changed files: %w", err)
+		return nil, fmt.Errorf("failed to get diff: %w", err)
+	}
+
+	stats, err := r.getDiffStats(targetRef)
+	if err != nil {
+		stats = DiffStats{}
 	}
 
 	review := &Review{
-		ID:        fmt.Sprintf("review-%d", time.Now().UnixNano()),
-		Target:    fmt.Sprintf("%s..%s", base, head),
-		Type:      "diff",
-		Findings:  make([]Finding, 0),
-		Reviewer:  "forge-review",
-		CreatedAt: start.UTC(),
+		ID:            fmt.Sprintf("review-%d", time.Now().UnixNano()),
+		Target:        targetRef,
+		Reviewer:      "forge-reviewer",
+		FilesReviewed: stats.Files,
+		LinesAdded:    stats.Added,
+		LinesRemoved:  stats.Removed,
+		Timestamp:     time.Now(),
 	}
 
-	for _, file := range changedFiles {
-		content, err := r.getFileContent(head, file)
-		if err != nil {
+	// Parse the diff into file sections
+	sections := parseDiff(diff)
+
+	// Run static checks
+	for _, section := range sections {
+		if r.shouldExclude(section.File) {
 			continue
 		}
-
-		findings := r.reviewFile(file, content)
-		review.Findings = append(review.Findings, findings...)
-		review.FilesReviewed++
-		review.LinesReviewed += strings.Count(content, "\n") + 1
+		comments := r.reviewSection(section)
+		review.Comments = append(review.Comments, comments...)
 	}
 
-	review.Score = r.CalculateScore(review)
+	// Compute score and approval
+	review.Score = r.computeScore(review)
+	review.Approved = r.isApproved(review)
 	review.Summary = r.generateSummary(review)
-	review.Duration = time.Since(start)
 
-	r.save(review)
 	return review, nil
 }
 
-// ReviewPath reviews all files in a path.
-func (r *Reviewer) ReviewPath(path string) (*Review, error) {
-	start := time.Now()
+// ReviewFile reviews a single file.
+func (r *Reviewer) ReviewFile(path string) (*Review, error) {
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		abs = path
+	}
+
+	data, err := os.ReadFile(abs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	content := string(data)
+	lines := strings.Split(content, "\n")
 
 	review := &Review{
-		ID:        fmt.Sprintf("review-%d", time.Now().UnixNano()),
-		Target:    path,
-		Type:      "full",
-		Findings:  make([]Finding, 0),
-		Reviewer:  "forge-review",
-		CreatedAt: start.UTC(),
+		ID:            fmt.Sprintf("review-%d", time.Now().UnixNano()),
+		Target:        path,
+		Reviewer:      "forge-reviewer",
+		FilesReviewed: 1,
+		LinesAdded:    len(lines),
+		Timestamp:     time.Now(),
 	}
 
-	err := filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
-		if err != nil || info.IsDir() {
-			return nil
-		}
-
-		// Skip non-code files
-		if !isCodeFile(filePath) {
-			return nil
-		}
-
-		content, err := os.ReadFile(filePath)
-		if err != nil {
-			return nil
-		}
-
-		relPath, _ := filepath.Rel(path, filePath)
-		findings := r.reviewFile(relPath, string(content))
-		review.Findings = append(review.Findings, findings...)
-		review.FilesReviewed++
-		review.LinesReviewed += strings.Count(string(content), "\n") + 1
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
+	// Check each line
+	for i, line := range lines {
+		lineNum := i + 1
+		comments := r.reviewLine(filepath.Base(path), lineNum, line)
+		review.Comments = append(review.Comments, comments...)
 	}
 
-	review.Score = r.CalculateScore(review)
+	review.Score = r.computeScore(review)
+	review.Approved = r.isApproved(review)
 	review.Summary = r.generateSummary(review)
-	review.Duration = time.Since(start)
 
-	r.save(review)
 	return review, nil
 }
 
-// Get retrieves a review by ID.
-func (r *Reviewer) Get(id string) (*Review, error) {
-	path := filepath.Join(r.storeDir, id+".json")
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("review not found: %s", id)
-	}
+// --- diff parsing ---
 
-	var review Review
-	if err := json.Unmarshal(data, &review); err != nil {
-		return nil, fmt.Errorf("invalid review: %w", err)
-	}
-
-	return &review, nil
+// DiffSection represents a section of a diff for one file.
+type DiffSection struct {
+	File    string
+	Header  string
+	Lines   []DiffLine
 }
 
-// List returns all reviews.
-func (r *Reviewer) List() ([]*Review, error) {
-	os.MkdirAll(r.storeDir, 0o755)
-	entries, err := os.ReadDir(r.storeDir)
-	if err != nil {
-		return nil, err
-	}
+// DiffLine represents a single line in a diff.
+type DiffLine struct {
+	Type     string // "+", "-", " " (context)
+	NewLine  int
+	OldLine  int
+	Content  string
+}
 
-	var reviews []*Review
-	for _, entry := range entries {
-		if !strings.HasSuffix(entry.Name(), ".json") {
+// DiffStats holds aggregate diff statistics.
+type DiffStats struct {
+	Files   int
+	Added   int
+	Removed int
+}
+
+func parseDiff(diff string) []DiffSection {
+	var sections []DiffSection
+	var current *DiffSection
+	newLine, oldLine := 0, 0
+
+	for _, line := range strings.Split(diff, "\n") {
+		if strings.HasPrefix(line, "diff --git") {
+			if current != nil {
+				sections = append(sections, *current)
+			}
+			// Extract file name
+			parts := strings.SplitN(line, " b/", 2)
+			file := ""
+			if len(parts) >= 2 {
+				file = parts[1]
+			}
+			current = &DiffSection{File: file, Header: line}
 			continue
 		}
-		id := strings.TrimSuffix(entry.Name(), ".json")
-		review, err := r.Get(id)
-		if err != nil {
+
+		if current == nil {
 			continue
 		}
-		reviews = append(reviews, review)
-	}
 
-	return reviews, nil
-}
+		if strings.HasPrefix(line, "@@") {
+			// Parse hunk header: @@ -old,count +new,count @@
+			fmt.Sscanf(line, "@@ -%d,%*d +%d,%*d @@", &oldLine, &newLine)
+			continue
+		}
 
-func (r *Reviewer) reviewFile(file string, content string) []Finding {
-	var findings []Finding
+		if len(line) == 0 {
+			continue
+		}
 
-	for _, rule := range r.rules {
-		if rule.Check != nil {
-			ff := rule.Check(file, content)
-			findings = append(findings, ff...)
+		switch line[0] {
+		case '+':
+			current.Lines = append(current.Lines, DiffLine{Type: "+", NewLine: newLine, Content: line[1:]})
+			newLine++
+		case '-':
+			current.Lines = append(current.Lines, DiffLine{Type: "-", OldLine: oldLine, Content: line[1:]})
+			oldLine++
+		case ' ':
+			current.Lines = append(current.Lines, DiffLine{Type: " ", NewLine: newLine, OldLine: oldLine, Content: line[1:]})
+			newLine++
+			oldLine++
 		}
 	}
 
-	return findings
-}
-
-func (r *Reviewer) CalculateScore(review *Review) float64 {
-	if len(review.Findings) == 0 {
-		return 100.0
+	if current != nil {
+		sections = append(sections, *current)
 	}
 
-	deduction := 0.0
-	for _, f := range review.Findings {
-		switch f.Severity {
-		case SeverityCritical:
-			deduction += 25
-		case SeverityError:
-			deduction += 10
-		case SeverityWarning:
-			deduction += 3
-		case SeverityInfo:
-			deduction += 0.5
+	return sections
+}
+
+func (r *Reviewer) reviewSection(section DiffSection) []Comment {
+	var comments []Comment
+
+	for _, dl := range section.Lines {
+		if dl.Type != "+" {
+			continue // only review added lines
+		}
+		lineComments := r.reviewLine(section.File, dl.NewLine, dl.Content)
+		comments = append(comments, lineComments...)
+	}
+
+	return comments
+}
+
+func (r *Reviewer) reviewLine(file string, lineNum int, line string) []Comment {
+	var comments []Comment
+
+	// Long line check
+	if r.Config.MaxLineLength > 0 && len(line) > r.Config.MaxLineLength {
+		comments = append(comments, Comment{
+			File:     file,
+			Line:     lineNum,
+			Severity: SevSuggestion,
+			Message:  fmt.Sprintf("Line exceeds %d characters (%d)", r.Config.MaxLineLength, len(line)),
+			Rule:     "max-line-length",
+		})
+	}
+
+	// Secret detection
+	if r.Config.BlockSecrets {
+		if isLikelySecret(line) {
+			comments = append(comments, Comment{
+				File:     file,
+				Line:     lineNum,
+				Severity: SevBlocking,
+				Message:  "Possible secret or credential detected",
+				Rule:     "no-secrets",
+			})
 		}
 	}
 
-	score := 100.0 - deduction
+	// TODO check
+	if r.Config.BlockTODOs {
+		if strings.Contains(strings.ToUpper(line), "TODO") || strings.Contains(strings.ToUpper(line), "FIXME") {
+			comments = append(comments, Comment{
+				File:     file,
+				Line:     lineNum,
+				Severity: SevNit,
+				Message:  "TODO/FIXME comment found",
+				Rule:     "no-todos",
+			})
+		}
+	}
+
+	// Debug statement check
+	if isDebugStatement(line) {
+		comments = append(comments, Comment{
+			File:     file,
+			Line:     lineNum,
+			Severity: SevWarning,
+			Message:  "Debug statement detected — remove before merging",
+			Rule:     "no-debug",
+		})
+	}
+
+	// Error handling check
+	if hasBareErrorReturn(line) {
+		comments = append(comments, Comment{
+			File:     file,
+			Line:     lineNum,
+			Severity: SevSuggestion,
+			Message:  "Consider wrapping error with context (fmt.Errorf with %w)",
+			Rule:     "error-wrapping",
+		})
+	}
+
+	return comments
+}
+
+func (r *Reviewer) shouldExclude(file string) bool {
+	for _, pattern := range r.Config.ExcludePatterns {
+		if strings.Contains(file, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
+func (r *Reviewer) computeScore(review *Review) int {
+	score := 100
+	for _, c := range review.Comments {
+		switch c.Severity {
+		case SevBlocking:
+			score -= 25
+		case SevWarning:
+			score -= 10
+		case SevSuggestion:
+			score -= 3
+		case SevNit:
+			score -= 1
+		}
+	}
 	if score < 0 {
 		score = 0
 	}
 	return score
 }
 
-func (r *Reviewer) generateSummary(review *Review) string {
-	counts := make(map[Severity]int)
-	for _, f := range review.Findings {
-		counts[f.Severity]++
+func (r *Reviewer) isApproved(review *Review) bool {
+	for _, c := range review.Comments {
+		if c.Severity == SevBlocking {
+			return false
+		}
 	}
+	return review.Score >= 60
+}
 
-	if len(review.Findings) == 0 {
-		return "No issues found. Clean review."
+func (r *Reviewer) generateSummary(review *Review) string {
+	blocking := 0
+	warnings := 0
+	suggestions := 0
+	nits := 0
+
+	for _, c := range review.Comments {
+		switch c.Severity {
+		case SevBlocking:
+			blocking++
+		case SevWarning:
+			warnings++
+		case SevSuggestion:
+			suggestions++
+		case SevNit:
+			nits++
+		}
 	}
 
 	var parts []string
-	for sev, count := range counts {
-		parts = append(parts, fmt.Sprintf("%d %s", count, sev))
+	if blocking > 0 {
+		parts = append(parts, fmt.Sprintf("%d blocking", blocking))
+	}
+	if warnings > 0 {
+		parts = append(parts, fmt.Sprintf("%d warning(s)", warnings))
+	}
+	if suggestions > 0 {
+		parts = append(parts, fmt.Sprintf("%d suggestion(s)", suggestions))
+	}
+	if nits > 0 {
+		parts = append(parts, fmt.Sprintf("%d nit(s)", nits))
 	}
 
-	return fmt.Sprintf("Found %s issues across %d files (%d lines).",
-		strings.Join(parts, ", "), review.FilesReviewed, review.LinesReviewed)
-}
-
-func (r *Reviewer) save(review *Review) {
-	os.MkdirAll(r.storeDir, 0o755)
-	data, _ := json.MarshalIndent(review, "", "  ")
-	path := filepath.Join(r.storeDir, review.ID+".json")
-	os.WriteFile(path, data, 0o644)
-}
-
-func (r *Reviewer) getChangedFiles(base, head string) ([]string, error) {
-	cmd := exec.Command("git", "diff", "--name-only", base, head)
-	out, err := cmd.Output()
-	if err != nil {
-		return nil, err
+	if len(parts) == 0 {
+		return "Clean review — no issues found"
 	}
-	return strings.Fields(string(out)), nil
+
+	return fmt.Sprintf("Found %s across %d file(s)", strings.Join(parts, ", "), review.FilesReviewed)
 }
 
-func (r *Reviewer) getFileContent(ref, file string) (string, error) {
-	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", ref, file))
+func (r *Reviewer) getDiff(targetRef string) (string, error) {
+	var cmd *exec.Cmd
+	if targetRef == "" {
+		cmd = exec.Command("git", "diff", "HEAD")
+	} else {
+		cmd = exec.Command("git", "diff", targetRef)
+	}
+	cmd.Dir = r.WorkDir
 	out, err := cmd.Output()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("git diff: %w", err)
 	}
 	return string(out), nil
 }
 
-func isCodeFile(path string) bool {
-	ext := strings.ToLower(filepath.Ext(path))
-	codeExts := map[string]bool{
-		".go": true, ".py": true, ".js": true, ".ts": true,
-		".jsx": true, ".tsx": true, ".rs": true, ".java": true,
-		".c": true, ".cpp": true, ".h": true, ".hpp": true,
-		".rb": true, ".sh": true, ".bash": true, ".sql": true,
-		".yaml": true, ".yml": true, ".json": true, ".toml": true,
-		".md": true, ".html": true, ".css": true, ".scss": true,
+func (r *Reviewer) getDiffStats(targetRef string) (DiffStats, error) {
+	var cmd *exec.Cmd
+	if targetRef == "" {
+		cmd = exec.Command("git", "diff", "--stat", "HEAD")
+	} else {
+		cmd = exec.Command("git", "diff", "--stat", targetRef)
 	}
-	return codeExts[ext]
+	cmd.Dir = r.WorkDir
+	out, err := cmd.Output()
+	if err != nil {
+		return DiffStats{}, err
+	}
+
+	stats := DiffStats{}
+	lines := strings.Split(string(out), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "insertion") {
+			fmt.Sscanf(line, "%d file", &stats.Files)
+			var added, removed int
+			if strings.Contains(line, "insertion") {
+				fmt.Sscanf(line, "%d insertion", &added)
+			}
+			if strings.Contains(line, "deletion") {
+				// Parse deletions from the line
+				parts := strings.Split(line, ",")
+				for _, p := range parts {
+					p = strings.TrimSpace(p)
+					if strings.Contains(p, "deletion") {
+						fmt.Sscanf(p, "%d deletion", &removed)
+					}
+					if strings.Contains(p, "insertion") {
+						fmt.Sscanf(p, "%d insertion", &added)
+					}
+				}
+			}
+			stats.Added = added
+			stats.Removed = removed
+		}
+	}
+
+	return stats, nil
 }
 
-func defaultRules() []Rule {
-	return []Rule{
-		{
-			ID: "SEC-001", Name: "Hardcoded Secret",
-			Category: CategorySecurity, Severity: SeverityCritical,
-			Description: "Potential hardcoded secret or API key",
-			Check: func(file string, content string) []Finding {
-				var findings []Finding
-				patterns := []string{"password =", "api_key =", "secret =", "token ="}
-				for i, line := range strings.Split(content, "\n") {
-					lower := strings.ToLower(line)
-					for _, pattern := range patterns {
-						if strings.Contains(lower, pattern) && !strings.Contains(lower, "os.getenv") && !strings.Contains(lower, "env(") {
-							findings = append(findings, Finding{
-								File:      file,
-								Line:      i + 1,
-								Severity:  SeverityCritical,
-								Category:  CategorySecurity,
-								Message:   "Potential hardcoded secret detected",
-								Suggestion: "Use environment variables instead",
-								Rule:      "SEC-001",
-							})
-						}
-					}
-				}
-				return findings
-			},
-		},
-		{
-			ID: "SEC-002", Name: "SQL Injection",
-			Category: CategorySecurity, Severity: SeverityCritical,
-			Description: "Potential SQL injection vulnerability",
-			Check: func(file string, content string) []Finding {
-				var findings []Finding
-				dangerous := []string{"fmt.Sprintf(\"SELECT", "fmt.Sprintf(\"INSERT", "fmt.Sprintf(\"UPDATE", "fmt.Sprintf(\"DELETE"}
-				for i, line := range strings.Split(content, "\n") {
-					for _, pattern := range dangerous {
-						if strings.Contains(line, pattern) {
-							findings = append(findings, Finding{
-								File:      file,
-								Line:      i + 1,
-								Severity:  SeverityCritical,
-								Category:  CategorySecurity,
-								Message:   "Potential SQL injection",
-								Suggestion: "Use parameterized queries",
-								Rule:      "SEC-002",
-							})
-						}
-					}
-				}
-				return findings
-			},
-		},
-		{
-			ID: "PERF-001", Name: "N+1 Query Pattern",
-			Category: CategoryPerformance, Severity: SeverityWarning,
-			Description: "Potential N+1 query pattern in loop",
-			Check: func(file string, content string) []Finding {
-				var findings []Finding
-				lines := strings.Split(content, "\n")
-				inLoop := false
-				for i, line := range lines {
-					if strings.Contains(line, "for ") || strings.Contains(line, "range ") {
-						inLoop = true
-					}
-					if inLoop && (strings.Contains(line, "db.Query") || strings.Contains(line, "db.Exec") || strings.Contains(line, ".Find(") || strings.Contains(line, ".First(")) {
-						findings = append(findings, Finding{
-							File:      file,
-							Line:      i + 1,
-							Severity:  SeverityWarning,
-							Category:  CategoryPerformance,
-							Message:   "Database query inside loop (N+1 pattern)",
-							Suggestion: "Batch queries outside the loop",
-							Rule:      "PERF-001",
-						})
-					}
-					if strings.TrimSpace(line) == "}" {
-						inLoop = false
-					}
-				}
-				return findings
-			},
-		},
-		{
-			ID: "STYLE-001", Name: "Long Function",
-			Category: CategoryStyle, Severity: SeverityWarning,
-			Description: "Function exceeds 50 lines",
-			Check: func(file string, content string) []Finding {
-				var findings []Finding
-				lines := strings.Split(content, "\n")
-				funcStart := -1
-				funcName := ""
-				for i, line := range lines {
-					if strings.Contains(line, "func ") {
-						if funcStart >= 0 && i-funcStart > 50 {
-							findings = append(findings, Finding{
-								File:      file,
-								Line:      funcStart + 1,
-								Severity:  SeverityWarning,
-								Category:  CategoryStyle,
-								Message:   fmt.Sprintf("Function '%s' is %d lines long", funcName, i-funcStart),
-								Suggestion: "Consider breaking into smaller functions",
-								Rule:      "STYLE-001",
-							})
-						}
-						funcStart = i
-						parts := strings.Split(line, "func ")
-						if len(parts) > 1 {
-							funcName = strings.Split(parts[1], "(")[0]
-						}
-					}
-				}
-				return findings
-			},
-		},
-		{
-			ID: "TEST-001", Name: "Missing Error Check",
-			Category: CategoryTesting, Severity: SeverityError,
-			Description: "Error return value not checked",
-			Check: func(file string, content string) []Finding {
-				var findings []Finding
-				if !strings.HasSuffix(file, ".go") {
-					return findings
-				}
-				lines := strings.Split(content, "\n")
-				for i, line := range lines {
-					trimmed := strings.TrimSpace(line)
-					if strings.Contains(trimmed, "err :=") || strings.Contains(trimmed, ", err :=") || strings.Contains(trimmed, ",err:=") {
-						// Check if next few lines have if err != nil
-						checked := false
-						for j := i + 1; j < len(lines) && j < i+5; j++ {
-							if strings.Contains(lines[j], "if err") || strings.Contains(lines[j], "err != nil") {
-								checked = true
-								break
-							}
-						}
-						if !checked {
-							findings = append(findings, Finding{
-								File:      file,
-								Line:      i + 1,
-								Severity:  SeverityError,
-								Category:  CategoryTesting,
-								Message:   "Error value not checked",
-								Suggestion: "Add 'if err != nil { return err }'",
-								Rule:      "TEST-001",
-							})
-						}
-					}
-				}
-				return findings
-			},
-		},
+// --- heuristic checkers ---
+
+func isLikelySecret(line string) bool {
+	secretPatterns := []string{
+		"api_key", "apikey", "secret_key", "secretkey",
+		"private_key", "password", "passwd",
+		"aws_secret", "access_token",
+		"Bearer ", "Authorization:",
+		"-----BEGIN RSA",
+		"-----BEGIN PRIVATE",
 	}
+
+	lower := strings.ToLower(line)
+	for _, pattern := range secretPatterns {
+		if strings.Contains(lower, strings.ToLower(pattern)) {
+			// Check if it looks like an assignment or header with a value
+			if strings.Contains(line, "=") || strings.Contains(line, ":") {
+				// Make sure it's not just a variable name
+				value := ""
+				if idx := strings.Index(line, "="); idx >= 0 {
+					value = strings.TrimSpace(line[idx+1:])
+				} else if idx := strings.Index(line, ":"); idx >= 0 {
+					value = strings.TrimSpace(line[idx+1:])
+				}
+				if value != "" && value != `""` && value != "''" && value != "nil" && value != "null" && !strings.HasPrefix(value, "os.") && !strings.HasPrefix(value, "env.") {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
-// FormatReview formats a review for display.
+func isDebugStatement(line string) bool {
+	trimmed := strings.TrimSpace(line)
+	debugPatterns := []string{
+		"fmt.Println(", "fmt.Printf(", "fmt.Print(",
+		"console.log(", "console.debug(",
+		"print(", "pprint(",
+		"log.Println(", "log.Printf(",
+		"dprintln(", "dprintf(",
+	}
+	for _, p := range debugPatterns {
+		if strings.Contains(trimmed, p) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasBareErrorReturn(line string) bool {
+	trimmed := strings.TrimSpace(line)
+	return strings.Contains(trimmed, "return err") ||
+		strings.Contains(trimmed, "return nil, err")
+}
+
+// FormatReview renders a review as a human-readable string.
 func FormatReview(review *Review) string {
-	var b strings.Builder
+	var sb strings.Builder
 
-	b.WriteString(fmt.Sprintf("Review: %s\n", review.ID))
-	b.WriteString(fmt.Sprintf("Target: %s\n", review.Target))
-	b.WriteString(fmt.Sprintf("Score:  %.1f/100\n", review.Score))
-	b.WriteString(fmt.Sprintf("Files:  %d reviewed (%d lines)\n", review.FilesReviewed, review.LinesReviewed))
-	b.WriteString(fmt.Sprintf("Summary: %s\n\n", review.Summary))
-
-	if len(review.Findings) == 0 {
-		b.WriteString("No issues found. ✅\n")
-		return b.String()
+	status := "✓ APPROVED"
+	if !review.Approved {
+		status = "✗ CHANGES REQUESTED"
 	}
 
-	// Group by severity
-	bySev := make(map[Severity][]Finding)
-	for _, f := range review.Findings {
-		bySev[f.Severity] = append(bySev[f.Severity], f)
+	sb.WriteString(fmt.Sprintf("Review: %s  Score: %d/100\n", status, review.Score))
+	sb.WriteString(fmt.Sprintf("  %s\n\n", review.Summary))
+
+	if len(review.Comments) == 0 {
+		return sb.String()
 	}
 
-	for _, sev := range []Severity{SeverityCritical, SeverityError, SeverityWarning, SeverityInfo} {
-		findings, ok := bySev[sev]
-		if !ok {
-			continue
-		}
-		b.WriteString(fmt.Sprintf("\n%s (%d):\n", strings.ToUpper(sev.String()), len(findings)))
-		for _, f := range findings {
-			loc := f.File
-			if f.Line > 0 {
-				loc = fmt.Sprintf("%s:%d", f.File, f.Line)
+	// Group by file
+	byFile := make(map[string][]Comment)
+	for _, c := range review.Comments {
+		byFile[c.File] = append(byFile[c.File], c)
+	}
+
+	// Sort files
+	var files []string
+	for f := range byFile {
+		files = append(files, f)
+	}
+	sort.Strings(files)
+
+	for _, file := range files {
+		comments := byFile[file]
+		sb.WriteString(fmt.Sprintf("  %s\n", file))
+		for _, c := range comments {
+			var sev string
+			switch c.Severity {
+			case SevBlocking:
+				sev = "BLOCKING"
+			case SevWarning:
+				sev = "WARNING"
+			case SevSuggestion:
+				sev = "suggestion"
+			case SevNit:
+				sev = "nit"
 			}
-			b.WriteString(fmt.Sprintf("  [%s] %s — %s\n", f.Rule, loc, f.Message))
-			if f.Suggestion != "" {
-				b.WriteString(fmt.Sprintf("         → %s\n", f.Suggestion))
+			loc := ""
+			if c.Line > 0 {
+				loc = fmt.Sprintf("L%d: ", c.Line)
+			}
+			sb.WriteString(fmt.Sprintf("    [%s] %s%s\n", sev, loc, c.Message))
+			if c.Suggestion != "" {
+				sb.WriteString(fmt.Sprintf("      → %s\n", c.Suggestion))
 			}
 		}
+		sb.WriteString("\n")
 	}
 
-	return b.String()
+	return sb.String()
+}
+
+// SaveReview persists a review to a JSON file.
+func SaveReview(review *Review, dir string) error {
+	os.MkdirAll(dir, 0o755)
+	data, err := json.MarshalIndent(review, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(dir, review.ID+".json"), data, 0o644)
 }
