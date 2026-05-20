@@ -1,72 +1,83 @@
 # Trend Report — The Forge
 
-**Generated:** 2026-05-20 21:20 UTC  
-**Previous:** 2026-05-20 20:07 UTC  
+**Generated:** 2026-05-20 23:14 UTC  
+**Previous:** 2026-05-20 21:20 UTC  
 **Purpose:** Cross-reference current market signals with The Forge roadmap to prioritize next-phase features.
+
+---
+
+## What Changed Since Last Report (21:20 UTC)
+
+Three significant new signals emerged today:
+
+1. **Gartner (May 20):** By 2027, 65%+ of engineering teams using agentic coding will treat traditional IDEs as optional — control shifts to automated platforms. This validates Forge's CLI-first, orchestration-layer approach.
+2. **Google Antigravity 2.0 (I/O '26, May 19-20):** New standalone desktop app for steering/orchestrating coding agents. Multi-agent workflows, sub-agent spawning, parallel refactoring + test generation + scaffolding. Direct competitor to `forge orchestrate` + `forge serve`.
+3. **Cohere Command A+ (May 20):** Apache 2.0 open-source enterprise model, MoE architecture, 128K/64K context, designed for sovereign/regulated deployments. New local-model option for Forge.
+4. **Optimizely:** 42% QoQ ARR growth for AI agent orchestration, 1,700 customers, 172K+ agent executions. Validates the market is monetizing fast.
 
 ---
 
 ## 1. Trends Detected
 
-### 1.1 MCP Is Now the De Facto Standard — 110M+ Monthly Downloads
-- MCP (Model Context Protocol) has been **donated to the Linux Foundation** under the Agentic AI Foundation, with Anthropic, OpenAI, Google, Microsoft, and AWS as backers.
-- **110M+ monthly SDK downloads** (Python/TypeScript) — outpacing early React adoption.
-- 5,500+ MCP servers in registries; official servers from Slack, GitHub, Salesforce, HubSpot, Stripe, Notion, Linear.
-- Every major client supports it: Claude, ChatGPT, Gemini, Copilot, Cursor, VS Code, Windsurf, Zed.
-- **Implication:** MCP support in The Forge is no longer P0 — it's **existential**. Without it, Forge is invisible to the entire ecosystem.
-- *Sources:* Anthropic, WorkOS, CData, DigitalApplied protocol ecosystem map
+### 1.1 MCP Is the De Facto Standard — 110M+ Monthly Downloads
+- Donated to Linux Foundation (Agentic AI Foundation). Backed by Anthropic, OpenAI, Google, Microsoft, AWS.
+- 110M+ monthly SDK downloads. 5,500+ MCP servers. Every major client supports it.
+- **Forge status:** `forge mcp` exists. MCP Tool Composer in progress. On track.
+- *Sources:* Anthropic, WorkOS, CData, DigitalApplied
 
-### 1.2 New Entrant: Warp Oz — "Vercel for Cloud Agents"
-- **Warp Oz** (launched Feb 2026, GA) — cloud-based orchestration for running coding agents (Claude Code, Codex, Warp Agent) in secure sandboxes.
-- Features: persistent memory, audit logs, multi-agent coordination, parallel agent fleets, enterprise governance.
-- May 2026 updates added deeper enterprise features.
-- **Threat level: HIGH.** This is Forge's `forge serve` vision, but cloud-native and shipping now.
+### 1.2 Gartner: IDEs Becoming Optional by 2027
+- **May 20 press release:** 65%+ of agentic-coding eng teams will treat IDEs as optional by 2027.
+- Control, governance, validation shift to automated platforms.
+- **Implication:** Forge's CLI-first + `forge serve` architecture is aligned. Web dashboard becomes more important than IDE plugins.
+- *Source:* Gartner newsroom, May 20, 2026
+
+### 1.3 Google Antigravity 2.0 — New Direct Competitor
+- Standalone desktop app for orchestrating coding agents (Google I/O '26, announced May 19).
+- Multi-agent workflows: agents spawn sub-agents, handle parallel refactoring, test generation, service scaffolding from specs.
+- **Threat level: HIGH.** Google is investing heavily here. Forge must differentiate on local-first, privacy, and multi-provider (not just Gemini).
+- *Source:* Google Cloud blog
+
+### 1.4 Cohere Command A+ — New Apache 2.0 Enterprise Model
+- Fully open-source (Apache 2.0), MoE architecture, 128K input / 64K output context.
+- Designed for sovereign/regulated deployments, agentic workflows, RAG, tool-use.
+- Weights on Hugging Face with multiple quantizations.
+- **Implication:** Add Command A+ to `forge init --local` presets alongside Ollama + DeepSeek/Qwen. Enterprise-ready, no licensing concerns.
+- *Sources:* Cohere blog, Digg, Las Vegas Sun
+
+### 1.5 New Entrant: Warp Oz — "Vercel for Cloud Agents"
+- GA since Feb 2026. Cloud orchestration for coding agents in secure sandboxes.
+- Persistent memory, audit logs, parallel agent fleets, enterprise governance.
+- May updates added deeper enterprise features.
+- **Threat level: HIGH.** This is `forge serve` but cloud-native and shipping now.
 - *Source:* Warp blog
 
-### 1.3 Microsoft Agent Framework 1.0 GA
-- Unified SDK (.NET + Python) merging AutoGen and Semantic Kernel — GA April 3, 2026.
-- Built-in: multi-agent orchestration, MCP/A2A protocol support, PII detection, responsible AI safeguards.
-- **Azure-native enterprise lock-in.** Not a direct competitor to Forge's local-first approach, but captures the enterprise segment Forge wants in Phase 4.
+### 1.6 Microsoft Agent Framework 1.0 GA
+- Unified SDK (.NET + Python), GA April 3, 2026. Merges AutoGen + Semantic Kernel.
+- Multi-agent orchestration, MCP/A2A support, PII detection, responsible AI safeguards.
+- Azure-native enterprise lock-in.
 - *Source:* Microsoft devblogs
 
-### 1.4 Multi-Agent Orchestration Is the Battleground
-- 2026 is widely called "the year of agent orchestration."
-- Developers are "managing AI engineering teams" — planning, executing, testing, reviewing across parallel agents.
-- Specialized agent roles in isolated environments is now standard practice.
-- Agentic stacks converge: Cursor (interface) + Claude Code (reasoning) + Codex (generation).
-- **Implication:** Forge's `forge orchestrate` must support role-based teams and protocol bridges.
-- *Sources:* Anthropic 2026 Agentic Coding Trends Report, Information Matters market report (May 18), Medium
+### 1.7 Enterprise Orchestration Monetizing Fast
+- Optimizely: 42% QoQ ARR growth, 1,700 customers, 172K+ agent executions.
+- Validates that agent orchestration is a real, revenue-generating market — not just hype.
+- *Source:* PRNewswire, May 20, 2026
 
-### 1.5 Enterprise AI: Production Over Pilots
-- 72% of enterprises have ≥1 AI workload in production (up from 55% in 2024).
-- 79% report adoption challenges — governance, security, measurement are pain points.
-- Agentic AI projected to power ~40% of enterprise apps by end of 2026 (vs <5% in 2025).
-- "Turbocharged technical debt" is a recognized enterprise risk from AI-generated code.
-- **Implication:** Enterprise features (RBAC, audit logs, SSO, SOC 2) must accelerate from Phase 4.
-- *Sources:* Deloitte, Writer.com, MIT Sloan, Gartner
+### 1.8 Multi-Agent Orchestration: "Year of Agent Orchestration"
+- 2026 widely called "the year of agent orchestration."
+- Developers manage AI engineering teams: planner, implementer, tester, reviewer in parallel.
+- Agentic stacks converge: Cursor + Claude Code + Codex.
+- *Sources:* Anthropic, Information Matters (May 18), industry commentary
 
-### 1.6 Developer Tool Adoption: Trust Gap Persists
-- 84–93% of developers use AI coding tools daily/weekly; ~41% of code is AI-generated.
-- **Only 29% fully trust AI-generated code in production without review.**
-- Productivity ROI: 2.5–3.5× average, 4–6× top quartile.
-- Claude Code leads developer satisfaction (~46%); Cursor leads revenue ($2B ARR); Copilot leads scale (4.7M+ users).
-- **Implication:** Human-in-the-loop and trust/safety features are differentiation opportunities.
-- *Sources:* Information Matters, fungies.io, Pragmatic Engineer, dev.to
+### 1.9 Trust Gap: Only 29% Fully Trust AI Code
+- 84–93% of devs use AI tools daily; only 29% trust AI code in production without review.
+- "Turbocharged technical debt" is a recognized enterprise risk.
+- **Implication:** HITL features are a real differentiator.
+- *Sources:* Information Matters, fungies.io, MIT Sloan
 
-### 1.7 Open-Source Breakout Tools (GitHub Trending May 2026)
-- **opencode** (+1,764 stars/28d) — agentic coding agent, fast growth.
-- **Dify** (~111k stars) — production-ready LLM app platform, self-hosted.
-- **OpenHands** (~60k stars) — open-source AI coding agent.
-- **codegraph** — pre-indexed local code knowledge graph for agents (trending).
-- **superpowers** (obra) — agentic skills framework (relevant to Forge's plugin system).
-- Ollama (~147k stars) still foundational; llama.cpp (~90k stars) for efficient inference.
+### 1.10 Open-Source Tools Trending (GitHub, May 2026)
+- **opencode** (+1,764 stars/28d), **Dify** (~111k), **OpenHands** (~60k), **codegraph**, **superpowers** (obra).
+- Ollama (~147k), llama.cpp (~90k) still foundational.
 - *Sources:* OSSInsight, GitHub Trending, ByteByteGo
-
-### 1.8 Security-First Agent Architecture
-- Dual-use risk drives baked-in security. Enterprises demand SOC 2, private deployment.
-- RSA Conference 2026 focused on MCP security, governance, and observability.
-- **Implication:** `forge jail` + `forge env` isolation are ahead of the curve. Make them prominent.
-- *Sources:* Anthropic, cortex.io, RSA 2026 via CData
 
 ---
 
@@ -74,47 +85,50 @@
 
 | Trend | Forge Coverage | Gap |
 |-------|---------------|-----|
-| MCP protocol | Not implemented | **Critical** — 110M+ downloads, every tool supports it |
-| Cloud agent orchestration | `forge serve` exists | Warp Oz ships this NOW with enterprise features |
-| Observability & tracing | Not addressed | Missing entirely — all competitors have this |
-| Enterprise governance | Planned Phase 4 | Should accelerate — RBAC, audit logs, SSO |
-| Local/open-source models | `forge api` gateway exists | Needs Ollama/DeepSeek integration presets |
-| Security-first | `forge jail` + `forge env` | Good foundation, needs scanning hooks |
-| Plugin/skill ecosystem | `forge plugin` exists | Needs marketplace, versioning, composition |
-| Agent role system | Not addressed | Standard practice now (planner/coder/tester/reviewer) |
-| Human-in-the-loop | Not addressed | 71% of devs don't fully trust AI code |
-| Code knowledge graph | `forge index` exists | Codegraph-style pre-indexing is trending |
-| Session replay | `forge session` exists | Needs replay, branching, sharing |
-| Declarative pipelines | Forgefile exists | Needs multi-agent workflow syntax |
+| MCP protocol | `forge mcp` ✅ exists | MCP Tool Composer — ship it |
+| Cloud orchestration | `forge serve` exists | Warp Oz ships NOW; need self-hosted parity |
+| Google Antigravity 2.0 | `forge orchestrate` exists | Must support sub-agent spawning + parallel workflows |
+| Observability | OpenTelemetry ✅ integrated | Need trace viewer UI + `forge traces` CLI |
+| Enterprise auth | Not yet | OIDC/SAML SSO, RBAC — accelerate from Phase 4 |
+| Local models | `forge api` gateway | Add Command A+ preset to `forge init --local` |
+| Agent roles | Not yet | Standard practice — planner/coder/tester/reviewer |
+| Human-in-the-loop | Not yet | 71% don't trust AI code fully |
+| Code knowledge graph | `forge index` exists | Enhance with codegraph-style relationships |
+| Web dashboard | `forge dashboard` exists | Needs real-time WebSocket monitoring |
+| Plugin ecosystem | `forge plugin` exists | Marketplace + WASM plugins |
+| Declarative pipelines | Forgefile + `forge pipeline` ✅ | Multi-agent workflow syntax (Forgefile v2) |
+| Security scanning | `forge jail` + sandbox chain ✅ | Pre/post hooks for automated scanning |
 
 ---
 
 ## 3. Recommended Features (Prioritized)
 
-### P0 — Do Now (This Week)
-1. **MCP Server/Client** — `forge mcp` command. Without this, Forge can't interoperate with any tool in the ecosystem. MCP is the new USB-C for AI. Every agent tool, IDE, and framework speaks it.
-2. **Observability Foundation** — Structured trace spans for every agent action. SQLite store. `forge traces` CLI. This is table stakes — Warp Oz, VoltAgent, and every new entrant ships with this.
+### P0 — This Week
+1. **Ship MCP Tool Composer** — nearly done. Combine multiple MCP servers behind one Forge gateway. This is Forge's ticket into the ecosystem.
+2. **Observability: `forge traces` CLI** — OpenTelemetry spans exist. Add a CLI viewer + Jaeger/Zipkin export. Table stakes.
+3. **`forge init --local`** — one-command preset for Ollama + DeepSeek/Qwen/Command A+. Zero cloud dependency.
 
 ### P0 — Next 2 Weeks
-3. **Ollama Integration Preset** — `forge init --local` that configures Ollama + DeepSeek/Qwen as defaults. One command, fully local, zero cloud dependency.
-4. **Agent Role System** — Extend `forge orchestrate` with role definitions (planner, coder, tester, reviewer). This is now standard in every competing platform.
+4. **Sub-Agent Spawning** — agents can spawn sub-agents for parallel tasks (à la Antigravity 2.0). Extends `forge orchestrate`.
+5. **Agent Role System** — role definitions (planner, coder, tester, reviewer) with auto-assignment based on task type.
+6. **Code Knowledge Graph** — enhance `forge index` with pre-indexed relationship graph (codegraph-style).
 
 ### P1 — Next Month
-5. **Human-in-the-Loop Workflows** — `forge approve` + pause/resume + agent escalation. Only 29% of devs trust AI code fully — this is a trust differentiator.
-6. **Security Scanning Hooks** — Pre/post agent run hooks that trigger security scanners, integrated with `forge jail`. Enterprise-ready from day one.
-7. **Forgefile v2 (Multi-Agent Workflows)** — TOML syntax for defining multi-agent pipelines. Think GitHub Actions for AI agents.
-8. **Code Knowledge Graph** — Enhance `forge index` with pre-indexed codegraph-style relationships. Trending on GitHub; high value for agent accuracy.
+7. **Human-in-the-Loop** — `forge approve` + pause/resume + escalation. Trust differentiator.
+8. **Security Scanning Hooks** — pre/post agent run hooks integrated with `forge jail`.
+9. **Forgefile v2** — TOML multi-agent workflow syntax (GitHub Actions for AI agents).
+10. **Web Dashboard Real-Time** — WebSocket agent monitoring, cost charts, trace viewer.
 
 ### P2 — Next Quarter
-9. **Web Dashboard MVP** — Session management, cost tracking, agent status, trace viewer. Warp Oz has this. Forge needs parity.
-10. **Enterprise Auth (RBAC + SSO)** — OIDC/SAML for `forge serve`. Microsoft Agent Framework has this. Essential for enterprise adoption.
-11. **Plugin Marketplace** — Publish/discover/install with versioning, ratings, dependency resolution. inspired by `superpowers` and `obra` trending projects.
-12. **A2A Protocol Support** — Google's Agent-to-Agent protocol for inter-framework communication.
+11. **Enterprise Auth (RBAC + SSO)** — OIDC/SAML for `forge serve`. Microsoft AF and Warp Oz both have this.
+12. **Plugin Marketplace** — registry with versioning, ratings, WASM plugins.
+13. **A2A Protocol** — Google's Agent-to-Agent for inter-framework communication.
+14. **Agent A/B Testing + Quality Scoring** — compare outputs, score quality automatically.
 
-### P3 — Deprioritize / Pivot
-- ~~`forge desktop`~~ — Niche. Pivot to **VS Code / Neovim extensions** (already planned Phase 3). VS Code MCP support is native now — Forge should be an MCP server.
-- ~~`forge blink` (bot platform)~~ — Crowded (n8n, Make Maia, Botpress). Pivot to **Forge-as-MCP-tool** for existing platforms.
-- **Slow down `forge mux`** — `forge orchestrate` covers the parallel agent use case more broadly.
+### Deprioritize / Pivot
+- ~~`forge desktop`~~ → Focus on VS Code extension (MCP-native). Gartner says IDEs becoming optional anyway — CLI + web dashboard is the play.
+- ~~`forge blink`~~ → Forge-as-MCP-tool for existing platforms (n8n, Make Maia, Optimizely).
+- ~~`forge mux`~~ → `forge orchestrate` with sub-agent spawning covers this.
 
 ---
 
@@ -122,53 +136,55 @@
 
 | When | What | Why |
 |------|------|-----|
-| **This week** | MCP bridge, observability foundation | Existential — without MCP, Forge is invisible |
-| **Next 2 weeks** | Ollama preset, agent role system | Low effort, high visibility, quick wins |
-| **Month 1** | HITL workflows, security hooks, Forgefile v2, codegraph | Trust differentiator + enterprise readiness |
-| **Month 2–3** | Web dashboard, enterprise auth | Parity with Warp Oz and Microsoft AF |
-| **Quarter 2** | Plugin marketplace, A2A protocol | Ecosystem building |
+| **This week** | MCP Tool Composer, `forge traces`, `forge init --local` | Ecosystem entry + local-first value prop |
+| **Next 2 weeks** | Sub-agent spawning, agent roles, codegraph | Parity with Antigravity 2.0 |
+| **Month 1** | HITL, security hooks, Forgefile v2, dashboard real-time | Trust + enterprise readiness |
+| **Month 2–3** | Enterprise auth, plugin marketplace | Revenue enablers |
+| **Quarter 2** | A2A, agent quality, A/B testing | Ecosystem + optimization |
 
 ---
 
-## 5. Competitive Positioning Update
-
-The landscape has shifted since the last report:
+## 5. Competitive Positioning
 
 | Competitor | What They Do | Forge's Counter |
 |-----------|-------------|-----------------|
-| **Warp Oz** | Cloud agent orchestration, sandboxes, audit logs | Forge is local-first + self-hosted; no cloud lock-in |
-| **Microsoft AF 1.0** | Enterprise multi-agent (.NET/Python), Azure-native | Forge is Go-native, lightweight, no cloud dependency |
-| **Mastra/VoltAgent** | TS-native orchestration with built-in observability | Forge is binary-distributed, no Node.js required |
-| **LangGraph/CrewAI** | Python-heavy, graph/role-based orchestration | Forge is language-agnostic, protocol-bridge approach |
+| **Google Antigravity 2.0** | Desktop agent orchestrator, sub-agents, parallel workflows | Local-first, multi-provider (not Gemini-only), self-hosted |
+| **Warp Oz** | Cloud agent orchestration, sandboxes, audit logs | No cloud lock-in, single binary, self-hosted |
+| **Microsoft AF 1.0** | Enterprise multi-agent (.NET/Python), Azure-native | Go binary, lightweight, no Azure dependency |
+| **Mastra/VoltAgent** | TS-native orchestration + observability | No Node.js required, binary distribution |
+| **Optimizely** | Marketing/digital workflow agent orchestration | Forge is developer-first, code-focused |
 
-**The Forge's moat remains: single Go binary, local-first, protocol-agnostic, unified.** But "unified" now means "speaks MCP" — that's the price of admission.
+**The Forge's moat:** Single Go binary. Local-first. Protocol-agnostic. Multi-provider. Self-hosted.
 
-The "one command" pitch still works:
+**The pitch in 2026:**
 
 ```bash
 forge serve -- claude codex aider goose
-```
-
-But it should also work as:
-
-```bash
-forge mcp serve  # exposes Forge as an MCP server to any MCP-compatible tool
+forge mcp serve           # MCP gateway to every tool
+forge init --local        # zero cloud, zero cost
 ```
 
 ---
 
-## 6. New Signals Since Last Report (20:07 UTC)
+## 6. New Signals Since Last Report (21:20 UTC)
 
 | Signal | Impact | Action |
 |--------|--------|--------|
-| MCP donated to Linux Foundation | MCP is now vendor-neutral standard | Implement immediately |
-| Warp Oz GA with enterprise features | Cloud orchestration competitor shipping | Differentiate on local/self-hosted |
-| Microsoft Agent Framework 1.0 GA | Enterprise Azure lock-in | Target non-Azure enterprises |
-| MCP 110M+ monthly downloads | Massive ecosystem momentum | MCP is no longer optional |
-| opencode trending (+1.7k stars) | New agentic coding competitor | Monitor, possibly integrate |
-| codegraph trending | Code knowledge graphs are hot | Enhance `forge index` |
-| Only 29% trust AI code in prod | Trust gap is real | HITL as differentiator |
-| "Turbocharged tech debt" narrative | Enterprise risk awareness | Security + governance features |
+| Gartner: 65% teams drop IDEs by 2027 | Validates CLI-first approach | Double down on CLI + web dashboard |
+| Google Antigravity 2.0 | Direct competitor with sub-agents | Ship sub-agent spawning in `forge orchestrate` |
+| Cohere Command A+ (Apache 2.0) | New enterprise-grade open model | Add to `forge init --local` presets |
+| Optimizely 42% QoQ growth | Market monetizing fast | Move enterprise features up |
+| MCP donated to Linux Foundation | MCP is permanent, vendor-neutral | Ship MCP Tool Composer this week |
+
+---
+
+## 7. Run History
+
+| Run | Time (UTC) | Key New Signals |
+|-----|-----------|-----------------|
+| 1 | 2026-05-20 20:07 | Baseline: MCP, Mastra, VoltAgent, enterprise adoption |
+| 2 | 2026-05-20 21:20 | Warp Oz, Microsoft AF 1.0, MCP 110M downloads, codegraph |
+| 3 | 2026-05-20 23:14 | Gartner IDE prediction, Antigravity 2.0, Command A+, Optimizely growth |
 
 ---
 

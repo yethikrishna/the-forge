@@ -183,6 +183,42 @@ All 18 utility packages implemented and tested.
 - [ ] Agentfile standard working group — publish spec independently
 - [ ] ForgeConf virtual conference plan
 
+## Phase 4+ Trend-Driven Features
+*Updated 2026-05-20 23:14 UTC — trend analysis run 3*
+
+### P0 — This Week
+- [ ] **MCP Tool Composer** — combine multiple MCP servers behind one Forge gateway (in progress, ship it)
+- [ ] **`forge traces` CLI** — OpenTelemetry spans exist; add trace viewer + Jaeger/Zipkin export
+- [ ] **`forge init --local`** — one-command preset: Ollama + DeepSeek/Qwen/Command A+. Zero cloud.
+
+### P0 — Next 2 Weeks
+- [ ] **Sub-Agent Spawning** — agents spawn sub-agents for parallel tasks (parity with Antigravity 2.0)
+- [ ] **Agent Role System** — role definitions (planner, coder, tester, reviewer) for `forge orchestrate`
+- [ ] **Code Knowledge Graph** — enhance `forge index` with pre-indexed relationship graph (codegraph-style)
+
+### P1 — Next Month
+- [ ] **Human-in-the-Loop** — `forge approve` + pause/resume + escalation (29% trust gap)
+- [ ] **Security Scanning Hooks** — pre/post agent run hooks integrated with `forge jail`
+- [ ] **Forgefile v2** — TOML multi-agent workflow syntax (GitHub Actions for AI agents)
+- [ ] **Web Dashboard Real-Time** — WebSocket agent monitoring, cost charts, trace viewer
+
+### P2 — Next Quarter
+- [ ] **Enterprise Auth (RBAC + SSO)** — OIDC/SAML for `forge serve`
+- [ ] **Plugin Marketplace** — registry + versioning + ratings + WASM plugins
+- [ ] **A2A Protocol** — Google Agent-to-Agent for inter-framework communication
+
+### Competitive Watchlist (Updated 23:14 UTC)
+- **Google Antigravity 2.0** — desktop agent orchestrator, sub-agents, parallel workflows. Counter: local-first, multi-provider, self-hosted
+- **Warp Oz** — cloud agent orchestration, GA, enterprise features. Counter: no cloud lock-in
+- **Microsoft Agent Framework 1.0** — Azure-native, enterprise. Counter: Go binary, no Azure dependency
+- **opencode** — fast-growing agentic coding agent on GitHub. Monitor
+- **Cohere Command A+** — Apache 2.0 enterprise model. Add to local presets
+
+### Market Signals
+- Gartner (May 20): 65% of eng teams will treat IDEs as optional by 2027
+- Optimizely: 42% QoQ ARR growth in agent orchestration — market monetizing fast
+- MCP: 110M+ monthly downloads, donated to Linux Foundation — permanent standard
+
 ## Phase 4: Polish & Release
 - [ ] CI/CD pipeline (GitHub Actions)
 - [ ] Cross-platform builds
