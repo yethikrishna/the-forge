@@ -63,6 +63,7 @@ The wielder and the sword are one.`,
 		undoCmd(),
 		mcpCmd(),
 		breedCmd(),
+		snapshotCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
