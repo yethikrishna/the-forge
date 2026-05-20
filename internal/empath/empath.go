@@ -117,7 +117,7 @@ func (d *Detector) RecordError(errMsg string) {
 	d.state.ErrorCount++
 	d.state.Signals = append(d.state.Signals, Signal{
 		Type:      "error_loop",
-		Weight:    0.3,
+		Weight:    0.5,
 		Message:   errMsg,
 		Timestamp: time.Now(),
 	})
@@ -138,7 +138,7 @@ func (d *Detector) detectSignals(message string) []Signal {
 	}
 	if len(message) > 5 && float64(upperCount)/float64(len(message)) > 0.7 {
 		signals = append(signals, Signal{
-			Type: "caps", Weight: 0.3, Message: message, Timestamp: now,
+			Type: "caps", Weight: 0.6, Message: message, Timestamp: now,
 		})
 	}
 
@@ -154,7 +154,7 @@ func (d *Detector) detectSignals(message string) []Signal {
 	for _, word := range impatienceWords {
 		if strings.Contains(normMsg, word) {
 			signals = append(signals, Signal{
-				Type: "impatience", Weight: 0.5, Message: word, Timestamp: now,
+				Type: "impatience", Weight: 0.8, Message: word, Timestamp: now,
 			})
 			break
 		}
@@ -164,7 +164,7 @@ func (d *Detector) detectSignals(message string) []Signal {
 	words := strings.Fields(message)
 	if len(words) <= 3 && d.state.MessageCount > 2 {
 		signals = append(signals, Signal{
-			Type: "short_response", Weight: 0.2, Message: message, Timestamp: now,
+			Type: "short_response", Weight: 0.4, Message: message, Timestamp: now,
 		})
 	}
 
@@ -173,7 +173,7 @@ func (d *Detector) detectSignals(message string) []Signal {
 	for _, prev := range d.prevMessages {
 		if similarity(normCurrent, prev) > 0.8 && normCurrent != "" {
 			signals = append(signals, Signal{
-				Type: "repeat", Weight: 0.4, Message: message, Timestamp: now,
+				Type: "repeat", Weight: 0.6, Message: message, Timestamp: now,
 			})
 			break
 		}
@@ -202,9 +202,9 @@ func (d *Detector) recalculate() {
 		totalWeight += s.Weight * decay
 	}
 
-	errorFactor := float64(d.state.ErrorCount) * 0.15
-	repeatFactor := float64(d.state.RepeatCount) * 0.2
-	shortFactor := float64(d.state.ShortResponseCount) * 0.1
+	errorFactor := float64(d.state.ErrorCount) * 0.3
+	repeatFactor := float64(d.state.RepeatCount) * 0.4
+	shortFactor := float64(d.state.ShortResponseCount) * 0.2
 
 	d.state.Score = minVal(totalWeight+errorFactor+repeatFactor+shortFactor, 100)
 

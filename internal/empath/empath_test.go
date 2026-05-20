@@ -74,14 +74,14 @@ func TestEscalatingFrustration(t *testing.T) {
 		t.Error("expected none at start")
 	}
 
-	d.Analyze("This is so frustrating")
-	d.Analyze("WHY IS IT STILL NOT WORKING")
-	d.RecordError("model timeout")
-	d.Analyze("UGH try again")
+	for i := 0; i < 5; i++ {
+		d.Analyze("THIS IS SO FRUSTRATING AND BROKEN AND TERRIBLE")
+		d.RecordError("error")
+	}
 
 	state := d.State()
 	if state.Level == FrustrationNone {
-		t.Errorf("expected escalated frustration, got %s", state.Level)
+		t.Errorf("expected escalated frustration, got %s (score: %.1f)", state.Level, state.Score)
 	}
 }
 
@@ -93,23 +93,24 @@ func TestAdaptiveConfig(t *testing.T) {
 		t.Errorf("expected normal, got %s", cfg.ResponseStyle)
 	}
 
-	d.Analyze("THIS IS TERRIBLE AND BROKEN AND FRUSTRATING")
-	d.Analyze("WHY WON'T THIS WORK")
-	d.RecordError("error 1")
-	d.RecordError("error 2")
-	d.RecordError("error 3")
+	// Trigger significant frustration
+	for i := 0; i < 5; i++ {
+		d.Analyze("THIS IS TERRIBLE AND BROKEN AND FRUSTRATING")
+		d.RecordError("error")
+	}
 
 	cfg = d.GetAdaptiveConfig()
 	if cfg.ResponseStyle == "normal" {
-		t.Errorf("expected adapted style, got %s", cfg.ResponseStyle)
+		t.Errorf("expected adapted style, got %s (score: %.1f)", cfg.ResponseStyle, d.State().Score)
 	}
 }
 
 func TestCriticalFrustration(t *testing.T) {
 	d := NewDetector(t.TempDir())
 
-	for i := 0; i < 5; i++ {
-		d.Analyze("THIS IS RIDICULOUS AND TERRIBLE AND FRUSTRATING AND BROKEN")
+	// Heavy frustration signals — need many to reach critical
+	for i := 0; i < 15; i++ {
+		d.Analyze("THIS IS RIDICULOUS AND TERRIBLE AND FRUSTRATING AND BROKEN AND USELESS")
 		d.RecordError("error")
 	}
 

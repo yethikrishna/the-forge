@@ -146,18 +146,18 @@ All 18 utility packages implemented and tested.
 
 - [x] Universal Protocol Bridge — `forge bridge` translating between MCP ↔ A2A ↔ ACP
 - [x] MCP Server Discovery — `forge mcp discover` auto-find local/network MCP servers
-- [ ] Agent Identity & Trust Layer — cryptographic agent identities, signed manifests, trust registry
+- [x] Agent Identity & Trust Layer — cryptographic agent identities, signed manifests, trust registry
 
 ## Phase 3.5: Production Hardening (From Brainstorm #5)
 
-- [ ] Graceful shutdown — SIGTERM/SIGINT handling with state persistence, drain connections
-- [ ] File locking for concurrent agents — advisory locks, conflict detection, auto-merge
+- [x] Graceful shutdown — SIGTERM/SIGINT handling with state persistence, drain connections
+- [x] File locking for concurrent agents — advisory locks, conflict detection, auto-merge
 - [ ] `--output=json/quiet/verbose` on every command — stable schema, no ANSI in JSON mode
 - [ ] Session resumption after crash — reload from replay log, restore agent state
 - [x] Provider outage playbook — detect outage, auto-fallback, notify, generate incident report
 - [x] Cost anomaly detection — rate-based alerting, hard budget stops, root cause analysis
 - [x] Agent runaway detection — stuck loop/stalled/context explosion detection with auto-terminate
-- [ ] Disk/memory/goroutine resource monitoring with auto-cleanup
+- [x] Disk/memory/goroutine resource monitoring with auto-cleanup
 
 ## Phase 3.5: Developer Adoption (From Brainstorm #5)
 
@@ -171,7 +171,7 @@ All 18 utility packages implemented and tested.
 - [ ] `forge archaeologist` — AI-powered git forensics (why was code written, dead code detection)
 - [ ] `forge tune` — Bayesian hyperparameter optimization for agents (temp, top_p, system prompt)
 - [ ] `forge seed` — project bootstrapping from natural language intent
-- [ ] `forge witness` — cryptographic proof of agent actions (Merkle tree, tamper verification)
+- [x] `forge witness` — cryptographic proof of agent actions (Merkle tree, tamper verification)
 - [ ] `forge empath` — user frustration detection with adaptive response
 
 ## Phase 3.5: Strategic (From Brainstorm #5)

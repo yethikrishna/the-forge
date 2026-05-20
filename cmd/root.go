@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	forgeVersion = "0.8.0"
+	forgeVersion = "1.0.0"
 	buildTime    = "unknown"
 )
 
@@ -98,6 +98,7 @@ The wielder and the sword are one.`,
 		anomalyCmd(),
 		runawayCmd(),
 		outageCmd(),
+		witnessCmd(),
 		archaeologistCmd(),
 		tuneCmd(),
 		empathCmd(),
