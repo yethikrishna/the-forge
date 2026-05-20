@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/forge/sword/internal/aisdk"
 	"github.com/forge/sword/internal/pretty"

@@ -2,6 +2,7 @@ package serpent_test
 
 import (
 	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/forge/sword/internal/serpent"
@@ -66,7 +67,6 @@ func TestCommandList(t *testing.T) {
 	if len(list) != 3 {
 		t.Fatalf("expected 3 commands, got %d", len(list))
 	}
-	// Should be sorted
 	if list[0] != "alpha" || list[1] != "beta" || list[2] != "gamma" {
 		t.Errorf("expected sorted list, got %v", list)
 	}
@@ -77,10 +77,10 @@ func TestPrintVersion(t *testing.T) {
 	serpent.PrintVersion(&buf, "forge", "3.0.0", "2024-01-01", "abc123")
 
 	output := buf.String()
-	if !bytes.Contains(output, []byte("forge 3.0.0")) {
+	if !strings.Contains(output, "forge 3.0.0") {
 		t.Errorf("expected version in output: %s", output)
 	}
-	if !bytes.Contains(output, []byte("abc123")) {
+	if !strings.Contains(output, "abc123") {
 		t.Errorf("expected commit in output: %s", output)
 	}
 }
@@ -98,7 +98,7 @@ func TestPrintCustomHelp(t *testing.T) {
 	})
 
 	output := buf.String()
-	if !bytes.Contains(output, []byte("Examples:")) {
+	if !strings.Contains(output, "Examples:") {
 		t.Errorf("expected examples section: %s", output)
 	}
 }

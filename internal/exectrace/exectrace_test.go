@@ -2,7 +2,6 @@ package exectrace_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/forge/sword/internal/exectrace"
 )

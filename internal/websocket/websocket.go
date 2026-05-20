@@ -138,10 +138,11 @@ func Upgrade(w http.ResponseWriter, r *http.Request) (*Conn, error) {
 		return nil, fmt.Errorf("websocket: response writer cannot hijack")
 	}
 
-	netConn, br, err := hj.Hijack()
+	netConn, brw, err := hj.Hijack()
 	if err != nil {
 		return nil, fmt.Errorf("websocket: hijack: %w", err)
 	}
+	_ = brw
 
 	acceptKey := computeAcceptKey(key)
 	resp := fmt.Sprintf("HTTP/1.1 101 Switching Protocols\r\n"+
@@ -154,7 +155,7 @@ func Upgrade(w http.ResponseWriter, r *http.Request) (*Conn, error) {
 		return nil, fmt.Errorf("websocket: write handshake: %w", err)
 	}
 
-	return &Conn{conn: netConn, br: br, mask: false}, nil
+	return &Conn{conn: netConn, br: bufio.NewReader(netConn), mask: false}, nil
 }
 
 // ReadMessage reads a complete WebSocket message.

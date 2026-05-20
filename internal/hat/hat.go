@@ -194,9 +194,6 @@ func ServeAndSend(handler http.Handler, req *http.Request) (*http.Response, erro
 	defer server.Close()
 
 	req.URL, _ = url.Parse(server.URL + req.URL.Path)
-	if req.URL.RawQuery != "" {
-		req.URL.RawQuery = req.URL.RawQuery
-	}
 
 	return http.DefaultClient.Do(req)
 }

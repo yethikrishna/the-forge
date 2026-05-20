@@ -29,13 +29,12 @@ func TestTimerReset(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	tm.Stop()
 	tm.Reset()
-	if !tm.Running() {
-		t.Fatal("timer should be running after reset")
+	// After reset, should be running again
+	elapsed := tm.Elapsed()
+	if elapsed > time.Second {
+		t.Fatalf("after reset, elapsed should be small, got %v", elapsed)
 	}
 }
-
-// Running is not exported, so we just test the reset works
-func (t *Timer) Running() bool { return true }
 
 func TestFormatDuration(t *testing.T) {
 	tests := []struct {

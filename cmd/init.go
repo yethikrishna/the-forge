@@ -158,20 +158,7 @@ if __name__ == "__main__":
 }
 
 func createDefaultTemplate(dir, name string) {
-	readme := fmt.Sprintf(`# %s
-
-A project forged with [The Forge](https://github.com/yethikrishna/the-forge).
-
-## Getting Started
-
-```bash
-forge serve -- claude
-```
-
-## License
-
-MIT
-`, name)
+	readme := fmt.Sprintf("# %s\n\nA project forged with The Forge.\n\n## Getting Started\n\n    forge serve -- claude\n\n## License\n\nMIT\n", name)
 	os.WriteFile(filepath.Join(dir, "README.md"), []byte(readme), 0o644)
 	fmt.Printf("  Created README.md\n")
 }
