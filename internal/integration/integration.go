@@ -6,6 +6,7 @@
 package integration
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"os"
