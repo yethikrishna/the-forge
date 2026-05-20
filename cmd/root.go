@@ -90,6 +90,8 @@ The wielder and the sword are one.`,
 		tenantCmd(),
 		composeEnvCmd(),
 		worktreeCmd(),
+		qualityCmd(),
+		abTestCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
