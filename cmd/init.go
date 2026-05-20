@@ -5,28 +5,33 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/forge/sword/internal/pretty"
+	"github.com/forge/sword/internal/template"
 	"github.com/spf13/cobra"
 )
 
 func initCmd() *cobra.Command {
 	var name string
-	var template string
+	var tmplName string
+	var module string
 
 	cmd := &cobra.Command{
 		Use:   "init [path]",
 		Short: "Initialize a new Forge project",
 		Long: `Scaffold a new project with Forge configuration.
-Creates a Forgefile and project structure.
+Creates a Forgefile, project structure, and boilerplate.
+
+Available templates: go-agent, go-cli, go-api, python-agent
 
 Examples:
-  forge init
   forge init my-project
-  forge init --template go
-  forge init --template python`,
+  forge init my-agent --template go-agent
+  forge init my-api --template go-api --module github.com/me/my-api
+  forge init . --template python-agent`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if name == "" {
-				if len(args) > 0 {
+				if len(args) > 0 && args[0] != "." {
 					name = args[0]
 				} else {
 					dir, _ := os.Getwd()
@@ -41,33 +46,50 @@ Examples:
 				os.MkdirAll(targetDir, 0o755)
 			}
 
-			fmt.Printf("Forge: Initializing project %q\n", name)
+			fmt.Println(pretty.InfoLine(fmt.Sprintf("Initializing project %q", name)))
 
-			// Create Forgefile
-			forgefilePath := filepath.Join(targetDir, "Forgefile")
-			forgefile := generateForgefile(name, template)
-			if err := os.WriteFile(forgefilePath, []byte(forgefile), 0o644); err != nil {
-				return fmt.Errorf("failed to create Forgefile: %w", err)
+			vars := map[string]string{
+				"NAME": name,
 			}
-			fmt.Printf("  Created %s\n", forgefilePath)
+			if module != "" {
+				vars["MODULE"] = module
+			}
 
-			// Create .forge directory
-			forgeDir := filepath.Join(targetDir, ".forge")
-			os.MkdirAll(forgeDir, 0o755)
-			fmt.Printf("  Created %s/\n", forgeDir)
+			if tmplName != "" {
+				// Use built-in template
+				tmpl, ok := template.FindTemplate(tmplName)
+				if !ok {
+					available := "go-agent, go-cli, go-api, python-agent"
+					return fmt.Errorf("template %q not found. Available: %s", tmplName, available)
+				}
 
-			// Create template-specific files
-			switch template {
-			case "go":
-				createGoTemplate(targetDir, name)
-			case "python":
-				createPythonTemplate(targetDir, name)
-			default:
-				createDefaultTemplate(targetDir, name)
+				if err := template.Execute(tmpl, targetDir, vars); err != nil {
+					return fmt.Errorf("template execution failed: %w", err)
+				}
+
+				for _, f := range tmpl.Files {
+					fmt.Printf("  Created %s\n", filepath.Join(targetDir, f.Path))
+				}
+			} else {
+				// Default: create Forgefile and basic structure
+				forgefilePath := filepath.Join(targetDir, "Forgefile")
+				forgefile := generateForgefile(name)
+				if err := os.WriteFile(forgefilePath, []byte(forgefile), 0o644); err != nil {
+					return fmt.Errorf("failed to create Forgefile: %w", err)
+				}
+				fmt.Printf("  Created %s\n", forgefilePath)
+
+				forgeDir := filepath.Join(targetDir, ".forge")
+				os.MkdirAll(forgeDir, 0o755)
+				fmt.Printf("  Created %s/\n", forgeDir)
+
+				readme := fmt.Sprintf("# %s\n\nA project forged with The Forge.\n", name)
+				os.WriteFile(filepath.Join(targetDir, "README.md"), []byte(readme), 0o644)
+				fmt.Printf("  Created README.md\n")
 			}
 
 			fmt.Println()
-			fmt.Println("Forge: Project initialized! Next steps:")
+			fmt.Println(pretty.SuccessLine("Project initialized!"))
 			fmt.Printf("  cd %s\n", targetDir)
 			fmt.Println("  forge serve -- <your-agent>")
 			fmt.Println()
@@ -77,12 +99,13 @@ Examples:
 	}
 
 	cmd.Flags().StringVarP(&name, "name", "n", "", "Project name (defaults to directory name)")
-	cmd.Flags().StringVarP(&template, "template", "t", "", "Project template (go|python|default)")
+	cmd.Flags().StringVarP(&tmplName, "template", "t", "", "Project template (go-agent|go-cli|go-api|python-agent)")
+	cmd.Flags().StringVarP(&module, "module", "m", "", "Go module path (e.g. github.com/me/project)")
 
 	return cmd
 }
 
-func generateForgefile(name, template string) string {
+func generateForgefile(name string) string {
 	return fmt.Sprintf(`# Forgefile — %s
 # The Forge project configuration
 
@@ -91,12 +114,10 @@ name = "%s"
 version = "0.1.0"
 
 [agent]
-# Default agent to use with forge serve
 type = "claude"
 model = "anthropic/claude-sonnet-4-20250514"
 
 [security]
-# Network sandboxing
 jail = false
 jail_rules = ["github.com"]
 
@@ -106,59 +127,8 @@ jail_rules = ["github.com"]
 # gpt5 = "openai/gpt-5-mini"
 
 [tasks]
-# Define custom tasks
 # lint = "golangci-lint run ./..."
 # test = "go test ./..."
 # build = "go build -o forge ."
 `, name, name)
-}
-
-func createGoTemplate(dir, name string) {
-	// Create main.go
-	mainGo := fmt.Sprintf(`package main
-
-import (
-	"fmt"
-)
-
-func main() {
-	fmt.Println("Hello from %s!")
-}
-`, name)
-	os.WriteFile(filepath.Join(dir, "main.go"), []byte(mainGo), 0o644)
-
-	// Create go.mod
-	goMod := fmt.Sprintf(`module github.com/forge/%s
-
-go 1.23
-`, name)
-	os.WriteFile(filepath.Join(dir, "go.mod"), []byte(goMod), 0o644)
-
-	fmt.Printf("  Created main.go\n")
-	fmt.Printf("  Created go.mod\n")
-}
-
-func createPythonTemplate(dir, name string) {
-	mainPy := fmt.Sprintf(`#!/usr/bin/env python3
-"""%s - A Forge project"""
-
-def main():
-    print("Hello from %s!")
-
-if __name__ == "__main__":
-    main()
-`, name, name)
-	os.WriteFile(filepath.Join(dir, "main.py"), []byte(mainPy), 0o644)
-
-	requirements := "# Add your dependencies here\n"
-	os.WriteFile(filepath.Join(dir, "requirements.txt"), []byte(requirements), 0o644)
-
-	fmt.Printf("  Created main.py\n")
-	fmt.Printf("  Created requirements.txt\n")
-}
-
-func createDefaultTemplate(dir, name string) {
-	readme := fmt.Sprintf("# %s\n\nA project forged with The Forge.\n\n## Getting Started\n\n    forge serve -- claude\n\n## License\n\nMIT\n", name)
-	os.WriteFile(filepath.Join(dir, "README.md"), []byte(readme), 0o644)
-	fmt.Printf("  Created README.md\n")
 }
