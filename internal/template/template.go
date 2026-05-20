@@ -1,291 +1,445 @@
-// Package template provides project scaffolding templates for The Forge.
-// Every sword starts from a blueprint.
+// Package template provides project scaffolding templates.
+// Create new projects from predefined templates (go-api, python-ml, etc.)
+// or custom templates from ~/.forge/templates/.
+//
+// Don't start from scratch. Start from a template.
 package template
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
 
+// TemplateType represents the category of template.
+type TemplateType string
+
+const (
+	TypeGoAPI      TemplateType = "go-api"
+	TypeGoCLI      TemplateType = "go-cli"
+	TypeGoGRPC     TemplateType = "go-grpc"
+	TypePythonML   TemplateType = "python-ml"
+	TypePythonAPI  TemplateType = "python-api"
+	TypeRustCLI    TemplateType = "rust-cli"
+	TypeTSNode     TemplateType = "ts-node"
+	TypeReact      TemplateType = "react"
+	TypeDocker     TemplateType = "docker"
+	TypeK8s        TemplateType = "k8s"
+	TypeCustom     TemplateType = "custom"
+)
+
+// TemplateFile represents a file in a template.
+type TemplateFile struct {
+	Path     string `json:"path"`       // relative path within project
+	Content  string `json:"content"`    // file content (may contain {{.Var}})
+	Mode     int    `json:"mode"`       // file permissions
+	Exec     bool   `json:"exec"`       // executable?
+	Optional bool   `json:"optional"`   // skip if exists?
+}
+
+// Var represents a template variable.
+type Var struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Default     string `json:"default,omitempty"`
+	Required    bool   `json:"required"`
+}
+
 // Template represents a project template.
 type Template struct {
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Files       []TemplateFile    `json:"files"`
-	Variables   map[string]string `json:"variables"`
+	ID          string         `json:"id"`
+	Name        string         `json:"name"`
+	Type        TemplateType   `json:"type"`
+	Version     string         `json:"version"`
+	Description string         `json:"description"`
+	Author      string         `json:"author,omitempty"`
+	Files       []TemplateFile `json:"files"`
+	Vars        []Var          `json:"vars,omitempty"`
+	Tags        []string       `json:"tags,omitempty"`
+	CreatedAt   time.Time      `json:"created_at"`
 }
 
-// TemplateFile represents a single file in a template.
-type TemplateFile struct {
-	Path    string `json:"path"`
-	Content string `json:"content"`
-	Mode    int    `json:"mode,omitempty"`
+// ApplyResult holds the result of applying a template.
+type ApplyResult struct {
+	TemplateID string   `json:"template_id"`
+	TargetDir  string   `json:"target_dir"`
+	FilesCreated []string `json:"files_created"`
+	FilesSkipped []string `json:"files_skipped"`
 }
 
-// BuiltinTemplates returns the built-in project templates.
+// Registry manages templates.
+type Registry struct {
+	Dir string
+}
+
+// NewRegistry creates a template registry.
+func NewRegistry(dir string) *Registry {
+	return &Registry{Dir: dir}
+}
+
+// BuiltinTemplates returns the built-in templates.
 func BuiltinTemplates() []Template {
 	return []Template{
-		GoAgentTemplate(),
-		GoCLITemplate(),
-		GoAPITemplate(),
-		PythonAgentTemplate(),
+		{
+			ID:          "go-api",
+			Name:        "Go REST API",
+			Type:        TypeGoAPI,
+			Version:     "1.0.0",
+			Description: "REST API with Chi router, structured logging, and graceful shutdown",
+			Files: []TemplateFile{
+				{Path: "main.go", Content: goAPIMain, Mode: 0644},
+				{Path: "go.mod", Content: goAPIMod, Mode: 0644},
+				{Path: "handler/handler.go", Content: goAPIHandler, Mode: 0644},
+				{Path: "Dockerfile", Content: goAPIDocker, Mode: 0644},
+				{Path: "README.md", Content: goAPIReadme, Mode: 0644},
+			},
+			Vars: []Var{
+				{Name: "module", Description: "Go module path", Default: "github.com/example/api", Required: true},
+				{Name: "port", Description: "HTTP port", Default: "8080"},
+			},
+		},
+		{
+			ID:          "go-cli",
+			Name:        "Go CLI",
+			Type:        TypeGoCLI,
+			Version:     "1.0.0",
+			Description: "CLI application with Cobra, config, and shell completion",
+			Files: []TemplateFile{
+				{Path: "main.go", Content: goCLIMain, Mode: 0644},
+				{Path: "go.mod", Content: goCLIMod, Mode: 0644},
+				{Path: "cmd/root.go", Content: goCLIRoot, Mode: 0644},
+			},
+			Vars: []Var{
+				{Name: "module", Description: "Go module path", Default: "github.com/example/cli", Required: true},
+			},
+		},
+		{
+			ID:          "python-api",
+			Name:        "Python FastAPI",
+			Type:        TypePythonAPI,
+			Version:     "1.0.0",
+			Description: "FastAPI application with Pydantic models and Docker",
+			Files: []TemplateFile{
+				{Path: "app/main.py", Content: pythonAPIMain, Mode: 0644},
+				{Path: "requirements.txt", Content: pythonAPIReqs, Mode: 0644},
+				{Path: "Dockerfile", Content: pythonDocker, Mode: 0644},
+			},
+			Vars: []Var{
+				{Name: "name", Description: "Project name", Default: "my-api", Required: true},
+			},
+		},
 	}
 }
 
-// GoAgentTemplate returns the Go agent template.
-func GoAgentTemplate() Template {
-	return Template{
-		Name:        "go-agent",
-		Description: "Go AI agent with ACP support",
-		Variables: map[string]string{
-			"MODULE": "github.com/example/my-agent",
-			"NAME":   "my-agent",
-		},
-		Files: []TemplateFile{
-			{Path: "main.go", Content: `package main
+// List returns available templates.
+func (r *Registry) List() ([]*Template, error) {
+	var templates []*Template
+
+	// Add built-ins
+	for i := range BuiltinTemplates() {
+		templates = append(templates, &BuiltinTemplates()[i])
+	}
+
+	// Add custom templates from dir
+	if r.Dir != "" {
+		entries, err := os.ReadDir(r.Dir)
+		if err == nil {
+			for _, e := range entries {
+				if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
+					continue
+				}
+				data, err := os.ReadFile(filepath.Join(r.Dir, e.Name()))
+				if err != nil {
+					continue
+				}
+				var t Template
+				if err := json.Unmarshal(data, &t); err != nil {
+					continue
+				}
+				templates = append(templates, &t)
+			}
+		}
+	}
+
+	sort.Slice(templates, func(i, k int) bool {
+		return templates[i].Name < templates[k].Name
+	})
+
+	return templates, nil
+}
+
+// Get returns a template by ID.
+func (r *Registry) Get(id string) (*Template, error) {
+	templates, err := r.List()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, t := range templates {
+		if t.ID == id {
+			return t, nil
+		}
+	}
+	return nil, fmt.Errorf("template %q not found", id)
+}
+
+// Apply creates a project from a template.
+func (r *Registry) Apply(templateID, targetDir string, vars map[string]string) (*ApplyResult, error) {
+	tmpl, err := r.Get(templateID)
+	if err != nil {
+		return nil, err
+	}
+
+	os.MkdirAll(targetDir, 0o755)
+
+	result := &ApplyResult{
+		TemplateID: templateID,
+		TargetDir:  targetDir,
+	}
+
+	// Set defaults for missing vars
+	for _, v := range tmpl.Vars {
+		if _, ok := vars[v.Name]; !ok {
+			if v.Required && v.Default == "" {
+				return nil, fmt.Errorf("required variable %q not provided", v.Name)
+			}
+			vars[v.Name] = v.Default
+		}
+	}
+
+	for _, file := range tmpl.Files {
+		filePath := filepath.Join(targetDir, file.Path)
+		os.MkdirAll(filepath.Dir(filePath), 0o755)
+
+		// Check if file exists
+		if _, err := os.Stat(filePath); err == nil {
+			result.FilesSkipped = append(result.FilesSkipped, file.Path)
+			continue
+		}
+
+		// Apply variable substitution
+		content := file.Content
+		for k, v := range vars {
+			content = strings.ReplaceAll(content, "{{."+k+"}}", v)
+		}
+
+		mode := os.FileMode(file.Mode)
+		if file.Exec {
+			mode = 0755
+		}
+
+		if err := os.WriteFile(filePath, []byte(content), mode); err != nil {
+			return nil, fmt.Errorf("failed to write %s: %w", file.Path, err)
+		}
+
+		result.FilesCreated = append(result.FilesCreated, file.Path)
+	}
+
+	return result, nil
+}
+
+// Save saves a custom template.
+func (r *Registry) Save(tmpl *Template) error {
+	os.MkdirAll(r.Dir, 0o755)
+	data, err := json.MarshalIndent(tmpl, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filepath.Join(r.Dir, tmpl.ID+".json"), data, 0o644)
+}
+
+// FormatTemplate renders a template for display.
+func FormatTemplate(t *Template) string {
+	vars := ""
+	for _, v := range t.Vars {
+		req := ""
+		if v.Required {
+			req = " (required)"
+		}
+		defaultVal := ""
+		if v.Default != "" {
+			defaultVal = fmt.Sprintf(" [default: %s]", v.Default)
+		}
+		vars += fmt.Sprintf("\n    %s: %s%s%s", v.Name, v.Description, defaultVal, req)
+	}
+
+	return fmt.Sprintf("%-15s %-12s %s (%d files)%s",
+		t.ID, t.Type, t.Description, len(t.Files), vars)
+}
+
+// Template file contents
+
+const goAPIMain = `package main
 
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
-	"github.com/forge/sword/internal/acp"
+	"{{.module}}/handler"
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "{{.port}}"
+	}
+
+	mux := http.NewServeMux()
+	handler.Register(mux)
+
+	server := &http.Server{
+		Addr:         ":" + port,
+		Handler:      mux,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+	}
+
+	go func() {
+		fmt.Printf("Server listening on :%s\n", port)
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			log.Fatal(err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+	server.Shutdown(ctx)
+	fmt.Println("Server stopped")
+}`
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+const goAPIMod = `module {{.module}}
 
-	client := acp.NewClient("http://localhost:3284")
+go 1.22`
 
-	fmt.Println("{{.NAME}} starting...")
-	fmt.Println("  The wielder and the sword are one.")
-
-	select {
-	case <-sigChan:
-		fmt.Println("\n{{.NAME}} shutting down...")
-	case <-ctx.Done():
-	}
-}`},
-			{Path: "go.mod", Content: `module {{.MODULE}}
-
-go 1.23`},
-			{Path: "Forgefile", Content: `[project]
-name = "{{.NAME}}"
-version = "0.1.0"
-
-[agent]
-type = "claude"
-model = "anthropic/claude-sonnet-4-20250514"
-
-[tasks]
-build = "go build ./..."
-test = "go test ./..."
-run = "go run main.go"`},
-			{Path: "README.md", Content: `# {{.NAME}}
-
-AI agent built with The Forge.
-
-## Usage
-
-    forge run build
-    forge run test
-    forge run run
-
-## Configuration
-
-See ` + "`Forgefile`" + ` for agent configuration.
-`},
-		},
-	}
-}
-
-// GoCLITemplate returns the Go CLI template.
-func GoCLITemplate() Template {
-	return Template{
-		Name:        "go-cli",
-		Description: "Go CLI application with Cobra",
-		Variables: map[string]string{
-			"MODULE": "github.com/example/my-cli",
-			"NAME":   "my-cli",
-		},
-		Files: []TemplateFile{
-			{Path: "main.go", Content: `package main
+const goAPIHandler = `package handler
 
 import (
-	"context"
+	"encoding/json"
+	"net/http"
+)
+
+type Response struct {
+	Status  string      ` + "`" + `json:"status"` + "`" + `
+	Data    interface{} ` + "`" + `json:"data,omitempty"` + "`" + `
+}
+
+func Register(mux *http.ServeMux) {
+	mux.HandleFunc("/health", healthHandler)
+	mux.HandleFunc("/api/v1/status", statusHandler)
+}
+
+func healthHandler(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(Response{Status: "ok"})
+}
+
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(Response{
+		Status: "ok",
+		Data:   map[string]string{"version": "1.0.0"},
+	})
+}`
+
+const goAPIDocker = `FROM golang:1.22-alpine AS builder
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -o /server .
+
+FROM alpine:3.19
+COPY --from=builder /server /server
+EXPOSE {{.port}}
+CMD ["/server"]`
+
+const goAPIReadme = `# {{.module}}
+
+REST API built with Go.
+
+## Getting Started
+
+` + "```" + `bash
+go run main.go
+` + "```" + `
+
+## Endpoints
+
+- GET /health — Health check
+- GET /api/v1/status — API status
+
+## Docker
+
+` + "```" + `bash
+docker build -t api .
+docker run -p {{.port}}:{{.port}} api
+` + "```" + ``
+
+const goCLIMain = `package main
+
+import "{{.module}}/cmd"
+
+func main() {
+	cmd.Execute()
+}`
+
+const goCLIMod = `module {{.module}}
+
+go 1.22`
+
+const goCLIRoot = `package cmd
+
+import (
 	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
-func main() {
-	root := &cobra.Command{
-		Use:   "{{.NAME}}",
-		Short: "A CLI tool built with The Forge",
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Hello from {{.NAME}}!")
-		},
-	}
+var rootCmd = &cobra.Command{
+	Use:   "{{.module}}",
+	Short: "A CLI application",
+}
 
-	if err := root.ExecuteContext(context.Background()); err != nil {
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-}`},
-			{Path: "go.mod", Content: `module {{.MODULE}}
+}`
 
-go 1.23`},
-		},
-	}
-}
+const pythonAPIMain = `from fastapi import FastAPI
 
-// GoAPITemplate returns the Go API template.
-func GoAPITemplate() Template {
-	return Template{
-		Name:        "go-api",
-		Description: "Go HTTP API server",
-		Variables: map[string]string{
-			"MODULE": "github.com/example/my-api",
-			"NAME":   "my-api",
-		},
-		Files: []TemplateFile{
-			{Path: "main.go", Content: `package main
+app = FastAPI(title="{{.name}}")
 
-import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"net/http"
-)
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
-func main() {
-	mux := http.NewServeMux()
+@app.get("/api/v1/status")
+async def status():
+    return {"status": "ok", "version": "1.0.0"}`
 
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-	})
+const pythonAPIReqs = `fastapi>=0.110.0
+uvicorn>=0.29.0
+pydantic>=2.6.0`
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "{{.NAME}} API v0.1.0\n")
-	})
-
-	fmt.Println("{{.NAME}} API starting on :8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
-}`},
-			{Path: "go.mod", Content: `module {{.MODULE}}
-
-go 1.23`},
-		},
-	}
-}
-
-// PythonAgentTemplate returns the Python agent template.
-func PythonAgentTemplate() Template {
-	return Template{
-		Name:        "python-agent",
-		Description: "Python AI agent",
-		Variables: map[string]string{
-			"NAME": "my-agent",
-		},
-		Files: []TemplateFile{
-			{Path: "main.py", Content: `#!/usr/bin/env python3
-"""{{.NAME}} - AI Agent built with The Forge"""
-
-import signal
-import sys
-
-
-def main():
-    print("{{.NAME}} starting...")
-    print("  The wielder and the sword are one.")
-
-    def shutdown(signum, frame):
-        print("\n{{.NAME}} shutting down...")
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, shutdown)
-    signal.signal(signal.SIGTERM, shutdown)
-
-    # Agent loop
-    while True:
-        try:
-            pass  # Your agent logic here
-        except KeyboardInterrupt:
-            break
-
-
-if __name__ == "__main__":
-    main()
-`},
-			{Path: "requirements.txt", Content: `# {{.NAME}} dependencies
-`},
-		},
-	}
-}
-
-// FindTemplate finds a built-in template by name.
-func FindTemplate(name string) (*Template, bool) {
-	for _, t := range BuiltinTemplates() {
-		if t.Name == name {
-			return &t, true
-		}
-	}
-	return nil, false
-}
-
-// Execute renders a template with the given variables into a directory.
-func Execute(tmpl *Template, dir string, vars map[string]string) error {
-	if dir == "" {
-		dir = "."
-	}
-
-	// Merge template variables with provided vars
-	merged := make(map[string]string)
-	for k, v := range tmpl.Variables {
-		merged[k] = v
-	}
-	for k, v := range vars {
-		merged[k] = v
-	}
-
-	for _, f := range tmpl.Files {
-		path := filepath.Join(dir, applyVars(f.Path, merged))
-		content := applyVars(f.Content, merged)
-
-		// Create parent directories
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-			return fmt.Errorf("template: mkdir %s: %w", filepath.Dir(path), err)
-		}
-
-		mode := os.FileMode(0o644)
-		if f.Mode > 0 {
-			mode = os.FileMode(f.Mode)
-		}
-
-		if err := os.WriteFile(path, []byte(content), mode); err != nil {
-			return fmt.Errorf("template: write %s: %w", path, err)
-		}
-	}
-
-	return nil
-}
-
-// applyVars replaces {{.KEY}} placeholders in a string.
-func applyVars(s string, vars map[string]string) string {
-	for k, v := range vars {
-		s = strings.ReplaceAll(s, "{{."+k+"}}", v)
-	}
-	// Replace date placeholders
-	s = strings.ReplaceAll(s, "{{.YEAR}}", fmt.Sprintf("%d", time.Now().Year()))
-	s = strings.ReplaceAll(s, "{{.DATE}}", time.Now().Format("2006-01-02"))
-	return s
-}
+const pythonDocker = `FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]`

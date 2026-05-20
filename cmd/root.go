@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	forgeVersion = "0.7.0"
+	forgeVersion = "0.7.1"
 	buildTime    = "unknown"
 )
 
@@ -82,6 +82,7 @@ The wielder and the sword are one.`,
 		pairCmd(),
 		promptCmd(),
 		dreamCmd(),
+		lspCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }

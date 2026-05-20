@@ -1,98 +1,276 @@
-package template_test
+package template
 
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
-
-	"github.com/forge/sword/internal/template"
 )
 
 func TestBuiltinTemplates(t *testing.T) {
-	templates := template.BuiltinTemplates()
-	if len(templates) < 4 {
-		t.Errorf("expected at least 4 templates, got %d", len(templates))
-	}
-}
-
-func TestFindTemplate(t *testing.T) {
-	tmpl, ok := template.FindTemplate("go-agent")
-	if !ok {
-		t.Fatal("should find go-agent template")
-	}
-	if tmpl.Name != "go-agent" {
-		t.Errorf("expected go-agent, got %s", tmpl.Name)
-	}
-}
-
-func TestFindTemplateNotFound(t *testing.T) {
-	_, ok := template.FindTemplate("nonexistent")
-	if ok {
-		t.Error("should not find nonexistent template")
-	}
-}
-
-func TestExecuteGoAgent(t *testing.T) {
-	tmpl, _ := template.FindTemplate("go-agent")
-	dir := t.TempDir()
-
-	vars := map[string]string{
-		"MODULE": "github.com/test/my-agent",
-		"NAME":   "my-agent",
+	templates := BuiltinTemplates()
+	if len(templates) < 3 {
+		t.Errorf("expected at least 3 built-in templates, got %d", len(templates))
 	}
 
-	if err := template.Execute(tmpl, dir, vars); err != nil {
-		t.Fatalf("execute error: %v", err)
-	}
-
-	// Check files were created
-	expectedFiles := []string{"main.go", "go.mod", "Forgefile", "README.md"}
-	for _, f := range expectedFiles {
-		path := filepath.Join(dir, f)
-		if _, err := os.Stat(path); err != nil {
-			t.Errorf("expected file %s to exist", f)
+	for _, t2 := range templates {
+		if t2.ID == "" {
+			t.Error("template should have an ID")
 		}
+		if t2.Name == "" {
+			t.Error("template should have a name")
+		}
+		if len(tmpl.Files) == 0 {
+			t.Errorf("template %s should have files", tmpl.ID)
+		}
+	}
+}
+
+func TestList(t *testing.T) {
+	tmpDir := t.TempDir()
+	r := NewRegistry(tmpDir)
+
+	templates, err := r.List()
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	if len(templates) < 3 {
+		t.Errorf("expected at least 3 templates, got %d", len(templates))
+	}
+}
+
+func TestListWithCustom(t *testing.T) {
+	tmpDir := t.TempDir()
+	r := NewRegistry(tmpDir)
+
+	// Create a custom template
+	custom := Template{
+		ID:          "custom-test",
+		Name:        "Custom Test",
+		Type:        TypeCustom,
+		Version:     "1.0.0",
+		Description: "A custom template",
+		Files:       []TemplateFile{{Path: "hello.txt", Content: "Hello!"}},
+	}
+	r.Save(&custom)
+
+	templates, err := r.List()
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+
+	found := false
+	for _, t := range templates {
+		if t.ID == "custom-test" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected to find custom template")
+	}
+}
+
+func TestGet(t *testing.T) {
+	r := NewRegistry("")
+
+	tmpl, err := r.Get("go-api")
+	if err != nil {
+		t.Fatalf("Get failed: %v", err)
+	}
+	if t2.Name != "Go REST API" {
+		t.Errorf("expected 'Go REST API', got %s", tmpl.Name)
+	}
+}
+
+func TestGetNotFound(t *testing.T) {
+	r := NewRegistry("")
+	_, err := r.Get("nonexistent")
+	if err == nil {
+		t.Error("expected error for nonexistent template")
+	}
+}
+
+func TestApply(t *testing.T) {
+	tmpDir := t.TempDir()
+	targetDir := filepath.Join(tmpDir, "my-project")
+	r := NewRegistry("")
+
+	result, err := r.Apply("go-api", targetDir, map[string]string{
+		"module": "github.com/test/api",
+		"port":   "9090",
+	})
+	if err != nil {
+		t.Fatalf("Apply failed: %v", err)
+	}
+
+	if len(result.FilesCreated) == 0 {
+		t.Error("expected files to be created")
+	}
+
+	// Check main.go exists
+	if _, err := os.Stat(filepath.Join(targetDir, "main.go")); os.IsNotExist(err) {
+		t.Error("main.go should exist")
 	}
 
 	// Check variable substitution
-	content, _ := os.ReadFile(filepath.Join(dir, "go.mod"))
-	if string(content) == "" {
-		t.Error("go.mod should not be empty")
+	data, _ := os.ReadFile(filepath.Join(targetDir, "main.go"))
+	if !strings.Contains(string(data), "github.com/test/api") {
+		t.Error("expected module path substitution")
 	}
-
-	// Check main.go has substituted name
-	mainContent, _ := os.ReadFile(filepath.Join(dir, "main.go"))
-	mainStr := string(mainContent)
-	if mainStr == "" {
-		t.Error("main.go should not be empty")
+	if !strings.Contains(string(data), "9090") {
+		t.Error("expected port substitution")
 	}
 }
 
-func TestExecutePythonAgent(t *testing.T) {
-	tmpl, _ := template.FindTemplate("python-agent")
-	dir := t.TempDir()
+func TestApplySkipsExisting(t *testing.T) {
+	tmpDir := t.TempDir()
+	targetDir := filepath.Join(tmpDir, "my-project")
+	r := NewRegistry("")
 
-	if err := template.Execute(tmpl, dir, nil); err != nil {
-		t.Fatalf("execute error: %v", err)
-	}
+	// Create an existing file
+	os.MkdirAll(targetDir, 0o755)
+	os.WriteFile(filepath.Join(targetDir, "main.go"), []byte("existing"), 0644)
 
-	if _, err := os.Stat(filepath.Join(dir, "main.py")); err != nil {
-		t.Error("main.py should exist")
-	}
-	if _, err := os.Stat(filepath.Join(dir, "requirements.txt")); err != nil {
-		t.Error("requirements.txt should exist")
+	result, _ := r.Apply("go-api", targetDir, map[string]string{
+		"module": "github.com/test/api",
+	})
+
+	if len(result.FilesSkipped) == 0 {
+		t.Error("expected files to be skipped")
 	}
 }
 
-func TestTemplateFilesNotEmpty(t *testing.T) {
-	for _, tmpl := range template.BuiltinTemplates() {
-		if len(tmpl.Files) == 0 {
-			t.Errorf("template %s should have files", tmpl.Name)
-		}
-		for _, f := range tmpl.Files {
-			if f.Path == "" {
-				t.Errorf("template %s has file with empty path", tmpl.Name)
+func TestApplyMissingRequiredVar(t *testing.T) {
+	tmpDir := t.TempDir()
+	r := NewRegistry("")
+
+	_, err := r.Apply("go-api", filepath.Join(tmpDir, "project"), map[string]string{})
+	if err == nil {
+		t.Error("expected error for missing required variable")
+	}
+}
+
+func TestApplyUsesDefaults(t *testing.T) {
+	tmpDir := t.TempDir()
+	targetDir := filepath.Join(tmpDir, "my-project")
+	r := NewRegistry("")
+
+	// Only provide required var, others use defaults
+	result, err := r.Apply("go-api", targetDir, map[string]string{
+		"module": "github.com/test/api",
+	})
+	if err != nil {
+		t.Fatalf("Apply failed: %v", err)
+	}
+	if len(result.FilesCreated) == 0 {
+		t.Error("expected files to be created")
+	}
+
+	// Port should default to 8080
+	data, _ := os.ReadFile(filepath.Join(targetDir, "main.go"))
+	if !strings.Contains(string(data), "8080") {
+		t.Error("expected default port 8080")
+	}
+}
+
+func TestApplyGoCLI(t *testing.T) {
+	tmpDir := t.TempDir()
+	targetDir := filepath.Join(tmpDir, "cli-project")
+	r := NewRegistry("")
+
+	result, err := r.Apply("go-cli", targetDir, map[string]string{
+		"module": "github.com/test/mycli",
+	})
+	if err != nil {
+		t.Fatalf("Apply go-cli failed: %v", err)
+	}
+	if len(result.FilesCreated) == 0 {
+		t.Error("expected files to be created")
+	}
+}
+
+func TestApplyPythonAPI(t *testing.T) {
+	tmpDir := t.TempDir()
+	targetDir := filepath.Join(tmpDir, "py-project")
+	r := NewRegistry("")
+
+	result, err := r.Apply("python-api", targetDir, map[string]string{
+		"name": "my-fastapi",
+	})
+	if err != nil {
+		t.Fatalf("Apply python-api failed: %v", err)
+	}
+	if len(result.FilesCreated) == 0 {
+		t.Error("expected files to be created")
+	}
+}
+
+func TestSaveAndLoad(t *testing.T) {
+	tmpDir := t.TempDir()
+	r := NewRegistry(tmpDir)
+
+	custom := Template{
+		ID:          "saved-template",
+		Name:        "Saved Template",
+		Type:        TypeCustom,
+		Version:     "1.0.0",
+		Description: "A saved template",
+		Files:       []TemplateFile{{Path: "test.txt", Content: "Hello {{.name}}"}},
+		Vars:        []Var{{Name: "name", Default: "World", Required: true}},
+	}
+
+	if err := r.Save(&custom); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	// Verify file exists
+	if _, err := os.Stat(filepath.Join(tmpDir, "saved-template.json")); os.IsNotExist(err) {
+		t.Error("template file should exist")
+	}
+
+	// Load via List
+	templates, _ := r.List()
+	found := false
+	for _, t2 := range templates {
+		if t2.ID == "saved-template" {
+			found = true
+			if t2.Name != "Saved Template" {
+				t.Errorf("expected 'Saved Template', got %s", t2.Name)
 			}
 		}
+	}
+	if !found {
+		t.Error("expected to find saved template in list")
+	}
+}
+
+func TestFormatTemplate(t *testing.T) {
+	tmpl := &Template{
+		ID:          "go-api",
+		Name:        "Go REST API",
+		Type:        TypeGoAPI,
+		Description: "REST API with Chi router",
+		Files:       []TemplateFile{{}, {}},
+		Vars: []Var{
+			{Name: "module", Description: "Go module path", Required: true},
+		},
+	}
+
+	output := FormatTemplate(tmpl)
+	if !strings.Contains(output, "go-api") {
+		t.Error("expected ID in output")
+	}
+	if !strings.Contains(output, "module") {
+		t.Error("expected var in output")
+	}
+}
+
+func TestApplyNonexistentTemplate(t *testing.T) {
+	tmpDir := t.TempDir()
+	r := NewRegistry("")
+
+	_, err := r.Apply("nonexistent", filepath.Join(tmpDir, "project"), nil)
+	if err == nil {
+		t.Error("expected error for nonexistent template")
 	}
 }

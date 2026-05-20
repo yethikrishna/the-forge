@@ -57,18 +57,19 @@ Examples:
 
 			if tmplName != "" {
 				// Use built-in template
-				tmpl, ok := template.FindTemplate(tmplName)
-				if !ok {
-					available := "go-agent, go-cli, go-api, python-agent"
-					return fmt.Errorf("template %q not found. Available: %s", tmplName, available)
+				reg := template.NewRegistry("")
+				_, err := reg.Get(tmplName)
+				if err != nil {
+					return fmt.Errorf("template %q not found: %w", tmplName, err)
 				}
 
-				if err := template.Execute(tmpl, targetDir, vars); err != nil {
+				result, err := reg.Apply(tmplName, targetDir, vars)
+				if err != nil {
 					return fmt.Errorf("template execution failed: %w", err)
 				}
 
-				for _, f := range tmpl.Files {
-					fmt.Printf("  Created %s\n", filepath.Join(targetDir, f.Path))
+				for _, f := range result.FilesCreated {
+					fmt.Printf("  Created %s\n", filepath.Join(targetDir, f))
 				}
 			} else {
 				// Default: create Forgefile and basic structure
