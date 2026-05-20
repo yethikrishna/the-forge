@@ -289,3 +289,55 @@ Linux Foundation press release (recent):
 - https://www.linuxfoundation.org/press/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year
 - https://berkeleyrdi.substack.com/p/agentic-ai-weekly-berkeley-rdi-may-e16
 - https://blaxel.ai/blog/best-ai-agents
+
+---
+
+## 2026-05-20 (21:31 UTC) — Incremental Update
+
+### Enterprise Agentic Platform Launches (May 20, 2026)
+
+Heavy day for enterprise agentic AI platform announcements:
+
+**Acceldata — Autonomous Data & AI Platform (xLake)** — GA today:
+- Hybrid-native governed compute for distributed enterprise data (cloud, on-prem, hybrid, sovereign)
+- Thousands of AI agents running autonomously with built-in data quality, cost optimization, governance
+- Positioned as successor to lakehouse architectures for the agentic era
+- Relevance: another example of enterprise platforms embedding agent orchestration as a core primitive
+
+**RapDev — Agentic Platform Operator (APO)** for ServiceNow:
+- Governed AI agent platform for operating ServiceNow at enterprise scale
+- Request decomposition, policy-based authorization, change execution, human oversight, auditability
+- Vitals health checks, Datadog telemetry, per-tenant kill switches, scoped secrets, isolation
+- Relevance: pattern of "governed agent operator" layer on top of existing platforms — similar to what the-forge could provide
+
+**Interact — Spring Launch 2026** (intranet platform):
+- Action Agent GA (content moderation, community risk, task completion)
+- Signal Agent + AI Search with document upload and Workplace Connectors
+- Direct Workday workflows from homepage
+
+**Manhattan Associates — Momentum 2026** (supply chain/commerce):
+- Solution Design Studio: natural-language workspace for configuring complex systems
+- Manhattan Marketplace: ecosystem for discovering/deploying intelligent agents
+- Built on ActivePlatform cloud-native microservices foundation
+- Claims 50% reduction in implementation timelines
+
+### Trend Observation
+
+May 20, 2026 is a watershed moment for enterprise agentic platforms. Every major vertical (data, IT operations, intranet, supply chain) now has purpose-built agent platforms. The common pattern:
+1. Agent orchestration as a managed service
+2. Governance, audit, and human oversight built in
+3. Kill switches and isolation per tenant
+4. Natural language as the primary interface
+
+This validates the-forge's direction of unified agent orchestration with governance controls.
+
+### No New Framework/Protocol/Coding Agent Updates
+
+No new coding agent launches, protocol changes, or framework releases since the 21:01 UTC update. Sandbox vulnerability landscape unchanged (vm2 wave, Semantic Kernel CVEs already covered).
+
+### Sources
+
+- https://www.hpcwire.com/bigdatawire/this-just-in/acceldata-launches-autonomous-data-ai-platform-for-agentic-ai-era/
+- https://www.morningstar.com/news/pr-newswire/20260520ne64356/rapdev-launches-agentic-platform-operator-a-governed-ai-agent-platform-for-operating-servicenow-at-scale
+- https://www.interactsoftware.com/news/spring-launch-2026/
+- https://www.manh.com/our-insights/resources/blog/momentum-2026-welcome-agentic-era

@@ -75,8 +75,11 @@ The wielder and the sword are one.`,
 		debateCmd(),
 		circuitCmd(),
 		agentgraphCmd(),
+		feedbackCmd(),
+		tokenizerCmd(),
 		pairCmd(),
 		promptCmd(),
+		dreamCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
