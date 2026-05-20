@@ -337,3 +337,59 @@ func FormatProfile(p *Profile) string {
 	sb.WriteString(fmt.Sprintf("Achievements: %d\n", len(p.Unlocks)))
 	return sb.String()
 }
+
+// All returns all achievements with their unlock status.
+func (t *Tracker) All() []AchievementStatus {
+	return t.ListAchievements()
+}
+
+// Unlock manually unlocks an achievement.
+func (t *Tracker) Unlock(id, agentID, sessionID string) error {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.isUnlocked(id) {
+		return fmt.Errorf("achievement %q already unlocked", id)
+	}
+	if _, ok := t.definitions[id]; !ok {
+		return fmt.Errorf("achievement %q not found", id)
+	}
+	t.unlocks = append(t.unlocks, Unlock{
+		AchievementID: id,
+		UnlockedAt:    time.Now(),
+		AgentID:       agentID,
+		SessionID:     sessionID,
+	})
+	t.save()
+	return nil
+}
+
+// LevelForCount returns the level for a given count of unlocked achievements.
+func LevelForCount(count int) int {
+	return count/5 + 1
+}
+
+// NewTrackerSimple creates a tracker without error (for cmd compat).
+func NewTrackerSimple(dir string) *Tracker {
+	t, _ := NewTracker(dir)
+	return t
+}
+
+// UnlockSimple unlocks an achievement and returns it.
+// This is the simpler API the cmd expects.
+func (t *Tracker) UnlockSimple(id string) (*Achievement, bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.isUnlocked(id) {
+		return nil, false
+	}
+	ach, ok := t.definitions[id]
+	if !ok {
+		return nil, false
+	}
+	t.unlocks = append(t.unlocks, Unlock{
+		AchievementID: id,
+		UnlockedAt:    time.Now(),
+	})
+	t.save()
+	return ach, true
+}

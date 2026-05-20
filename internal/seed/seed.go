@@ -338,3 +338,133 @@ func FormatResult(r *SeedResult) string {
 func FormatTemplate(t *Template) string {
 	return fmt.Sprintf("%s (%s) — %s [%d files]", t.Name, t.Type, t.Description, len(t.Files))
 }
+
+// ParseIntent parses a natural language description into a project type and name.
+// Alias for ClassifyIntent that also extracts a project name.
+func ParseIntent(description string) (ProjectType, string) {
+	ptype := NewSeed().ClassifyIntent(description)
+	name := extractProjectName(description)
+	return ptype, name
+}
+
+// Intent represents a parsed project intent.
+type Intent struct {
+	ProjectType ProjectType `json:"project_type"`
+	ProjectName string      `json:"project_name"`
+	Features    []string    `json:"features"`
+}
+
+func extractProjectName(desc string) string {
+	words := strings.Fields(desc)
+	for _, w := range words {
+		if strings.HasPrefix(w, "--name=") {
+			return strings.TrimPrefix(w, "--name=")
+		}
+	}
+	if len(words) > 0 {
+		return strings.ToLower(words[0])
+	}
+	return "my-project"
+}
+
+// HasFeature checks if a feature is implied by the description.
+func HasFeature(description, feature string) bool {
+	return strings.Contains(strings.ToLower(description), strings.ToLower(feature))
+}
+
+// GenerateFromIntent generates a project from a natural language description.
+// Package-level convenience function.
+func GenerateFromIntent(description, templateName string) (*SeedResult, error) {
+	s := NewSeed()
+	var ptype ProjectType
+	var name string
+	
+	if templateName != "" {
+		// Map template name to type
+		switch strings.ToLower(templateName) {
+		case "go", "go-app":
+			ptype = TypeGo
+		case "python", "py":
+			ptype = TypePython
+		case "typescript", "ts", "node":
+			ptype = TypeTypeScript
+		case "rust":
+			ptype = TypeRust
+		case "web":
+			ptype = TypeWeb
+		case "cli":
+			ptype = TypeCLI
+		case "api", "go-api":
+			ptype = TypeAPI
+		case "agent", "forge-agent":
+			ptype = TypeAgent
+		default:
+			ptype = TypeGo
+		}
+		name = "my-project"
+	} else {
+		ptype, name = ParseIntent(description)
+	}
+	
+	return s.Generate(name, ptype, name)
+}
+
+// AvailableTemplates returns template info for display.
+func AvailableTemplates() []map[string]string {
+	s := NewSeed()
+	templates := s.ListTemplates()
+	result := make([]map[string]string, len(templates))
+	for i, t := range templates {
+		result[i] = map[string]string{
+			"name":        t.Name,
+			"type":        string(t.Type),
+			"description": t.Description,
+		}
+	}
+	return result
+}
+
+// InferType infers the project type from a description.
+func InferType(description string) ProjectType {
+	return NewSeed().ClassifyIntent(description)
+}
+
+// SeedFile represents a file to be generated.
+type SeedFile struct {
+	Path    string `json:"path"`
+	Content string `json:"content"`
+}
+
+// SeedResultCompat is the extended result with file details.
+type SeedResultCompat struct {
+	Name      string      `json:"name"`
+	Type      ProjectType `json:"type"`
+	Files     []SeedFile  `json:"files"`
+	Template  string      `json:"template"`
+	CreatedAt time.Time   `json:"created_at"`
+}
+
+// GenerateCompat generates a project and returns file details.
+func (s *Seed) GenerateCompat(name string, ptype ProjectType, targetDir string) (*SeedResultCompat, error) {
+	template, ok := s.templates[ptype]
+	if !ok {
+		template = s.templates[TypeGo]
+	}
+
+	if targetDir == "" {
+		targetDir = name
+	}
+
+	var files []SeedFile
+	for path, content := range template.Files {
+		content = strings.ReplaceAll(content, "{{.Name}}", name)
+		files = append(files, SeedFile{Path: path, Content: content})
+	}
+
+	return &SeedResultCompat{
+		Name:     name,
+		Type:     ptype,
+		Files:    files,
+		Template: template.Name,
+	}, nil
+}

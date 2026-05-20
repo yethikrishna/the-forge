@@ -170,7 +170,7 @@ All 18 utility packages implemented and tested.
 
 - [x] `forge archaeologist` — AI-powered git forensics (why was code written, dead code detection)
 - [x] `forge tune` — Bayesian hyperparameter optimization for agents (temp, top_p, system prompt)
-- [ ] `forge seed` — project bootstrapping from natural language intent
+- [x] `forge seed` — project bootstrapping from natural language intent
 - [x] `forge witness` — cryptographic proof of agent actions (Merkle tree, tamper verification)
 - [x] `forge empath` — user frustration detection with adaptive response
 

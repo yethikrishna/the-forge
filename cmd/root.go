@@ -102,6 +102,8 @@ The wielder and the sword are one.`,
 		archaeologistCmd(),
 		tuneCmd(),
 		empathCmd(),
+		achievementCmd(),
+		seedCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
