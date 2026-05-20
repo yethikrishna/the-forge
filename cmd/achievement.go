@@ -29,11 +29,12 @@ Gamification that drives adoption.`,
 }
 
 func getAchievementTracker() *achievement.Tracker {
-	return achievement.NewTrackerSimple(getForgeDir() + "/achievement")
+	return achievement.NewTracker(getForgeDir() + "/achievement.json")
 }
 
 func achievementListCmd() *cobra.Command {
 	var jsonOutput bool
+	var showAll bool
 
 	cmd := &cobra.Command{
 		Use:   "list",
@@ -41,13 +42,19 @@ func achievementListCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			tracker := getAchievementTracker()
 
+			var achievements []achievement.Achievement
+			if showAll {
+				achievements = tracker.ListAll()
+			} else {
+				achievements = tracker.List()
+			}
+
 			if jsonOutput {
-				data, _ := json.MarshalIndent(tracker.All(), "", "  ")
+				data, _ := json.MarshalIndent(achievements, "", "  ")
 				fmt.Println(string(data))
 				return nil
 			}
 
-			achievements := tracker.All()
 			unlocked := 0
 			for _, a := range achievements {
 				if a.Unlocked {
@@ -68,6 +75,7 @@ func achievementListCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
+	cmd.Flags().BoolVar(&showAll, "all", false, "Show hidden achievements too")
 	return cmd
 }
 
@@ -79,9 +87,9 @@ func achievementUnlockCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			tracker := getAchievementTracker()
 
-			a, ok := tracker.UnlockSimple(args[0])
-			if !ok {
-				return fmt.Errorf("achievement not found or already unlocked: %s", args[0])
+			a, err := tracker.Unlock(args[0])
+			if err != nil {
+				return fmt.Errorf("achievement error: %w", err)
 			}
 
 			fmt.Printf("🏆 Achievement unlocked: %s\n", a.ID)
@@ -98,29 +106,52 @@ func achievementStatusCmd() *cobra.Command {
 		Short: "Show achievement progress summary",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			tracker := getAchievementTracker()
-			achievements := tracker.All()
-			unlocked := 0
-			var levels map[string]int
-
-			for _, a := range achievements {
-				if a.Unlocked {
-					unlocked++
-				}
-			}
+			stats := tracker.Stats()
 
 			pct := 0.0
-			if len(achievements) > 0 {
-				pct = float64(unlocked) / float64(len(achievements)) * 100
+			if stats.Total > 0 {
+				pct = float64(stats.UnlockedTotal) / float64(stats.Total) * 100
 			}
 
 			fmt.Printf("Achievement Progress\n")
 			fmt.Printf("====================\n")
-			fmt.Printf("Unlocked: %d/%d (%.0f%%)\n", unlocked, len(achievements), pct)
-			fmt.Printf("Level: %d\n", achievement.LevelForCount(unlocked))
+			fmt.Printf("Unlocked: %d/%d (%.0f%%)\n", stats.UnlockedTotal, stats.Total, pct)
+			fmt.Printf("Level: %s\n", levelForCount(stats.UnlockedTotal))
 
-			_ = levels
+			fmt.Printf("\nBy Tier:\n")
+			for _, tier := range []achievement.Tier{
+				achievement.TierCommon,
+				achievement.TierUncommon,
+				achievement.TierRare,
+				achievement.TierEpic,
+				achievement.TierLegendary,
+			} {
+				total := stats.Tiers[tier]
+				unlocked := stats.Unlocked[tier]
+				if total > 0 {
+					fmt.Printf("  %s: %d/%d\n", tier, unlocked, total)
+				}
+			}
 			return nil
 		},
 	}
 	return cmd
+}
+
+// levelForCount returns a level title based on unlock count.
+func levelForCount(count int) string {
+	switch {
+	case count >= 17:
+		return "Forge Master 👑"
+	case count >= 12:
+		return "Veteran ⚔️"
+	case count >= 8:
+		return "Adventurer 🗡️"
+	case count >= 4:
+		return "Apprentice 📖"
+	case count >= 1:
+		return "Novice 🌱"
+	default:
+		return "Uninitiated"
+	}
 }

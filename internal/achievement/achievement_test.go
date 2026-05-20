@@ -1,162 +1,237 @@
 package achievement
 
 import (
+	"path/filepath"
+	"strings"
 	"testing"
 )
 
 func TestNewTracker(t *testing.T) {
-	tr, err := NewTracker(t.TempDir())
+	tracker := NewTracker("")
+	if tracker.TotalCount() == 0 {
+		t.Error("expected default achievements")
+	}
+}
+
+func TestUnlock(t *testing.T) {
+	tracker := NewTracker("")
+
+	a, err := tracker.Unlock("first-chat")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if tr == nil {
-		t.Fatal("expected non-nil tracker")
+	if !a.Unlocked {
+		t.Error("should be unlocked")
+	}
+	if a.UnlockedAt.IsZero() {
+		t.Error("should have unlock time")
 	}
 }
 
-func TestDefaultAchievements(t *testing.T) {
-	achs := DefaultAchievements()
-	if len(achs) < 10 {
-		t.Errorf("expected at least 10 achievements, got %d", len(achs))
+func TestUnlockNotFound(t *testing.T) {
+	tracker := NewTracker("")
+	_, err := tracker.Unlock("nonexistent")
+	if err == nil {
+		t.Error("expected error for nonexistent achievement")
 	}
 }
 
-func TestTrackEventFirstChat(t *testing.T) {
-	tr, _ := NewTracker(t.TempDir())
-	unlocked := tr.TrackEvent("chat", "agent1", "sess1")
+func TestUnlockIdempotent(t *testing.T) {
+	tracker := NewTracker("")
+	tracker.Unlock("first-chat")
+	a, _ := tracker.Unlock("first-chat")
+	if !a.Unlocked {
+		t.Error("should stay unlocked")
+	}
+}
+
+func TestSetProgress(t *testing.T) {
+	tracker := NewTracker("")
+
+	err := tracker.SetProgress("power-user", 0.5)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	a, _ := tracker.Get("power-user")
+	if a.Progress != 0.5 {
+		t.Errorf("expected 0.5, got %.1f", a.Progress)
+	}
+}
+
+func TestSetProgressAutoUnlock(t *testing.T) {
+	tracker := NewTracker("")
+
+	tracker.SetProgress("power-user", 1.0)
+
+	a, _ := tracker.Get("power-user")
+	if !a.Unlocked {
+		t.Error("should auto-unlock at 100%")
+	}
+}
+
+func TestSetProgressClamps(t *testing.T) {
+	tracker := NewTracker("")
+	tracker.SetProgress("power-user", 2.0)
+
+	a, _ := tracker.Get("power-user")
+	if a.Progress != 1.0 {
+		t.Errorf("expected clamped to 1.0, got %.1f", a.Progress)
+	}
+}
+
+func TestGet(t *testing.T) {
+	tracker := NewTracker("")
+
+	a, ok := tracker.Get("first-chat")
+	if !ok {
+		t.Error("expected to find first-chat")
+	}
+	if a.Name != "Hello World" {
+		t.Errorf("expected Hello World, got %s", a.Name)
+	}
+}
+
+func TestGetNotFound(t *testing.T) {
+	tracker := NewTracker("")
+	_, ok := tracker.Get("nonexistent")
+	if ok {
+		t.Error("should not find nonexistent")
+	}
+}
+
+func TestListHidesHidden(t *testing.T) {
+	tracker := NewTracker("")
+
+	visible := tracker.List()
+	for _, a := range visible {
+		if a.Hidden && !a.Unlocked {
+			t.Errorf("hidden achievement %s should not appear", a.ID)
+		}
+	}
+}
+
+func TestListShowsUnlockedHidden(t *testing.T) {
+	tracker := NewTracker("")
+	tracker.Unlock("power-user")
+
+	visible := tracker.List()
 	found := false
-	for _, a := range unlocked {
-		if a.ID == "first_chat" {
+	for _, a := range visible {
+		if a.ID == "power-user" {
 			found = true
 		}
 	}
 	if !found {
-		t.Error("expected first_chat to unlock")
+		t.Error("unlocked hidden achievement should appear in list")
 	}
 }
 
-func TestTrackEventFirstAgent(t *testing.T) {
-	tr, _ := NewTracker(t.TempDir())
-	unlocked := tr.TrackEvent("agent_create", "agent1", "sess1")
-	found := false
-	for _, a := range unlocked {
-		if a.ID == "first_agent" {
-			found = true
-		}
-	}
-	if !found {
-		t.Error("expected first_agent to unlock")
+func TestListAll(t *testing.T) {
+	tracker := NewTracker("")
+	all := tracker.ListAll()
+	if len(all) != tracker.TotalCount() {
+		t.Error("ListAll should return all achievements including hidden")
 	}
 }
 
-func TestTrackEventTenChats(t *testing.T) {
-	tr, _ := NewTracker(t.TempDir())
-	for i := 0; i < 9; i++ {
-		tr.TrackEvent("chat", "agent1", "sess1")
-	}
-	unlocked := tr.TrackEvent("chat", "agent1", "sess1")
-	found := false
-	for _, a := range unlocked {
-		if a.ID == "ten_chats" {
-			found = true
-		}
-	}
-	if !found {
-		t.Error("expected ten_chats to unlock on 10th chat")
+func TestUnlockedCount(t *testing.T) {
+	tracker := NewTracker("")
+	tracker.Unlock("first-chat")
+	tracker.Unlock("first-agent")
+
+	if tracker.UnlockedCount() != 2 {
+		t.Errorf("expected 2, got %d", tracker.UnlockedCount())
 	}
 }
 
-func TestPrerequisite(t *testing.T) {
-	tr, _ := NewTracker(t.TempDir())
-	// hundred_chats requires ten_chats
-	// Even if we send 100 chats, hundred_chats should unlock after ten_chats
-	for i := 0; i < 100; i++ {
-		tr.TrackEvent("chat", "agent1", "sess1")
-	}
-	if !tr.IsUnlocked("hundred_chats") {
-		t.Error("expected hundred_chats to unlock after 100 chats")
-	}
-}
+func TestStats(t *testing.T) {
+	tracker := NewTracker("")
+	tracker.Unlock("first-chat")
 
-func TestNoDoubleUnlock(t *testing.T) {
-	tr, _ := NewTracker(t.TempDir())
-	tr.TrackEvent("chat", "agent1", "sess1")
-	unlocked := tr.TrackEvent("chat", "agent1", "sess1")
-	for _, a := range unlocked {
-		if a.ID == "first_chat" {
-			t.Error("first_chat should not unlock twice")
-		}
+	stats := tracker.Stats()
+	if stats.UnlockedTotal != 1 {
+		t.Errorf("expected 1 unlocked, got %d", stats.UnlockedTotal)
 	}
-}
-
-func TestGetProfile(t *testing.T) {
-	tr, _ := NewTracker(t.TempDir())
-	tr.TrackEvent("chat", "agent1", "sess1")
-	tr.TrackEvent("agent_create", "agent1", "sess1")
-	profile := tr.GetProfile()
-	if profile.TotalPoints <= 0 {
-		t.Error("expected positive points")
-	}
-	if profile.Level < 1 {
-		t.Error("expected level >= 1")
-	}
-}
-
-func TestListAchievements(t *testing.T) {
-	tr, _ := NewTracker(t.TempDir())
-	list := tr.ListAchievements()
-	if len(list) == 0 {
-		t.Error("expected achievements")
-	}
-}
-
-func TestGetStats(t *testing.T) {
-	tr, _ := NewTracker(t.TempDir())
-	tr.TrackEvent("chat", "agent1", "sess1")
-	stats := tr.GetStats()
-	if stats["unlocked"].(int) < 1 {
-		t.Error("expected at least 1 unlocked")
+	if stats.Total == 0 {
+		t.Error("expected total > 0")
 	}
 }
 
 func TestPersistence(t *testing.T) {
 	dir := t.TempDir()
-	tr1, _ := NewTracker(dir)
-	tr1.TrackEvent("chat", "agent1", "sess1")
+	path := filepath.Join(dir, "achievements.json")
 
-	tr2, _ := NewTracker(dir)
-	if !tr2.IsUnlocked("first_chat") {
-		t.Error("expected first_chat to persist")
+	t1 := NewTracker(path)
+	t1.Unlock("first-chat")
+	t1.Unlock("first-agent")
+
+	t2 := NewTracker(path)
+	if t2.UnlockedCount() != 2 {
+		t.Errorf("expected 2 unlocked after reload, got %d", t2.UnlockedCount())
+	}
+
+	a, _ := t2.Get("first-chat")
+	if !a.Unlocked {
+		t.Error("first-chat should persist as unlocked")
+	}
+}
+
+func TestForgeMaster(t *testing.T) {
+	tracker := NewTracker("")
+
+	// Unlock all non-hidden achievements
+	for _, a := range tracker.ListAll() {
+		if a.ID != "forge-master" && !a.Hidden {
+			tracker.Unlock(a.ID)
+		}
+	}
+
+	fm, _ := tracker.Get("forge-master")
+	if !fm.Unlocked {
+		t.Error("forge-master should unlock when all visible achievements are done")
+	}
+}
+
+func TestDefaultAchievements(t *testing.T) {
+	tracker := NewTracker("")
+	all := tracker.ListAll()
+
+	expected := []string{"first-chat", "first-agent", "first-pipeline", "forge-master"}
+	for _, id := range expected {
+		found := false
+		for _, a := range all {
+			if a.ID == id {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("expected achievement %s", id)
+		}
 	}
 }
 
 func TestFormatAchievement(t *testing.T) {
-	ach := &Achievement{ID: "test", Name: "Test", Description: "Test ach", Icon: "🏆", Points: 10, Rarity: RarityCommon}
-	output := FormatAchievement(ach, true)
-	if output == "" {
-		t.Error("expected non-empty output")
+	a := Achievement{
+		Name:        "Hello World",
+		Description: "Start your first chat",
+		Tier:        TierCommon,
+		Icon:        "💬",
+		Unlocked:    true,
+	}
+
+	s := FormatAchievement(a)
+	if !strings.Contains(s, "Hello World") {
+		t.Error("should contain name")
+	}
+	if !strings.Contains(s, "💬") {
+		t.Error("should contain icon")
 	}
 }
 
-func TestFormatProfile(t *testing.T) {
-	p := &Profile{Level: 5, Title: "Artisan", TotalPoints: 420, Unlocks: make([]Unlock, 3)}
-	output := FormatProfile(p)
-	if output == "" {
-		t.Error("expected non-empty output")
-	}
-}
-
-func TestLevelTitle(t *testing.T) {
-	tests := []struct{ level int; want string }{
-		{1, "Apprentice"},
-		{2, "Journeyman"},
-		{5, "Expert"},
-		{100, "Legendary Smith"},
-	}
-	for _, tt := range tests {
-		got := levelTitle(tt.level)
-		if got != tt.want {
-			t.Errorf("levelTitle(%d) = %s, want %s", tt.level, got, tt.want)
-		}
+func TestTierOrder(t *testing.T) {
+	if tierOrder(TierCommon) >= tierOrder(TierLegendary) {
+		t.Error("common should have lower order than legendary")
 	}
 }

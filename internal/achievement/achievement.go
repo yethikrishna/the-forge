@@ -1,5 +1,6 @@
-// Package achievement tracks user milestones and gamification.
-// Celebrate progress. Motivate exploration.
+// Package achievement tracks user milestones and achievements.
+// First chat, first pipeline, first orchestration, etc.
+// Gamification that actually motivates.
 package achievement
 
 import (
@@ -8,388 +9,330 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 )
 
-// Rarity represents achievement rarity.
-type Rarity string
+// Tier represents achievement rarity.
+type Tier string
 
 const (
-	RarityCommon    Rarity = "common"
-	RarityUncommon  Rarity = "uncommon"
-	RarityRare      Rarity = "rare"
-	RarityEpic      Rarity = "epic"
-	RarityLegendary Rarity = "legendary"
+	TierCommon    Tier = "common"
+	TierUncommon  Tier = "uncommon"
+	TierRare      Tier = "rare"
+	TierEpic      Tier = "epic"
+	TierLegendary Tier = "legendary"
 )
 
-// Category represents an achievement category.
-type Category string
-
-const (
-	CategoryOnboarding Category = "onboarding"
-	CategoryAgent      Category = "agent"
-	CategoryPipeline   Category = "pipeline"
-	CategoryOrchestration Category = "orchestration"
-	CategoryExploration Category = "exploration"
-	CategoryMastery    Category = "mastery"
-	CategorySocial     Category = "social"
-)
-
-// Achievement represents an achievement definition.
+// Achievement represents a single achievement.
 type Achievement struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Category    Category `json:"category"`
-	Rarity      Rarity   `json:"rarity"`
-	Icon        string   `json:"icon,omitempty"` // emoji
-	Points      int      `json:"points"`
-	Hidden      bool     `json:"hidden"` // hidden until unlocked
-	Prerequisite string  `json:"prerequisite,omitempty"` // ID of required achievement
-}
-
-// Unlock represents an unlocked achievement.
-type Unlock struct {
-	AchievementID string    `json:"achievement_id"`
-	UnlockedAt    time.Time `json:"unlocked_at"`
-	AgentID       string    `json:"agent_id,omitempty"`
-	SessionID     string    `json:"session_id,omitempty"`
-}
-
-// Profile represents a user's achievement profile.
-type Profile struct {
-	Unlocks     []Unlock `json:"unlocks"`
-	TotalPoints int      `json:"total_points"`
-	Level       int      `json:"level"`
-	Title       string   `json:"title"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Tier        Tier      `json:"tier"`
+	Icon        string    `json:"icon,omitempty"`
+	UnlockedAt  time.Time `json:"unlocked_at,omitempty"`
+	Unlocked    bool      `json:"unlocked"`
+	Progress    float64   `json:"progress"` // 0-1
+	Hidden      bool      `json:"hidden"`   // hidden until unlocked
 }
 
 // Tracker tracks achievements.
 type Tracker struct {
-	mu           sync.Mutex
-	dir          string
-	definitions  map[string]*Achievement
-	unlocks      []Unlock
-	eventCounts  map[string]int // event -> count
+	achievements map[string]*Achievement
+	storePath    string
+	mu           sync.RWMutex
 }
 
-// NewTracker creates an achievement tracker.
-func NewTracker(dir string) (*Tracker, error) {
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return nil, err
-	}
+// NewTracker creates a new achievement tracker.
+func NewTracker(storePath string) *Tracker {
 	t := &Tracker{
-		dir:         dir,
-		definitions: DefaultAchievements(),
-		unlocks:     make([]Unlock, 0),
-		eventCounts: make(map[string]int),
+		achievements: make(map[string]*Achievement),
+		storePath:    storePath,
 	}
+	t.registerDefaults()
 	t.load()
-	return t, nil
+	return t
 }
 
-// DefaultAchievements returns built-in achievement definitions.
-func DefaultAchievements() map[string]*Achievement {
-	return map[string]*Achievement{
-		"first_chat": {ID: "first_chat", Name: "First Words", Description: "Send your first chat to an agent", Category: CategoryOnboarding, Rarity: RarityCommon, Icon: "💬", Points: 10},
-		"first_agent": {ID: "first_agent", Name: "Summoner", Description: "Create your first agent", Category: CategoryOnboarding, Rarity: RarityCommon, Icon: "🤖", Points: 15},
-		"first_pipeline": {ID: "first_pipeline", Name: "Plumber", Description: "Create your first pipeline", Category: CategoryPipeline, Rarity: RarityUncommon, Icon: "🔧", Points: 25},
-		"first_orchestration": {ID: "first_orchestration", Name: "Conductor", Description: "Run your first orchestration", Category: CategoryOrchestration, Rarity: RarityRare, Icon: "🎼", Points: 50},
-		"ten_chats": {ID: "ten_chats", Name: "Conversationalist", Description: "Have 10 agent conversations", Category: CategoryAgent, Rarity: RarityCommon, Icon: "🗣️", Points: 20},
-		"hundred_chats": {ID: "hundred_chats", Name: "Chatterbox", Description: "Have 100 agent conversations", Category: CategoryAgent, Rarity: RarityUncommon, Icon: "📢", Points: 50, Prerequisite: "ten_chats"},
-		"five_agents": {ID: "five_agents", Name: "Agent Army", Description: "Create 5 agents", Category: CategoryAgent, Rarity: RarityUncommon, Icon: "⚔️", Points: 30, Prerequisite: "first_agent"},
-		"first_debate": {ID: "first_debate", Name: "Devil's Advocate", Description: "Run your first debate", Category: CategoryOrchestration, Rarity: RarityRare, Icon: "⚖️", Points: 40},
-		"first_breed": {ID: "first_breed", Name: "Evolution", Description: "Breed an agent for the first time", Category: CategoryMastery, Rarity: RarityEpic, Icon: "🧬", Points: 75},
-		"first_dream": {ID: "first_dream", Name: "Dreamweaver", Description: "Run the dream command", Category: CategoryMastery, Rarity: RarityEpic, Icon: "💭", Points: 75},
-		"cost_saver": {ID: "cost_saver", Name: "Penny Pincher", Description: "Save $10 on LLM costs", Category: CategoryMastery, Rarity: RarityRare, Icon: "💰", Points: 50},
-		"mcp_master": {ID: "mcp_master", Name: "Protocol Master", Description: "Use MCP, A2A, and ACP protocols", Category: CategoryExploration, Rarity: RarityEpic, Icon: "🔌", Points: 60},
-		"witness_prover": {ID: "witness_prover", Name: "Notary", Description: "Verify a witnessed action", Category: CategoryExploration, Rarity: RarityUncommon, Icon: "📜", Points: 25},
-		"integration_hacker": {ID: "integration_hacker", Name: "Connected", Description: "Connect 3 integrations", Category: CategoryExploration, Rarity: RarityUncommon, Icon: "🔗", Points: 30},
-		"quick_start": {ID: "quick_start", Name: "Quick Draw", Description: "Complete quickstart in under 5 minutes", Category: CategoryOnboarding, Rarity: RarityRare, Icon: "⚡", Points: 40},
-		"pipeline_master": {ID: "pipeline_master", Name: "Flow State", Description: "Create 10 pipelines", Category: CategoryPipeline, Rarity: RarityRare, Icon: "🌊", Points: 50, Prerequisite: "first_pipeline"},
-		"forge_master": {ID: "forge_master", Name: "Master Smith", Description: "Unlock all other achievements", Category: CategoryMastery, Rarity: RarityLegendary, Icon: "⚒️", Points: 200, Prerequisite: "pipeline_master"},
+func (t *Tracker) registerDefaults() {
+	defaults := []Achievement{
+		{ID: "first-chat", Name: "Hello World", Description: "Start your first chat with an agent", Tier: TierCommon, Icon: "💬"},
+		{ID: "first-agent", Name: "Agent Creator", Description: "Create your first agent", Tier: TierCommon, Icon: "🤖"},
+		{ID: "first-pipeline", Name: "Pipeline Runner", Description: "Run your first pipeline", Tier: TierUncommon, Icon: "🔗"},
+		{ID: "first-orchestration", Name: "Orchestrator", Description: "Orchestrate multiple agents", Tier: TierRare, Icon: "🎭"},
+		{ID: "first-share", Name: "Sharing is Caring", Description: "Share a session for the first time", Tier: TierCommon, Icon: "📤"},
+		{ID: "first-undo", Name: "Time Traveler", Description: "Undo an agent action", Tier: TierCommon, Icon: "⏪"},
+		{ID: "first-test", Name: "Test Driven", Description: "Run agent tests", Tier: TierUncommon, Icon: "🧪"},
+		{ID: "first-watch", Name: "Watcher", Description: "Watch files for changes", Tier: TierCommon, Icon: "👁️"},
+		{ID: "first-quality", Name: "Quality Inspector", Description: "Score agent output quality", Tier: TierUncommon, Icon: "📊"},
+		{ID: "first-abtest", Name: "A/B Tester", Description: "Run an A/B test", Tier: TierUncommon, Icon: "🔬"},
+		{ID: "first-seed", Name: "Seeder", Description: "Bootstrap a project with forge seed", Tier: TierCommon, Icon: "🌱"},
+		{ID: "first-witness", Name: "Witness", Description: "Record a witnessed action", Tier: TierRare, Icon: "🔐"},
+		{ID: "first-empath", Name: "Empath", Description: "Analyze user sentiment", Tier: TierUncommon, Icon: "💗"},
+		{ID: "cost-conscious", Name: "Cost Conscious", Description: "Review your cost report", Tier: TierCommon, Icon: "💰"},
+		{ID: "budget-setter", Name: "Budget Setter", Description: "Set a cost budget", Tier: TierUncommon, Icon: "🎯"},
+		{ID: "quickstart-complete", Name: "Trailblazer", Description: "Complete the quickstart guide", Tier: TierUncommon, Icon: "🚀"},
+		{ID: "power-user", Name: "Power User", Description: "Use 10 different commands", Tier: TierRare, Icon: "⚡", Hidden: true},
+		{ID: "centurion", Name: "Centurion", Description: "Run 100 agent actions", Tier: TierEpic, Icon: "💯", Hidden: true},
+		{ID: "night-owl", Name: "Night Owl", Description: "Use Forge after midnight", Tier: TierCommon, Icon: "🦉", Hidden: true},
+		{ID: "forge-master", Name: "Forge Master", Description: "Unlock all other achievements", Tier: TierLegendary, Icon: "👑", Hidden: true},
+	}
+
+	for _, a := range defaults {
+		t.achievements[a.ID] = &Achievement{
+			ID:          a.ID,
+			Name:        a.Name,
+			Description: a.Description,
+			Tier:        a.Tier,
+			Icon:        a.Icon,
+			Hidden:      a.Hidden,
+		}
 	}
 }
 
-// TrackEvent records an event and checks for unlocks.
-func (t *Tracker) TrackEvent(event string, agentID, sessionID string) []*Achievement {
+// Unlock unlocks an achievement.
+func (t *Tracker) Unlock(id string) (*Achievement, error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	t.eventCounts[event]++
-	var newUnlocks []*Achievement
-
-	for id, ach := range t.definitions {
-		if t.isUnlocked(id) {
-			continue
-		}
-		if t.checkCondition(ach, event) {
-			if t.checkPrerequisite(ach) {
-				unlock := Unlock{
-					AchievementID: id,
-					UnlockedAt:    time.Now(),
-					AgentID:       agentID,
-					SessionID:     sessionID,
-				}
-				t.unlocks = append(t.unlocks, unlock)
-				newUnlocks = append(newUnlocks, ach)
-			}
-		}
+	a, ok := t.achievements[id]
+	if !ok {
+		return nil, fmt.Errorf("achievement %q not found", id)
 	}
 
-	if len(newUnlocks) > 0 {
-		t.save()
+	if a.Unlocked {
+		return a, nil // already unlocked
 	}
 
-	return newUnlocks
+	a.Unlocked = true
+	a.UnlockedAt = time.Now()
+	a.Progress = 1.0
+
+	t.save()
+
+	// Check if forge-master should unlock
+	t.checkForgeMaster()
+
+	return a, nil
 }
 
-func (t *Tracker) checkCondition(ach *Achievement, event string) bool {
-	switch ach.ID {
-	case "first_chat":
-		return event == "chat" && t.eventCounts["chat"] >= 1
-	case "first_agent":
-		return event == "agent_create" && t.eventCounts["agent_create"] >= 1
-	case "first_pipeline":
-		return event == "pipeline_create" && t.eventCounts["pipeline_create"] >= 1
-	case "first_orchestration":
-		return event == "orchestration_run" && t.eventCounts["orchestration_run"] >= 1
-	case "ten_chats":
-		return t.eventCounts["chat"] >= 10
-	case "hundred_chats":
-		return t.eventCounts["chat"] >= 100
-	case "five_agents":
-		return t.eventCounts["agent_create"] >= 5
-	case "first_debate":
-		return event == "debate_run" && t.eventCounts["debate_run"] >= 1
-	case "first_breed":
-		return event == "breed_run" && t.eventCounts["breed_run"] >= 1
-	case "first_dream":
-		return event == "dream_run" && t.eventCounts["dream_run"] >= 1
-	case "witness_prover":
-		return event == "witness_verify" && t.eventCounts["witness_verify"] >= 1
-	default:
-		return false
-	}
-}
-
-func (t *Tracker) checkPrerequisite(ach *Achievement) bool {
-	if ach.Prerequisite == "" {
-		return true
-	}
-	return t.isUnlocked(ach.Prerequisite)
-}
-
-func (t *Tracker) isUnlocked(id string) bool {
-	for _, u := range t.unlocks {
-		if u.AchievementID == id {
-			return true
-		}
-	}
-	return false
-}
-
-// IsUnlocked checks if an achievement is unlocked (exported).
-func (t *Tracker) IsUnlocked(id string) bool {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	return t.isUnlocked(id)
-}
-
-// GetProfile returns the user's achievement profile.
-func (t *Tracker) GetProfile() *Profile {
+// SetProgress updates progress on an achievement.
+func (t *Tracker) SetProgress(id string, progress float64) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	p := &Profile{Unlocks: t.unlocks}
-	for _, u := range t.unlocks {
-		if ach, ok := t.definitions[u.AchievementID]; ok {
-			p.TotalPoints += ach.Points
-		}
+	a, ok := t.achievements[id]
+	if !ok {
+		return fmt.Errorf("achievement %q not found", id)
 	}
 
-	// Calculate level (100 points per level)
-	p.Level = p.TotalPoints/100 + 1
+	if progress > 1.0 {
+		progress = 1.0
+	}
+	a.Progress = progress
 
-	// Assign title based on level
-	p.Title = levelTitle(p.Level)
+	if progress >= 1.0 && !a.Unlocked {
+		a.Unlocked = true
+		a.UnlockedAt = time.Now()
+	}
 
-	return p
+	t.save()
+	return nil
 }
 
-func levelTitle(level int) string {
-	titles := []string{
-		"Apprentice", "Journeyman", "Craftsman", "Artisan",
-		"Expert", "Master", "Grandmaster", "Legendary Smith",
+// Get returns a specific achievement.
+func (t *Tracker) Get(id string) (*Achievement, bool) {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	a, ok := t.achievements[id]
+	if !ok {
+		return nil, false
 	}
-	if level > len(titles) {
-		return titles[len(titles)-1]
-	}
-	return titles[level-1]
+	copy := *a
+	return &copy, true
 }
 
-// ListAchievements returns all achievements with unlock status.
-func (t *Tracker) ListAchievements() []AchievementStatus {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+// List returns all achievements.
+func (t *Tracker) List() []Achievement {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 
-	var result []AchievementStatus
-	for _, ach := range t.definitions {
-		status := AchievementStatus{
-			Achievement: *ach,
-			Unlocked:    t.isUnlocked(ach.ID),
+	result := make([]Achievement, 0, len(t.achievements))
+	for _, a := range t.achievements {
+		if a.Hidden && !a.Unlocked {
+			continue // don't reveal hidden achievements
 		}
-		if status.Unlocked {
-			for _, u := range t.unlocks {
-				if u.AchievementID == ach.ID {
-					status.UnlockedAt = &u.UnlockedAt
-					break
-				}
-			}
-		}
-		result = append(result, status)
+		result = append(result, *a)
 	}
 
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].Points > result[j].Points
+		// Unlocked first, then by tier
+		if result[i].Unlocked != result[j].Unlocked {
+			return result[i].Unlocked
+		}
+		return tierOrder(result[i].Tier) < tierOrder(result[j].Tier)
 	})
 
 	return result
 }
 
-// AchievementStatus combines an achievement with its unlock status.
-type AchievementStatus struct {
-	Achievement
-	Unlocked    bool       `json:"unlocked"`
-	UnlockedAt  *time.Time `json:"unlocked_at,omitempty"`
+// ListAll returns all achievements including hidden.
+func (t *Tracker) ListAll() []Achievement {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	result := make([]Achievement, 0, len(t.achievements))
+	for _, a := range t.achievements {
+		result = append(result, *a)
+	}
+	return result
 }
 
-// GetStats returns achievement statistics.
-func (t *Tracker) GetStats() map[string]interface{} {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+// UnlockedCount returns the number of unlocked achievements.
+func (t *Tracker) UnlockedCount() int {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 
-	total := len(t.definitions)
-	unlocked := len(t.unlocks)
-	hidden := 0
-	for _, ach := range t.definitions {
-		if ach.Hidden && !t.isUnlocked(ach.ID) {
-			hidden++
+	count := 0
+	for _, a := range t.achievements {
+		if a.Unlocked {
+			count++
+		}
+	}
+	return count
+}
+
+// TotalCount returns total achievements (including hidden).
+func (t *Tracker) TotalCount() int {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	return len(t.achievements)
+}
+
+// Stats returns achievement statistics.
+func (t *Tracker) Stats() Stats {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	stats := Stats{
+		Total:   len(t.achievements),
+		Tiers:   make(map[Tier]int),
+		Unlocked: make(map[Tier]int),
+	}
+
+	for _, a := range t.achievements {
+		stats.Tiers[a.Tier]++
+		if a.Unlocked {
+			stats.UnlockedTotal++
+			stats.Unlocked[a.Tier]++
 		}
 	}
 
-	return map[string]interface{}{
-		"total":      total,
-		"unlocked":   unlocked,
-		"locked":     total - unlocked - hidden,
-		"hidden":     hidden,
-		"completion": float64(unlocked) / float64(total) * 100,
+	return stats
+}
+
+// Stats holds achievement statistics.
+type Stats struct {
+	Total        int         `json:"total"`
+	UnlockedTotal int        `json:"unlocked_total"`
+	Tiers        map[Tier]int `json:"tiers"`
+	Unlocked     map[Tier]int `json:"unlocked"`
+}
+
+func (t *Tracker) checkForgeMaster() {
+	// Count non-hidden, non-forge-master unlocked
+	count := 0
+	total := 0
+	for _, a := range t.achievements {
+		if a.ID == "forge-master" {
+			continue
+		}
+		if a.Hidden {
+			continue
+		}
+		total++
+		if a.Unlocked {
+			count++
+		}
 	}
+
+	fm, ok := t.achievements["forge-master"]
+	if ok && count >= total && total > 0 {
+		if !fm.Unlocked {
+			fm.Unlocked = true
+			fm.UnlockedAt = time.Now()
+			fm.Progress = 1.0
+		}
+	}
+}
+
+func (t *Tracker) save() {
+	if t.storePath == "" {
+		return
+	}
+
+	data, err := json.MarshalIndent(t.achievements, "", "  ")
+	if err != nil {
+		return
+	}
+
+	os.MkdirAll(filepath.Dir(t.storePath), 0755)
+	os.WriteFile(t.storePath, data, 0644)
 }
 
 func (t *Tracker) load() {
-	data, err := os.ReadFile(filepath.Join(t.dir, "unlocks.json"))
+	if t.storePath == "" {
+		return
+	}
+
+	data, err := os.ReadFile(t.storePath)
 	if err != nil {
 		return
 	}
-	json.Unmarshal(data, &t.unlocks)
 
-	// Load event counts
-	edata, err := os.ReadFile(filepath.Join(t.dir, "events.json"))
-	if err != nil {
+	var saved map[string]*Achievement
+	if err := json.Unmarshal(data, &saved); err != nil {
 		return
 	}
-	json.Unmarshal(edata, &t.eventCounts)
-}
 
-func (t *Tracker) save() error {
-	data, _ := json.MarshalIndent(t.unlocks, "", "  ")
-	os.WriteFile(filepath.Join(t.dir, "unlocks.json"), data, 0o644)
-
-	edata, _ := json.MarshalIndent(t.eventCounts, "", "  ")
-	os.WriteFile(filepath.Join(t.dir, "events.json"), edata, 0o644)
-	return nil
-}
-
-// FormatAchievement renders an achievement for display.
-func FormatAchievement(ach *Achievement, unlocked bool) string {
-	icon := "🔒"
-	if unlocked {
-		icon = ach.Icon
-		if icon == "" {
-			icon = "✅"
+	for id, a := range saved {
+		if existing, ok := t.achievements[id]; ok {
+			existing.Unlocked = a.Unlocked
+			existing.UnlockedAt = a.UnlockedAt
+			existing.Progress = a.Progress
 		}
 	}
-	status := "LOCKED"
-	if unlocked {
-		status = "UNLOCKED"
+}
+
+func tierOrder(t Tier) int {
+	switch t {
+	case TierCommon:
+		return 0
+	case TierUncommon:
+		return 1
+	case TierRare:
+		return 2
+	case TierEpic:
+		return 3
+	case TierLegendary:
+		return 4
+	default:
+		return 5
 	}
-	return fmt.Sprintf("%s %s [%s] — %s (%d pts, %s)", icon, ach.Name, status, ach.Description, ach.Points, ach.Rarity)
 }
 
-// FormatProfile renders a profile for display.
-func FormatProfile(p *Profile) string {
-	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("Level %d: %s\n", p.Level, p.Title))
-	sb.WriteString(fmt.Sprintf("Points: %d\n", p.TotalPoints))
-	sb.WriteString(fmt.Sprintf("Achievements: %d\n", len(p.Unlocks)))
-	return sb.String()
-}
-
-// All returns all achievements with their unlock status.
-func (t *Tracker) All() []AchievementStatus {
-	return t.ListAchievements()
-}
-
-// Unlock manually unlocks an achievement.
-func (t *Tracker) Unlock(id, agentID, sessionID string) error {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if t.isUnlocked(id) {
-		return fmt.Errorf("achievement %q already unlocked", id)
+// FormatAchievement formats an achievement for display.
+func FormatAchievement(a Achievement) string {
+	status := "🔒"
+	if a.Unlocked {
+		status = "✓"
 	}
-	if _, ok := t.definitions[id]; !ok {
-		return fmt.Errorf("achievement %q not found", id)
-	}
-	t.unlocks = append(t.unlocks, Unlock{
-		AchievementID: id,
-		UnlockedAt:    time.Now(),
-		AgentID:       agentID,
-		SessionID:     sessionID,
-	})
-	t.save()
-	return nil
-}
 
-// LevelForCount returns the level for a given count of unlocked achievements.
-func LevelForCount(count int) int {
-	return count/5 + 1
-}
-
-// NewTrackerSimple creates a tracker without error (for cmd compat).
-func NewTrackerSimple(dir string) *Tracker {
-	t, _ := NewTracker(dir)
-	return t
-}
-
-// UnlockSimple unlocks an achievement and returns it.
-// This is the simpler API the cmd expects.
-func (t *Tracker) UnlockSimple(id string) (*Achievement, bool) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-	if t.isUnlocked(id) {
-		return nil, false
+	icon := a.Icon
+	if icon == "" {
+		icon = "🏆"
 	}
-	ach, ok := t.definitions[id]
-	if !ok {
-		return nil, false
-	}
-	t.unlocks = append(t.unlocks, Unlock{
-		AchievementID: id,
-		UnlockedAt:    time.Now(),
-	})
-	t.save()
-	return ach, true
+
+	return fmt.Sprintf("%s %s [%s] %s — %s", status, icon, a.Tier, a.Name, a.Description)
 }
