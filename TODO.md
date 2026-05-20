@@ -47,7 +47,7 @@
 - [ ] `forge blink` — Self-hosted bots
 - [ ] `forge index` — RAG codebase indexing
 - [ ] `forge exec` — Sandboxed code execution
-- [ ] `forge watch` — File change detection
+- [x] `forge watch` — File change detection
 - [ ] `forge plugin` — Plugin management
 - [ ] `forge run` — Execute Forgefile tasks
 - [ ] `forge desktop` — Linux desktop for agents
@@ -61,7 +61,7 @@
 - [ ] Web dashboard UI
 
 ## Current Stats
-- ~9,800 lines of Go
-- 22 internal packages
-- 14 commands
+- ~10,600 lines of Go
+- 23 internal packages
+- 15 commands
 - Build: ✅ Vet: ✅
