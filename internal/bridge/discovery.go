@@ -257,6 +257,7 @@ func (d *Discoverer) probeHTTP(ctx context.Context, url string, body interface{}
 
 	var req *exec.Cmd
 	_ = req // Use net/http in production; simplified for now
+	_ = bodyReader
 
 	// Use a simple TCP check + HTTP probe
 	conn, err := net.DialTimeout("tcp", strings.TrimPrefix(url, "http://"), d.config.Timeout)

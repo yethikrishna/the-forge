@@ -167,6 +167,7 @@ Examples:
 				return nil
 			},
 		},
+		mcpDiscoverCmd(),
 	)
 
 	cmd.PersistentFlags().StringVar(&transport, "transport", "stdio", "Transport mode (stdio or http)")

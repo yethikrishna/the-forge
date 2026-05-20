@@ -144,8 +144,8 @@ All 18 utility packages implemented and tested.
 
 ## Phase 3.5: Protocol Strategy (From Brainstorm #5)
 
-- [ ] Universal Protocol Bridge — `forge bridge` translating between MCP ↔ A2A ↔ ACP
-- [ ] MCP Server Discovery — `forge mcp discover` auto-find local/network MCP servers
+- [x] Universal Protocol Bridge — `forge bridge` translating between MCP ↔ A2A ↔ ACP
+- [x] MCP Server Discovery — `forge mcp discover` auto-find local/network MCP servers
 - [ ] Agent Identity & Trust Layer — cryptographic agent identities, signed manifests, trust registry
 
 ## Phase 3.5: Production Hardening (From Brainstorm #5)
