@@ -234,7 +234,7 @@ All 18 utility packages implemented and tested.
 ### CLI Consistency
 - [ ] Unified command grammar audit — `forge <noun> <verb>` everywhere
 - [x] `forge overview` — single summary pane (agents, cost, sessions, alerts, quick actions)
-- [ ] `forge find` — global search across memory, sessions, pipelines, templates, codebase
+- [x] `forge find` — global search across memory, sessions, pipelines, templates, codebase
 
 ### Trust Infrastructure
 - [ ] Transparent mode (`--transparent`) — show model selection, token count, cost, tools, file access in real-time
