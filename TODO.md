@@ -238,7 +238,7 @@ All 18 utility packages implemented and tested.
 
 ### Trust Infrastructure
 - [ ] Transparent mode (`--transparent`) — show model selection, token count, cost, tools, file access in real-time
-- [ ] Agent trust scores — composite 0-100 from feedback, undo rate, test results, security findings
+- [x] Agent trust scores — composite 0-100 from feedback, undo rate, test results, security findings
 - [ ] Action preview before destructive operations — show plan, user approves/modifies/rejects
 - [ ] Per-session permission scoping — `--scope=read-only`, `--scope=src-only`, `--scope=sandbox`, `--scope=full`
 

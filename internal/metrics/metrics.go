@@ -5,7 +5,6 @@ package metrics
 
 import (
 	"fmt"
-	"math"
 	"sort"
 	"strings"
 	"sync"
@@ -64,24 +63,33 @@ func (c *Counter) Type() MetricType { return TypeCounter }
 type Gauge struct {
 	name   string
 	labels LabelSet
-	value  atomic.Int64
+	value  float64
 	help   string
+	mu     sync.Mutex
 }
 
 func (g *Gauge) Set(val float64) {
-	g.value.Store(int64(math.Float64bits(val)))
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.value = val
 }
 
 func (g *Gauge) Inc() {
-	g.value.Add(1)
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.value++
 }
 
 func (g *Gauge) Dec() {
-	g.value.Add(-1)
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.value--
 }
 
 func (g *Gauge) Value() float64 {
-	return math.Float64frombits(uint64(g.value.Load()))
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.value
 }
 
 func (g *Gauge) Name() string     { return g.name }
@@ -96,8 +104,9 @@ type Histogram struct {
 	help    string
 	buckets []float64
 	counts  []atomic.Int64
-	sum     atomic.Int64
+	sum     float64
 	count   atomic.Int64
+	mu      sync.Mutex
 }
 
 func NewHistogram(name string, labels LabelSet, help string, buckets []float64) *Histogram {
@@ -120,7 +129,9 @@ var DefaultBuckets = []float64{0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5,
 
 func (h *Histogram) Observe(val float64) {
 	h.count.Add(1)
-	h.sum.Add(int64(math.Float64bits(val)))
+	h.mu.Lock()
+	h.sum += val
+	h.mu.Unlock()
 
 	for i, b := range h.buckets {
 		if val <= b {
@@ -146,13 +157,13 @@ type HistogramStats struct {
 
 func (h *Histogram) Stats() HistogramStats {
 	count := h.count.Load()
-	sum := math.Float64frombits(uint64(h.sum.Load()))
+	h.mu.Lock()
+	sum := h.sum
+	h.mu.Unlock()
 
 	buckets := make(map[float64]int64)
-	cumulative := int64(0)
 	for i, b := range h.buckets {
-		cumulative += h.counts[i].Load()
-		buckets[b] = cumulative
+		buckets[b] = h.counts[i].Load()
 	}
 
 	mean := float64(0)
@@ -371,13 +382,15 @@ func (r *Registry) Reset() {
 		c.value.Store(0)
 	}
 	for _, g := range r.gauges {
-		g.value.Store(0)
+		g.Set(0)
 	}
 	for _, h := range r.histograms {
 		for i := range h.counts {
 			h.counts[i].Store(0)
 		}
-		h.sum.Store(0)
+		h.mu.Lock()
+		h.sum = 0
+		h.mu.Unlock()
 		h.count.Store(0)
 	}
 }
