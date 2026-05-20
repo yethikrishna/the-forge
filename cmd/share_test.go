@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"os"
 	"strings"
 	"testing"
@@ -18,7 +19,7 @@ func TestShareCmdHTML(t *testing.T) {
 	w.Close()
 	os.Stdout = old
 
-	var buf strings.Builder
+	var buf bytes.Buffer
 	buf.ReadFrom(r)
 	output := buf.String()
 
@@ -42,7 +43,7 @@ func TestShareCmdMarkdown(t *testing.T) {
 	w.Close()
 	os.Stdout = old
 
-	var buf strings.Builder
+	var buf bytes.Buffer
 	buf.ReadFrom(r)
 	output := buf.String()
 

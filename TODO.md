@@ -47,6 +47,10 @@ All 18 utility packages implemented and tested.
 - [ ] Integration tests for each command
 - [ ] Configuration management via forge.yaml
 - [ ] Model alias system in aibridge
+- [x] `forge completion` — Shell completions (bash/zsh/fish/powershell)
+- [x] `forge share` — Session HTML/Markdown export
+- [x] `internal/share` — Session export package
+- [x] `internal/watcher` — File watcher package
 
 ## Phase 2: New Features
 - [ ] Web dashboard UI
@@ -60,8 +64,8 @@ All 18 utility packages implemented and tested.
 - [ ] `forge desktop` — Linux desktop for agents
 
 ## Current Stats
-- ~13,125 lines of Go
-- 27+ internal packages
-- 21 commands
+- ~14,000 lines of Go
+- 28+ internal packages
+- 23 commands
 - Build: ✅ Vet: ✅
 - Version: 0.3.0

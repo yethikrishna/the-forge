@@ -2,97 +2,98 @@ package cmd
 
 import (
 	"fmt"
-	"sort"
 
-	"github.com/forge/sword/internal/aisdk"
+	"github.com/forge/sword/internal/cost"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
 )
 
 func costCmd() *cobra.Command {
 	var provider string
-	var inputTokens int
-	var outputTokens int
+	var inputTokens int64
+	var outputTokens int64
 
 	cmd := &cobra.Command{
 		Use:   "cost",
 		Short: "Compare LLM pricing across providers",
 		Long: `Compare pricing for LLM models across providers.
-Shows input/output token costs and context window sizes.
+Shows input/output token costs and estimates for specific usage.
 
 Examples:
   forge cost
   forge cost --provider anthropic
-  forge cost --input 10000 --output 5000`,
+  forge cost --input 10000 --output 5000
+  forge cost --input 10000 --output 5000 --provider openai`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			models := aisdk.KnownModels()
+			catalog := cost.Catalog()
 
 			// Filter by provider if specified
 			if provider != "" {
-				var filtered []aisdk.ModelPricing
-				for _, m := range models {
-					if string(m.Provider) == provider {
+				var filtered []cost.ModelPricing
+				for _, m := range catalog {
+					if m.Provider == provider {
 						filtered = append(filtered, m)
 					}
 				}
-				models = filtered
+				catalog = filtered
 			}
-
-			// Sort by output price (ascending)
-			sort.Slice(models, func(i, j int) bool {
-				return models[i].OutputPer1M < models[j].OutputPer1M
-			})
 
 			fmt.Println(pretty.HeaderLine("LLM Pricing Comparison"))
 			fmt.Println()
 
-			// Table headers
-			headers := []string{"Provider", "Model", "Input/1M", "Output/1M", "Context"}
 			if inputTokens > 0 || outputTokens > 0 {
-				headers = append(headers, "Est. Cost")
-			}
+				// Show cost comparison
+				results := cost.Compare(inputTokens, outputTokens)
 
-			rows := make([][]string, len(models))
-			for i, m := range models {
-				row := []string{
-					string(m.Provider),
-					m.Model,
-					fmt.Sprintf("$%.2f", m.InputPer1M),
-					fmt.Sprintf("$%.2f", m.OutputPer1M),
-					formatContext(m.ContextWindow),
+				if provider != "" {
+					var filtered []cost.EstimateResult
+					for _, r := range results {
+						if len(r.Model) > len(provider) && r.Model[:len(provider)] == provider {
+							filtered = append(filtered, r)
+						}
+					}
+					results = filtered
 				}
-				if inputTokens > 0 || outputTokens > 0 {
-					cost := aisdk.EstimateCost(m.Provider, m.Model, inputTokens, outputTokens)
-					row = append(row, fmt.Sprintf("$%.4f", cost))
+
+				fmt.Printf("  Estimate: %d input + %d output tokens\n\n", inputTokens, outputTokens)
+
+				headers := []string{"Model", "Input Cost", "Output Cost", "Total"}
+				rows := make([][]string, len(results))
+				for i, r := range results {
+					rows[i] = []string{
+						r.Model,
+						cost.FormatCost(r.InputCost),
+						cost.FormatCost(r.OutputCost),
+						cost.FormatCost(r.TotalCost),
+					}
 				}
-				rows[i] = row
-			}
-
-			fmt.Println(pretty.Table(headers, rows))
-
-			if inputTokens > 0 || outputTokens > 0 {
-				fmt.Printf("\n  Estimated for %d input + %d output tokens\n", inputTokens, outputTokens)
+				fmt.Println(pretty.Table(headers, rows))
+			} else {
+				// Show pricing table
+				headers := []string{"Provider", "Model", "Input/1M", "Output/1M", "Cache Read/1M"}
+				rows := make([][]string, len(catalog))
+				for i, m := range catalog {
+					row := []string{
+						m.Provider,
+						m.Model,
+						fmt.Sprintf("$%.2f", m.Pricing.InputPer1M),
+						fmt.Sprintf("$%.2f", m.Pricing.OutputPer1M),
+						fmt.Sprintf("$%.2f", m.Pricing.CacheReadPer1M),
+					}
+					rows[i] = row
+				}
+				fmt.Println(pretty.Table(headers, rows))
 			}
 
 			fmt.Println()
-			fmt.Println("  Prices shown per 1M tokens. Context window in thousands (K).")
+			fmt.Println("  Prices shown per 1M tokens. Data as of 2025.")
 			return nil
 		},
 	}
 
 	cmd.Flags().StringVarP(&provider, "provider", "p", "", "Filter by provider")
-	cmd.Flags().IntVar(&inputTokens, "input", 0, "Estimate cost for N input tokens")
-	cmd.Flags().IntVar(&outputTokens, "output", 0, "Estimate cost for N output tokens")
+	cmd.Flags().Int64Var(&inputTokens, "input", 0, "Estimate cost for N input tokens")
+	cmd.Flags().Int64Var(&outputTokens, "output", 0, "Estimate cost for N output tokens")
 
 	return cmd
-}
-
-func formatContext(tokens int) string {
-	if tokens >= 1_000_000 {
-		return fmt.Sprintf("%.0fM", float64(tokens)/1_000_000)
-	}
-	if tokens >= 1000 {
-		return fmt.Sprintf("%dK", tokens/1000)
-	}
-	return fmt.Sprintf("%d", tokens)
 }

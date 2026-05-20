@@ -23,7 +23,6 @@ func TestExportHTML(t *testing.T) {
 		t.Fatalf("ExportHTML failed: %v", err)
 	}
 
-	// Verify key content
 	checks := []string{
 		"Test Session",
 		"claude-sonnet-4-20250514",
@@ -33,7 +32,7 @@ func TestExportHTML(t *testing.T) {
 		"entry-user",
 		"entry-assistant",
 		"entry-tool",
-		"3 entries",
+		">3</strong> entries",
 		"May 20, 2026 19:00",
 	}
 
@@ -57,7 +56,6 @@ func TestExportHTMLEscaping(t *testing.T) {
 		t.Fatalf("ExportHTML failed: %v", err)
 	}
 
-	// Should be escaped
 	if strings.Contains(html, "<script>alert('xss')</script>") {
 		t.Error("Title should be HTML-escaped")
 	}
