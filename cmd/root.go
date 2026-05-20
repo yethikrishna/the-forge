@@ -52,6 +52,7 @@ The wielder and the sword are one.`,
 		muxCmd(),
 		blinkCmd(),
 		desktopCmd(),
+		pipelineCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
