@@ -1,0 +1,45 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/yethikrishna/forge
+  pullPolicy: IfNotPresent
+  tag: "3.0.0-alpha"
+
+forge:
+  port: 3284
+  model: "anthropic/claude-sonnet-4-20250514"
+  # Agent command (e.g., claude, codex, aider)
+  agentCommand: "claude"
+  # Transport: pty or acp
+  transport: "pty"
+
+# API keys (set via --set or secrets)
+secrets:
+  anthropicApiKey: ""
+  openaiApiKey: ""
+  googleApiKey: ""
+  xaiApiKey: ""
+  deepseekApiKey: ""
+
+service:
+  type: ClusterIP
+  port: 3284
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts: []
+  tls: []
+
+resources:
+  limits:
+    cpu: 2000m
+    memory: 2Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
