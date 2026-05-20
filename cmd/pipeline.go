@@ -83,7 +83,7 @@ Examples:
 					for i, s := range pipe.Steps {
 						fmt.Printf("  %d. %s (agent: %s, model: %s)\n", i+1, s.Name, s.Agent, s.Model)
 						if s.Prompt != "" {
-							fmt.Printf("     Prompt: %s\n", truncate(s.Prompt, 60))
+							fmt.Printf("     Prompt: %s\n", truncatePipeline(s.Prompt, 60))
 						}
 						if s.Approval {
 							fmt.Printf("     ⏳ Requires approval\n")
@@ -234,7 +234,7 @@ func (c *cliRunner) Run(_ context.Context, agent, model, prompt string) (string,
 	// In a real implementation, this would call agentapi or aibridge
 	// For now, simulate execution with a brief delay
 	time.Sleep(10 * time.Millisecond)
-	return fmt.Sprintf("[%s/%s] Completed: %s", agent, model, truncate(prompt, 40)), nil
+	return fmt.Sprintf("[%s/%s] Completed: %s", agent, model, truncatePipeline(prompt, 40)), nil
 }
 
 func modeStr(parallel bool) string {
@@ -251,7 +251,7 @@ func onFailStr(onFail string) string {
 	return onFail
 }
 
-func truncate(s string, max int) string {
+func truncatePipeline(s string, max int) string {
 	if len(s) <= max {
 		return s
 	}

@@ -406,34 +406,35 @@ func unmarshalYAML(data []byte, target *Suite) error {
 
 	for _, line := range lines {
 		trimmed := strings.TrimRight(line, " \t")
+		stripped := strings.TrimLeft(trimmed, " \t")
 
-		if strings.HasPrefix(trimmed, "#") || trimmed == "" {
+		if strings.HasPrefix(stripped, "#") || stripped == "" {
 			continue
 		}
 
-		// Top-level fields
-		if strings.HasPrefix(trimmed, "name:") && !inTests {
-			target.Name = strings.TrimSpace(strings.TrimPrefix(trimmed, "name:"))
+		// Top-level fields (no indent)
+		if strings.HasPrefix(stripped, "name:") && !inTests {
+			target.Name = strings.TrimSpace(strings.TrimPrefix(stripped, "name:"))
 			continue
 		}
-		if strings.HasPrefix(trimmed, "agent:") {
-			target.Agent = strings.TrimSpace(strings.TrimPrefix(trimmed, "agent:"))
+		if strings.HasPrefix(stripped, "agent:") {
+			target.Agent = strings.TrimSpace(strings.TrimPrefix(stripped, "agent:"))
 			continue
 		}
 
 		// Tests section
-		if strings.HasPrefix(trimmed, "tests:") {
+		if strings.HasPrefix(stripped, "tests:") {
 			inTests = true
 			continue
 		}
 
-		if inTests && strings.HasPrefix(trimmed, "- name:") {
+		if inTests && strings.HasPrefix(stripped, "- name:") {
 			// New test case
 			if currentTestCase != nil {
 				target.TestCases = append(target.TestCases, *currentTestCase)
 			}
 			currentTestCase = &TestCase{
-				Name: strings.TrimSpace(strings.TrimPrefix(trimmed, "- name:")),
+				Name: strings.TrimSpace(strings.TrimPrefix(stripped, "- name:")),
 			}
 			inAssertions = false
 			inFixtures = false
@@ -445,28 +446,28 @@ func unmarshalYAML(data []byte, target *Suite) error {
 		}
 
 		// Test case fields
-		if strings.HasPrefix(trimmed, "description:") && !inAssertions {
-			currentTestCase.Description = strings.TrimSpace(strings.TrimPrefix(trimmed, "description:"))
+		if strings.HasPrefix(stripped, "description:") && !inAssertions {
+			currentTestCase.Description = strings.TrimSpace(strings.TrimPrefix(stripped, "description:"))
 			continue
 		}
-		if strings.HasPrefix(trimmed, "prompt:") {
-			currentTestCase.Prompt = strings.TrimSpace(strings.TrimPrefix(trimmed, "prompt:"))
+		if strings.HasPrefix(stripped, "prompt:") {
+			currentTestCase.Prompt = strings.TrimSpace(strings.TrimPrefix(stripped, "prompt:"))
 			continue
 		}
-		if strings.HasPrefix(trimmed, "system:") {
-			currentTestCase.System = strings.TrimSpace(strings.TrimPrefix(trimmed, "system:"))
+		if strings.HasPrefix(stripped, "system:") && !inAssertions {
+			currentTestCase.System = strings.TrimSpace(strings.TrimPrefix(stripped, "system:"))
 			continue
 		}
-		if strings.HasPrefix(trimmed, "model:") {
-			currentTestCase.Model = strings.TrimSpace(strings.TrimPrefix(trimmed, "model:"))
+		if strings.HasPrefix(stripped, "model:") {
+			currentTestCase.Model = strings.TrimSpace(strings.TrimPrefix(stripped, "model:"))
 			continue
 		}
-		if strings.HasPrefix(trimmed, "timeout:") {
-			currentTestCase.Timeout = strings.TrimSpace(strings.TrimPrefix(trimmed, "timeout:"))
+		if strings.HasPrefix(stripped, "timeout:") {
+			currentTestCase.Timeout = strings.TrimSpace(strings.TrimPrefix(stripped, "timeout:"))
 			continue
 		}
-		if strings.HasPrefix(trimmed, "tags:") {
-			tagStr := strings.TrimSpace(strings.TrimPrefix(trimmed, "tags:"))
+		if strings.HasPrefix(stripped, "tags:") {
+			tagStr := strings.TrimSpace(strings.TrimPrefix(stripped, "tags:"))
 			if strings.HasPrefix(tagStr, "[") {
 				tagStr = strings.Trim(tagStr, "[]")
 			}
@@ -475,45 +476,44 @@ func unmarshalYAML(data []byte, target *Suite) error {
 		}
 
 		// Assertions section
-		if strings.HasPrefix(trimmed, "assertions:") {
+		if strings.HasPrefix(stripped, "assertions:") {
 			inAssertions = true
 			continue
 		}
 
-		if inAssertions && strings.HasPrefix(trimmed, "- type:") {
+		if inAssertions && strings.HasPrefix(stripped, "- type:") {
 			if currentAssertion != nil && currentTestCase != nil {
 				currentTestCase.Assertions = append(currentTestCase.Assertions, *currentAssertion)
 			}
 			currentAssertion = &Assertion{
-				Type: strings.TrimSpace(strings.TrimPrefix(trimmed, "- type:")),
+				Type: strings.TrimSpace(strings.TrimPrefix(stripped, "- type:")),
 			}
 			continue
 		}
 
 		if currentAssertion != nil {
-			if strings.HasPrefix(trimmed, "value:") {
-				currentAssertion.Value = strings.TrimSpace(strings.TrimPrefix(trimmed, "value:"))
+			if strings.HasPrefix(stripped, "value:") {
+				currentAssertion.Value = strings.TrimSpace(strings.TrimPrefix(stripped, "value:"))
 				continue
 			}
-			if strings.HasPrefix(trimmed, "negate:") {
-				currentAssertion.Negate = strings.TrimSpace(strings.TrimPrefix(trimmed, "negate:")) == "true"
+			if strings.HasPrefix(stripped, "negate:") {
+				currentAssertion.Negate = strings.TrimSpace(strings.TrimPrefix(stripped, "negate:")) == "true"
 				continue
 			}
-			if strings.HasPrefix(trimmed, "description:") {
-				currentAssertion.Description = strings.TrimSpace(strings.TrimPrefix(trimmed, "description:"))
+			if strings.HasPrefix(stripped, "description:") {
+				currentAssertion.Description = strings.TrimSpace(strings.TrimPrefix(stripped, "description:"))
 				continue
 			}
 		}
 
 		// Fixtures
-		if strings.HasPrefix(trimmed, "fixtures:") {
+		if strings.HasPrefix(stripped, "fixtures:") {
 			inFixtures = true
 			currentTestCase.Fixtures = make(map[string]string)
 			continue
 		}
-		if inFixtures && strings.HasPrefix(trimmed, "-") {
-			// fixture list item: "- key: value"
-			kv := strings.TrimPrefix(trimmed, "- ")
+		if inFixtures && strings.HasPrefix(stripped, "-") {
+			kv := strings.TrimPrefix(stripped, "- ")
 			parts := strings.SplitN(kv, ":", 2)
 			if len(parts) == 2 {
 				currentTestCase.Fixtures[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
