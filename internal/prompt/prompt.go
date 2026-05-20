@@ -1,351 +1,405 @@
-// Package prompt provides prompt template management for the forge.
-// The words that shape the blade are as important as the hammer.
+// Package prompt provides template-based prompt management for AI agents.
+// Prompts live in .forge/prompts/ with versioning and variable interpolation.
+//
+// The right words, always at hand.
 package prompt
 
 import (
-	"encoding/json"
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
-	"text/template"
 	"time"
 )
 
-// Template is a reusable prompt template.
+// Template is a reusable prompt template with variables and metadata.
 type Template struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Content     string            `json:"content"`
-	Variables   []Variable        `json:"variables,omitempty"`
-	Tags        []string          `json:"tags,omitempty"`
-	Version     int               `json:"version"`
-	ParentID    string            `json:"parent_id,omitempty"`
-	CreatedAt   time.Time         `json:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at"`
-	Metadata    map[string]string `json:"metadata,omitempty"`
+	// Name identifies this template (filename without extension).
+	Name string `json:"name"`
+
+	// Description of what this template does.
+	Description string `json:"description,omitempty"`
+
+	// The prompt body with {{variable}} placeholders.
+	Body string `json:"body"`
+
+	// Variables declared in the template.
+	Variables []Variable `json:"variables,omitempty"`
+
+	// Tags for categorization.
+	Tags []string `json:"tags,omitempty"`
+
+	// Model hint — suggested model for this prompt.
+	Model string `json:"model,omitempty"`
+
+	// Version for tracking changes.
+	Version string `json:"version,omitempty"`
+
+	// Author of the template.
+	Author string `json:"author,omitempty"`
+
+	// Created timestamp.
+	Created time.Time `json:"created,omitempty"`
+
+	// Updated timestamp.
+	Updated time.Time `json:"updated,omitempty"`
+
+	// Source file path.
+	Source string `json:"source,omitempty"`
 }
 
-// Variable is a template variable.
+// Variable describes a template variable.
 type Variable struct {
-	Name         string   `json:"name"`
-	Description  string   `json:"description"`
-	Default      string   `json:"default,omitempty"`
-	Required     bool     `json:"required"`
-	Enum         []string `json:"enum,omitempty"`
-	Type         string   `json:"type,omitempty"` // string, int, float, bool
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Default     string `json:"default,omitempty"`
+	Required    bool   `json:"required,omitempty"`
 }
 
-// Store manages prompt templates.
+// Store manages prompt templates on disk.
 type Store struct {
-	dir string
+	Dir string
 }
 
-// NewStore creates a prompt template store.
+// NewStore creates a prompt store rooted at dir (typically .forge/prompts).
 func NewStore(dir string) *Store {
-	os.MkdirAll(dir, 0o755)
-	return &Store{dir: dir}
+	return &Store{Dir: dir}
 }
 
-// Save persists a template.
-func (s *Store) Save(t *Template) error {
-	if t.ID == "" {
-		t.ID = fmt.Sprintf("prompt-%d", time.Now().UnixNano())
-	}
-	t.UpdatedAt = time.Now().UTC()
-	if t.CreatedAt.IsZero() {
-		t.CreatedAt = t.UpdatedAt
-	}
-
-	data, err := json.MarshalIndent(t, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal: %w", err)
-	}
-
-	path := filepath.Join(s.dir, t.ID+".json")
-	return os.WriteFile(path, data, 0o644)
+// Init creates the prompts directory if it doesn't exist.
+func (s *Store) Init() error {
+	return os.MkdirAll(s.Dir, 0o755)
 }
 
-// Get retrieves a template by ID.
-func (s *Store) Get(id string) (*Template, error) {
-	path := filepath.Join(s.dir, id+".json")
-	data, err := os.ReadFile(path)
+// List returns all templates sorted by name.
+func (s *Store) List() ([]Template, error) {
+	entries, err := os.ReadDir(s.Dir)
 	if err != nil {
-		return nil, fmt.Errorf("template not found: %s", id)
-	}
-
-	var t Template
-	if err := json.Unmarshal(data, &t); err != nil {
-		return nil, fmt.Errorf("invalid template: %w", err)
-	}
-
-	return &t, nil
-}
-
-// GetByName retrieves a template by name.
-func (s *Store) GetByName(name string) (*Template, error) {
-	templates, err := s.List()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, t := range templates {
-		if t.Name == name {
-			return t, nil
+		if os.IsNotExist(err) {
+			return nil, nil
 		}
-	}
-
-	return nil, fmt.Errorf("template not found: %s", name)
-}
-
-// List returns all templates.
-func (s *Store) List() ([]*Template, error) {
-	entries, err := os.ReadDir(s.dir)
-	if err != nil {
 		return nil, err
 	}
 
-	var templates []*Template
-	for _, entry := range entries {
-		if !strings.HasSuffix(entry.Name(), ".json") {
+	var templates []Template
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		ext := strings.ToLower(filepath.Ext(name))
+		if ext != ".md" && ext != ".txt" && ext != ".yaml" && ext != ".yml" {
 			continue
 		}
 
-		id := strings.TrimSuffix(entry.Name(), ".json")
-		t, err := s.Get(id)
+		tmpl, err := s.Load(strings.TrimSuffix(name, ext))
 		if err != nil {
 			continue
 		}
-		templates = append(templates, t)
+		templates = append(templates, *tmpl)
 	}
 
 	sort.Slice(templates, func(i, j int) bool {
-		return templates[i].UpdatedAt.After(templates[j].UpdatedAt)
+		return templates[i].Name < templates[j].Name
 	})
 
 	return templates, nil
 }
 
+// Load reads a template by name.
+func (s *Store) Load(name string) (*Template, error) {
+	// Try extensions in order
+	for _, ext := range []string{".md", ".txt", ".yaml", ".yml"} {
+		path := filepath.Join(s.Dir, name+ext)
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		return parseTemplate(name, path, ext, data)
+	}
+
+	return nil, fmt.Errorf("template %q not found", name)
+}
+
+// Save writes a template to disk.
+func (s *Store) Save(tmpl Template) error {
+	if err := os.MkdirAll(s.Dir, 0o755); err != nil {
+		return err
+	}
+
+	if tmpl.Name == "" {
+		return fmt.Errorf("template name is required")
+	}
+
+	tmpl.Updated = time.Now()
+	if tmpl.Created.IsZero() {
+		tmpl.Created = time.Now()
+	}
+
+	// Auto-detect variables from body
+	tmpl.Variables = mergeVariables(tmpl.Variables, extractVariables(tmpl.Body))
+
+	ext := ".md"
+	path := filepath.Join(s.Dir, tmpl.Name+ext)
+
+	var buf bytes.Buffer
+
+	// Write frontmatter (YAML between --- delimiters) for metadata
+	if tmpl.Description != "" || len(tmpl.Tags) > 0 || tmpl.Model != "" || tmpl.Version != "" || tmpl.Author != "" || len(tmpl.Variables) > 0 {
+		buf.WriteString("---\n")
+		if tmpl.Description != "" {
+			buf.WriteString(fmt.Sprintf("description: %s\n", tmpl.Description))
+		}
+		if tmpl.Model != "" {
+			buf.WriteString(fmt.Sprintf("model: %s\n", tmpl.Model))
+		}
+		if tmpl.Version != "" {
+			buf.WriteString(fmt.Sprintf("version: %s\n", tmpl.Version))
+		}
+		if tmpl.Author != "" {
+			buf.WriteString(fmt.Sprintf("author: %s\n", tmpl.Author))
+		}
+		if len(tmpl.Tags) > 0 {
+			buf.WriteString(fmt.Sprintf("tags: [%s]\n", strings.Join(tmpl.Tags, ", ")))
+		}
+		for _, v := range tmpl.Variables {
+			buf.WriteString(fmt.Sprintf("var %s:", v.Name))
+			if v.Default != "" {
+				buf.WriteString(fmt.Sprintf(" (default: %s)", v.Default))
+			}
+			if v.Required {
+				buf.WriteString(" [required]")
+			}
+			if v.Description != "" {
+				buf.WriteString(fmt.Sprintf(" — %s", v.Description))
+			}
+			buf.WriteString("\n")
+		}
+		buf.WriteString("---\n\n")
+	}
+
+	buf.WriteString(tmpl.Body)
+	buf.WriteString("\n")
+
+	return os.WriteFile(path, buf.Bytes(), 0o644)
+}
+
 // Delete removes a template.
-func (s *Store) Delete(id string) error {
-	path := filepath.Join(s.dir, id+".json")
-	return os.Remove(path)
+func (s *Store) Delete(name string) error {
+	for _, ext := range []string{".md", ".txt", ".yaml", ".yml"} {
+		path := filepath.Join(s.Dir, name+ext)
+		if err := os.Remove(path); err == nil {
+			return nil
+		}
+	}
+	return fmt.Errorf("template %q not found", name)
 }
 
-// Render renders a template with variables.
-func (s *Store) Render(id string, vars map[string]string) (string, error) {
-	t, err := s.Get(id)
-	if err != nil {
-		return "", err
+// Exists checks if a template exists.
+func (s *Store) Exists(name string) bool {
+	for _, ext := range []string{".md", ".txt", ".yaml", ".yml"} {
+		path := filepath.Join(s.Dir, name+ext)
+		if _, err := os.Stat(path); err == nil {
+			return true
+		}
 	}
-
-	return RenderTemplate(t.Content, vars)
+	return false
 }
 
-// RenderTemplate renders a template string with variable substitution.
-func RenderTemplate(content string, vars map[string]string) (string, error) {
-	// Simple {{.variable}} substitution using text/template
-	tmpl, err := template.New("prompt").Parse(content)
-	if err != nil {
-		return "", fmt.Errorf("parse template: %w", err)
+// Render interpolates variables into a template body.
+func (t *Template) Render(vars map[string]string) (string, error) {
+	result := t.Body
+
+	// Validate required variables
+	for _, v := range t.Variables {
+		if v.Required {
+			val, ok := vars[v.Name]
+			if !ok || val == "" {
+				if v.Default == "" {
+					return "", fmt.Errorf("required variable %q not provided", v.Name)
+				}
+			}
+		}
 	}
 
-	// Convert map[string]string to map[string]interface{}
-	data := make(map[string]interface{})
-	for k, v := range vars {
-		data[k] = v
+	// Replace {{var}} and {{ var }} patterns
+	for key, val := range vars {
+		if val == "" {
+			continue
+		}
+		// Both {{key}} and {{ key }}
+		result = strings.ReplaceAll(result, "{{"+key+"}}", val)
+		result = strings.ReplaceAll(result, "{{ "+key+" }}", val)
+		result = strings.ReplaceAll(result, "{{ "+key+"}}", val)
+		result = strings.ReplaceAll(result, "{{"+key+" }}", val)
 	}
 
-	// Fill defaults for missing variables
-	// (The template engine will use <no value> for missing, which is fine)
-
-	var buf strings.Builder
-	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("execute template: %w", err)
+	// Apply defaults for unreplaced variables
+	for _, v := range t.Variables {
+		if v.Default != "" {
+			placeholder := "{{" + v.Name + "}}"
+			result = strings.ReplaceAll(result, placeholder, v.Default)
+			placeholder = "{{ " + v.Name + " }}"
+			result = strings.ReplaceAll(result, placeholder, v.Default)
+		}
 	}
 
-	return buf.String(), nil
+	// Check for unreplaced required variables
+	re := regexp.MustCompile(`\{\{\s*(\w+)\s*\}\}`)
+	matches := re.FindAllStringSubmatch(result, -1)
+	for _, m := range matches {
+		for _, v := range t.Variables {
+			if v.Name == m[1] && v.Required {
+				return "", fmt.Errorf("required variable %q was not replaced", m[1])
+			}
+		}
+	}
+
+	return result, nil
 }
 
-// ExtractVariables extracts {{.variable}} references from a template.
-func ExtractVariables(content string) []string {
-	var vars []string
+// parseTemplate reads a file and extracts metadata + body.
+func parseTemplate(name, path, ext string, data []byte) (*Template, error) {
+	content := string(data)
+	tmpl := &Template{
+		Name:    name,
+		Source:  path,
+		Updated: time.Now(),
+	}
+
+	switch ext {
+	case ".yaml", ".yml":
+		// For YAML files, the whole file is the body
+		tmpl.Body = content
+	default:
+		// .md and .txt: check for frontmatter
+		if strings.HasPrefix(content, "---\n") {
+			parts := strings.SplitN(content, "---\n", 3)
+			if len(parts) >= 3 {
+				frontmatter := parts[1]
+				tmpl.Body = strings.TrimSpace(parts[2])
+				parseFrontmatter(tmpl, frontmatter)
+			} else {
+				tmpl.Body = content
+			}
+		} else {
+			tmpl.Body = content
+		}
+	}
+
+	// Auto-detect variables from body
+	detected := extractVariables(tmpl.Body)
+	tmpl.Variables = mergeVariables(tmpl.Variables, detected)
+
+	return tmpl, nil
+}
+
+// parseFrontmatter extracts metadata from YAML-like frontmatter.
+func parseFrontmatter(tmpl *Template, frontmatter string) {
+	for _, line := range strings.Split(frontmatter, "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		idx := strings.Index(line, ":")
+		if idx < 0 {
+			continue
+		}
+
+		key := strings.TrimSpace(line[:idx])
+		val := strings.TrimSpace(line[idx+1:])
+
+		switch key {
+		case "description":
+			tmpl.Description = val
+		case "model":
+			tmpl.Model = val
+		case "version":
+			tmpl.Version = val
+		case "author":
+			tmpl.Author = val
+		case "tags":
+			val = strings.Trim(val, "[]")
+			for _, tag := range strings.Split(val, ",") {
+				tag = strings.TrimSpace(tag)
+				if tag != "" {
+					tmpl.Tags = append(tmpl.Tags, tag)
+				}
+			}
+		}
+	}
+}
+
+// varPlaceholderRegex matches {{var_name}} patterns.
+var varPlaceholderRegex = regexp.MustCompile(`\{\{\s*(\w+)\s*\}\}`)
+
+// extractVariables finds all {{var}} placeholders in text.
+func extractVariables(text string) []Variable {
 	seen := make(map[string]bool)
+	var vars []Variable
 
-	i := 0
-	for i < len(content) {
-		start := strings.Index(content[i:], "{{.")
-		if start == -1 {
-			break
+	matches := varPlaceholderRegex.FindAllStringSubmatch(text, -1)
+	for _, m := range matches {
+		name := m[1]
+		if !seen[name] {
+			seen[name] = true
+			vars = append(vars, Variable{Name: name})
 		}
-		start += i
-		end := strings.Index(content[start:], "}}")
-		if end == -1 {
-			break
-		}
-		end += start
-
-		varName := strings.TrimSpace(content[start+3 : end])
-		varName = strings.TrimPrefix(varName, ".")
-
-		if !seen[varName] && varName != "" {
-			vars = append(vars, varName)
-			seen[varName] = true
-		}
-
-		i = end + 2
 	}
 
 	return vars
 }
 
-// Validate checks a template for issues.
-func Validate(t *Template) []string {
-	var issues []string
+// mergeVariables combines declared and detected variables, preserving descriptions.
+func mergeVariables(declared, detected []Variable) []Variable {
+	byName := make(map[string]Variable)
 
-	if t.Name == "" {
-		issues = append(issues, "name is required")
-	}
-	if t.Content == "" {
-		issues = append(issues, "content is required")
+	// Start with detected
+	for _, v := range detected {
+		byName[v.Name] = v
 	}
 
-	// Check that all template variables have corresponding Variable definitions
-	extracted := ExtractVariables(t.Content)
-	defined := make(map[string]bool)
-	for _, v := range t.Variables {
-		defined[v.Name] = true
-	}
-
-	for _, v := range extracted {
-		if !defined[v] {
-			issues = append(issues, fmt.Sprintf("variable {{.%s}} used but not defined", v))
+	// Overlay declared (they have richer metadata)
+	for _, v := range declared {
+		existing, ok := byName[v.Name]
+		if ok {
+			if v.Description != "" {
+				existing.Description = v.Description
+			}
+			if v.Default != "" {
+				existing.Default = v.Default
+			}
+			if v.Required {
+				existing.Required = true
+			}
+			byName[v.Name] = existing
+		} else {
+			byName[v.Name] = v
 		}
 	}
 
-	// Check that defined variables are used in content
-	for _, v := range t.Variables {
-		if !strings.Contains(t.Content, "{{."+v.Name+"}}") {
-			issues = append(issues, fmt.Sprintf("variable %s defined but not used in template", v.Name))
-		}
+	var result []Variable
+	for _, v := range byName {
+		result = append(result, v)
 	}
 
-	// Validate template syntax
-	_, err := template.New("validation").Parse(t.Content)
-	if err != nil {
-		issues = append(issues, fmt.Sprintf("invalid template syntax: %v", err))
-	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Name < result[j].Name
+	})
 
-	return issues
+	return result
 }
 
-// Fork creates a new template based on an existing one.
-func (s *Store) Fork(parentID, newName string) (*Template, error) {
-	parent, err := s.Get(parentID)
-	if err != nil {
-		return nil, err
+// RenderString is a convenience function to render a template string directly.
+func RenderString(body string, vars map[string]string) string {
+	result := body
+	for key, val := range vars {
+		result = strings.ReplaceAll(result, "{{"+key+"}}", val)
+		result = strings.ReplaceAll(result, "{{ "+key+" }}", val)
 	}
-
-	child := &Template{
-		Name:        newName,
-		Description: parent.Description + " (forked)",
-		Content:     parent.Content,
-		Variables:   parent.Variables,
-		Tags:        parent.Tags,
-		Version:     1,
-		ParentID:    parentID,
-		Metadata:    copyMap(parent.Metadata),
-	}
-
-	if err := s.Save(child); err != nil {
-		return nil, err
-	}
-
-	return child, nil
-}
-
-// Diff compares two templates.
-func Diff(t1, t2 *Template) string {
-	var b strings.Builder
-
-	if t1.Name != t2.Name {
-		b.WriteString(fmt.Sprintf("name: %q → %q\n", t1.Name, t2.Name))
-	}
-	if t1.Content != t2.Content {
-		b.WriteString("content: changed\n")
-	}
-	if t1.Description != t2.Description {
-		b.WriteString(fmt.Sprintf("description: %q → %q\n", t1.Description, t2.Description))
-	}
-	if len(t1.Variables) != len(t2.Variables) {
-		b.WriteString(fmt.Sprintf("variables: %d → %d\n", len(t1.Variables), len(t2.Variables)))
-	}
-
-	if b.Len() == 0 {
-		return "no differences"
-	}
-	return b.String()
-}
-
-// DefaultTemplates returns built-in prompt templates.
-func DefaultTemplates() []*Template {
-	return []*Template{
-		{
-			Name:        "code-review",
-			Description: "Code review prompt with security focus",
-			Content:     "Review the following {{.language}} code for {{.focus}} issues:\n\n```\n{{.code}}\n```\n\nProvide findings with severity levels and suggestions.",
-			Variables: []Variable{
-				{Name: "language", Description: "Programming language", Required: true},
-				{Name: "focus", Description: "Review focus (security, performance, style)", Default: "all"},
-				{Name: "code", Description: "Code to review", Required: true},
-			},
-			Tags: []string{"review", "code-quality"},
-		},
-		{
-			Name:        "fix-bug",
-			Description: "Bug fix prompt with context",
-			Content:     "Fix the following bug:\n\nDescription: {{.description}}\n\nFile: {{.file}}\nError: {{.error}}\n\nProvide a fix with explanation.",
-			Variables: []Variable{
-				{Name: "description", Description: "Bug description", Required: true},
-				{Name: "file", Description: "Affected file path"},
-				{Name: "error", Description: "Error message or stack trace"},
-			},
-			Tags: []string{"debugging", "fix"},
-		},
-		{
-			Name:        "generate-api",
-			Description: "API endpoint generator",
-			Content:     "Generate a {{.method}} {{.path}} endpoint for a {{.language}} {{.framework}} API.\n\nRequirements: {{.requirements}}\n\nInclude request/response types, validation, and error handling.",
-			Variables: []Variable{
-				{Name: "method", Description: "HTTP method (GET, POST, etc.)", Required: true},
-				{Name: "path", Description: "API path (e.g., /users/:id)", Required: true},
-				{Name: "language", Description: "Programming language", Default: "go"},
-				{Name: "framework", Description: "Web framework", Default: "net/http"},
-				{Name: "requirements", Description: "Specific requirements"},
-			},
-			Tags: []string{"generation", "api"},
-		},
-		{
-			Name:        "explain-code",
-			Description: "Code explanation prompt",
-			Content:     "Explain the following {{.language}} code in {{.detail_level}} detail:\n\n```\n{{.code}}\n```\n\n{{.extra_instructions}}",
-			Variables: []Variable{
-				{Name: "language", Description: "Programming language", Default: "unknown"},
-				{Name: "detail_level", Description: "Detail level (brief, normal, detailed)", Default: "normal"},
-				{Name: "code", Description: "Code to explain", Required: true},
-				{Name: "extra_instructions", Description: "Additional instructions"},
-			},
-			Tags: []string{"explanation", "documentation"},
-		},
-	}
-}
-
-func copyMap(m map[string]string) map[string]string {
-	c := make(map[string]string, len(m))
-	for k, v := range m {
-		c[k] = v
-	}
-	return c
+	return result
 }

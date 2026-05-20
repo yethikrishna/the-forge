@@ -1,27 +1,29 @@
-# MELTLOG.md — Phase 0-1: The Meltdown (v0.4.0)
+# MELTLOG.md — Phase 0-2: The Meltdown (v0.5.0)
 
-## Status: PHASE 1 COMPLETE ✅ | 26.4K LINES | 48 PACKAGES | 35 COMMANDS
+## Status: PHASE 2 IN PROGRESS | 37K LINES | 61 PACKAGES | 43 COMMANDS
 
 ### Session Progress
 - ✅ All 18 utility packages implemented and tested
 - ✅ 30 core/feature packages implemented
-- ✅ 35 CLI commands registered and functional
+- ✅ 37 Phase 1 CLI commands registered and functional
 - ✅ Build and vet pass cleanly
-- ✅ Web dashboard with real-time monitoring
-- ✅ Code execution sandbox (8 languages)
-- ✅ Multi-agent routing (6 strategies)
-- ✅ Task queue with priority and retries
-- ✅ Secret scanning and redaction
-- ✅ API key management
-- ✅ Project scaffolding templates
-- ✅ LLM cost comparison (20+ models, 7 providers)
-- ✅ Configuration management (YAML/TOML/JSON)
-- ✅ Session recording and replay
-- ✅ Git integration for agent workflows
+- ✅ Phase 2 features shipping:
+  - ✅ `forge snapshot` — environment checkpoints (create, list, restore, diff, delete)
+  - ✅ `forge schedule` — cron for agents (create, list, run, history, enable/disable)
+  - ✅ `forge workspace` — multi-repo context management (init, clone, status, diff, plan)
+  - ✅ `forge errors` — structured error code catalog (60+ codes, export JSON/Markdown)
+  - ✅ `forge review` — agent-driven code review (severity levels, scoring, diff analysis)
+  - ✅ `forge docs` — documentation agent (README, API, architecture, ADR, changelog, CLI, pkg)
+  - ✅ `internal/snapshot` — checkpoint storage with tar.gz archives and manifest
+  - ✅ `internal/schedule` — cron expression parser, next-run computation, run tracking
+  - ✅ `internal/workspace` — multi-repo management with coordination plans
+  - ✅ `internal/errcode` — 60+ structured error codes across 18 categories
+  - ✅ `internal/review` — static code review with secret detection, debug statements, linting
+  - ✅ `internal/docs` — documentation generator from code analysis
 
 ---
 
-## Internal Packages (48)
+## Internal Packages (61)
 
 ### Utility (18)
 slog, retry, pretty, cli, timer, bigdur, flog, hat, quartz, redjet,
@@ -31,13 +33,15 @@ yamux, websocket, serpent, hnsw, clistat, wsep, exectrace, version
 acp, aisdk, agentapi, aibridge, aicommit, boundary, envbuilder,
 wgtunnel, wush, watcher, config, cost, replay, routing
 
-### Feature (16)
+### Feature (29)
 sandbox, auth, template, pipeline, share, memory, audit, queue,
-gitwrap, secrets, agenttest, eval, dashboard, undo, forecast, memory
+gitwrap, secrets, agenttest, eval, dashboard, undo, forecast, memory,
+breed, otel, pubsub, diff, snapshot, schedule, workspace, errcode,
+review, docs, mcp, explain, config
 
 ---
 
-## Commands (35)
+## Commands (43)
 
 | Command | Description |
 |---------|-------------|
@@ -76,12 +80,20 @@ gitwrap, secrets, agenttest, eval, dashboard, undo, forecast, memory
 | test | Testing framework |
 | status | Comprehensive system overview |
 | undo | Undo operations |
+| mcp | MCP server mode (stdio + HTTP/SSE) |
+| breed | Agent evolution |
+| snapshot | Environment checkpoints |
+| schedule | Cron for agents |
+| workspace | Multi-repo context management |
+| errors | Error code reference |
+| review | Agent-driven code review |
+| docs | Documentation agent |
 
 ---
 
 ## Stats
-- **Lines of Go:** ~26,456
-- **Internal packages:** 48
-- **Commands:** 35
+- **Lines of Go:** ~37,074
+- **Internal packages:** 61
+- **Commands:** 43
 - **Build:** ✅ **Vet:** ✅
-- **Version:** 0.4.0
+- **Version:** 0.5.0

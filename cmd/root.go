@@ -70,6 +70,7 @@ The wielder and the sword are one.`,
 		reviewCmd(),
 		docsCmd(),
 		pairCmd(),
+		promptCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }

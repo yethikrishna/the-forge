@@ -1,256 +1,365 @@
-package prompt_test
+package prompt
 
 import (
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
-
-	"github.com/forge/sword/internal/prompt"
 )
 
-func TestSaveAndGet(t *testing.T) {
-	dir := t.TempDir()
-	store := prompt.NewStore(dir)
+func TestExtractVariables(t *testing.T) {
+	vars := extractVariables("Hello {{name}}, your {{role}} is set. Welcome {{name}} again.")
+	if len(vars) != 2 {
+		t.Fatalf("expected 2 unique variables, got %d", len(vars))
+	}
+	names := map[string]bool{}
+	for _, v := range vars {
+		names[v.Name] = true
+	}
+	if !names["name"] || !names["role"] {
+		t.Errorf("expected name and role, got %v", vars)
+	}
+}
 
-	tmpl := &prompt.Template{
-		Name:        "test",
-		Description: "A test template",
-		Content:     "Hello {{.name}}, welcome to {{.place}}!",
-		Variables: []prompt.Variable{
-			{Name: "name", Description: "User name", Required: true},
-			{Name: "place", Description: "Place name", Default: "the forge"},
+func TestExtractVariablesSpaced(t *testing.T) {
+	vars := extractVariables("{{ name }} is {{ age }}")
+	if len(vars) != 2 {
+		t.Fatalf("expected 2 variables, got %d", len(vars))
+	}
+}
+
+func TestExtractVariablesNone(t *testing.T) {
+	vars := extractVariables("no variables here")
+	if len(vars) != 0 {
+		t.Errorf("expected 0 variables, got %d", len(vars))
+	}
+}
+
+func TestRenderBasic(t *testing.T) {
+	tmpl := Template{
+		Body: "Hello {{name}}, welcome to {{project}}!",
+	}
+	result, err := tmpl.Render(map[string]string{"name": "Alice", "project": "The Forge"})
+	if err != nil {
+		t.Fatalf("Render failed: %v", err)
+	}
+	if result != "Hello Alice, welcome to The Forge!" {
+		t.Errorf("unexpected result: %q", result)
+	}
+}
+
+func TestRenderWithDefaults(t *testing.T) {
+	tmpl := Template{
+		Body: "Hello {{name}}, role: {{role}}",
+		Variables: []Variable{
+			{Name: "role", Default: "developer"},
 		},
 	}
-
-	err := store.Save(tmpl)
+	result, err := tmpl.Render(map[string]string{"name": "Bob"})
 	if err != nil {
-		t.Fatalf("save: %v", err)
+		t.Fatalf("Render failed: %v", err)
 	}
-
-	retrieved, err := store.Get(tmpl.ID)
-	if err != nil {
-		t.Fatalf("get: %v", err)
-	}
-
-	if retrieved.Name != "test" {
-		t.Errorf("expected 'test', got %s", retrieved.Name)
+	if !strings.Contains(result, "role: developer") {
+		t.Errorf("expected default role, got: %q", result)
 	}
 }
 
-func TestGetByName(t *testing.T) {
-	dir := t.TempDir()
-	store := prompt.NewStore(dir)
-
-	store.Save(&prompt.Template{Name: "my-template", Content: "Hello"})
-
-	retrieved, err := store.GetByName("my-template")
-	if err != nil {
-		t.Fatalf("get by name: %v", err)
-	}
-	if retrieved.Name != "my-template" {
-		t.Errorf("expected 'my-template', got %s", retrieved.Name)
-	}
-}
-
-func TestGetByNameNotFound(t *testing.T) {
-	dir := t.TempDir()
-	store := prompt.NewStore(dir)
-
-	_, err := store.GetByName("nonexistent")
-	if err == nil {
-		t.Error("should error for nonexistent")
-	}
-}
-
-func TestList(t *testing.T) {
-	dir := t.TempDir()
-	store := prompt.NewStore(dir)
-
-	store.Save(&prompt.Template{Name: "first", Content: "1"})
-	store.Save(&prompt.Template{Name: "second", Content: "2"})
-
-	list, err := store.List()
-	if err != nil {
-		t.Fatalf("list: %v", err)
-	}
-	if len(list) != 2 {
-		t.Errorf("expected 2, got %d", len(list))
-	}
-}
-
-func TestDelete(t *testing.T) {
-	dir := t.TempDir()
-	store := prompt.NewStore(dir)
-
-	tmpl := &prompt.Template{Name: "to-delete", Content: "bye"}
-	store.Save(tmpl)
-
-	err := store.Delete(tmpl.ID)
-	if err != nil {
-		t.Fatalf("delete: %v", err)
-	}
-
-	_, err = store.Get(tmpl.ID)
-	if err == nil {
-		t.Error("should be deleted")
-	}
-}
-
-func TestRender(t *testing.T) {
-	dir := t.TempDir()
-	store := prompt.NewStore(dir)
-
-	tmpl := &prompt.Template{
-		Name:    "greet",
-		Content: "Hello {{.name}}, welcome to {{.place}}!",
-	}
-	store.Save(tmpl)
-
-	result, err := store.Render(tmpl.ID, map[string]string{
-		"name":  "Forge",
-		"place": "the anvil",
-	})
-	if err != nil {
-		t.Fatalf("render: %v", err)
-	}
-
-	if result != "Hello Forge, welcome to the anvil!" {
-		t.Errorf("unexpected render result: %s", result)
-	}
-}
-
-func TestRenderTemplate(t *testing.T) {
-	result, err := prompt.RenderTemplate(
-		"Hello {{.name}}!",
-		map[string]string{"name": "World"},
-	)
-	if err != nil {
-		t.Fatalf("render: %v", err)
-	}
-	if result != "Hello World!" {
-		t.Errorf("expected 'Hello World!', got %s", result)
-	}
-}
-
-func TestExtractVariables(t *testing.T) {
-	content := "Hello {{.name}}, your role is {{.role}} at {{.company}}."
-
-	vars := prompt.ExtractVariables(content)
-	if len(vars) != 3 {
-		t.Errorf("expected 3 variables, got %d", len(vars))
-	}
-}
-
-func TestExtractVariablesDuplicate(t *testing.T) {
-	content := "{{.name}} is {{.name}} again"
-
-	vars := prompt.ExtractVariables(content)
-	if len(vars) != 1 {
-		t.Errorf("expected 1 unique variable, got %d", len(vars))
-	}
-}
-
-func TestValidate(t *testing.T) {
-	tmpl := &prompt.Template{
-		Name:    "valid",
-		Content: "Hello {{.name}}",
-		Variables: []prompt.Variable{
+func TestRenderRequiredMissing(t *testing.T) {
+	tmpl := Template{
+		Body: "Hello {{name}}!",
+		Variables: []Variable{
 			{Name: "name", Required: true},
 		},
 	}
-
-	issues := prompt.Validate(tmpl)
-	if len(issues) != 0 {
-		t.Errorf("should be valid, got issues: %v", issues)
+	_, err := tmpl.Render(map[string]string{})
+	if err == nil {
+		t.Error("expected error for missing required variable")
 	}
 }
 
-func TestValidateEmptyName(t *testing.T) {
-	tmpl := &prompt.Template{
-		Content: "Hello",
-	}
-
-	issues := prompt.Validate(tmpl)
-	if len(issues) == 0 {
-		t.Error("should have issues for empty name")
-	}
-}
-
-func TestValidateUnusedVariable(t *testing.T) {
-	tmpl := &prompt.Template{
-		Name:    "test",
-		Content: "Hello",
-		Variables: []prompt.Variable{
-			{Name: "unused", Required: false},
+func TestRenderRequiredProvided(t *testing.T) {
+	tmpl := Template{
+		Body: "Hello {{name}}!",
+		Variables: []Variable{
+			{Name: "name", Required: true},
 		},
 	}
-
-	issues := prompt.Validate(tmpl)
-	hasUnusedIssue := false
-	for _, issue := range issues {
-		if len(issue) > 6 && issue[:6] == "variab" {
-			hasUnusedIssue = true
-		}
-	}
-	if !hasUnusedIssue {
-		t.Error("should detect unused variable")
-	}
-}
-
-func TestFork(t *testing.T) {
-	dir := t.TempDir()
-	store := prompt.NewStore(dir)
-
-	parent := &prompt.Template{
-		Name:    "original",
-		Content: "Hello {{.name}}",
-	}
-	store.Save(parent)
-
-	child, err := store.Fork(parent.ID, "forked")
+	result, err := tmpl.Render(map[string]string{"name": "Eve"})
 	if err != nil {
-		t.Fatalf("fork: %v", err)
+		t.Fatalf("Render failed: %v", err)
 	}
-
-	if child.ParentID != parent.ID {
-		t.Error("child should reference parent")
-	}
-	if child.Name != "forked" {
-		t.Errorf("expected 'forked', got %s", child.Name)
+	if result != "Hello Eve!" {
+		t.Errorf("unexpected result: %q", result)
 	}
 }
 
-func TestDiff(t *testing.T) {
-	t1 := &prompt.Template{Name: "v1", Content: "Hello {{.name}}", Description: "First"}
-	t2 := &prompt.Template{Name: "v2", Content: "Hi {{.name}}!", Description: "Second"}
-
-	diff := prompt.Diff(t1, t2)
-	if diff == "no differences" {
-		t.Error("should detect differences")
+func TestRenderSpacedPlaceholders(t *testing.T) {
+	tmpl := Template{
+		Body: "Hello {{ name }}, welcome!",
+	}
+	result, err := tmpl.Render(map[string]string{"name": "Alice"})
+	if err != nil {
+		t.Fatalf("Render failed: %v", err)
+	}
+	if result != "Hello Alice, welcome!" {
+		t.Errorf("unexpected result: %q", result)
 	}
 }
 
-func TestDiffIdentical(t *testing.T) {
-	t1 := &prompt.Template{Name: "same", Content: "Hello"}
-	t2 := &prompt.Template{Name: "same", Content: "Hello"}
+func TestStoreSaveAndLoad(t *testing.T) {
+	dir := t.TempDir()
+	s := NewStore(dir)
 
-	diff := prompt.Diff(t1, t2)
-	if diff != "no differences" {
-		t.Errorf("expected no differences, got %s", diff)
+	tmpl := Template{
+		Name:        "greeting",
+		Description: "A greeting prompt",
+		Body:        "Hello {{name}}, welcome to {{project}}!",
+		Tags:        []string{"test", "greeting"},
+		Model:       "gpt-5-mini",
+	}
+
+	if err := s.Save(tmpl); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	loaded, err := s.Load("greeting")
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	if loaded.Name != "greeting" {
+		t.Errorf("expected name 'greeting', got %q", loaded.Name)
+	}
+	if loaded.Description != "A greeting prompt" {
+		t.Errorf("expected description, got %q", loaded.Description)
+	}
+	if !strings.Contains(loaded.Body, "{{name}}") {
+		t.Error("body should contain variable placeholders")
+	}
+	if len(loaded.Tags) != 2 {
+		t.Errorf("expected 2 tags, got %d", len(loaded.Tags))
 	}
 }
 
-func TestDefaultTemplates(t *testing.T) {
-	templates := prompt.DefaultTemplates()
+func TestStoreList(t *testing.T) {
+	dir := t.TempDir()
+	s := NewStore(dir)
 
-	if len(templates) == 0 {
-		t.Error("should have default templates")
+	s.Save(Template{Name: "beta", Body: "Beta {{x}}"})
+	s.Save(Template{Name: "alpha", Body: "Alpha {{y}}"})
+	s.Save(Template{Name: "gamma", Body: "Gamma {{z}}"})
+
+	templates, err := s.List()
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	if len(templates) != 3 {
+		t.Fatalf("expected 3 templates, got %d", len(templates))
+	}
+	// Should be sorted
+	if templates[0].Name != "alpha" || templates[1].Name != "beta" || templates[2].Name != "gamma" {
+		t.Errorf("expected sorted order, got: %v", []string{templates[0].Name, templates[1].Name, templates[2].Name})
+	}
+}
+
+func TestStoreDelete(t *testing.T) {
+	dir := t.TempDir()
+	s := NewStore(dir)
+
+	s.Save(Template{Name: "to-delete", Body: "bye"})
+	if !s.Exists("to-delete") {
+		t.Fatal("template should exist after save")
 	}
 
-	for _, tmpl := range templates {
-		if tmpl.Name == "" {
-			t.Error("template should have a name")
-		}
-		if tmpl.Content == "" {
-			t.Error("template should have content")
-		}
+	if err := s.Delete("to-delete"); err != nil {
+		t.Fatalf("Delete failed: %v", err)
+	}
+	if s.Exists("to-delete") {
+		t.Error("template should not exist after delete")
+	}
+}
+
+func TestStoreDeleteNotFound(t *testing.T) {
+	dir := t.TempDir()
+	s := NewStore(dir)
+
+	err := s.Delete("nonexistent")
+	if err == nil {
+		t.Error("expected error for deleting nonexistent template")
+	}
+}
+
+func TestStoreLoadNotFound(t *testing.T) {
+	dir := t.TempDir()
+	s := NewStore(dir)
+
+	_, err := s.Load("nonexistent")
+	if err == nil {
+		t.Error("expected error for loading nonexistent template")
+	}
+}
+
+func TestStoreLoadWithFrontmatter(t *testing.T) {
+	dir := t.TempDir()
+	content := "---\ndescription: Test prompt\nmodel: claude\nversion: \"1.0\"\ntags: [code, review]\n---\n\nReview this {{language}} code:\n```{{language}}\n{{code}}\n```\n"
+	os.WriteFile(filepath.Join(dir, "review.md"), []byte(content), 0o644)
+
+	s := NewStore(dir)
+	tmpl, err := s.Load("review")
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+
+	if tmpl.Description != "Test prompt" {
+		t.Errorf("expected description, got %q", tmpl.Description)
+	}
+	if tmpl.Model != "claude" {
+		t.Errorf("expected model claude, got %q", tmpl.Model)
+	}
+	if tmpl.Version != "1.0" {
+		t.Errorf("expected version 1.0, got %q", tmpl.Version)
+	}
+	if len(tmpl.Tags) != 2 {
+		t.Errorf("expected 2 tags, got %d", len(tmpl.Tags))
+	}
+	if !strings.Contains(tmpl.Body, "Review this {{language}} code") {
+		t.Errorf("body should contain template, got: %q", tmpl.Body)
+	}
+}
+
+func TestStoreLoadTXT(t *testing.T) {
+	dir := t.TempDir()
+	os.WriteFile(filepath.Join(dir, "plain.txt"), []byte("Hello {{name}}"), 0o644)
+
+	s := NewStore(dir)
+	tmpl, err := s.Load("plain")
+	if err != nil {
+		t.Fatalf("Load failed: %v", err)
+	}
+	if tmpl.Body != "Hello {{name}}" {
+		t.Errorf("unexpected body: %q", tmpl.Body)
+	}
+}
+
+func TestStoreListEmpty(t *testing.T) {
+	dir := t.TempDir()
+	s := NewStore(dir)
+
+	templates, err := s.List()
+	if err != nil {
+		t.Fatalf("List on empty dir failed: %v", err)
+	}
+	if len(templates) != 0 {
+		t.Errorf("expected 0 templates, got %d", len(templates))
+	}
+}
+
+func TestStoreExists(t *testing.T) {
+	dir := t.TempDir()
+	s := NewStore(dir)
+
+	if s.Exists("anything") {
+		t.Error("should not exist in empty store")
+	}
+
+	s.Save(Template{Name: "test", Body: "hi"})
+	if !s.Exists("test") {
+		t.Error("should exist after save")
+	}
+}
+
+func TestSaveNoName(t *testing.T) {
+	dir := t.TempDir()
+	s := NewStore(dir)
+
+	err := s.Save(Template{Body: "no name"})
+	if err == nil {
+		t.Error("expected error for template without name")
+	}
+}
+
+func TestAutoDetectVariables(t *testing.T) {
+	dir := t.TempDir()
+	s := NewStore(dir)
+
+	s.Save(Template{
+		Name: "auto",
+		Body: "{{input}} processed by {{model}} with {{temperature}}",
+	})
+
+	tmpl, _ := s.Load("auto")
+	if len(tmpl.Variables) != 3 {
+		t.Errorf("expected 3 auto-detected variables, got %d", len(tmpl.Variables))
+	}
+}
+
+func TestMergeVariables(t *testing.T) {
+	declared := []Variable{
+		{Name: "lang", Description: "Programming language", Default: "go", Required: true},
+	}
+	detected := []Variable{
+		{Name: "lang"},
+		{Name: "code"},
+	}
+
+	merged := mergeVariables(declared, detected)
+	if len(merged) != 2 {
+		t.Fatalf("expected 2 merged variables, got %d", len(merged))
+	}
+
+	byName := map[string]Variable{}
+	for _, v := range merged {
+		byName[v.Name] = v
+	}
+
+	if byName["lang"].Description != "Programming language" {
+		t.Error("declared description should be preserved")
+	}
+	if byName["lang"].Default != "go" {
+		t.Error("declared default should be preserved")
+	}
+	if !byName["lang"].Required {
+		t.Error("declared required should be preserved")
+	}
+	if _, ok := byName["code"]; !ok {
+		t.Error("detected variable 'code' should be present")
+	}
+}
+
+func TestRenderString(t *testing.T) {
+	result := RenderString("Hello {{name}} from {{city}}", map[string]string{
+		"name": "Alice",
+		"city": "NYC",
+	})
+	if result != "Hello Alice from NYC" {
+		t.Errorf("unexpected result: %q", result)
+	}
+}
+
+func TestStoreInit(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "prompts")
+	s := NewStore(dir)
+
+	if err := s.Init(); err != nil {
+		t.Fatalf("Init failed: %v", err)
+	}
+
+	info, err := os.Stat(dir)
+	if err != nil {
+		t.Fatalf("dir should exist: %v", err)
+	}
+	if !info.IsDir() {
+		t.Error("should be a directory")
+	}
+}
+
+func TestStoreListNonexistentDir(t *testing.T) {
+	s := NewStore("/nonexistent/path/prompts")
+	templates, err := s.List()
+	if err != nil {
+		t.Fatalf("should not error on nonexistent dir: %v", err)
+	}
+	if len(templates) != 0 {
+		t.Errorf("expected 0 templates, got %d", len(templates))
 	}
 }
