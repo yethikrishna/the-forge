@@ -176,7 +176,13 @@ All 18 utility packages implemented and tested.
 
 ## Phase 3.5: Strategic (From Brainstorm #5)
 
-- [ ] "Forge as CI" — agent-native CI system (not GitHub Actions running Forge)
+- [x] "Forge as CI" — agent-native CI system (forge ci run/list/show/delete/templates)
+- [x] Error messages that teach — forge errors list/show/search/stats (35+ codes)
+- [x] Notification system — forge notify add/list/remove/send/test/history (Slack/Discord/webhook/email/file)
+- [x] Progressive complexity ladder — forge level show/path/complete/next/stats (Level 0-5, 28 milestones)
+- [x] SBOM generation — forge sbom generate/summary (SPDX, CycloneDX)
+- [x] Prometheus metrics — internal/metrics (counter/gauge/histogram, Prometheus format, 13 default metrics)
+- [x] Git hook integration — forge gitserve add/list/run/install/uninstall (8 hook types, agent-driven)
 - [ ] Code Review Bot as Trojan Horse — single-purpose GitHub App, wedge to full adoption
 - [ ] Forge Desktop (Electron wrapper) — system tray, drag-and-drop, no CLI required
 - [ ] Forge Cloud — hosted multi-tenant SaaS with hybrid mode
@@ -272,8 +278,8 @@ All 18 utility packages implemented and tested.
 - [ ] Cross-package event correlation — correlate anomalies across cost/health/lifecycle/replay
 
 ## Current Stats
-- ~84K lines of Go
-- 119 internal packages
-- 80+ commands
+- ~88K lines of Go
+- 124 internal packages
+- 95+ commands
 - Build: ✅ Vet: ✅
 - Version: 1.1.0
