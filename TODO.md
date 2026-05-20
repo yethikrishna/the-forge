@@ -86,7 +86,7 @@ All 18 utility packages implemented and tested.
 ## Phase 2.5: Agent Quality
 
 - [x] `forge test` — agent integration testing framework with declarative test cases
-- [ ] `forge undo` — universal agent undo (revert file mutations, git commits, entire sessions)
+- [x] `forge undo` — universal agent undo (revert file mutations, git commits, entire sessions)
 - [ ] `forge snapshot` — environment checkpoints (files + git state + env vars)
 - [ ] Agent output quality scoring — multi-dimensional (correctness, style, security, cost)
 - [ ] Agent A/B testing framework — blind comparison with statistical significance

@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/forge/sword/internal/pretty"
 	"github.com/forge/sword/internal/undo"
