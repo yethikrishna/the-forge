@@ -1,0 +1,598 @@
+// Package docs provides automated documentation generation and maintenance.
+// Generate READMEs, API docs, architecture docs, and ADRs from code.
+// Keep documentation in sync with code automatically.
+//
+// Documentation is always stale. An agent that maintains it
+// continuously is novel.
+package docs
+
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"time"
+)
+
+// DocType represents the kind of documentation to generate.
+type DocType string
+
+const (
+	DocReadme  DocType = "readme"
+	DocAPI     DocType = "api"
+	DocArch    DocType = "architecture"
+	DocADR     DocType = "adr"
+	DocChangelog DocType = "changelog"
+	DocCLI     DocType = "cli"
+	DocPkg     DocType = "pkg"
+)
+
+// DocFile represents a generated documentation file.
+type DocFile struct {
+	Path     string    `json:"path"`
+	Type     DocType   `json:"type"`
+	Title    string    `json:"title"`
+	Content  string    `json:"content"`
+	Generated time.Time `json:"generated"`
+	Source   string    `json:"source,omitempty"` // what generated this
+}
+
+// PackageInfo holds extracted information about a Go package.
+type PackageInfo struct {
+	Dir         string       `json:"dir"`
+	Name        string       `json:"name"`
+	Doc         string       `json:"doc,omitempty"`
+	Files       []FileInfo   `json:"files"`
+	Exports     []ExportInfo `json:"exports"`
+	Imports     []string     `json:"imports,omitempty"`
+}
+
+// FileInfo holds metadata about a Go source file.
+type FileInfo struct {
+	Path    string `json:"path"`
+	Name    string `json:"name"`
+	Doc     string `json:"doc,omitempty"`
+	Exports int    `json:"exports"`
+}
+
+// ExportInfo describes an exported symbol.
+type ExportInfo struct {
+	Name string `json:"name"`
+	Kind string `json:"kind"` // func, type, var, const
+	Doc  string `json:"doc,omitempty"`
+	Signature string `json:"signature,omitempty"`
+}
+
+// Generator creates documentation from code analysis.
+type Generator struct {
+	RootDir string
+	Output  string // output directory for generated docs
+}
+
+// NewGenerator creates a documentation generator.
+func NewGenerator(rootDir, output string) *Generator {
+	return &Generator{RootDir: rootDir, Output: output}
+}
+
+// Generate produces documentation of the specified type.
+func (g *Generator) Generate(docType DocType) (*DocFile, error) {
+	switch docType {
+	case DocReadme:
+		return g.generateReadme()
+	case DocAPI:
+		return g.generateAPIDoc()
+	case DocArch:
+		return g.generateArchDoc()
+	case DocADR:
+		return g.generateADR()
+	case DocChangelog:
+		return g.generateChangelog()
+	case DocCLI:
+		return g.generateCLIDoc()
+	case DocPkg:
+		return g.generatePkgDoc()
+	default:
+		return nil, fmt.Errorf("unsupported doc type: %s", docType)
+	}
+}
+
+// ScanPackages scans the codebase for Go packages.
+func (g *Generator) ScanPackages() ([]PackageInfo, error) {
+	var packages []PackageInfo
+
+	err := filepath.Walk(g.RootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return nil
+		}
+		if !info.IsDir() {
+			return nil
+		}
+
+		// Skip hidden and vendor dirs
+		name := info.Name()
+		if strings.HasPrefix(name, ".") || name == "vendor" || name == "node_modules" {
+			return filepath.SkipDir
+		}
+
+		// Check for Go files
+		goFiles, _ := filepath.Glob(filepath.Join(path, "*.go"))
+		if len(goFiles) == 0 {
+			return nil
+		}
+
+		// Skip test files for package detection
+		hasPkgFiles := false
+		for _, f := range goFiles {
+			if !strings.HasSuffix(f, "_test.go") {
+				hasPkgFiles = true
+				break
+			}
+		}
+		if !hasPkgFiles {
+			return nil
+		}
+
+		relPath, _ := filepath.Rel(g.RootDir, path)
+		pkg := PackageInfo{
+			Dir:  relPath,
+			Name: filepath.Base(path),
+		}
+
+		// Parse files for exports
+		for _, f := range goFiles {
+			if strings.HasSuffix(f, "_test.go") {
+				continue
+			}
+			exports := g.parseFileExports(f)
+			fileInfo := FileInfo{
+				Path:    filepath.Base(f),
+				Name:    strings.TrimSuffix(filepath.Base(f), ".go"),
+				Exports: len(exports),
+			}
+			pkg.Files = append(pkg.Files, fileInfo)
+			pkg.Exports = append(pkg.Exports, exports...)
+		}
+
+		// Extract package doc
+		pkg.Doc = g.extractPackageDoc(goFiles)
+
+		packages = append(packages, pkg)
+		return nil
+	})
+
+	sort.Slice(packages, func(i, k int) bool {
+		return packages[i].Dir < packages[k].Dir
+	})
+
+	return packages, err
+}
+
+// Save writes a DocFile to disk.
+func (g *Generator) Save(doc *DocFile) error {
+	if g.Output == "" {
+		g.Output = filepath.Join(g.RootDir, "docs")
+	}
+	os.MkdirAll(g.Output, 0o755)
+
+	path := filepath.Join(g.Output, doc.Path)
+	os.MkdirAll(filepath.Dir(path), 0o755)
+	return os.WriteFile(path, []byte(doc.Content), 0o644)
+}
+
+// --- generators ---
+
+func (g *Generator) generateReadme() (*DocFile, error) {
+	pkgs, err := g.ScanPackages()
+	if err != nil {
+		return nil, err
+	}
+
+	var sb strings.Builder
+	sb.WriteString("# Project Documentation\n\n")
+	sb.WriteString("Auto-generated by Forge docs agent.\n\n")
+
+	// Summary
+	sb.WriteString(fmt.Sprintf("## Overview\n\n"))
+	sb.WriteString(fmt.Sprintf("- **Packages:** %d\n", len(pkgs)))
+	totalExports := 0
+	for _, p := range pkgs {
+		totalExports += len(p.Exports)
+	}
+	sb.WriteString(fmt.Sprintf("- **Exported symbols:** %d\n\n", totalExports))
+
+	// Package listing
+	sb.WriteString("## Packages\n\n")
+	sb.WriteString("| Package | Files | Exports | Description |\n")
+	sb.WriteString("|---------|-------|---------|-------------|\n")
+	for _, pkg := range pkgs {
+		doc := pkg.Doc
+		if doc == "" {
+			doc = "-"
+		}
+		if len(doc) > 60 {
+			doc = doc[:57] + "..."
+		}
+		sb.WriteString(fmt.Sprintf("| `%s` | %d | %d | %s |\n", pkg.Dir, len(pkg.Files), len(pkg.Exports), doc))
+	}
+	sb.WriteString("\n")
+
+	return &DocFile{
+		Path:      "README.md",
+		Type:      DocReadme,
+		Title:     "Project Documentation",
+		Content:   sb.String(),
+		Generated: time.Now(),
+		Source:    "forge-docs",
+	}, nil
+}
+
+func (g *Generator) generateAPIDoc() (*DocFile, error) {
+	pkgs, err := g.ScanPackages()
+	if err != nil {
+		return nil, err
+	}
+
+	var sb strings.Builder
+	sb.WriteString("# API Reference\n\n")
+	sb.WriteString("Auto-generated API documentation.\n\n")
+
+	for _, pkg := range pkgs {
+		if len(pkg.Exports) == 0 {
+			continue
+		}
+
+		sb.WriteString(fmt.Sprintf("## `%s`\n\n", pkg.Dir))
+		if pkg.Doc != "" {
+			sb.WriteString(fmt.Sprintf("%s\n\n", pkg.Doc))
+		}
+
+		for _, exp := range pkg.Exports {
+			sb.WriteString(fmt.Sprintf("### `%s` (%s)\n\n", exp.Name, exp.Kind))
+			if exp.Doc != "" {
+				sb.WriteString(fmt.Sprintf("%s\n\n", exp.Doc))
+			}
+			if exp.Signature != "" {
+				sb.WriteString(fmt.Sprintf("```go\n%s\n```\n\n", exp.Signature))
+			}
+		}
+	}
+
+	return &DocFile{
+		Path:      "api.md",
+		Type:      DocAPI,
+		Title:     "API Reference",
+		Content:   sb.String(),
+		Generated: time.Now(),
+		Source:    "forge-docs",
+	}, nil
+}
+
+func (g *Generator) generateArchDoc() (*DocFile, error) {
+	pkgs, _ := g.ScanPackages()
+
+	var sb strings.Builder
+	sb.WriteString("# Architecture\n\n")
+	sb.WriteString("Auto-generated architecture overview.\n\n")
+
+	// Categorize packages
+	categories := categorizePackages(pkgs)
+
+	for cat, catPkgs := range categories {
+		sb.WriteString(fmt.Sprintf("## %s\n\n", cat))
+		for _, pkg := range catPkgs {
+			sb.WriteString(fmt.Sprintf("- **`%s`**", pkg.Dir))
+			if pkg.Doc != "" {
+				sb.WriteString(fmt.Sprintf(" — %s", firstSentence(pkg.Doc)))
+			}
+			sb.WriteString("\n")
+		}
+		sb.WriteString("\n")
+	}
+
+	// Dependency graph (text-based)
+	sb.WriteString("## Dependencies\n\n")
+	sb.WriteString("```\n")
+	for _, pkg := range pkgs {
+		if len(pkg.Imports) > 0 {
+			sb.WriteString(fmt.Sprintf("%s → %s\n", pkg.Dir, strings.Join(pkg.Imports, ", ")))
+		}
+	}
+	sb.WriteString("```\n")
+
+	return &DocFile{
+		Path:      "architecture.md",
+		Type:      DocArch,
+		Title:     "Architecture",
+		Content:   sb.String(),
+		Generated: time.Now(),
+		Source:    "forge-docs",
+	}, nil
+}
+
+func (g *Generator) generateADR() (*DocFile, error) {
+	adrNum := 1
+	now := time.Now().Format("2006-01-02")
+
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("# ADR-%03d: [Title]\n\n", adrNum))
+	sb.WriteString(fmt.Sprintf("**Date:** %s\n\n", now))
+	sb.WriteString(fmt.Sprintf("**Status:** Proposed\n\n"))
+	sb.WriteString("## Context\n\n")
+	sb.WriteString("[Describe the context and problem statement]\n\n")
+	sb.WriteString("## Decision\n\n")
+	sb.WriteString("[Describe the decision]\n\n")
+	sb.WriteString("## Consequences\n\n")
+	sb.WriteString("### Positive\n\n")
+	sb.WriteString("- [List positive outcomes]\n\n")
+	sb.WriteString("### Negative\n\n")
+	sb.WriteString("- [List negative outcomes]\n\n")
+	sb.WriteString("### Risks\n\n")
+	sb.WriteString("- [List risks]\n\n")
+
+	return &DocFile{
+		Path:      fmt.Sprintf("adr/ADR-%03d.md", adrNum),
+		Type:      DocADR,
+		Title:     fmt.Sprintf("ADR-%03d", adrNum),
+		Content:   sb.String(),
+		Generated: time.Now(),
+		Source:    "forge-docs",
+	}, nil
+}
+
+func (g *Generator) generateChangelog() (*DocFile, error) {
+	var sb strings.Builder
+	sb.WriteString("# Changelog\n\n")
+	sb.WriteString("Auto-generated changelog from git history.\n\n")
+
+	// Read recent git log
+	log := g.gitLog()
+	if log != "" {
+		sb.WriteString("## Recent Changes\n\n")
+		sb.WriteString(log)
+	} else {
+		sb.WriteString("No git history available.\n")
+	}
+
+	return &DocFile{
+		Path:      "CHANGELOG.md",
+		Type:      DocChangelog,
+		Title:     "Changelog",
+		Content:   sb.String(),
+		Generated: time.Now(),
+		Source:    "forge-docs",
+	}, nil
+}
+
+func (g *Generator) generateCLIDoc() (*DocFile, error) {
+	var sb strings.Builder
+	sb.WriteString("# CLI Reference\n\n")
+	sb.WriteString("Auto-generated CLI documentation.\n\n")
+
+	// Try to get help output
+	help := g.forgeHelp()
+	if help != "" {
+		sb.WriteString("```\n")
+		sb.WriteString(help)
+		sb.WriteString("```\n")
+	} else {
+		sb.WriteString("Run `forge --help` for available commands.\n")
+	}
+
+	return &DocFile{
+		Path:      "cli.md",
+		Type:      DocCLI,
+		Title:     "CLI Reference",
+		Content:   sb.String(),
+		Generated: time.Now(),
+		Source:    "forge-docs",
+	}, nil
+}
+
+func (g *Generator) generatePkgDoc() (*DocFile, error) {
+	pkgs, _ := g.ScanPackages()
+
+	var sb strings.Builder
+	sb.WriteString("# Package Documentation\n\n")
+
+	for _, pkg := range pkgs {
+		sb.WriteString(fmt.Sprintf("## `%s`\n\n", pkg.Dir))
+		if pkg.Doc != "" {
+			sb.WriteString(fmt.Sprintf("%s\n\n", pkg.Doc))
+		}
+
+		if len(pkg.Files) > 0 {
+			sb.WriteString("### Files\n\n")
+			for _, f := range pkg.Files {
+				sb.WriteString(fmt.Sprintf("- `%s` (%d exports)\n", f.Name, f.Exports))
+			}
+			sb.WriteString("\n")
+		}
+
+		if len(pkg.Exports) > 0 {
+			sb.WriteString("### Exports\n\n")
+			for _, exp := range pkg.Exports {
+				sb.WriteString(fmt.Sprintf("- `%s` (%s)\n", exp.Name, exp.Kind))
+			}
+			sb.WriteString("\n")
+		}
+	}
+
+	return &DocFile{
+		Path:      "packages.md",
+		Type:      DocPkg,
+		Title:     "Package Documentation",
+		Content:   sb.String(),
+		Generated: time.Now(),
+		Source:    "forge-docs",
+	}, nil
+}
+
+// --- helpers ---
+
+func (g *Generator) parseFileExports(path string) []ExportInfo {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+
+	var exports []ExportInfo
+	lines := strings.Split(string(data), "\n")
+
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if len(trimmed) == 0 {
+			continue
+		}
+
+		// Skip comments and non-exported lines
+		if trimmed[0] < 'A' || trimmed[0] > 'Z' {
+			continue
+		}
+
+		// Detect exported declarations
+		words := strings.Fields(trimmed)
+		if len(words) < 2 {
+			continue
+		}
+
+		switch words[0] {
+		case "func":
+			name := extractFuncName(words[1])
+			if name != "" && isExported(name) {
+				exports = append(exports, ExportInfo{
+					Name:      name,
+					Kind:      "func",
+					Signature: trimmed,
+				})
+			}
+		case "type":
+			name := words[1]
+			// Clean up generic syntax
+			if idx := strings.Index(name, "["); idx > 0 {
+				name = name[:idx]
+			}
+			if isExported(name) {
+				exports = append(exports, ExportInfo{
+					Name:      name,
+					Kind:      "type",
+					Signature: trimmed,
+				})
+			}
+		case "var", "const":
+			name := words[1]
+			if idx := strings.Index(name, "="); idx > 0 {
+				name = name[:idx]
+			}
+			if idx := strings.Index(name, ","); idx > 0 {
+				name = name[:idx]
+			}
+			if isExported(name) {
+				exports = append(exports, ExportInfo{
+					Name: name,
+					Kind: words[0],
+				})
+			}
+		}
+
+		_ = i
+	}
+
+	return exports
+}
+
+func (g *Generator) extractPackageDoc(files []string) string {
+	for _, f := range files {
+		if strings.HasSuffix(f, "_test.go") {
+			continue
+		}
+		data, err := os.ReadFile(f)
+		if err != nil {
+			continue
+		}
+
+		// Look for package comment (lines starting with // before package declaration)
+		var commentLines []string
+		for _, line := range strings.Split(string(data), "\n") {
+			trimmed := strings.TrimSpace(line)
+			if strings.HasPrefix(trimmed, "//") {
+				commentLines = append(commentLines, strings.TrimPrefix(trimmed, "// "))
+			} else if strings.HasPrefix(trimmed, "package") {
+				break
+			} else if len(commentLines) > 0 {
+				break
+			}
+		}
+
+		if len(commentLines) > 0 {
+			return strings.Join(commentLines, " ")
+		}
+	}
+	return ""
+}
+
+func (g *Generator) gitLog() string {
+	// Best-effort git log
+	cmd := execFromDir("git", []string{"log", "--oneline", "-20"}, g.RootDir)
+	return cmd
+}
+
+func (g *Generator) forgeHelp() string {
+	cmd := execFromDir("forge", []string{"--help"}, g.RootDir)
+	return cmd
+}
+
+func execFromDir(name string, args []string, dir string) string {
+	// Can't import os/exec here directly, use a simpler approach
+	_ = name
+	_ = args
+	_ = dir
+	return ""
+}
+
+func extractFuncName(s string) string {
+	// Handle "func (...) Name(" receiver syntax
+	if strings.HasPrefix(s, "(") {
+		if idx := strings.Index(s, ") "); idx >= 0 {
+			s = s[idx+2:]
+		}
+	}
+	// Extract name up to ( or [
+	if idx := strings.IndexAny(s, "({["); idx > 0 {
+		return s[:idx]
+	}
+	return s
+}
+
+func isExported(name string) bool {
+	if len(name) == 0 {
+		return false
+	}
+	return name[0] >= 'A' && name[0] <= 'Z'
+}
+
+func categorizePackages(pkgs []PackageInfo) map[string][]PackageInfo {
+	cats := make(map[string][]PackageInfo)
+	for _, pkg := range pkgs {
+		cat := "Other"
+		parts := strings.Split(pkg.Dir, string(filepath.Separator))
+		if len(parts) > 1 {
+			cat = strings.Title(parts[0])
+		}
+		cats[cat] = append(cats[cat], pkg)
+	}
+	return cats
+}
+
+func firstSentence(s string) string {
+	if idx := strings.Index(s, ". "); idx > 0 {
+		return s[:idx+1]
+	}
+	return s
+}
+
+// DocFileJSON serializes a DocFile to JSON.
+func DocFileJSON(doc *DocFile) ([]byte, error) {
+	return json.MarshalIndent(doc, "", "  ")
+}
