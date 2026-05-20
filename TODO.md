@@ -132,7 +132,7 @@ All 18 utility packages implemented and tested.
 
 ## Phase 3: Next Features (In Progress)
 - [x] `forge suggest` — Context-aware agent suggestions
-- [ ] `forge explain error` — Intelligent error interpretation
+- [x] `forge explain error` — Intelligent error interpretation
 - [x] Agent output quality scoring — multi-dimensional
 - [x] Agent A/B testing framework
 - [x] Multi-tenancy in `forge serve`

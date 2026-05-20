@@ -7,6 +7,7 @@ package errorexplain
 
 import (
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 )
@@ -107,6 +108,15 @@ func (e *Explainer) Explain(input string) *Explanation {
 		if len(matches) > 1 {
 			confidence = 0.95 // specific captures = high confidence
 		}
+
+		// Prefer longer/more specific regexes
+		// A pattern that matches a longer portion of the regex itself is more specific
+		regexLen := len(p.regex.String())
+		if regexLen > 50 {
+			confidence += 0.05 // boost for complex patterns
+		}
+
+		confidence = math.Min(confidence, 1.0)
 
 		if confidence > bestScore {
 			bestScore = confidence
@@ -357,17 +367,7 @@ func defaultPatterns() []errorPattern {
 			tags:      []string{"python", "compile", "indentation"},
 		},
 
-		// JavaScript/TypeScript errors
-		{
-			regex:     regexp.MustCompile(`Cannot find module '(.+?)'`),
-			category:  CatDependency,
-			language:  "typescript",
-			summary:   "Module not found: '{1}'",
-			rootCause: "TypeScript cannot resolve module '{1}'. It may not be installed or the path is wrong.",
-			suggest:   "Run `npm install {1}` for packages. For relative imports, check the file path and extension.",
-			severity:  SevHigh,
-			tags:      []string{"typescript", "module"},
-		},
+		// JavaScript/TypeScript errors (must come before Python TypeError)
 		{
 			regex:     regexp.MustCompile(`TypeError:\s+Cannot read propert(?:y|ies) of undefined`),
 			category:  CatRuntime,
@@ -379,6 +379,16 @@ func defaultPatterns() []errorPattern {
 			tags:      []string{"javascript", "runtime", "undefined"},
 		},
 		{
+			regex:     regexp.MustCompile(`Cannot find module '(.+?)'`),
+			category:  CatDependency,
+			language:  "typescript",
+			summary:   "Module not found: '{1}'",
+			rootCause: "TypeScript cannot resolve module '{1}'. It may not be installed or the path is wrong.",
+			suggest:   "Run `npm install {1}` for packages. For relative imports, check the file path and extension.",
+			severity:  SevHigh,
+			tags:      []string{"typescript", "module"},
+		},
+		{
 			regex:     regexp.MustCompile(`ENOENT:\s+no such file or directory`),
 			category:  CatRuntime,
 			language:  "javascript",
@@ -388,6 +398,8 @@ func defaultPatterns() []errorPattern {
 			severity:  SevHigh,
 			tags:      []string{"javascript", "node", "file"},
 		},
+
+		// Python errors
 
 		// Rust errors
 		{
