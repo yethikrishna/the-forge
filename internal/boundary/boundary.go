@@ -231,7 +231,7 @@ func (p *Process) ExitCode() int {
 func (p *Process) Running() bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	if p.cmd.Process == nil {
+	if p.cmd == nil || p.cmd.Process == nil {
 		return false
 	}
 	return p.cmd.ProcessState == nil

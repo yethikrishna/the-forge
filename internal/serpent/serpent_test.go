@@ -58,9 +58,9 @@ func TestRequireExactArgs(t *testing.T) {
 func TestCommandList(t *testing.T) {
 	root := &cobra.Command{Use: "root"}
 	root.AddCommand(
-		&cobra.Command{Use: "beta", Short: "Beta command"},
-		&cobra.Command{Use: "alpha", Short: "Alpha command"},
-		&cobra.Command{Use: "gamma", Short: "Gamma command"},
+		&cobra.Command{Use: "beta", Short: "Beta command", Run: func(*cobra.Command, []string){}},
+		&cobra.Command{Use: "alpha", Short: "Alpha command", Run: func(*cobra.Command, []string){}},
+		&cobra.Command{Use: "gamma", Short: "Gamma command", Run: func(*cobra.Command, []string){}},
 	)
 
 	list := serpent.CommandList(root)
