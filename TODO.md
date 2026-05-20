@@ -85,7 +85,7 @@ All 18 utility packages implemented and tested.
 
 ## Phase 2.5: Agent Quality
 
-- [ ] `forge test` — agent integration testing framework with declarative test cases
+- [x] `forge test` — agent integration testing framework with declarative test cases
 - [ ] `forge undo` — universal agent undo (revert file mutations, git commits, entire sessions)
 - [ ] `forge snapshot` — environment checkpoints (files + git state + env vars)
 - [ ] Agent output quality scoring — multi-dimensional (correctness, style, security, cost)
@@ -128,8 +128,8 @@ All 18 utility packages implemented and tested.
 - [ ] Public release
 
 ## Current Stats
-- ~20.4K lines of Go
-- 39 internal packages
-- 25+ commands
+- ~22K lines of Go
+- 41 internal packages
+- 26+ commands
 - Build: ✅ Vet: ✅
 - Version: 0.4.0
