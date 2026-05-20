@@ -48,7 +48,7 @@ func TestServerHandle(t *testing.T) {
 	if resp.Error != nil {
 		t.Errorf("unexpected error: %s", resp.Error.Message)
 	}
-	if resp.ID != 1 {
+	if resp.ID != float64(1) {
 		t.Errorf("expected ID 1, got %v", resp.ID)
 	}
 }
@@ -290,7 +290,7 @@ func TestAnalyzeDocument(t *testing.T) {
 	content := `package main
 // TODO: implement this
 // FIXME: broken
-var apiKey = "sk-xxx"
+var api_key = "sk-xxx"
 func main() {}`
 
 	diagnostics := s.analyzeDocument("file:///test.go", content)

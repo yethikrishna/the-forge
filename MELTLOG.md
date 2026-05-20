@@ -119,3 +119,22 @@ review, docs, mcp, explain, config
 - ~47K lines of Go
 - 72 internal packages
 - Build: ✅ Vet: ✅
+
+## v0.8.0 — Phase 2 Continued (2026-05-20)
+
+### New Packages
+- **internal/template** — Project scaffolding with variable substitution (go-api, go-cli, python-api built-ins)
+- **internal/capability** — Agent capability registry (capability-based routing, proficiency levels)
+
+### New Commands
+- **forge caps** — register, list, find, best, show
+
+### Fixes
+- Fixed init.go to use new template.Registry API
+- Fixed lsp.go server variable scoping
+- Fixed mcp server rewrite (full protocol support)
+
+### Stats
+- ~53K lines of Go
+- 79 internal packages
+- Build: ✅ Vet: ✅

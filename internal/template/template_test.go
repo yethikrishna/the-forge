@@ -13,11 +13,11 @@ func TestBuiltinTemplates(t *testing.T) {
 		t.Errorf("expected at least 3 built-in templates, got %d", len(templates))
 	}
 
-	for _, t2 := range templates {
-		if t2.ID == "" {
+	for _, tmpl := range templates {
+		if tmpl.ID == "" {
 			t.Error("template should have an ID")
 		}
-		if t2.Name == "" {
+		if tmpl.Name == "" {
 			t.Error("template should have a name")
 		}
 		if len(tmpl.Files) == 0 {
@@ -60,8 +60,8 @@ func TestListWithCustom(t *testing.T) {
 	}
 
 	found := false
-	for _, t := range templates {
-		if t.ID == "custom-test" {
+	for _, tmpl := range templates {
+		if tmpl.ID == "custom-test" {
 			found = true
 		}
 	}
@@ -77,7 +77,7 @@ func TestGet(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Get failed: %v", err)
 	}
-	if t2.Name != "Go REST API" {
+	if tmpl.Name != "Go REST API" {
 		t.Errorf("expected 'Go REST API', got %s", tmpl.Name)
 	}
 }
@@ -231,11 +231,11 @@ func TestSaveAndLoad(t *testing.T) {
 	// Load via List
 	templates, _ := r.List()
 	found := false
-	for _, t2 := range templates {
-		if t2.ID == "saved-template" {
+	for _, tmpl := range templates {
+		if tmpl.ID == "saved-template" {
 			found = true
-			if t2.Name != "Saved Template" {
-				t.Errorf("expected 'Saved Template', got %s", t2.Name)
+			if tmpl.Name != "Saved Template" {
+				t.Errorf("expected 'Saved Template', got %s", tmpl.Name)
 			}
 		}
 	}
