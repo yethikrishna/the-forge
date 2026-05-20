@@ -63,6 +63,31 @@ All 18 utility packages implemented and tested.
 - [ ] `forge blink` — Self-hosted bots
 - [ ] `forge desktop` — Linux desktop for agents
 
+## Phase 4+ Trend-Driven Features
+*Added 2026-05-20 from trend analysis*
+
+### P0 — Do Now (Next 2 Weeks)
+- [ ] MCP Protocol Bridge — `forge mcp` command, MCP server/client for interop with Claude Code, Cursor, etc.
+- [ ] Observability Foundation — Structured trace spans for all agent actions, SQLite storage, `forge traces` CLI command
+- [ ] Ollama Integration Preset — `forge init --local` configures Ollama + DeepSeek/Qwen as defaults
+
+### P1 — Next Month
+- [ ] Agent Role System — Role definitions (planner, coder, tester, reviewer) for `forge orchestrate`
+- [ ] Human-in-the-Loop Workflows — `forge approve` command, pause/resume, agent escalation to user
+- [ ] Security Scanning Hooks — Pre/post agent run hooks, integrate scanners with `forge jail`
+- [ ] Forgefile v2 — TOML multi-agent workflow syntax (GitHub Actions-style for agents)
+
+### P2 — Next Quarter
+- [ ] Web Dashboard MVP — Session mgmt, cost tracking, agent status, trace viewer
+- [ ] Enterprise Auth — OIDC/SAML SSO for `forge serve`, RBAC for agents/sessions/environments
+- [ ] Plugin Marketplace Protocol — Registry with publish/discover/install, versioning, ratings
+- [ ] A2A Protocol Support — Google Agent-to-Agent protocol for inter-framework communication
+
+### Deprioritized / Pivoted
+- `forge desktop` → Pivoted to VS Code / Neovim extensions (100× more users)
+- `forge blink` → Pivoted from bot platform to Forge-as-a-tool for existing bot frameworks
+- `forge mux` → Deprioritized; `forge orchestrate` covers the parallel agent use case
+
 ## Current Stats
 - ~14,000 lines of Go
 - 28+ internal packages

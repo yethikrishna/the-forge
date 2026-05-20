@@ -387,6 +387,29 @@ func (c *ForgeConfig) Validate() []error {
 // parseSimple parses a simple TOML-like config format.
 // Handles [section] headers and key = "value" pairs.
 func parseSimple(data []byte, cfg *ForgeConfig) error {
+	// Ensure maps are initialized
+	if cfg.Models == nil {
+		cfg.Models = ModelsConfig{}
+	}
+	if cfg.Tasks == nil {
+		cfg.Tasks = TasksConfig{}
+	}
+	if cfg.Pipelines == nil {
+		cfg.Pipelines = PipelinesConfig{}
+	}
+	if cfg.Agents == nil {
+		cfg.Agents = map[string]AgentDefConfig{}
+	}
+	if cfg.Envs == nil {
+		cfg.Envs = map[string]EnvConfig{}
+	}
+	if cfg.Jails == nil {
+		cfg.Jails = map[string]JailConfig{}
+	}
+	if cfg.Plugins.Sources == nil {
+		cfg.Plugins.Sources = map[string]string{}
+	}
+
 	var currentSection string
 
 	lines := strings.Split(string(data), "\n")
