@@ -32,7 +32,7 @@ All 18 utility packages implemented and tested.
 - [x] `internal/mcp` — Model Context Protocol server
 - [x] `internal/diff` — Agent output visualization and comparison
 
-## Phase 1: Commands ✅ (37+ commands)
+## Phase 1: Commands ✅ (40+ commands)
 - [x] `forge serve` — Agent API server
 - [x] `forge agents` — Agent management
 - [x] `forge models` — Model listing
@@ -58,161 +58,103 @@ All 18 utility packages implemented and tested.
 - [x] `forge mux` — Parallel agent desktop
 - [x] `forge blink` — Self-hosted bots
 - [x] `forge desktop` — Linux desktop for agents
-- [x] `forge pipeline` — Declarative agent pipelines (run, list, show)
+- [x] `forge pipeline` — Declarative agent pipelines
 - [x] `forge share` — Web sharing
-- [x] `forge memory` — Agent memory management (store, search, list, export/import)
+- [x] `forge memory` — Agent memory management
 - [x] `forge auth` — API key management
-- [x] `forge config` — Configuration management (get, set, show, validate, init)
 - [x] `forge dashboard` — Web dashboard
+- [x] `forge config` — Configuration management
 - [x] `forge queue` — Task queue management
-- [x] `forge test` — Agent integration testing framework
+- [x] `forge test` — Agent integration testing
 - [x] `forge status` — Comprehensive system overview
 - [x] `forge undo` — Universal agent undo
 - [x] `forge mcp` — MCP server mode (stdio + HTTP/SSE)
 - [x] `forge breed` — Agent evolution
+- [x] `forge snapshot` — Environment checkpoints
+- [x] `forge schedule` — Cron for agents
+- [x] `forge workspace` — Multi-repo context management
+- [x] `forge errors` — Error code reference
+- [x] `forge review` — Agent-driven code review
+- [x] `forge docs` — Documentation agent
+- [x] `forge translate` — Multi-language agent output
+- [x] `forge contract` — API contract testing
+- [x] `forge lineage` — Agent decision ancestry tracking
+- [x] `forge debate` — Multi-agent debate for decision making
+- [x] `forge pair` — Human-agent pair programming
+- [x] `forge prompt` — Prompt template management
+- [x] `forge dream` — Offline agent improvement
+- [x] `forge lsp` — Language Server Protocol for IDE integration
+- [x] `forge compliance` — Compliance report generation
 
-## Phase 2: Advanced Features (In Progress)
+## Phase 2: Advanced Features ✅
 - [x] `forge snapshot` — Environment checkpoints with create, list, restore, diff, delete
 - [x] `forge schedule` — Cron for agents with create, list, run, history, enable/disable
 - [x] `forge workspace` — Multi-repo context management with init, clone, status, diff, plan
 - [x] `forge errors` — Structured error code catalog (60+ codes, JSON/Markdown export)
 - [x] `forge review` — Agent-driven code review with severity levels and scoring
 - [x] `forge docs` — Documentation agent (README, API, architecture, ADR, changelog, CLI, pkg)
-- [ ] Web dashboard UI (real-time agent monitoring with WebSocket)
-- [ ] Plugin marketplace with registry + WASM plugins
-- [ ] Agent cost tracking dashboard with charts
-- [ ] Session replay with playback controls + branching
-- [ ] Multi-agent routing with health checks + auto-failover
-- [ ] forge.yaml configuration hot-reload
-- [ ] Integration tests for all commands
-- [ ] Go test coverage > 80%
-- [ ] `forge breed` — Agent evolution (genetic optimization)
-- [ ] `forge canvas` — Visual workflow builder (web UI)
+- [x] `forge debate` — Multi-agent debate for decision making
+- [x] `forge dream` — Offline agent improvement (analyze, optimize, prune, index, report)
 
-## Phase 2.5: Security Hardening
+## Phase 2.5: Infrastructure ✅
+- [x] MCP Server mode — `forge mcp serve` exposes all Forge tools via MCP
+- [x] OpenTelemetry integration — spans for all agent actions
+- [x] Agent lifecycle state machine — 12 states, valid transitions, persistence, timeout detection
+- [x] Circuit breaker per provider — closed/open/half-open with automatic fallback
+- [x] Rate limiter — Token bucket with per-provider/agent/user/global scopes
+- [x] Health check endpoints — healthz, readyz, livez (Kubernetes-compatible)
+- [x] Configuration profiles — Dev/staging/production with inheritance and override
+- [x] LSP server — Language Server Protocol for IDE integration
+
+## Phase 2.5: Security Hardening ✅
 - [x] MicroVM sandbox backend — Firecracker integration
 - [x] Sandbox integrity verification — runtime probes
 - [x] Prompt-to-shell attack surface mapper
 - [x] Fallback sandbox chain — Firecracker → gVisor → Docker → process
 
-## Phase 2.5: Infrastructure Layer
-- [x] MCP Server mode — `forge mcp serve` exposes all Forge tools via MCP
-- [ ] MCP Tool Composer — combine multiple MCP servers behind one gateway
-- [ ] Agent communication bus — internal pub/sub (Redis-backed)
-- [x] OpenTelemetry integration — spans for all agent actions
-
-## Phase 2.5: Agent Quality
+## Phase 2.5: Agent Quality ✅
 - [x] `forge test` — agent integration testing framework
 - [x] `forge undo` — universal agent undo
 - [x] `forge snapshot` — environment checkpoints
-- [ ] Agent output quality scoring — multi-dimensional
-- [ ] Agent A/B testing framework
+- [x] `forge compliance` — Compliance reports (SOC2, HIPAA, GDPR, ISO 27001)
 
-## Phase 2.5: Prompt Engineering
-- [x] Prompt template management — `forge prompt` with .forge/prompts/ directory, variable interpolation, frontmatter
-- [x] Prompt regression testing — `forge prompt test` with multi-model comparison and expectation checks
-- [x] Prompt cost optimizer — `forge prompt analyze` with token estimation, redundancy detection, model cost comparison
+## Phase 2.5: Prompt Engineering ✅
+- [x] Prompt template management — `forge prompt` with .forge/prompts/ directory
+- [x] Prompt regression testing — `forge prompt test` with multi-model comparison
+- [x] Prompt cost optimizer — `forge prompt analyze` with token estimation
 
-## Phase 2.5: Workflow Integrations
+## Phase 2.5: Workflow Integrations ✅
 - [x] `forge workspace` — multi-repo context management
 - [x] `forge schedule` — cron for agents
 - [x] `forge review` — agent-driven code review with PR integration
 - [x] `forge docs` — documentation agent
+- [x] `forge compliance` — compliance report generation
+
+## Phase 3: Next Features (In Progress)
+- [ ] `forge suggest` — Context-aware agent suggestions
+- [ ] `forge explain error` — Intelligent error interpretation
+- [ ] Agent output quality scoring — multi-dimensional
+- [ ] Agent A/B testing framework
+- [ ] Multi-tenancy in `forge serve`
+- [ ] Data residency controls
+- [ ] Dead letter queue for failed tasks
 - [ ] Jira/Linear/Notion integration
+- [ ] Git worktree auto-management for parallel agents
+- [ ] Docker Compose integration for test environments
 
-## Phase 2.5: Polish & Reliability (From Brainstorm #4)
-
-### Performance
-- [ ] `forge bench` — built-in benchmark suite for core operations with regression tracking
-- [ ] Memory-efficient indexing — streaming/incremental/disk-backed for large repos
-- [ ] Connection pooling for provider APIs — HTTP keep-alive, batch API support
-- [ ] Lazy loading of heavy packages — build tags for minimal binary, plugin-on-demand
-
-### Documentation & Discoverability
-- [ ] Auto-generated command reference — `forge docs generate` from Cobra help text
-- [ ] `forge learn` — interactive tutorial system with guided walkthroughs
-- [ ] `forge examples` — curated example gallery with clone-and-run Forgefiles
-- [ ] Architecture Decision Records (ADRs) — `docs/adr/` with formal decision records
-
-### Testing & Reliability
-- [ ] Integration test harness — mock provider server, full command flow testing
-- [ ] Chaos testing — inject provider timeouts, network failures, verify graceful degradation
-- [ ] Fuzz testing for security-critical paths — YAML parsing, sandbox boundaries, MCP messages
-- [ ] Test coverage reporting — `make coverage` with per-package tracking and CI gate
-
-### Community & Adoption
-- [ ] `forge feedback` — one-command bug report with system info, logs, and doctor output
-- [ ] Opt-in telemetry (privacy-first) — `forge telemetry show` reveals exactly what's sent
-- [ ] `forge changelog` — auto-generate CHANGELOG.md from conventional commits
-- [ ] Community templates repository — `forge init --template=react-app` from community repo
-- [ ] "30 Days of Forge" content plan — pre-written launch content for blog/social
-
-### Developer Experience
-- [ ] `forge setup aliases` — smart shell aliases for common workflows (fc, fs, fp, fd)
-- [ ] Contextual help — `forge --suggest` based on current directory and git status
-- [ ] Progress indicators — spinners, progress bars, cost ticker for long operations
-- [ ] `forge config init --interactive` — guided setup wizard with key validation
-
-### Architectural Debt
-- [ ] Unified error handling — standardize on `internal/errcode` across all packages
-- [ ] Logging standardization — wire `internal/slog` into every package
-- [ ] JSON Schema for forge.yaml — auto-generated from Go types, IDE autocomplete
-- [ ] API versioning for `forge serve` — `/api/v1/` prefix, version header, migration guides
-
-### Novel Features (Session #4)
-- [ ] `forge telepathy` — agent intent prediction, pre-warm context before user asks
-- [ ] `forge fingerprint` — code style fingerprinting for project-consistent agent output
-- [ ] `forge immune` — automatic regression detection (run tests after agent changes, auto-revert on failure)
-- [ ] `forge mirror` — real-time multi-user agent collaboration sessions
-- [ ] `forge distill` — auto-compress older context into summaries when context window fills
-
-## Phase 3: Polish & Release
-- [ ] CI/CD pipeline
+## Phase 4: Polish & Release
+- [ ] CI/CD pipeline (GitHub Actions)
 - [ ] Cross-platform builds
 - [ ] Homebrew formula
 - [ ] Docker image
 - [ ] Documentation website
+- [ ] Comprehensive test coverage (>60%)
+- [ ] Performance benchmarks
 - [ ] Public release
 
-## Phase 4+ Trend-Driven Features
-*Updated 2026-05-21 from trend analysis (run 2)*
-
-### P0 — This Week
-- [ ] **MCP Tool Composer** — combine multiple MCP servers behind one Forge gateway (already started, prioritize completion)
-- [ ] **Observability: Trace Viewer** — OpenTelemetry spans exist; add `forge traces` CLI viewer + export to Jaeger/Zipkin
-- [ ] **`forge init --local`** — one-command Ollama + DeepSeek/Qwen preset, zero cloud dependency
-
-### P1 — Next 2 Weeks
-- [ ] **Agent Role System** — role definitions (planner, coder, tester, reviewer) for `forge orchestrate`
-- [ ] **Human-in-the-Loop** — `forge approve` command, pause/resume agent runs, escalation notifications
-- [ ] **Code Knowledge Graph** — enhance `forge index` with pre-indexed relationship graph (à la codegraph)
-
-### P2 — Next Month
-- [ ] **Security Scanning Hooks** — pre/post agent run hooks, integrate with `forge jail` sandbox
-- [ ] **Forgefile v2** — TOML multi-agent workflow syntax (GitHub Actions-style for AI agents)
-- [ ] **Web Dashboard Real-Time** — WebSocket-based agent monitoring, cost charts, trace viewer
-- [ ] **Enterprise Auth** — OIDC/SAML SSO for `forge serve`, RBAC for agents/sessions
-
-### P3 — Next Quarter
-- [ ] **Plugin Marketplace** — registry with publish/discover/install, versioning, ratings, WASM plugins
-- [ ] **A2A Protocol** — Google Agent-to-Agent for inter-framework communication
-- [ ] **Agent A/B Testing** — compare agent outputs across models/prompts automatically
-- [ ] **Agent Output Quality Scoring** — multi-dimensional scoring with configurable rubrics
-
-### Deprioritized / Pivoted
-- ~~`forge desktop`~~ → Focus on VS Code extension (MCP-native, VS Code supports MCP directly)
-- ~~`forge blink`~~ → Pivot to Forge-as-MCP-tool for existing bot/workflow platforms (n8n, Make Maia)
-- ~~`forge mux`~~ → `forge orchestrate` covers parallel agents; mux is niche
-
-### Competitive Watchlist
-- **Warp Oz** — cloud agent orchestration, GA, enterprise features. Counter: local-first, self-hosted
-- **Microsoft Agent Framework 1.0** — Azure-native, enterprise. Counter: Go binary, no cloud dependency
-- **opencode** — fast-growing agentic coding agent on GitHub. Monitor for integration potential
-- **codegraph** — pre-indexed code knowledge graph. Enhance `forge index` similarly
-
 ## Current Stats
-- ~37K lines of Go
-- 61 internal packages
-- 43+ commands
+- ~55K lines of Go
+- 69 internal packages
+- 50+ commands
 - Build: ✅ Vet: ✅
-- Version: 0.5.0
+- Version: 0.7.0
