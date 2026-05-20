@@ -67,13 +67,20 @@ func TestRecordFailedTrial(t *testing.T) {
 	params := DefaultAgentParams()
 	o.CreateStudy("test-failed", params, "maximize")
 
+	// First record a successful trial
+	o.RecordTrial(ParamValues{"temperature": 0.5}, 0.5, 1.0, "")
+
+	// Then a failed trial
 	values, _ := o.Suggest()
 	o.RecordTrial(values, 0, 0, "timeout")
 
 	best := o.Best()
-	// Failed trial should not be best
-	if best != nil && best.Score == 0 {
-		t.Error("failed trial should not be best")
+	if best == nil {
+		t.Fatal("expected a best trial")
+	}
+	// Best should be the successful one, not the failed one
+	if best.Score != 0.5 {
+		t.Errorf("expected best score 0.5, got %f", best.Score)
 	}
 }
 

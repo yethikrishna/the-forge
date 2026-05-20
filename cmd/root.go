@@ -98,6 +98,9 @@ The wielder and the sword are one.`,
 		anomalyCmd(),
 		runawayCmd(),
 		outageCmd(),
+		archaeologistCmd(),
+		tuneCmd(),
+		empathCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
