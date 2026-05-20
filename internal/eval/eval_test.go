@@ -122,27 +122,19 @@ func TestRunAllWithErrors(t *testing.T) {
 }
 
 func TestScoreToGrade(t *testing.T) {
-	tests := []struct {
-		score float64
-		grade eval.Grade
-	}{
-		{0.99, eval.GradeAPlus},
-		{0.95, eval.GradeAPlus},
-		{0.90, eval.GradeA},
-		{0.80, eval.GradeB},
-		{0.70, eval.GradeC},
-		{0.60, eval.GradeD},
-		{0.30, eval.GradeF},
+	runner := eval.NewRunner("")
+	bm := eval.Benchmark{ID: "grade-test", Name: "Grade Test", Expected: "expected keywords"}
+
+	// High score -> A+
+	highResult := runner.RunBenchmark(bm, "test", "test", "expected keywords found", 0, 0)
+	if highResult.Grade != eval.GradeAPlus {
+		t.Errorf("high score should be A+, got %s", highResult.Grade)
 	}
 
-	for _, tt := range tests {
-		// Test via RunBenchmark which uses scoreToGrade internally
-		runner := eval.NewRunner("")
-		bm := eval.Benchmark{ID: "grade-test", Name: "Grade Test", Expected: "expected keywords"}
-		result := runner.RunBenchmark(bm, "test", "test", "", 0, 0)
-		if result.Grade == "" {
-			t.Error("should have a grade")
-		}
+	// Zero score -> F
+	zeroResult := runner.RunBenchmark(bm, "test", "test", "nothing matching", 0, 0)
+	if zeroResult.Grade != eval.GradeF {
+		t.Errorf("zero score should be F, got %s", zeroResult.Grade)
 	}
 }
 

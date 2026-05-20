@@ -152,7 +152,7 @@ func (r *Runner) RunBenchmark(benchmark Benchmark, agent, model, output string, 
 		Output:      output,
 		Expected:    benchmark.Expected,
 		Score:       score,
-		Grade:       scoreToGrade(score),
+		Grade:       ScoreToGrade(score),
 		Duration:    duration.Round(time.Millisecond).String(),
 		Cost:        cost,
 		Timestamp:   time.Now().UTC(),
@@ -205,7 +205,7 @@ func (r *Runner) RunAll(benchmarks []Benchmark, agent, model string, runFn func(
 	if len(run.Results) > 0 {
 		run.AvgScore = totalScore / float64(len(run.Results))
 	}
-	run.Grade = scoreToGrade(run.AvgScore)
+	run.Grade = ScoreToGrade(run.AvgScore)
 	run.Duration = time.Since(start).Round(time.Millisecond).String()
 
 	r.mu.Lock()
