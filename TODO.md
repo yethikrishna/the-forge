@@ -164,7 +164,7 @@ All 18 utility packages implemented and tested.
 - [x] `forge quickstart` — 5-minute interactive onboarding with guaranteed first win
 - [x] Achievement system — track milestones (first chat, first pipeline, first orchestration)
 - [x] Error messages that teach — every error includes fix suggestion + docs link
-- [ ] Progressive complexity ladder — Level 0 (chat) through Level 5 (serve), documented path
+- [x] Progressive complexity ladder — Level 0 (chat) through Level 5 (serve), documented path
 
 ## Phase 3.5: Novel Features (From Brainstorm #5)
 
