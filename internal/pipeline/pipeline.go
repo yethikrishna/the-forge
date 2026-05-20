@@ -181,6 +181,8 @@ func (e *Executor) Execute(ctx context.Context, pipe Pipeline) (*PipelineResult,
 
 // executeSequential runs steps one after another.
 func (e *Executor) executeSequential(ctx context.Context, pipe Pipeline, result *PipelineResult, outputs map[string]string) *PipelineResult {
+	hasFailure := false
+
 	for _, step := range pipe.Steps {
 		// Check dependencies
 		if !e.checkDependencies(step, outputs) {
@@ -188,6 +190,7 @@ func (e *Executor) executeSequential(ctx context.Context, pipe Pipeline, result 
 				Step:   step,
 				Status: StatusSkipped,
 			})
+			hasFailure = true
 			continue
 		}
 
@@ -195,11 +198,13 @@ func (e *Executor) executeSequential(ctx context.Context, pipe Pipeline, result 
 		result.Steps = append(result.Steps, sr)
 
 		if sr.Status == StatusFailed {
-			if pipe.OnFail == "continue" {
-				continue
+			hasFailure = true
+			if pipe.OnFail != "continue" {
+				result.Status = StatusFailed
+				return result
 			}
-			result.Status = StatusFailed
-			return result
+			// continue on failure
+			continue
 		}
 
 		// Store output for downstream steps
@@ -208,7 +213,11 @@ func (e *Executor) executeSequential(ctx context.Context, pipe Pipeline, result 
 		}
 	}
 
-	result.Status = StatusCompleted
+	if hasFailure {
+		result.Status = StatusFailed
+	} else {
+		result.Status = StatusCompleted
+	}
 	return result
 }
 
