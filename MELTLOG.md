@@ -97,3 +97,25 @@ review, docs, mcp, explain, config
 - **Commands:** 43
 - **Build:** ✅ **Vet:** ✅
 - **Version:** 0.5.0
+
+## v0.6.0 — Phase 2 Continued (2026-05-20)
+
+### New Packages
+- **internal/lineage** — Agent lineage tracking (parent/child relationships, family trees, ancestry chains)
+- **internal/debate** — Multi-agent debate for decision making (positions, arguments, verdicts, judge evaluation)
+- **internal/circuit** — Circuit breakers for agent calls (closed/open/half-open states, failure thresholds, recovery)
+- **internal/agentgraph** — DAG execution engine for multi-agent pipelines (topological sort, parallel execution levels)
+- **internal/lifecycle** — Agent lifecycle management (birth → running → idle → stopped → dead)
+- **internal/ratelimit** — Token bucket rate limiting for API calls
+- **internal/resilience** — Resilience patterns (retry with backoff, timeout, bulkhead)
+
+### New Commands
+- **forge lineage** — record, list, show, tree, ancestors, descendants
+- **forge debate** — start, argue, judge, list, show
+- **forge circuit** — create, status, list, trip, reset, stats
+- **forge graph** — create, add-node, add-edge, validate, run, show, list
+
+### Stats
+- ~47K lines of Go
+- 72 internal packages
+- Build: ✅ Vet: ✅
