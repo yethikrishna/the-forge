@@ -45,7 +45,7 @@ func TestReadyzHealthy(t *testing.T) {
 
 	var body map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &body)
-	if body["status"] != StatusHealthy {
+	if body["status"] != string(StatusHealthy) {
 		t.Errorf("expected healthy, got %v", body["status"])
 	}
 }
@@ -92,7 +92,7 @@ func TestReadyzDegraded(t *testing.T) {
 
 	var body map[string]interface{}
 	json.Unmarshal(w.Body.Bytes(), &body)
-	if body["status"] != StatusDegraded {
+	if body["status"] != string(StatusDegraded) {
 		t.Errorf("expected degraded, got %v", body["status"])
 	}
 }
