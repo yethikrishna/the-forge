@@ -154,7 +154,7 @@ All 18 utility packages implemented and tested.
 - [ ] File locking for concurrent agents — advisory locks, conflict detection, auto-merge
 - [ ] `--output=json/quiet/verbose` on every command — stable schema, no ANSI in JSON mode
 - [ ] Session resumption after crash — reload from replay log, restore agent state
-- [ ] Provider outage playbook — detect outage, auto-fallback, notify, generate incident report
+- [x] Provider outage playbook — detect outage, auto-fallback, notify, generate incident report
 - [x] Cost anomaly detection — rate-based alerting, hard budget stops, root cause analysis
 - [x] Agent runaway detection — stuck loop/stalled/context explosion detection with auto-terminate
 - [ ] Disk/memory/goroutine resource monitoring with auto-cleanup
