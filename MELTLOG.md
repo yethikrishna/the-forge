@@ -115,3 +115,18 @@
 - **Commands:** 86
 - **Build:** ✅ **Vet:** ✅ **All Tests:** ✅
 - **Version:** 1.1.0
+
+### Continued Session — Production Hardening & Commands
+
+11. **internal/filelock/filelock.go** — Advisory file locking for concurrent agents (shared/exclusive, per-agent release, metadata)
+12. **internal/anomaly/anomaly.go** — Cost anomaly detection (z-score spikes, budget limits, hard stops, per-agent tracking)
+13. **cmd/achievement.go** — `forge achievement` command (list, unlock, status)
+14. **cmd/seed.go** — `forge seed` command (init, templates)
+15. Fixed empath and anomaly command files to match current package APIs
+
+### Final Stats
+- Lines: ~79K total Go
+- 113 internal packages
+- 86 cmd files
+- Version: 1.1.0
+- Build: ✅ Vet: ✅ All tests: ✅
