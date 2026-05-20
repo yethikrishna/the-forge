@@ -136,3 +136,91 @@ Best practices from NVIDIA AI Red Team, Glean, and industry guidance:
 - https://cline.bot/
 - https://promethium.ai/guides/multi-agent-ai-platform-comparison-2026/
 - https://medium.com/@akaivdo/multi-agent-frameworks-in-2025-and-2026-predictions-eaf7a5006f24
+
+---
+
+## 2026-05-20 (20:05 UTC) — Incremental Update
+
+### 1. New Tool: Grok Build (xAI)
+
+**xAI launched Grok Build on May 14–15, 2026** — a terminal-based AI coding agent entering early beta.
+
+- Terminal-native CLI for natural-language code generation, debugging, and multi-step workflows
+- Parallel sub-agents, worktrees, shell commands, VS Code integration
+- Powered by Grok 4.3 with up to 1M token context
+- Currently limited to SuperGrok Heavy subscribers ($300/month)
+- Competes directly with Claude Code and Codex
+
+This is a significant new entrant — xAI now has a coding agent to match Anthropic and OpenAI.
+
+### 2. Critical Sandbox Vulnerability Disclosures (May 2026)
+
+**vm2 Sandbox Escape Wave** — 10–13 CVEs disclosed May 4–5, 2026 (CVSS 9.0–10.0):
+- Node.js `vm2` library used by many AI agent frameworks for JS sandboxing
+- Escapes allow host RCE from untrusted/LLM-generated JavaScript
+- CVE-2026-22709 (Promise callback bypass, Jan), CVE-2026-26956 (WASM escape), CVE-2026-25881 (proxy unwrap)
+- Affects any agent framework using vm2 for code isolation
+
+**Microsoft Semantic Kernel** — CVE-2026-25592 & CVE-2026-26030 (May 7, 2026):
+- Sandbox bypass in Azure Container Apps dynamic sessions
+- Single malicious prompt can escape isolation → arbitrary file writes → host RCE
+- Microsoft: "Prompts become shells"
+
+**CrewAI** — CERT/CC disclosed 4 vulnerabilities (March 2026, CVE-2026-2275 etc.):
+- Unsafe Docker fallback when sandbox unreachable → RCE, arbitrary file read, SSRF
+
+**NVIDIA NeMoClaw** — CVE-2026-24222 (April 2026): Improper isolation in sandbox initialization.
+
+**OpenAI Codex** — Sandbox escape via ZDI-26-305 (April–May 2026).
+
+**Takeaway:** 2026 is seeing a surge in agent sandbox escapes. The pattern is clear: language-level and shared-kernel container isolation is insufficient. MicroVMs (Firecracker, Kata) are the recommended baseline.
+
+### 3. Coding Agent Updates (Mid-May 2026)
+
+**Cursor** — Rapid May updates:
+- May 20: Cursor Automations in Agents Window with multi-repo support
+- May 19: Native Jira integration
+- May 18: Composer 2.5 (smarter long-running task handling)
+- May 13: Full-screen tabs, compact chats, Dockerfile support, security/governance refinements
+
+**OpenAI Codex / GPT-5.5** — Launched April 23, 2026:
+- Terminal-Bench 82.7%, state-of-the-art
+- Codex now supports Windows sandbox, mobile app integration, Codex Security plugin
+- Parallel agents with isolated worktrees, code review, mobile steering
+
+**Claude Code** — Opus 4.7 launched:
+- Rate limits doubled, Agent View for multi-session management
+- Claude Managed Agents: dreaming, multi-agent orchestration, outcomes tracking, webhooks
+
+**Aider** — No major May releases; continues as lightweight Git-native CLI with latest model support.
+
+### 4. Framework & Platform Updates
+
+- **LangGraph v1.2** — Updates in May (production leader continues maturing)
+- **Genkit Middleware** (May 14, 2026) — Composable hooks for Google's Genkit framework (retries, fallbacks, tool approval). TypeScript/Go/Dart, Python upcoming.
+- **Microsoft Agent 365 GA** (May 1, 2026) — Enterprise observability, governance, and security layer for AI agents
+- **OpenClaw v2026.5.12** (May 14, 2026) — New model support, messaging features, integrations
+
+### 5. Protocol Landscape Update
+
+- **MCP + A2A remains the dominant combination** for production multi-agent systems
+- No major protocol changes in May
+- **A2A adoption caveat**: Some analysts note slower real-world uptake vs MCP due to implementation overhead; many teams achieve similar orchestration with simpler patterns or MCP extensions
+- Reference architecture: Orchestrator uses A2A to discover/delegate to sub-agents; each sub-agent is an MCP client connecting to tool/data servers
+
+### Sources
+
+- https://x.ai/news
+- https://www.engadget.com/2173482/xai-coding-agent-grok-build/
+- https://www.techzine.eu/news/devops/141340/xai-brings-ai-coding-agent-grok-build-to-the-terminal/
+- https://www.kodemsecurity.com/resources/vm2-sandbox-escape-vulnerabilities-the-2026-cve-wave-turning-ai-agents-into-host-rce-vectors
+- https://www.microsoft.com/en-us/security/blog/2026/05/07/prompts-become-shells-rce-vulnerabilities-ai-agent-frameworks/
+- https://modal.com/resources/best-code-execution-sandboxes-crewai
+- https://nvd.nist.gov/vuln/detail/cve-2026-24222
+- https://www.zerodayinitiative.com/advisories/published/
+- https://cursor.com/changelog
+- https://openai.com/index/introducing-gpt-5-5/
+- https://releasebot.io/updates/anthropic/claude
+- https://www.digitalapplied.com/blog/ai-agent-protocol-ecosystem-map-2026-mcp-a2a-acp-ucp
+- https://www.credal.ai/blog/what-happened-to-a2a-protocol
+- https://github.com/Zijian-Ni/awesome-ai-agents-2026
