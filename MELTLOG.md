@@ -48,3 +48,34 @@
 - Internal packages: ~59 → ~76+ (+17)
 - Commands: ~40 → ~50+ (+10)
 - All tests pass. Build and vet clean.
+
+## Session 2026-05-20 (Evening) — Bridge & Novel Features
+
+### What was built
+1. **internal/bridge/adapter.go** — Protocol adapters (MCP, A2A, ACP) with send/receive/status
+2. **internal/bridge/router.go** — Message router with HTTP API, route matching, stats
+3. **internal/bridge/discovery.go** — Protocol endpoint discovery (localhost scan, MCP config scan, health checks)
+4. **internal/identity/identity.go** — Ed25519 agent identities, signed manifests, trust registry (5 trust levels)
+5. **internal/graceful/graceful.go** — Graceful shutdown with state persistence, drainers, session resumption
+6. **internal/monitor/monitor.go** — Resource monitoring (goroutines, heap, GC, disk), alert thresholds, watchdog
+7. **internal/tune/tune.go** — Bayesian hyperparameter optimization (Thompson sampling, expected improvement)
+8. **internal/empath/empath.go** — User frustration detection (caps, impatience, repeats, short responses, error loops)
+9. **internal/witness/witness.go** — Cryptographic proof via Merkle trees (record, prove, verify actions)
+10. **internal/archaeologist/archaeologist.go** — AI-powered git forensics (blame, file log, hotspots, dead code detection)
+
+### Commands added
+- **forge bridge serve** — Start bridge server with protocol routing
+- **forge bridge discover** — Discover MCP/A2A/ACP endpoints
+- **forge bridge status** — Show bridge status and adapters
+- **forge bridge identity** — Manage cryptographic agent identities (generate, list, sign, verify)
+- **forge bridge trust** — Manage trust registry (grant, revoke, list, check)
+- **forge archaeologist** — Git forensics (blame, log, hotspots, dead-code, why)
+- **forge tune** — Bayesian hyperparameter optimization (create, suggest, record, best, history)
+- **forge empath** — Frustration detection (analyze, status, reset)
+
+### Stats
+- Lines: ~65K → ~77K (+12K)
+- Internal packages: ~76 → ~84 (+8)
+- Commands: ~52 → ~60+ (+8)
+- Version: 1.0.0 → 1.1.0
+- All tests pass. Build and vet clean.

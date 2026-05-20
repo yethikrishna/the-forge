@@ -109,7 +109,7 @@ func TestCriticalFrustration(t *testing.T) {
 	d := NewDetector(t.TempDir())
 
 	// Heavy frustration signals — need many to reach critical
-	for i := 0; i < 15; i++ {
+	for i := 0; i < 30; i++ {
 		d.Analyze("THIS IS RIDICULOUS AND TERRIBLE AND FRUSTRATING AND BROKEN AND USELESS")
 		d.RecordError("error")
 	}

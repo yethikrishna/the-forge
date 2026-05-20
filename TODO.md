@@ -153,7 +153,7 @@ All 18 utility packages implemented and tested.
 - [x] Graceful shutdown — SIGTERM/SIGINT handling with state persistence, drain connections
 - [x] File locking for concurrent agents — advisory locks, conflict detection, auto-merge
 - [ ] `--output=json/quiet/verbose` on every command — stable schema, no ANSI in JSON mode
-- [ ] Session resumption after crash — reload from replay log, restore agent state
+- [x] Session resumption after crash — reload from replay log, restore agent state
 - [x] Provider outage playbook — detect outage, auto-fallback, notify, generate incident report
 - [x] Cost anomaly detection — rate-based alerting, hard budget stops, root cause analysis
 - [x] Agent runaway detection — stuck loop/stalled/context explosion detection with auto-terminate
@@ -168,11 +168,11 @@ All 18 utility packages implemented and tested.
 
 ## Phase 3.5: Novel Features (From Brainstorm #5)
 
-- [ ] `forge archaeologist` — AI-powered git forensics (why was code written, dead code detection)
-- [ ] `forge tune` — Bayesian hyperparameter optimization for agents (temp, top_p, system prompt)
+- [x] `forge archaeologist` — AI-powered git forensics (why was code written, dead code detection)
+- [x] `forge tune` — Bayesian hyperparameter optimization for agents (temp, top_p, system prompt)
 - [ ] `forge seed` — project bootstrapping from natural language intent
 - [x] `forge witness` — cryptographic proof of agent actions (Merkle tree, tamper verification)
-- [ ] `forge empath` — user frustration detection with adaptive response
+- [x] `forge empath` — user frustration detection with adaptive response
 
 ## Phase 3.5: Strategic (From Brainstorm #5)
 
@@ -194,8 +194,8 @@ All 18 utility packages implemented and tested.
 - [ ] Public release
 
 ## Current Stats
-- ~60K lines of Go
-- 71 internal packages
-- 50+ commands
+- ~77K lines of Go
+- 84 internal packages
+- 60+ commands
 - Build: ✅ Vet: ✅
-- Version: 0.7.0
+- Version: 1.1.0
