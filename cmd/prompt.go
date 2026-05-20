@@ -10,6 +10,7 @@ import (
 	"github.com/forge/sword/internal/pretty"
 	"github.com/forge/sword/internal/prompt"
 	"github.com/forge/sword/internal/prompttest"
+	"github.com/forge/sword/internal/tokencost"
 	"github.com/spf13/cobra"
 )
 
@@ -290,6 +291,100 @@ Examples:
 		},
 
 		&cobra.Command{
+			Use:   "analyze [prompt-text | -f file]",
+			Short: "Analyze prompt token usage and cost",
+			Long: `Analyze a prompt for token efficiency, redundancy, and cost.
+Shows token count, cost per model, and optimization suggestions.
+
+Examples:
+  forge prompt analyze "Review this code for bugs"
+  forge prompt analyze -f prompt.txt
+  forge prompt analyze -f prompt.txt --compare-models`,
+			Args:  cobra.MaximumNArgs(1),
+			RunE: func(cmd *cobra.Command, args []string) error {
+				var text string
+
+				file, _ := cmd.Flags().GetString("file")
+				if file != "" {
+					data, err := os.ReadFile(file)
+					if err != nil {
+						return fmt.Errorf("failed to read file: %w", err)
+					}
+					text = string(data)
+				} else if len(args) > 0 {
+					text = args[0]
+				} else {
+					return fmt.Errorf("provide prompt text or use --file")
+				}
+
+				a := tokencost.Analyze(text)
+
+				fmt.Println(pretty.HeaderLine("Prompt Analysis"))
+				fmt.Println()
+
+				// Basic stats
+				fmt.Printf("  Characters: %d\n", a.CharCount)
+				fmt.Printf("  Words:      %d\n", a.WordCount)
+				fmt.Printf("  Sentences:  %d\n", a.Sentences)
+				fmt.Printf("  Tokens:     %s (estimated)\n", pretty.Sprint(pretty.BoldF, fmt.Sprintf("%d", a.EstimatedTokens)))
+
+				// Cost estimates
+				fmt.Println()
+				fmt.Println(pretty.Sprint(pretty.BoldF, "  Cost per model (input only):"))
+				showAll, _ := cmd.Flags().GetBool("compare-models")
+				models := []string{"gpt-5-mini", "claude-sonnet-4", "gemini-2.5-flash"}
+				if showAll {
+					for m := range tokencost.ModelPricing {
+						models = append(models, m)
+					}
+				}
+				for _, model := range models {
+					if cost, ok := a.CostEstimates[model]; ok {
+						fmt.Printf("    %-22s %s\n", model, tokencost.FormatCost(cost))
+					}
+				}
+
+				// Redundancies
+				if len(a.Redundancies) > 0 {
+					fmt.Println()
+					fmt.Println(pretty.Sprint(pretty.BoldF, "  Redundancies:"))
+					for _, r := range a.Redundancies {
+						fmt.Printf("    %s %s (%d tokens waste)\n",
+							pretty.Sprint(pretty.Warning, "!"),
+							r.Description, r.TokensWaste)
+					}
+				}
+
+				// Suggestions
+				if len(a.Suggestions) > 0 {
+					fmt.Println()
+					fmt.Println(pretty.Sprint(pretty.BoldF, "  Optimizations:"))
+					for _, s := range a.Suggestions {
+						saved := ""
+						if s.TokensSaved > 0 {
+							saved = fmt.Sprintf(" (save ~%d tokens)", s.TokensSaved)
+						}
+						fmt.Printf("    %s [%s] %s%s\n",
+							pretty.Sprint(pretty.Success, pretty.Arrow),
+							s.Type, s.Description, saved)
+					}
+				}
+
+				// Summary
+				fmt.Println()
+				if a.SavingsPercent > 0 {
+					fmt.Printf("  %s Optimized estimate: %d tokens (%.1f%% potential savings)\n",
+						pretty.Sprint(pretty.Info, pretty.Arrow),
+						a.OptimizedTokens, a.SavingsPercent)
+				} else {
+					fmt.Println(pretty.SuccessLine("Prompt is well-optimized"))
+				}
+
+				return nil
+			},
+		},
+
+		&cobra.Command{
 			Use:   "test [regression-file]",
 			Short: "Run prompt regression tests",
 			Long: `Run regression tests against prompt templates.
@@ -400,9 +495,11 @@ Examples:
 	cmd.Commands()[4].Flags().String("description", "", "Template description")
 	cmd.Commands()[4].Flags().String("model", "", "Suggested model")
 	cmd.Commands()[4].Flags().StringSlice("tags", nil, "Tags")
-	cmd.Commands()[6].Flags().Bool("dry-run", false, "Show tests without running")
-	cmd.Commands()[6].Flags().String("response", "", "Static response for testing")
-	cmd.Commands()[6].Flags().BoolP("verbose", "v", false, "Show full responses")
+	cmd.Commands()[6].Flags().String("file", "f", "Read prompt from file")
+	cmd.Commands()[6].Flags().Bool("compare-models", false, "Show all model cost comparisons")
+	cmd.Commands()[7].Flags().Bool("dry-run", false, "Show tests without running")
+	cmd.Commands()[7].Flags().String("response", "", "Static response for testing")
+	cmd.Commands()[7].Flags().BoolP("verbose", "v", false, "Show full responses")
 
 	return cmd
 }
