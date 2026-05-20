@@ -229,9 +229,49 @@ All 18 utility packages implemented and tested.
 - [ ] Performance benchmarks
 - [ ] Public release
 
+## Phase 4.5: The Glue — Coherent Experience (From Brainstorm #6)
+
+### CLI Consistency
+- [ ] Unified command grammar audit — `forge <noun> <verb>` everywhere
+- [ ] `forge overview` — single summary pane (agents, cost, sessions, alerts, quick actions)
+- [ ] `forge find` — global search across memory, sessions, pipelines, templates, codebase
+
+### Trust Infrastructure
+- [ ] Transparent mode (`--transparent`) — show model selection, token count, cost, tools, file access in real-time
+- [ ] Agent trust scores — composite 0-100 from feedback, undo rate, test results, security findings
+- [ ] Action preview before destructive operations — show plan, user approves/modifies/rejects
+- [ ] Per-session permission scoping — `--scope=read-only`, `--scope=src-only`, `--scope=sandbox`, `--scope=full`
+
+### Revenue & Sustainability
+- [ ] Forge Pro tier design — cloud sync, priority routing, advanced analytics, team features ($20/mo)
+- [ ] Enterprise license framework — SSO, RBAC, compliance automation, SLA, per-seat pricing
+- [ ] Forge Marketplace revenue model — 70/30 creator/Forge split, verified agents
+- [ ] Forge Cloud usage pricing — per agent-hour or per million tokens, free tier 100K tokens/mo
+
+### 1% Improvements
+- [ ] Sub-100ms command startup — lazy module init, benchmark in CI
+- [ ] Zero-config auto-detection — API keys from env, project type from files, git remote → workspace
+- [ ] Predictive prefetching — pre-load context before user needs it
+- [ ] Offline mode (`--offline`) — local models only, cached indexes, no telemetry
+- [ ] Session tags & organization — tag sessions, filter, auto-tag, saved searches
+
+### Deep Multi-Agent Patterns
+- [ ] Agent handoff protocol — standardized context/artifact/confidence transfer between agents
+- [ ] Agent consensus engine — run N agents, majority/weighted/unanimous/adversarial vote
+- [ ] Hierarchical agent trees — parent → child → grandchild delegation with cost rollup
+- [ ] Persistent agent personas — named personas with style preferences, memory, trust score
+
+### The Impossible-Until-Now
+- [ ] `forge simulate` — test agents on historical data (bug reports, reviews, cost patterns)
+- [ ] `forge translate-pipeline` — natural language → forge.yaml and vice versa
+- [ ] `forge refactor` — whole-codebase dependency-aware refactoring with migration plans
+- [ ] `forge clone-behavior` — record human task → create agent that repeats it
+- [ ] `forge quantum` — parallel universe exploration (N approaches, pick the best)
+- [ ] Cross-package event correlation — correlate anomalies across cost/health/lifecycle/replay
+
 ## Current Stats
-- ~77K lines of Go
-- 84 internal packages
-- 60+ commands
+- ~84K lines of Go
+- 119 internal packages
+- 80+ commands
 - Build: ✅ Vet: ✅
 - Version: 1.1.0

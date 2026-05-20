@@ -170,7 +170,11 @@ func (l *Ladder) CurrentLevel() Level {
 func (l *Ladder) MilestonesForLevel(level Level) []*Milestone {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	return l.milestonesForLevel(level)
+}
 
+// milestonesForLevel is the lock-free internal version.
+func (l *Ladder) milestonesForLevel(level Level) []*Milestone {
 	var result []*Milestone
 	for _, m := range l.Milestones {
 		if m.Level == level {
@@ -294,7 +298,7 @@ func (l *Ladder) Path() string {
 
 		b.WriteString(fmt.Sprintf("%s %s Level %d: %s %s\n", current, completed, level, level.Icon(), level))
 
-		milestones := l.MilestonesForLevel(level)
+		milestones := l.milestonesForLevel(level)
 		for _, m := range milestones {
 			status := "⬜"
 			if m.Completed {
@@ -331,7 +335,7 @@ func (l *Ladder) Stats() map[string]interface{} {
 		"xp":            l.XP,
 		"total_milestones": total,
 		"completed_milestones": completed,
-		"overall_pct":   l.OverallProgress(),
+		"overall_pct":   l.overallProgress(),
 	}
 }
 

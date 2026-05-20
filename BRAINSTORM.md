@@ -1567,3 +1567,278 @@ Three protocols dominate: MCP (tool connectivity), A2A (agent-to-agent), ACP (en
 ---
 
 *"86 packages is enough. The question isn't 'what else can we build?' — it's 'how do we make what we have indispensable?'"*
+
+---
+
+## 2026-05-20 23:26 UTC — Brainstorm Session #6
+
+*Project state: ~84K Go lines, 119 internal packages, 89 cmd files, v1.1.0 shipped. Phase 3 started. Sessions #1–5 generated ~170+ ideas. Almost all have been implemented. The project is no longer a prototype — it's a comprehensive platform.*
+
+*This session asks a different question: not "what to build" but "what makes Forge the tool developers reach for first, every day, for years?" Focus on: (1) the missing glue that connects 119 packages into a coherent experience, (2) the invisible infrastructure of trust, (3) revenue and sustainability, (4) the 1% improvements that compound into dominance.*
+
+---
+
+### A. The Glue — Connecting 119 Packages Into One Experience
+
+**A1. Unified Command Grammar**
+- Right now: `forge memory store`, `forge pipeline run`, `forge schedule create`, `forge session list` — inconsistent verb/noun ordering
+- Proposed grammar: `forge <noun> <verb>` everywhere:
+  - `forge agent list|start|stop|logs`
+  - `forge pipeline list|run|show|cancel`
+  - `forge memory store|search|list|export`
+  - `forge session list|resume|replay|share`
+  - `forge cost show|compare|budget|anomalies`
+- Consistency = discoverability = "I already know how to use the command I haven't tried yet"
+- **Why:** 119 packages with inconsistent CLI grammar feels like 119 separate tools. Consistent grammar makes it feel like ONE tool. This is the difference between Linux (scattered) and macOS (coherent).
+
+**A2. Global Search — `forge find`**
+- `forge find "postgres connection pool"` → searches across:
+  - Agent memory
+  - Session history
+  - Pipeline definitions
+  - Prompt templates
+  - Codebase index
+  - Cost reports
+- One search across all Forge data. Like Spotlight for your agent workspace.
+- **Why:** With 119 packages, data is siloed. `forge find` unifies it. Users don't need to remember which subsystem holds what.
+
+**A3. The Forge Dashboard — One Pane of Glass**
+- Current state: separate commands for status, cost, agents, sessions, pipelines, schedules, errors
+- Needed: `forge overview` — a single summary that tells you everything:
+  - Running agents (count, health, cost burn rate)
+  - Recent sessions (last 5 with success/fail)
+  - Cost today/this week/this month
+  - Scheduled tasks (next 3 upcoming)
+  - Active alerts (anomalies, runaways, outages)
+  - Quick actions: top 3 things you should do right now
+- **Why:** "Give me the overview" is the first thing every user wants. Currently they need to run 5+ commands.
+
+**A4. Cross-Package Event Correlation**
+- When something goes wrong, events fire from multiple packages: cost anomaly from `cost`, health degradation from `health`, agent failure from `lifecycle`
+- Correlate: "Agent X failed (lifecycle) after spending $4.50 (cost) while modifying auth.go (replay). The same agent succeeded on this file last week (memory). Possible cause: recent API change in auth module."
+- `forge correlate <event-id>` — trace across all subsystems
+- **Why:** Individual package alerts are noise. Correlated insights are signal. This is the "connective tissue" that makes 119 packages feel intelligent, not just numerous.
+
+---
+
+### B. Trust Infrastructure — The Invisible Foundation
+
+**B1. Transparent Mode — Show Everything**
+- `forge chat --transparent` — shows the user everything the agent is doing in real-time:
+  - Which model was selected and why
+  - Token count as it streams
+  - Running cost counter
+  - Tools being called (with arguments)
+  - Files being read/written
+  - Network requests being made
+- **Why:** Trust comes from transparency. When users can see everything, they trust the agent to do more. Most agent tools hide the mechanics — Forge should expose them.
+
+**B2. Trust Score Per Agent**
+- Track historical trust signals per agent:
+  - How many times has this agent produced correct output? (from feedback)
+  - How many times has it been undone? (from undo history)
+  - How many tests has its code passed/failed?
+  - How many security issues have been found in its output?
+- Composite trust score: 0-100, visible in `forge agents list`
+- Trust score affects routing: high-trust agents get autonomy, low-trust agents get more oversight
+- **Why:** Not all agents are equal. Some earn trust through consistent quality. Trust scores make this visible and actionable.
+
+**B3. Action Preview Before Execution**
+- For destructive/irreversible actions (file writes, git commits, network requests):
+  - Show a preview: "Agent plans to: modify auth.go (12 lines), delete temp.go, commit with message 'Add OAuth2'"
+  - User approves, modifies, or rejects
+  - Configurable: auto-approve for trusted agents, always-ask for new agents
+- **Why:** Irreversible actions without preview are the #1 source of agent-induced damage. Preview + approval is the safety net.
+
+**B4. Agent Permission Scoping — Per-Session**
+- When starting a session, explicitly scope what the agent can do:
+  - `forge chat --scope=read-only` — agent can read files but not modify
+  - `forge chat --scope=src-only` — agent can only modify files in `src/`
+  - `forge chat --scope=sandbox` — agent runs in isolated sandbox, no real file access
+  - `forge chat --scope=full` — unrestricted (default for trusted agents)
+- **Why:** Running a code review agent with full write access is unnecessary risk. Scope permissions to the task.
+
+---
+
+### C. Revenue & Sustainability — Making Forge Self-Sustaining
+
+**C1. Forge Pro — Premium Features**
+- Free tier: all 80+ commands, local-only, unlimited agents
+- Pro tier ($20/month):
+  - Forge Cloud sync (agents, memory, pipelines across machines)
+  - Priority model routing (better latency)
+  - Advanced cost analytics and forecasting
+  - Team collaboration features
+  - Premium support (48h response)
+- **Why:** Open source projects die without revenue. $20/month is affordable for professionals who save hours weekly.
+
+**C2. Enterprise License**
+- On-premise deployment with enterprise features:
+  - SSO (OIDC/SAML)
+  - Advanced RBAC
+  - Compliance report automation
+  - Custom SLA
+  - Dedicated support
+- Pricing: per-seat, annual contract
+- **Why:** Enterprise pays for certainty. A supported, compliant, on-premise agent platform is a $100K+/year purchase.
+
+**C3. Forge Marketplace — Transaction Revenue**
+- Community agents, prompts, and plugins
+- Revenue share: 70% to creator, 30% to Forge
+- Verified/paid agents for specialized tasks (security audit, compliance, migration)
+- **Why:** Marketplaces are self-sustaining ecosystems. They generate revenue while growing the platform.
+
+**C4. Forge Cloud — Usage-Based Pricing**
+- Pay per agent-hour or per million tokens processed through Forge
+- Includes: compute, API key management, monitoring
+- Free tier: 100K tokens/month
+- **Why:** Usage pricing aligns cost with value. Heavy users pay more; casual users pay nothing.
+
+---
+
+### D. The 1% Improvements — Compound Dominance
+
+**D1. Sub-100ms Command Startup**
+- Measure: time from `forge <cmd>` to first output
+- Target: <100ms for all read-only commands (list, show, status)
+- Techniques: lazy module initialization, compiled-in defaults, avoid network on startup
+- Benchmark in CI: `forge bench startup`
+- **Why:** 200ms feels instant. 500ms feels snappy. 1s feels slow. 2s feels broken. CLI speed is the first impression.
+
+**D2. Zero-Config Auto-Detection**
+- Detect everything possible without asking:
+  - API keys from environment variables (OPENAI_API_KEY, ANTHROPIC_API_KEY, etc.)
+  - Project type from files (go.mod → Go, package.json → Node, Cargo.toml → Rust)
+  - Git remote → suggest workspace integration
+  - Existing agent configs → suggest migration
+- **Why:** Every configuration step is a dropout point. Auto-detection eliminates 80% of setup friction.
+
+**D3. Predictive Prefetching**
+- When user starts `forge chat`, pre-load:
+  - Project context (index if not indexed)
+  - Recent memory for this project
+  - Most likely model based on history
+- When user starts `forge pipeline run`, pre-validate:
+  - Check all referenced agents exist
+  - Check all referenced models are available
+  - Pre-warm API connections
+- **Why:** Making the user wait is a bug. Prefetching makes Forge feel telepathic.
+
+**D4. Offline Mode**
+- `forge --offline` — works without any network:
+  - Uses only local models (Ollama)
+  - Uses cached indexes
+  - Reads from local memory store
+  - No telemetry, no cloud APIs
+- Clear indicator: `[OFFLINE]` in prompt
+- **Why:** Airplanes. Trains. Dead WiFi. VPNs. Many developers are offline regularly. A tool that dies without network is unreliable.
+
+**D5. Session Tags & Organization**
+- Tag sessions: `forge session tag add abc123 "refactoring" "auth-module"`
+- Filter: `forge session list --tag=refactoring`
+- Auto-tag: infer tags from agent activity (files modified, commands run)
+- Saved searches: `forge session saved-search "My auth work" --tag=auth --last=30d`
+- **Why:** After 100+ sessions, finding the right one is impossible without organization. Tags are the filing system.
+
+---
+
+### E. Deep Multi-Agent Patterns — Beyond Orchestration
+
+**E1. Agent Handoff Protocol**
+- Standardized protocol for agents to hand off work to each other:
+  - Context transfer: what was done, what remains, current state
+  - Artifact transfer: files modified, tests written, decisions made
+  - Confidence transfer: how confident is the outgoing agent in each artifact
+- `forge handoff --from=coder --to=reviewer --session=abc123`
+- **Why:** Multi-agent orchestration currently means "run agents in parallel." Real collaboration requires handoffs with full context transfer.
+
+**E2. Agent Consensus Engine**
+- Run N agents on the same task, compare outputs
+- Consensus strategies:
+  - Majority vote (3+ agents agree)
+  - Weighted vote (trust score as weight)
+  - Unanimous (all must agree)
+  - Adversarial (one agent must not find flaws)
+- `forge consensus --agents=3 --strategy=majority "Fix the auth bug"`
+- **Why:** Single-agent output is a single point of failure. Consensus reduces errors dramatically (proven in distributed systems).
+
+**E3. Hierarchical Agent Trees**
+- Parent agent delegates to child agents, which delegate to grandchild agents
+- Each level has different capabilities: planner → coder → tester → reviewer
+- Cost tracking rolls up the tree
+- Failure propagation: if a leaf agent fails, the parent decides whether to retry or escalate
+- Visualization: `forge tree <session-id>` shows the full agent tree
+- **Why:** Real projects need hierarchy. A flat list of agents can't handle complex multi-step tasks. Trees model how humans organize work.
+
+**E4. Persistent Agent Personas**
+- Define an agent persona with persistent traits:
+  ```yaml
+  persona:
+    name: "Alice"
+    role: "senior-backend-engineer"
+    style: "concise, prefers table-driven tests, hates global state"
+    memory: shared-team-memory
+    trust_score: 87
+  ```
+- Personas persist across sessions, accumulate memory and trust
+- Teams develop relationships with personas ("Ask Alice to review this — she catches race conditions")
+- **Why:** Agents without identity are interchangeable. Agents with identity develop reputations. Reputation drives appropriate delegation.
+
+---
+
+### F. The Impossible-Until-Now Features
+
+**F1. `forge simulate` — Agent Behavior Simulation**
+- Before deploying an agent to production, simulate its behavior on historical data:
+  - Feed it past bug reports → does it produce the correct fix?
+  - Feed it past code reviews → does it catch the known issues?
+  - Feed it past cost patterns → does it stay within budget?
+- Simulation report: accuracy, cost, speed, edge cases found
+- **Why:** You wouldn't deploy code without testing it. Why deploy agents without simulating them?
+
+**F2. `forge translate-pipeline` — Visual Pipeline Translator**
+- Describe a workflow in natural language → generate a forge.yaml pipeline
+- "When a PR is opened, review the code for security issues, run the tests, and if both pass, auto-merge"
+- → Generates a complete pipeline YAML with agents, models, conditions, and actions
+- Reverse: read a forge.yaml pipeline → explain it in natural language
+- **Why:** Pipeline YAML is powerful but verbose. Natural language → YAML bridges the gap for non-technical users.
+
+**F3. `forge refactor` — Whole-Codebase AI Refactoring**
+- Not file-by-file editing — coordinated, multi-file refactoring:
+  - "Rename function X to Y and update all call sites across the codebase"
+  - "Migrate from package A to package B in all files"
+  - "Split the monolith into services based on dependency analysis"
+- Uses index + dependency graph + agent orchestration
+- Generates a migration plan before executing: list of files, changes per file, risk assessment
+- **Why:** Individual file edits are what current agents do. Whole-codebase refactoring is what teams actually need. The gap is dependency-aware coordination.
+
+**F4. `forge clone-behavior` — Agent Behavior Cloning**
+- Record a human performing a task (terminal session + file changes)
+- Forge learns the pattern and creates an agent that can repeat it
+- "Watch me debug a test failure" → Forge creates a debug-test agent
+- Iterative refinement: human corrects agent, agent improves
+- **Why:** The best agents are ones that learn from specific humans. Behavior cloning makes every developer an agent trainer.
+
+**F5. `forge quantum` — Parallel Universe Exploration**
+- For critical decisions, fork the codebase into N parallel "universes"
+- Each universe gets a different agent/model/approach
+- Compare results side by side: quality, cost, test pass rate, style adherence
+- Merge the best universe back into the main branch
+- `forge quantum --universes=5 "Implement user authentication"`
+- **Why:** Critical decisions deserve exploration. Current workflow: pick one approach and hope. Better: try multiple and pick the best.
+
+---
+
+### G. Session #6 Quick Wins
+
+1. **Unified command grammar audit** — Document current verb/noun inconsistencies, propose consistent grammar. ~100 lines (documentation).
+2. **`forge overview`** — Aggregate status/cost/agents/sessions/alerts into one summary. ~400 lines.
+3. **`forge find`** — Global search across memory/sessions/pipelines/templates. ~350 lines.
+4. **Offline mode flag** — `--offline` that disables all network-dependent features. ~150 lines.
+5. **Session tags** — Add tag CRUD to session management. ~200 lines.
+6. **Action preview for destructive operations** — Show plan before executing writes/commits. ~300 lines.
+7. **Startup time benchmark** — Measure and CI-gate command startup latency. ~100 lines.
+
+---
+
+*"119 packages is not the goal. 119 packages that feel like ONE tool is the goal. The glue matters more than the bricks."
