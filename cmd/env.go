@@ -3,9 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 
 	"github.com/forge/sword/internal/envbuilder"
 	"github.com/forge/sword/internal/pretty"
