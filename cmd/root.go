@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	forgeVersion = "0.3.0"
+	forgeVersion = "0.4.0"
 	buildTime    = "unknown"
 )
 
@@ -53,7 +53,8 @@ The wielder and the sword are one.`,
 		blinkCmd(),
 		desktopCmd(),
 		pipelineCmd(),
-		pipelineCmd(),
+		memoryCmd(),
+		authCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
