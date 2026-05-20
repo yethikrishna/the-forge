@@ -14,19 +14,25 @@ All 18 utility packages implemented and tested.
 - [x] `internal/wush` — P2P file transfer
 - [x] `internal/aicommit` — AI git commits
 - [x] `internal/watcher` — File watcher
-- [x] `internal/config` — Configuration management (YAML/TOML/JSON)
-- [x] `internal/cost` — LLM pricing data and cost tracking
+- [x] `internal/config` — Configuration management (YAML/TOML/JSON + comprehensive schema)
+- [x] `internal/cost` — LLM pricing data, cost tracking, budget enforcement
 - [x] `internal/replay` — Session recording and replay
 - [x] `internal/routing` — Multi-agent routing strategies
 - [x] `internal/template` — Project scaffolding templates
 - [x] `internal/sandbox` — Secure code execution
 - [x] `internal/auth` — API key management
-- [x] `internal/pipeline` — Pipeline definition and execution
+- [x] `internal/pipeline` — Pipeline definition and execution engine
 - [x] `internal/share` — Web sharing
-- [x] `internal/memory` — Agent memory
-- [x] `internal/audit` — Audit logging
+- [x] `internal/memory` — Agent memory with semantic search + persistence
+- [x] `internal/audit` — Tamper-evident audit trail
+- [x] `internal/eval` — Agent evaluation and benchmarking
+- [x] `internal/secrets` — Secret scanning and redaction middleware
+- [x] `internal/explain` — Agent decision trace explanations
+- [x] `internal/forecast` — Predictive cost and time estimation
+- [x] `internal/mcp` — Model Context Protocol server
+- [x] `internal/diff` — Agent output visualization and comparison
 
-## Phase 1: Commands ✅ (25+ commands)
+## Phase 1: Commands ✅ (37+ commands)
 - [x] `forge serve` — Agent API server
 - [x] `forge agents` — Agent management
 - [x] `forge models` — Model listing
@@ -37,7 +43,7 @@ All 18 utility packages implemented and tested.
 - [x] `forge orchestrate` — Multi-agent execution
 - [x] `forge session` — Session management
 - [x] `forge chat` — Interactive terminal chat
-- [x] `forge cost` — LLM pricing comparison
+- [x] `forge cost` — LLM pricing comparison + budget tracking
 - [x] `forge init` — Project scaffolding
 - [x] `forge api` — Unified LLM gateway
 - [x] `forge doctor` — Environment diagnostics
@@ -52,72 +58,60 @@ All 18 utility packages implemented and tested.
 - [x] `forge mux` — Parallel agent desktop
 - [x] `forge blink` — Self-hosted bots
 - [x] `forge desktop` — Linux desktop for agents
-- [x] `forge pipeline` — Multi-agent routing
+- [x] `forge pipeline` — Declarative agent pipelines (run, list, show)
 - [x] `forge share` — Web sharing
-- [x] `forge memory` — Agent memory management
+- [x] `forge memory` — Agent memory management (store, search, list, export/import)
 - [x] `forge auth` — API key management
+- [x] `forge config` — Configuration management (get, set, show, validate, init)
+- [x] `forge dashboard` — Web dashboard
+- [x] `forge queue` — Task queue management
+- [x] `forge test` — Agent integration testing framework
+- [x] `forge status` — Comprehensive system overview
+- [x] `forge undo` — Universal agent undo
+- [x] `forge mcp` — MCP server mode (stdio + HTTP/SSE)
 
 ## Phase 2: Advanced Features (In Progress)
-- [ ] Web dashboard UI (real-time agent monitoring)
-- [ ] Plugin marketplace with registry
+- [ ] Web dashboard UI (real-time agent monitoring with WebSocket)
+- [ ] Plugin marketplace with registry + WASM plugins
 - [ ] Agent cost tracking dashboard with charts
-- [ ] Session replay with playback controls
-- [ ] Multi-agent routing with health checks
-- [ ] Template system for custom project scaffolding
+- [ ] Session replay with playback controls + branching
+- [ ] Multi-agent routing with health checks + auto-failover
 - [ ] forge.yaml configuration hot-reload
 - [ ] Integration tests for all commands
 - [ ] Go test coverage > 80%
+- [ ] `forge breed` — Agent evolution (genetic optimization)
+- [ ] `forge canvas` — Visual workflow builder (web UI)
 
-## Phase 2.5: Security Hardening (Post-CVE Wave — URGENT)
-
-- [ ] MicroVM sandbox backend — `forge exec --sandbox=firecracker` with Firecracker integration
-- [ ] Sandbox integrity verification — runtime probes to confirm isolation is actually enforced
-- [ ] Prompt-to-shell attack surface mapper — static analysis of injection vectors in prompt templates
-- [ ] Fallback sandbox chain — Firecracker → gVisor → Docker → process (with warnings)
+## Phase 2.5: Security Hardening
+- [ ] MicroVM sandbox backend — Firecracker integration
+- [ ] Sandbox integrity verification — runtime probes
+- [ ] Prompt-to-shell attack surface mapper
+- [ ] Fallback sandbox chain — Firecracker → gVisor → Docker → process
 
 ## Phase 2.5: Infrastructure Layer
-
-- [ ] MCP Server mode — `forge mcp serve` exposes all Forge tools via MCP for Claude Code/Cursor/Cline
-- [ ] MCP Tool Composer — combine multiple MCP servers behind one gateway with Forge middleware
-- [ ] Agent communication bus — internal pub/sub for inter-agent coordination (Redis-backed)
-- [ ] Persistent task queue — SQLite-backed, survives restarts, priority ordering
-- [ ] OpenTelemetry integration — spans for all agent actions, export to Jaeger/Zipkin/Tempo
+- [x] MCP Server mode — `forge mcp serve` exposes all Forge tools via MCP
+- [ ] MCP Tool Composer — combine multiple MCP servers behind one gateway
+- [ ] Agent communication bus — internal pub/sub (Redis-backed)
+- [ ] OpenTelemetry integration — spans for all agent actions
 
 ## Phase 2.5: Agent Quality
-
-- [x] `forge test` — agent integration testing framework with declarative test cases
-- [x] `forge undo` — universal agent undo (revert file mutations, git commits, entire sessions)
-- [ ] `forge snapshot` — environment checkpoints (files + git state + env vars)
-- [ ] Agent output quality scoring — multi-dimensional (correctness, style, security, cost)
-- [ ] Agent A/B testing framework — blind comparison with statistical significance
+- [x] `forge test` — agent integration testing framework
+- [x] `forge undo` — universal agent undo
+- [ ] `forge snapshot` — environment checkpoints
+- [ ] Agent output quality scoring — multi-dimensional
+- [ ] Agent A/B testing framework
 
 ## Phase 2.5: Prompt Engineering
-
-- [ ] Prompt template management — `.forge/prompts/` with versioning and variable interpolation
-- [ ] Prompt regression testing — test prompt variants against multiple models
-- [ ] Prompt cost optimizer — analyze and compress prompts for token efficiency
+- [ ] Prompt template management — `.forge/prompts/`
+- [ ] Prompt regression testing
+- [ ] Prompt cost optimizer
 
 ## Phase 2.5: Workflow Integrations
-
-- [ ] `forge workspace` — multi-repo context management (clone, index, cross-repo reasoning)
-- [ ] `forge schedule` — cron for agents with recurring task definitions in forge.yaml
-- [ ] `forge review` — agent-driven code review with PR integration (GitHub/GitLab)
-- [ ] `forge docs` — documentation agent that auto-maintains docs from code
-- [ ] Jira/Linear/Notion integration — ticket linking, progress updates, task execution
-- [ ] CI/CD platform support — GitLab CI, Jenkins, CircleCI, Azure DevOps
-
-## Phase 2.5: Novel UX
-
-- [ ] `forge pair` — interactive human-agent pair programming mode
-- [ ] `forge translate` — multi-language code generation from single agent output
-- [ ] `forge contract` — API contract testing and breaking change detection
-
-## Phase 2.5: Market & DX
-
-- [ ] Structured error catalog — `FORGE-E001` through `FORGE-E999` with causes and fixes
-- [ ] `forge status` — real-time agent cluster health dashboard
-- [ ] Forge Benchmark Suite — open benchmark comparing agent tools on cost/speed/quality/security
-- [ ] "Forge Inside" landing page — position Forge as infrastructure for other agent tools
+- [ ] `forge workspace` — multi-repo context management
+- [ ] `forge schedule` — cron for agents
+- [ ] `forge review` — agent-driven code review with PR integration
+- [ ] `forge docs` — documentation agent
+- [ ] Jira/Linear/Notion integration
 
 ## Phase 3: Polish & Release
 - [ ] CI/CD pipeline
@@ -128,8 +122,8 @@ All 18 utility packages implemented and tested.
 - [ ] Public release
 
 ## Current Stats
-- ~22K lines of Go
-- 41 internal packages
-- 26+ commands
+- ~27.5K lines of Go
+- 49 internal packages
+- 37+ commands
 - Build: ✅ Vet: ✅
 - Version: 0.4.0
