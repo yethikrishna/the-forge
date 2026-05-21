@@ -138,7 +138,7 @@ func (r *Recorder) Record(eventType EventType, data map[string]interface{}) Even
 	defer r.mu.Unlock()
 
 	event := Event{
-		ID:        fmt.Sprintf("evt-%d-%d", r.session.ID[len(r.session.ID)-6:], r.nextSeq),
+		ID:        fmt.Sprintf("evt-%s-%d", r.session.ID[len(r.session.ID)-6:], r.nextSeq),
 		Sequence:  r.nextSeq,
 		Type:      eventType,
 		Timestamp: time.Now(),

@@ -168,6 +168,7 @@ The wielder and the sword are one.`,
 		qualityCorpusCmd,
 		livedebugCmd,
 		experimentCmd,
+		replayCmd,
 		refactorCmd,
 		selftestCmd,
 	)

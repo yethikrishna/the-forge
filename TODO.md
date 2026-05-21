@@ -276,7 +276,7 @@ All 18 utility packages implemented and tested.
 - [ ] `forge clone-behavior` — record human task → create agent that repeats it
 - [x] `forge quantum` — parallel universe exploration (N approaches, pick the best)
 - [x] `forge selftest` — agent self-diagnostic and health check
-- [ ] Cross-package event correlation — correlate anomalies across cost/health/lifecycle/replay
+- [x] Cross-package event correlation — correlate anomalies across cost/health/lifecycle/replay
 
 ## Current Stats
 - ~108K lines of Go
