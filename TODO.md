@@ -317,7 +317,7 @@ All 18 utility packages implemented and tested.
 - [ ] `forge doctor --fix` — automatic environment repair
 
 ### Novel Features (From Brainstorm #14)
-- [ ] `forge genealogy` — agent output family trees (full provenance DAG for compliance)
+- [x] `forge genealogy` — agent output family trees (full provenance DAG for compliance)
 - [ ] `forge rollback` — time-travel for agent work (snapshot + undo + ledger integration)
 - [ ] `forge benchmark` — standardized agent benchmarks (SWE-bench, Terminal-Bench) + community leaderboard
 
