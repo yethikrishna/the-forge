@@ -2,50 +2,43 @@ package cmd
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/forge/sword/internal/dashboard"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
 )
 
-func dashboardCmd() *cobra.Command {
-	var port int
-
-	cmd := &cobra.Command{
-		Use:   "dashboard",
-		Short: "Launch the Forge web dashboard",
-		Long: `Start a web dashboard for monitoring agents,
+var dashboardCmd = &cobra.Command{
+	Use:   "dashboard",
+	Short: "Launch the Forge web dashboard",
+	Long: `Start a web dashboard for monitoring agents,
 requests, costs, and system status in real time.
 
-Real-time WebSocket agent monitoring, cost charts, and trace viewer.
+Real-time monitoring, cost charts, and activity log.
 Embedded in the Go binary — zero external dependencies.
 
 Examples:
   forge dashboard
   forge dashboard --port 9090`,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			fmt.Println(pretty.HeaderLine("Forge Dashboard"))
-			fmt.Printf("   URL: http://localhost:%d\n", port)
-			fmt.Println()
+	RunE: func(cmd *cobra.Command, args []string) error {
+		port, _ := cmd.Flags().GetInt("port")
+		fmt.Println(pretty.HeaderLine("Forge Dashboard"))
+		fmt.Printf("   URL: http://localhost:%d\n", port)
+		fmt.Println()
 
-			store := dashboard.NewMemoryStore()
-			addr := fmt.Sprintf(":%d", port)
-			srv := dashboard.NewDashboardServer(addr, store)
+		addr := fmt.Sprintf(":%d", port)
+		provider := dashboard.NewMemoryProvider()
+		srv := dashboard.NewServer(addr, provider)
 
-			if err := srv.Start(); err != nil {
-				return err
-			}
+		if err := srv.Start(); err != nil {
+			return err
+		}
 
-			// Block until interrupted
-			select {}
-		},
-	}
-
-	cmd.Flags().IntVarP(&port, "port", "p", 8080, "Dashboard port")
-
-	return cmd
+		// Block until interrupted
+		select {}
+	},
 }
 
-// startTime tracks dashboard uptime.
-var startTime = time.Now()
+func init() {
+	dashboardCmd.Flags().IntP("port", "p", 8080, "Dashboard port")
+}

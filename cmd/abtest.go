@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	abtestpkg "github.com/forge/sword/internal/abtest"
+	abtestpkg "github.com/forge/sword/internal/eval2/abtest"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
 )

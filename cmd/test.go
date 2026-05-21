@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/forge/sword/internal/agenttest"
+	"github.com/forge/sword/internal/eval2/agenttest"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
 )

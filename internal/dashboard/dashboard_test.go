@@ -8,199 +8,190 @@ import (
 	"time"
 )
 
-func TestMemoryStore(t *testing.T) {
-	store := NewMemoryStore()
+func TestMemoryProviderStats(t *testing.T) {
+	p := NewMemoryProvider()
+	stats := p.GetStats()
 
-	agents, err := store.GetAgentStatuses()
-	if err != nil {
-		t.Fatalf("GetAgentStatuses: %v", err)
+	if stats.ActiveAgents == 0 {
+		t.Error("Expected non-zero active agents in default data")
+	}
+	if stats.PendingTasks == 0 {
+		t.Error("Expected non-zero pending tasks in default data")
+	}
+}
+
+func TestMemoryProviderAgents(t *testing.T) {
+	p := NewMemoryProvider()
+	agents := p.GetAgents()
+
+	if len(agents) == 0 {
+		t.Error("Expected agents in default data")
+	}
+}
+
+func TestMemoryProviderTasks(t *testing.T) {
+	p := NewMemoryProvider()
+	tasks := p.GetTasks()
+
+	if len(tasks) == 0 {
+		t.Error("Expected tasks in default data")
+	}
+}
+
+func TestMemoryProviderLog(t *testing.T) {
+	p := NewMemoryProvider()
+	log := p.GetLog()
+
+	if len(log) == 0 {
+		t.Error("Expected log entries in default data")
+	}
+}
+
+func TestUpdateStats(t *testing.T) {
+	p := NewMemoryProvider()
+	p.UpdateStats(Stats{
+		ActiveAgents:  5,
+		PendingTasks:  10,
+		CompletedToday: 100,
+		SessionCost:   15.50,
+		QueueDepth:    20,
+		CanaryStatus:  "promoted",
+	})
+
+	stats := p.GetStats()
+	if stats.ActiveAgents != 5 {
+		t.Errorf("Expected 5 active agents, got %d", stats.ActiveAgents)
+	}
+	if stats.CanaryStatus != "promoted" {
+		t.Errorf("Expected 'promoted', got %s", stats.CanaryStatus)
+	}
+}
+
+func TestAddLog(t *testing.T) {
+	p := NewMemoryProvider()
+	initialLen := len(p.GetLog())
+
+	p.AddLog("info", "Test log message")
+
+	log := p.GetLog()
+	if len(log) != initialLen+1 {
+		t.Errorf("Expected %d log entries, got %d", initialLen+1, len(log))
+	}
+
+	lastEntry := log[len(log)-1]
+	if lastEntry.Message != "Test log message" {
+		t.Errorf("Expected 'Test log message', got %q", lastEntry.Message)
+	}
+	if lastEntry.Level != "info" {
+		t.Errorf("Expected 'info' level, got %q", lastEntry.Level)
+	}
+}
+
+func TestAddLogRotation(t *testing.T) {
+	p := NewMemoryProvider()
+
+	// Add more than 100 entries
+	for i := 0; i < 110; i++ {
+		p.AddLog("info", "entry")
+	}
+
+	log := p.GetLog()
+	if len(log) > 100 {
+		t.Errorf("Expected log rotation at 100, got %d entries", len(log))
+	}
+}
+
+func TestAPIStatsEndpoint(t *testing.T) {
+	p := NewMemoryProvider()
+	s := NewServer(":0", p)
+
+	req := httptest.NewRequest("GET", "/api/v1/stats", nil)
+	w := httptest.NewRecorder()
+
+	s.handleStats(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Code)
+	}
+
+	var stats Stats
+	if err := json.NewDecoder(w.Body).Decode(&stats); err != nil {
+		t.Fatalf("Decode: %v", err)
+	}
+	if stats.ActiveAgents == 0 {
+		t.Error("Expected non-zero active agents")
+	}
+}
+
+func TestAPIAgentsEndpoint(t *testing.T) {
+	p := NewMemoryProvider()
+	s := NewServer(":0", p)
+
+	req := httptest.NewRequest("GET", "/api/v1/agents", nil)
+	w := httptest.NewRecorder()
+
+	s.handleAgents(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Code)
+	}
+
+	var agents []AgentInfo
+	if err := json.NewDecoder(w.Body).Decode(&agents); err != nil {
+		t.Fatalf("Decode: %v", err)
 	}
 	if len(agents) == 0 {
-		t.Fatal("no agents in memory store")
-	}
-
-	sessions, err := store.GetRecentSessions(10)
-	if err != nil {
-		t.Fatalf("GetRecentSessions: %v", err)
-	}
-	if len(sessions) == 0 {
-		t.Fatal("no sessions in memory store")
-	}
-
-	cost, err := store.GetCostSummary("today")
-	if err != nil {
-		t.Fatalf("GetCostSummary: %v", err)
-	}
-	if cost.TotalCost <= 0 {
-		t.Fatal("expected positive total cost")
-	}
-
-	traces, err := store.GetTraceSummary()
-	if err != nil {
-		t.Fatalf("GetTraceSummary: %v", err)
-	}
-	if traces.TotalTraces == 0 {
-		t.Fatal("no traces in memory store")
-	}
-
-	metrics, err := store.GetMetrics()
-	if err != nil {
-		t.Fatalf("GetMetrics: %v", err)
-	}
-	if metrics.ActiveAgents == 0 {
-		t.Fatal("no active agents in metrics")
+		t.Error("Expected agents")
 	}
 }
 
-func TestMemoryStoreUpdateAgent(t *testing.T) {
-	store := NewMemoryStore()
+func TestAPITasksEndpoint(t *testing.T) {
+	p := NewMemoryProvider()
+	s := NewServer(":0", p)
 
-	newAgent := AgentStatus{
-		ID:          "agent-new",
-		Name:        "deployer",
-		Role:        "devops",
-		Model:       "gpt-4.1",
-		Status:      "running",
-		StartedAt:   time.Now(),
-		TokensUsed:  1000,
-		Cost:        0.05,
-		Progress:    0.5,
-		CurrentTask: "Deploying to staging",
-	}
-	store.UpdateAgent(newAgent)
+	req := httptest.NewRequest("GET", "/api/v1/tasks", nil)
+	w := httptest.NewRecorder()
 
-	agents, _ := store.GetAgentStatuses()
-	found := false
-	for _, a := range agents {
-		if a.ID == "agent-new" && a.Name == "deployer" {
-			found = true
-		}
-	}
-	if !found {
-		t.Fatal("new agent not found after update")
+	s.handleTasks(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Code)
 	}
 }
 
-func TestMemoryStorePushEvent(t *testing.T) {
-	store := NewMemoryStore()
+func TestAPILogEndpoint(t *testing.T) {
+	p := NewMemoryProvider()
+	s := NewServer(":0", p)
 
-	event := DashboardEvent{
-		Type:      "agent_start",
-		AgentID:   "agent-1",
-		Message:   "Agent started",
-		Timestamp: time.Now(),
-	}
-	store.PushEvent(event)
+	req := httptest.NewRequest("GET", "/api/v1/log", nil)
+	w := httptest.NewRecorder()
 
-	metrics, _ := store.GetMetrics()
-	if len(metrics.RecentEvents) == 0 {
-		t.Fatal("no events after push")
-	}
-	if metrics.RecentEvents[0].Message != "Agent started" {
-		t.Fatal("event not at front of list")
+	s.handleLog(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Errorf("Expected 200, got %d", w.Code)
 	}
 }
 
-func TestDashboardServerAPIs(t *testing.T) {
-	store := NewMemoryStore()
-	srv := NewDashboardServer(":0", store)
-
-	tests := []struct {
-		path   string
-		target interface{}
-	}{
-		{"/api/agents", &[]AgentStatus{}},
-		{"/api/sessions", &[]SessionInfo{}},
-		{"/api/costs", &CostSummary{}},
-		{"/api/traces", &TraceSummary{}},
-		{"/api/metrics", &DashboardMetrics{}},
-	}
-
-	for _, tt := range tests {
-		req := httptest.NewRequest("GET", tt.path, nil)
-		rec := httptest.NewRecorder()
-		srv.Handler().ServeHTTP(rec, req)
-
-		if rec.Code != http.StatusOK {
-			t.Errorf("%s: expected 200, got %d", tt.path, rec.Code)
-		}
-
-		if err := json.NewDecoder(rec.Body).Decode(tt.target); err != nil {
-			t.Errorf("%s: decode error: %v", tt.path, err)
-		}
+func TestNewServerDefaultProvider(t *testing.T) {
+	s := NewServer(":0", nil)
+	if s.provider == nil {
+		t.Error("Expected default provider")
 	}
 }
 
-func TestDashboardServerPages(t *testing.T) {
-	store := NewMemoryStore()
-	srv := NewDashboardServer(":0", store)
+func TestCORSHeaders(t *testing.T) {
+	p := NewMemoryProvider()
+	s := NewServer(":0", p)
 
-	tests := []string{"/", "/agents", "/costs", "/traces"}
+	req := httptest.NewRequest("GET", "/api/v1/stats", nil)
+	w := httptest.NewRecorder()
 
-	for _, path := range tests {
-		req := httptest.NewRequest("GET", path, nil)
-		rec := httptest.NewRecorder()
-		srv.Handler().ServeHTTP(rec, req)
+	s.handleStats(w, req)
 
-		if rec.Code != http.StatusOK {
-			t.Errorf("%s: expected 200, got %d", path, rec.Code)
-		}
+	if w.Header().Get("Access-Control-Allow-Origin") != "*" {
+		t.Error("Expected CORS header")
 	}
 }
 
-func TestWebSocketHub(t *testing.T) {
-	hub := NewWebSocketHub()
-	go hub.Run()
-
-	if hub.ClientCount() != 0 {
-		t.Fatal("expected 0 clients initially")
-	}
-
-	// Test broadcast with no clients
-	hub.Broadcast([]byte("test"))
-}
-
-func TestDashboardBroadcast(t *testing.T) {
-	store := NewMemoryStore()
-	srv := NewDashboardServer(":0", store)
-
-	event := DashboardEvent{
-		Type:      "test",
-		Message:   "Test event",
-		Timestamp: time.Now(),
-	}
-	srv.BroadcastEvent(event)
-	// Should not panic
-}
-
-func TestCostSummaryByModel(t *testing.T) {
-	store := NewMemoryStore()
-	cost, _ := store.GetCostSummary("today")
-
-	if len(cost.ByModel) == 0 {
-		t.Fatal("no model cost breakdown")
-	}
-
-	totalModelCost := 0.0
-	for _, mc := range cost.ByModel {
-		totalModelCost += mc.Cost
-	}
-	if totalModelCost <= 0 {
-		t.Fatal("expected positive model cost total")
-	}
-}
-
-func TestTraceSummaryOperations(t *testing.T) {
-	store := NewMemoryStore()
-	traces, _ := store.GetTraceSummary()
-
-	if len(traces.ByOperation) == 0 {
-		t.Fatal("no operation breakdown")
-	}
-
-	for _, op := range traces.ByOperation {
-		if op.Count <= 0 {
-			t.Fatalf("operation %s has zero count", op.Operation)
-		}
-	}
-}
+var _ = time.Now // ensure time import used

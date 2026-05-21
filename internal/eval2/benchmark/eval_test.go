@@ -1,15 +1,15 @@
-package eval_test
+package benchmark_test
 
 import (
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/forge/sword/internal/eval"
+	"github.com/forge/sword/internal/eval2/benchmark"
 )
 
 func TestExactScorer(t *testing.T) {
-	scorer := &eval.ExactScorer{}
+	scorer := &benchmark.ExactScorer{}
 
 	if scorer.Score("hello", "hello") != 1.0 {
 		t.Error("exact match should score 1.0")
@@ -20,7 +20,7 @@ func TestExactScorer(t *testing.T) {
 }
 
 func TestContainsScorer(t *testing.T) {
-	scorer := &eval.ContainsScorer{}
+	scorer := &benchmark.ContainsScorer{}
 
 	if scorer.Score("hello world", "hello") != 1.0 {
 		t.Error("should find substring")
@@ -34,7 +34,7 @@ func TestContainsScorer(t *testing.T) {
 }
 
 func TestKeywordScorer(t *testing.T) {
-	scorer := &eval.KeywordScorer{}
+	scorer := &benchmark.KeywordScorer{}
 
 	// Expected is semicolon-separated keywords
 	score := scorer.Score("package main with fmt.Println saying Hello", "package main; fmt.Println; Hello")
@@ -49,9 +49,9 @@ func TestKeywordScorer(t *testing.T) {
 }
 
 func TestRunBenchmark(t *testing.T) {
-	runner := eval.NewRunner("")
+	runner := benchmark.NewRunner("")
 
-	bm := eval.Benchmark{
+	bm := benchmark.Benchmark{
 		ID:       "test-1",
 		Name:     "Test Benchmark",
 		Expected: "hello; world",
@@ -70,11 +70,11 @@ func TestRunBenchmark(t *testing.T) {
 }
 
 func TestRunAll(t *testing.T) {
-	runner := eval.NewRunner("")
+	runner := benchmark.NewRunner("")
 
-	benchmarks := eval.BuiltInBenchmarks()
+	benchmarks := benchmark.BuiltInBenchmarks()
 
-	runFn := func(bm eval.Benchmark) (string, time.Duration, float64, error) {
+	runFn := func(bm benchmark.Benchmark) (string, time.Duration, float64, error) {
 		return "package main with fmt.Println Hello world", 50 * time.Millisecond, 0.01, nil
 	}
 
@@ -92,15 +92,15 @@ func TestRunAll(t *testing.T) {
 }
 
 func TestRunAllWithErrors(t *testing.T) {
-	runner := eval.NewRunner("")
+	runner := benchmark.NewRunner("")
 
-	benchmarks := []eval.Benchmark{
+	benchmarks := []benchmark.Benchmark{
 		{ID: "ok", Name: "OK", Expected: "hello"},
 		{ID: "fail", Name: "Fail", Expected: "hello"},
 	}
 
 	callCount := 0
-	runFn := func(bm eval.Benchmark) (string, time.Duration, float64, error) {
+	runFn := func(bm benchmark.Benchmark) (string, time.Duration, float64, error) {
 		callCount++
 		if bm.ID == "fail" {
 			return "", 10 * time.Millisecond, 0, fmt.Errorf("agent error")
@@ -116,43 +116,43 @@ func TestRunAllWithErrors(t *testing.T) {
 	if result.Results[1].Error == "" {
 		t.Error("second result should have an error")
 	}
-	if result.Results[1].Grade != eval.GradeF {
+	if result.Results[1].Grade != benchmark.GradeF {
 		t.Errorf("failed benchmark should be F, got %s", result.Results[1].Grade)
 	}
 }
 
 func TestScoreToGrade(t *testing.T) {
-	runner := eval.NewRunner("")
-	bm := eval.Benchmark{ID: "grade-test", Name: "Grade Test", Expected: "expected keywords"}
+	runner := benchmark.NewRunner("")
+	bm := benchmark.Benchmark{ID: "grade-test", Name: "Grade Test", Expected: "expected keywords"}
 
 	// High score -> A+
 	highResult := runner.RunBenchmark(bm, "test", "test", "expected keywords found", 0, 0)
-	if highResult.Grade != eval.GradeAPlus {
+	if highResult.Grade != benchmark.GradeAPlus {
 		t.Errorf("high score should be A+, got %s", highResult.Grade)
 	}
 
 	// Zero score -> F
 	zeroResult := runner.RunBenchmark(bm, "test", "test", "nothing matching", 0, 0)
-	if zeroResult.Grade != eval.GradeF {
+	if zeroResult.Grade != benchmark.GradeF {
 		t.Errorf("zero score should be F, got %s", zeroResult.Grade)
 	}
 }
 
 func TestBuiltInBenchmarks(t *testing.T) {
-	benchmarks := eval.BuiltInBenchmarks()
+	benchmarks := benchmark.BuiltInBenchmarks()
 	if len(benchmarks) == 0 {
 		t.Error("should have built-in benchmarks")
 	}
 }
 
 func TestHistory(t *testing.T) {
-	runner := eval.NewRunner("")
+	runner := benchmark.NewRunner("")
 
-	benchmarks := []eval.Benchmark{
+	benchmarks := []benchmark.Benchmark{
 		{ID: "t1", Name: "T1", Expected: "hello"},
 	}
 
-	runFn := func(bm eval.Benchmark) (string, time.Duration, float64, error) {
+	runFn := func(bm benchmark.Benchmark) (string, time.Duration, float64, error) {
 		return "hello", 10 * time.Millisecond, 0.001, nil
 	}
 
@@ -166,18 +166,18 @@ func TestHistory(t *testing.T) {
 }
 
 func TestFormatRunResult(t *testing.T) {
-	runner := eval.NewRunner("")
+	runner := benchmark.NewRunner("")
 
-	benchmarks := []eval.Benchmark{
+	benchmarks := []benchmark.Benchmark{
 		{ID: "t1", Name: "T1", Expected: "hello"},
 	}
 
-	runFn := func(bm eval.Benchmark) (string, time.Duration, float64, error) {
+	runFn := func(bm benchmark.Benchmark) (string, time.Duration, float64, error) {
 		return "hello", 10 * time.Millisecond, 0.001, nil
 	}
 
 	result := runner.RunAll(benchmarks, "claude", "sonnet", runFn)
-	formatted := eval.FormatRunResult(result)
+	formatted := benchmark.FormatRunResult(result)
 
 	if formatted == "" {
 		t.Error("formatted result should not be empty")
@@ -186,21 +186,21 @@ func TestFormatRunResult(t *testing.T) {
 
 func TestPersistence(t *testing.T) {
 	dir := t.TempDir()
-	path := dir + "/eval.json"
+	path := dir + "/benchmark.json"
 
-	runner := eval.NewRunner(path)
+	runner := benchmark.NewRunner(path)
 
-	benchmarks := []eval.Benchmark{
+	benchmarks := []benchmark.Benchmark{
 		{ID: "t1", Name: "T1", Expected: "hello"},
 	}
 
-	runFn := func(bm eval.Benchmark) (string, time.Duration, float64, error) {
+	runFn := func(bm benchmark.Benchmark) (string, time.Duration, float64, error) {
 		return "hello", 10 * time.Millisecond, 0.001, nil
 	}
 
 	runner.RunAll(benchmarks, "claude", "sonnet", runFn)
 
-	runner2 := eval.NewRunner(path)
+	runner2 := benchmark.NewRunner(path)
 	if len(runner2.History()) != 1 {
 		t.Errorf("expected 1 run after reload, got %d", len(runner2.History()))
 	}

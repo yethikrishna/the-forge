@@ -1,6 +1,6 @@
 // Package eval provides agent evaluation and benchmarking capabilities.
 // Test every blade before it leaves the forge.
-package eval
+package benchmark
 
 import (
 	"encoding/json"
