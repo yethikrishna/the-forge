@@ -3,10 +3,10 @@ package mcp2_test
 import (
 	"testing"
 
-	"github.com/forge/sword/internal/mcpgateway"
 	"github.com/forge/sword/internal/mcp2/compose"
 	"github.com/forge/sword/internal/mcp2/discover"
 	"github.com/forge/sword/internal/mcp2/server"
+	"github.com/forge/sword/internal/mcpgateway"
 )
 
 func TestMCPServerCreation(t *testing.T) {
