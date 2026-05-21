@@ -187,3 +187,25 @@
 - Slice bounds panic on short strings in ID generation
 - Duplicate function names (truncate, NodeType)
 - Missing imports (net/http) in other session's code
+
+## Session: May 21, 2026 — Forge Dev Sprint
+
+### Built (8 new packages)
+1. **internal/forgefile** — Forgefile v2 TOML multi-agent workflow syntax
+2. **internal/dreamreview** — Scheduled memory review (Dreaming) pattern detection
+3. **internal/rubric** — Rubric-based output grading with 3 builtin rubrics
+4. **internal/dashboard** — Real-time web dashboard (HTML/CSS/JS via go:embed, WebSocket)
+5. **internal/rbac** — Role-Based Access Control (5 builtin roles, policy engine)
+6. **internal/sso** — SSO (OIDC, SAML, API keys) with session management
+7. **internal/chaos** — Chaos engineering for resilience testing
+8. **internal/a2a** — A2A protocol for inter-framework agent communication
+
+### Fixed
+- Concurrent build errors: wrong import paths (the-forge -> github.com/forge/sword), missing imports
+- Tenant package type reconciliation (Plan struct vs string, Quota field names)
+- Missing Store, Role, CanPerform types for tenant API/middleware
+- All tests passing across 6 new packages
+
+### Stats
+- ~123K lines of Go, 162 internal packages, 112 commands
+- Build: ✅ Vet: ✅ Tests: ✅
