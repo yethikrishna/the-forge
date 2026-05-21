@@ -816,3 +816,42 @@ Consensus shift: **plain Docker containers are insufficient** for untrusted agen
 **Platform choices**: Anthropic uses gVisor/bubblewrap mix. Vercel and most agent frameworks standardize on Firecracker. E2B, Northflank, Blaxel offer managed Firecracker sandboxes. [Source](https://michaellivs.com/blog/sandboxing-ai-agents-2026/)
 
 **Emerging**: ZeroBoot claims sub-millisecond sandbox startup. Microsoft LiteBox (library-OS experiment). Snapshot/restore optimizations for faster sandbox reuse.
+
+---
+
+## Research Update — 2026-05-21 06:00 UTC
+
+### 1. MCP Ecosystem — Explosive Growth
+
+- **~9,400 distinct public MCP servers** tracked across registries as of mid-April 2026. Six canonical host surfaces (Claude Desktop/Code, Cursor, Codex CLI, VS Code + Copilot, OpenAI/Anthropic-native). [Source](https://www.digitalapplied.com/blog/mcp-ecosystem-h1-2026-retrospective-adoption-data-points)
+- **Tool taxonomy**: Connectors/SaaS (~38%), Developer tooling (~27%), Data/search (~18%), System/browser (~11%), Creative/content (~6%).
+- **Marketplace infrastructure matured**: Official MCP Registry, MCP Market, Glama.ai, Cline Marketplace, Databricks Marketplace, Smithery — functioning as "app stores" for MCP servers. [Source](https://workos.com/blog/everything-your-team-needs-to-know-about-mcp-in-2026)
+- **Official vendor servers**: GitHub, Stripe, AWS, Cloudflare, Slack, Notion all ship first-party MCP servers. [Source](https://hidekazu-konishi.com/entry/mcp_server_ecosystem_reference_2026.html)
+- **Databricks Marketplace** launched governed MCP server marketplace for enterprise. [Source](https://www.databricks.com/blog/mcp-marketplace-brings-real-time-intelligence-agentic-applications)
+- Notable new servers (May 20): CoReason federated zero-trust MCP gateway, CalendarMCP (hosted Google Calendar), XRPL Utilities, DPX (AI oracle + settlement with USDC/EURC on Base). [Source](https://registry.modelcontextprotocol.io/)
+
+### 2. Enterprise Orchestration Tools
+
+- **BMC Control-M**: Expanded with agentic AI orchestration capabilities. Integrations with CrewAI, LangGraph, Snowflake Cortex. Governance features added. [Source](https://www.prnewswire.com/news-releases/bmc-advances-trusted-ai-orchestration-with-new-control-m-capabilities-302717319.html)
+- **Zensai Human Success Agent**: Built on Microsoft Agent 365 enterprise orchestration. [Source](https://www.tmcnet.com/usubmit/-zensai-introduces-human-success-agent-microsoft-agent-365-/2026/05/01/10375387.htm)
+- **Deloitte 2026 predictions**: Agent orchestration layers critical for scaling multi-agent systems. 2026 as inflection point for 10× team capacity. [Source](https://www.deloitte.com/us/en/insights/industry/technology/technology-media-and-telecom-predictions/2026/ai-agent-orchestration.html)
+- **Enterprise security guidance**: IT Security Guru published best practices for securing AI agent orchestration (May 2). Focus on human-on-the-loop, EU AI Act compliance, governance. [Source](https://www.itsecurityguru.org/2026/05/02/securing-ai-agent-orchestration-enterprise-best-practices-2026/)
+
+### 3. Agent Memory & Persistent State Architecture (2026 Best Practices)
+
+Key distinction: **RAG ≠ agent memory**. RAG is reactive/stateless per query. Agent memory maintains evolving internal state (preferences, decisions, episodic history, procedural knowledge). [Source](https://www.letta.com/blog/rag-vs-agent-memory)
+
+**Multi-layer memory stack (2026 production standard):**
+1. Short-term/working memory — LLM context window
+2. Semantic/long-term memory — Vector DB (embeddings, similarity search)
+3. Structured/persistent state — SQL/graph/KV store (facts, workflows, variables)
+4. Checkpoints & orchestration — LangGraph-style persistent graphs with savers (Postgres, SQLite, Redis)
+[Source](https://mem0.ai/blog/state-of-ai-agent-memory-2026)
+
+**Leading tools:**
+- **Mem0** — Most popular drop-in memory layer, 20+ vector backends, ADD/UPDATE/DELETE operations. [Source](https://mem0.ai/blog/state-of-ai-agent-memory-2026)
+- **Letta (MemGPT)** — OS-style memory management for long-running agents
+- **Zep / Graphiti** — Temporal reasoning and evolving facts
+- **Cognee** — Graph-native memory
+- **Hybrid stores recommended**: TiDB (SQL + vector + HTAP), Redis (vector + caching), SurrealDB (multi-model ACID) reduce complexity vs separate systems. [Source](https://www.pingcap.com/compare/best-database-for-ai-agents/)
+[Source](https://atlan.com/know/best-ai-agent-memory-frameworks-2026/)
