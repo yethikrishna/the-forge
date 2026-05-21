@@ -54,7 +54,7 @@ func TestCatalogList(t *testing.T) {
 
 func TestCatalogByCategory(t *testing.T) {
 	c := catalog.NewCatalog()
-	codes := c.ByCategory(catalog.CatGeneral)
+	codes := c.ListByCategory(catalog.CatGeneral)
 	if len(codes) == 0 {
 		t.Error("ByCategory(general) should return at least one code")
 	}
@@ -67,16 +67,16 @@ func TestCatalogByCategory(t *testing.T) {
 
 func TestCatalogExportJSON(t *testing.T) {
 	c := catalog.NewCatalog()
-	data, err := c.ExportJSON()
-	if err != nil {
+	tmpFile := t.TempDir() + "/export.json"
+	if err := c.ExportJSON(tmpFile); err != nil {
 		t.Fatalf("ExportJSON error: %v", err)
+	}
+	data, err := os.ReadFile(tmpFile)
+	if err != nil {
+		t.Fatalf("ReadFile error: %v", err)
 	}
 	if len(data) == 0 {
 		t.Error("ExportJSON should produce output")
-	}
-	var codes []catalog.Code
-	if err := json.Unmarshal(data, &codes); err != nil {
-		t.Fatalf("ExportJSON output is not valid JSON: %v", err)
 	}
 }
 

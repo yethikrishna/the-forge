@@ -73,9 +73,7 @@ func TestMCPServerBuiltins(t *testing.T) {
 func TestMCPComposeGateway(t *testing.T) {
 	gw := compose.NewComposeGateway(compose.ComposeConfig{
 		Servers: []compose.ServerConfig{
-				Command: "echo",
-				Args:    []string{"hello"},
-			},
+			{Command: "echo", Args: []string{"hello"}},
 		},
 	})
 	if gw == nil {
@@ -99,7 +97,7 @@ func TestMCPComposeAddServer(t *testing.T) {
 
 func TestMCPComposeRemoveServer(t *testing.T) {
 	gw := compose.NewComposeGateway(compose.ComposeConfig{
-		Servers: []compose.ServerConfig{
+		Servers: []compose.ServerConfig{{
 			"rm-srv": {Command: "test"},
 		},
 	})

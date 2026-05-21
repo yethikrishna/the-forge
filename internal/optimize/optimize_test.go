@@ -40,8 +40,7 @@ func TestDreamSession(t *testing.T) {
 func TestDreamSaveReport(t *testing.T) {
 	store := dream.NewStore(t.TempDir())
 	report := &dream.DreamReport{
-		FilesIndexed:  5,
-		Optimizations: []dream.Optimization{},
+		FilesIndexed: 5,
 	}
 	if err := store.SaveReport(report); err != nil {
 		t.Fatalf("SaveReport error: %v", err)
@@ -54,7 +53,7 @@ func TestBreedEvolver(t *testing.T) {
 		{Name: "temperature", Values: []string{"0.3", "0.7", "1.0"}},
 	}
 	evolver := breed.NewEvolver(traits, func(g *breed.Genome) float64 {
-		return 0.5 // fixed fitness for testing
+		return 0.5
 	}, t.TempDir())
 
 	population := evolver.Initialize()
@@ -86,7 +85,6 @@ func TestBreedRecordRun(t *testing.T) {
 	population := evolver.Initialize()
 
 	evolver.RecordRun(population[0].ID, 0.85)
-	// Should not panic
 }
 
 func TestBreedDiversity(t *testing.T) {
@@ -100,6 +98,19 @@ func TestBreedDiversity(t *testing.T) {
 	if div < 0 || div > 1 {
 		t.Errorf("Diversity = %f, want [0,1]", div)
 	}
+}
+
+func TestBreedBest(t *testing.T) {
+	traits := []breed.Trait{
+		{Name: "model", Values: []string{"a", "b"}},
+	}
+	evolver := breed.NewEvolver(traits, func(g *breed.Genome) float64 {
+		return 0.8
+	}, t.TempDir())
+	evolver.Initialize()
+
+	best := evolver.Best()
+	_ = best // may be nil before recording
 }
 
 func TestTuneOptimizer(t *testing.T) {

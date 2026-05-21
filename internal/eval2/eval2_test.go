@@ -142,10 +142,10 @@ func TestAgentTestEvaluateTestCase(t *testing.T) {
 
 func TestAgentTestSuiteResult(t *testing.T) {
 	sr := &agenttest.SuiteResult{
-		Name: "test-suite",
+		SuiteName: "test-suite",
 		Results: []agenttest.Result{
-			{Name: "test1", Passed: true},
-			{Name: "test2", Passed: false, Error: "assertion failed"},
+			{TestCaseName: "test1", Status: agenttest.StatusPass},
+			{TestCaseName: "test2", Status: agenttest.StatusFail, Error: "assertion failed"},
 		},
 	}
 
