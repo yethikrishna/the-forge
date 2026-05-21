@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/forge/sword/internal/debate"
+	"github.com/forge/sword/internal/consensus/debate"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
 )
