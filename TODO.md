@@ -215,17 +215,51 @@ All 18 utility packages implemented and tested.
 - [ ] **Plugin Marketplace** — registry + versioning + ratings + WASM plugins
 - [x] **A2A Protocol** — Google Agent-to-Agent for inter-framework communication
 
-### Competitive Watchlist (Updated 23:14 UTC)
+### P0 — This Week (Run 4, 2026-05-21)
+- [ ] **MCP Governance Gateway** — `forge mcp gateway` with auth + rate limiting + audit logging + schema validation (MCP is the standard; governed MCP is the differentiator)
+- [ ] **Cross-Tool Bridge MVP** — `forge bridge cursor` and `forge bridge copilot` (be the glue between tools, not a replacement)
+- [ ] **60-Second Demo Video** — brew install → forge quickstart → agents running (blocking all growth)
+
+### P1 — Next 2 Weeks (Run 4)
+- [ ] **Spec-to-Pipeline** — `forge spec` command: natural language spec → agent pipeline → execution with approval checkpoints (Gartner #1 trend)
+- [ ] **Long-Running Agent Mode** — `forge run --persistent` with crash recovery, state persistence, progress dashboard (days-long autonomous runs)
+- [ ] **Enterprise Demo Mode** — `forge demo --enterprise` showing governance, compliance, audit trail, trust scores in 2 minutes
+
+### P2 — Next Month (Run 4)
+- [ ] **Plugin Marketplace MVP** — git-based registry, publish/install/version (ecosystem play)
+- [ ] **Observer Dashboard** — read-only web view for managers/leads: status, cost, compliance, trust scores (opens non-developer buyer)
+- [ ] **Air-Gapped Mode** — `forge init --airgap` with local model presets + pre-indexed codebase (enterprise security differentiator)
+- [ ] **Local Model Presets Expansion** — one-command presets for Cohere Command A+, DeepSeek V3, Qwen3 (hardware-agnostic)
+
+### P3 — Next Quarter (Run 4)
+- [ ] **Forge Studio (Visual Builder)** — drag-and-drop pipeline builder (post-CLI-solid, for non-developer expansion)
+- [ ] **A2A Bridge (basic)** — inter-framework communication via Google A2A protocol (despite anti-roadmap, adoption accelerating)
+- [ ] **Agent-as-a-Service** — `forge serve --public` with usage billing, API keys, rate limiting (revenue play)
+
+### Competitive Watchlist (Updated 05:37 UTC, Run 4)
+- **Google Antigravity 2.0** — desktop agent orchestrator with sub-agents, parallel workflows. Counter: local-first, multi-provider, self-hosted
+- **Warp Oz** — cloud agent orchestration GA, async cloud agents, enterprise features. Counter: no cloud lock-in
+- **Microsoft Agent Framework 1.0** — Azure-native, enterprise. Counter: Go binary, no Azure dependency
+- **Twin.so** — no-code browser agents, 150K+ community-built agents, explosive growth. Counter: governance, developer-power-user focus
+- **opencode** — fast-growing agentic coding agent on GitHub. Monitor
+- **Cohere Command A+** — Apache 2.0 enterprise model. Add to local presets
+- **LangGraph** — production standard for stateful graph workflows. Build bridge compatibility
+- **CrewAI** — 44K stars, simplest multi-agent Python framework. Reference for UX
 - **Google Antigravity 2.0** — desktop agent orchestrator, sub-agents, parallel workflows. Counter: local-first, multi-provider, self-hosted
 - **Warp Oz** — cloud agent orchestration, GA, enterprise features. Counter: no cloud lock-in
 - **Microsoft Agent Framework 1.0** — Azure-native, enterprise. Counter: Go binary, no Azure dependency
 - **opencode** — fast-growing agentic coding agent on GitHub. Monitor
 - **Cohere Command A+** — Apache 2.0 enterprise model. Add to local presets
 
-### Market Signals
+### Market Signals (Updated 05:37 UTC, Run 4)
 - Gartner (May 20): 65% of eng teams will treat IDEs as optional by 2027
 - Optimizely: 42% QoQ ARR growth in agent orchestration — market monetizing fast
 - MCP: 110M+ monthly downloads, donated to Linux Foundation — permanent standard
+- Anthropic: 2026 is the shift from pair-programming to managing teams of AI engineers
+- Deloitte: Companies with ≥40% AI projects in production to double in 6 months
+- Only 29% developer trust in AI output — governance and transparency are the wedge
+- Gartner #1 trend: AI-Native Development Platforms (intent-driven development)
+- 84% of devs use AI tools; 59% use 3+; enterprises consolidating to single platforms
 
 ## Phase 4: Polish & Release
 - [ ] CI/CD pipeline (GitHub Actions)
