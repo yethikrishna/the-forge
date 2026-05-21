@@ -628,3 +628,21 @@ Relevance for the-forge: SAFE-MCP provides a concrete threat model to test the-f
 
 - https://openssf.org/blog/2026/04/08/openssf-tech-talk-recap-securing-agentic-ai/
 - https://labs.cloudsecurityalliance.org/research/csa-research-note-nist-ai-agent-standards-federal-framework/
+
+---
+
+## 2026-05-21 (03:10 UTC) — Overnight Sweep
+
+### Minor Detail Fills
+
+**Smolagents** — Ultra-minimal, model-agnostic agent framework (fast-growing OSS option). Worth watching as a lightweight alternative to heavier orchestration frameworks. Relevant for the-forge: if we need a minimal agent runtime, this is a reference.
+
+**Okta AI Agent Security** (May 14, 2026) — Expanded support including **virtual MCP server capabilities** for identity-managed agent tool access. Pattern: identity provider as the MCP auth layer. Relevant for the-forge: if we add MCP server support, Okta-style identity integration is the enterprise pattern.
+
+**Microsoft Agent Framework 1.0 GA** — Confirmed April 3, 2026 (not just "Q1 target"). Open-source SDK/runtime for .NET and Python. Replaces AutoGen. Principle: "use code when possible" — deterministic fallbacks over LLM calls when feasible.
+
+**LangGraph** — now 126,000+ GitHub stars. Production deployment references expanding.
+
+### No Major New Launches
+
+Quiet overnight continues. All significant developments across 11 sweeps fully captured.
