@@ -1,5 +1,8 @@
-// Package sessiontag provides session tagging, filtering, auto-tagging,
-// and saved searches for organizing agent sessions.
+// Package sessiontag provides session tagging and organization.
+// Tag sessions, filter by tags, auto-tag based on content,
+// and save searches for quick access.
+//
+// Organize or drown.
 package sessiontag
 
 import (
@@ -7,348 +10,162 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
-	"sync"
 	"time"
+)
+
+// Color represents a tag color.
+type Color string
+
+const (
+	ColorRed    Color = "red"
+	ColorOrange Color = "orange"
+	ColorYellow Color = "yellow"
+	ColorGreen  Color = "green"
+	ColorBlue   Color = "blue"
+	ColorPurple Color = "purple"
+	ColorGray   Color = "gray"
 )
 
 // Tag represents a session tag.
 type Tag struct {
 	Name      string    `json:"name"`
-	Color     string    `json:"color,omitempty"` // hex color code
+	Color     Color     `json:"color"`
 	CreatedAt time.Time `json:"created_at"`
-	AutoTag   bool      `json:"auto_tag"` // true if auto-generated
-	Count     int       `json:"count"`    // number of sessions with this tag
+	Count     int       `json:"count"` // sessions with this tag
 }
 
-// SessionTags represents tags on a session.
-type SessionTags struct {
-	SessionID string    `json:"session_id"`
-	Tags      []string  `json:"tags"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// SavedSearch represents a saved search query.
-type SavedSearch struct {
+// Session represents a tagged session.
+type Session struct {
 	ID        string            `json:"id"`
-	Name      string            `json:"name"`
-	Query     string            `json:"query"`
-	Tags      []string          `json:"tags,omitempty"`
+	Title     string            `json:"title"`
+	Tags      []string          `json:"tags"`
 	CreatedAt time.Time         `json:"created_at"`
-	LastUsed  time.Time         `json:"last_used,omitempty"`
-	UseCount  int               `json:"use_count"`
+	UpdatedAt time.Time         `json:"updated_at"`
 	Metadata  map[string]string `json:"metadata,omitempty"`
 }
 
-// Store manages session tags.
-type Store struct {
-	mu       sync.RWMutex
-	dir      string
-	tags     map[string]*Tag           // tag name -> tag
-	sessions map[string]*SessionTags   // session ID -> tags
-	searches map[string]*SavedSearch   // search ID -> search
+// AutoRule is a rule for auto-tagging sessions.
+type AutoRule struct {
+	ID       string `json:"id"`
+	Tag      string `json:"tag"`
+	Pattern  string `json:"pattern"`  // regex to match title/content
+	Field    string `json:"field"`    // title, content, metadata
+	Enabled  bool   `json:"enabled"`
+	Priority int    `json:"priority"`
 }
 
-// NewStore creates a new session tag store.
-func NewStore(dir string) (*Store, error) {
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, fmt.Errorf("create tag dir: %w", err)
-	}
-	s := &Store{
-		dir:      dir,
-		tags:     make(map[string]*Tag),
-		sessions: make(map[string]*SessionTags),
-		searches: make(map[string]*SavedSearch),
-	}
-	s.load()
-	return s, nil
+// SavedSearch is a saved filter combination.
+type SavedSearch struct {
+	Name      string   `json:"name"`
+	Tags      []string `json:"tags"`
+	Query     string   `json:"query"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
-func (s *Store) load() {
-	// Load tags
-	data, err := os.ReadFile(filepath.Join(s.dir, "tags.json"))
-	if err == nil {
-		json.Unmarshal(data, &s.tags)
-	}
+// Manager manages session tags.
+type Manager struct {
+	sessions     map[string]*Session
+	tags         map[string]*Tag
+	autoRules    []AutoRule
+	savedSearches []SavedSearch
+	storeDir     string
+	mu           sync.Mutex
+}
 
-	// Load session tags
-	data, err = os.ReadFile(filepath.Join(s.dir, "sessions.json"))
-	if err == nil {
-		json.Unmarshal(data, &s.sessions)
+// NewManager creates a session tag manager.
+func NewManager(storeDir string) *Manager {
+	m := &Manager{
+		sessions:     make(map[string]*Session),
+		tags:         make(map[string]*Tag),
+		autoRules:    make([]AutoRule, 0),
+		storeDir:     storeDir,
 	}
+	m.registerDefaultTags()
+	m.registerDefaultRules()
+	m.load()
+	return m
+}
 
-	// Load saved searches
-	data, err = os.ReadFile(filepath.Join(s.dir, "searches.json"))
-	if err == nil {
-		json.Unmarshal(data, &s.searches)
+func (m *Manager) registerDefaultTags() {
+	defaults := []struct {
+		name  string
+		color Color
+	}{
+		{"bug", ColorRed}, {"feature", ColorGreen}, {"refactor", ColorBlue},
+		{"docs", ColorGray}, {"test", ColorOrange}, {"urgent", ColorRed},
+		{"review", ColorPurple}, {"wip", ColorYellow},
+	}
+	for _, d := range defaults {
+		m.tags[d.name] = &Tag{
+			Name:      d.name,
+			Color:     d.color,
+			CreatedAt: time.Now(),
+		}
 	}
 }
 
-func (s *Store) saveTags() error {
-	data, _ := json.MarshalIndent(s.tags, "", "  ")
-	return os.WriteFile(filepath.Join(s.dir, "tags.json"), data, 0644)
-}
-
-func (s *Store) saveSessions() error {
-	data, _ := json.MarshalIndent(s.sessions, "", "  ")
-	return os.WriteFile(filepath.Join(s.dir, "sessions.json"), data, 0644)
-}
-
-func (s *Store) saveSearches() error {
-	data, _ := json.MarshalIndent(s.searches, "", "  ")
-	return os.WriteFile(filepath.Join(s.dir, "searches.json"), data, 0644)
+func (m *Manager) registerDefaultRules() {
+	rules := []AutoRule{
+		{ID: "auto-fix", Tag: "bug", Pattern: `(?i)(fix|bug|patch|hotfix)`, Field: "title", Enabled: true, Priority: 10},
+		{ID: "auto-feat", Tag: "feature", Pattern: `(?i)(feat|feature|add|implement)`, Field: "title", Enabled: true, Priority: 10},
+		{ID: "auto-docs", Tag: "docs", Pattern: `(?i)(doc|readme|guide|tutorial)`, Field: "title", Enabled: true, Priority: 10},
+		{ID: "auto-test", Tag: "test", Pattern: `(?i)(test|spec|verify)`, Field: "title", Enabled: true, Priority: 10},
+		{ID: "auto-urgent", Tag: "urgent", Pattern: `(?i)(urgent|critical|asap|hot)`, Field: "title", Enabled: true, Priority: 20},
+	}
+	m.autoRules = append(m.autoRules, rules...)
 }
 
 // CreateTag creates a new tag.
-func (s *Store) CreateTag(name, color string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (m *Manager) CreateTag(name string, color Color) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	if _, exists := s.tags[name]; exists {
+	if _, exists := m.tags[name]; exists {
 		return fmt.Errorf("tag %q already exists", name)
 	}
-	s.tags[name] = &Tag{
+	m.tags[name] = &Tag{
 		Name:      name,
 		Color:     color,
 		CreatedAt: time.Now(),
 	}
-	return s.saveTags()
-}
-
-// GetTag retrieves a tag.
-func (s *Store) GetTag(name string) (*Tag, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	t, ok := s.tags[name]
-	return t, ok
-}
-
-// ListTags lists all tags.
-func (s *Store) ListTags() []Tag {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	var result []Tag
-	for _, t := range s.tags {
-		result = append(result, *t)
-	}
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Name < result[j].Name
-	})
-	return result
-}
-
-// DeleteTag removes a tag from all sessions.
-func (s *Store) DeleteTag(name string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	delete(s.tags, name)
-
-	for _, st := range s.sessions {
-		for i, t := range st.Tags {
-			if t == name {
-				st.Tags = append(st.Tags[:i], st.Tags[i+1:]...)
-				st.UpdatedAt = time.Now()
-				break
-			}
-		}
-	}
-
-	s.saveTags()
-	return s.saveSessions()
-}
-
-// TagSession adds tags to a session.
-func (s *Store) TagSession(sessionID string, tags []string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	st, ok := s.sessions[sessionID]
-	if !ok {
-		st = &SessionTags{SessionID: sessionID}
-		s.sessions[sessionID] = st
-	}
-
-	for _, tag := range tags {
-		found := false
-		for _, existing := range st.Tags {
-			if existing == tag {
-				found = true
-				break
-			}
-		}
-		if !found {
-			st.Tags = append(st.Tags, tag)
-		}
-
-		// Ensure tag exists in tag registry
-		if _, exists := s.tags[tag]; !exists {
-			s.tags[tag] = &Tag{
-				Name:      tag,
-				CreatedAt: time.Now(),
-				AutoTag:   false,
-			}
-		}
-		s.tags[tag].Count++
-	}
-	st.UpdatedAt = time.Now()
-
-	s.saveTags()
-	return s.saveSessions()
-}
-
-// UntagSession removes tags from a session.
-func (s *Store) UntagSession(sessionID string, tags []string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	st, ok := s.sessions[sessionID]
-	if !ok {
-		return nil
-	}
-
-	tagSet := make(map[string]bool)
-	for _, t := range tags {
-		tagSet[t] = true
-	}
-
-	var newTags []string
-	for _, t := range st.Tags {
-		if !tagSet[t] {
-			newTags = append(newTags, t)
-		} else if tag, exists := s.tags[t]; exists {
-			tag.Count--
-		}
-	}
-	st.Tags = newTags
-	st.UpdatedAt = time.Now()
-
-	s.saveTags()
-	return s.saveSessions()
-}
-
-// GetSessionTags returns tags for a session.
-func (s *Store) GetSessionTags(sessionID string) []string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	if st, ok := s.sessions[sessionID]; ok {
-		return st.Tags
-	}
+	m.save()
 	return nil
 }
 
-// FindSessions finds sessions matching the given tags (AND logic).
-func (s *Store) FindSessions(tags []string) []string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+// DeleteTag removes a tag from all sessions.
+func (m *Manager) DeleteTag(name string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	var result []string
-	for _, st := range s.sessions {
-		if containsAll(st.Tags, tags) {
-			result = append(result, st.SessionID)
-		}
+	if _, exists := m.tags[name]; !exists {
+		return fmt.Errorf("tag %q not found", name)
 	}
-	sort.Strings(result)
-	return result
+
+	delete(m.tags, name)
+	for _, s := range m.sessions {
+		s.Tags = removeString(s.Tags, name)
+	}
+	m.save()
+	return nil
 }
 
-// FindSessionsAny finds sessions matching any of the given tags (OR logic).
-func (s *Store) FindSessionsAny(tags []string) []string {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+// ListTags returns all tags.
+func (m *Manager) ListTags() []Tag {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	tagSet := make(map[string]bool)
-	for _, t := range tags {
-		tagSet[t] = true
-	}
-
-	var result []string
-	for _, st := range s.sessions {
-		for _, t := range st.Tags {
-			if tagSet[t] {
-				result = append(result, st.SessionID)
-				break
+	result := make([]Tag, 0, len(m.tags))
+	for _, t := range m.tags {
+		count := 0
+		for _, s := range m.sessions {
+			if containsString(s.Tags, t.Name) {
+				count++
 			}
 		}
-	}
-	sort.Strings(result)
-	return result
-}
-
-// AutoTag automatically tags a session based on its content.
-func (s *Store) AutoTag(sessionID, prompt, output string) []string {
-	var tags []string
-	lower := strings.ToLower(prompt + " " + output)
-
-	rules := map[string][]string{
-		"bug-fix":    {"bug", "fix", "issue", "error", "crash", "broken"},
-		"feature":    {"feature", "implement", "add", "create", "new"},
-		"refactor":   {"refactor", "clean", "restructure", "simplify"},
-		"security":   {"security", "vulnerability", "cve", "injection", "xss"},
-		"test":       {"test", "testing", "coverage", "unit test"},
-		"docs":       {"docs", "documentation", "readme", "comment"},
-		"perf":       {"performance", "optimize", "speed", "slow", "latency"},
-		"review":     {"review", "code review", "pr review"},
-		"deployment": {"deploy", "release", "production", "staging"},
-		"database":   {"database", "sql", "query", "migration", "schema"},
-		"api":        {"api", "endpoint", "rest", "graphql", "handler"},
-		"auth":       {"auth", "login", "oauth", "jwt", "token"},
-		"docker":     {"docker", "container", "dockerfile", "compose"},
-		"ci":         {"ci", "pipeline", "github actions", "jenkins"},
-	}
-
-	for tag, keywords := range rules {
-		for _, kw := range keywords {
-			if strings.Contains(lower, kw) {
-				tags = append(tags, tag)
-				break
-			}
-		}
-	}
-
-	if len(tags) > 0 {
-		s.TagSession(sessionID, tags)
-		// Mark as auto-generated
-		s.mu.Lock()
-		for _, tag := range tags {
-			if t, ok := s.tags[tag]; ok {
-				t.AutoTag = true
-			}
-		}
-		s.saveTags()
-		s.mu.Unlock()
-	}
-
-	return tags
-}
-
-// SaveSearch saves a search query.
-func (s *Store) SaveSearch(name, query string, tags []string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	id := fmt.Sprintf("search-%d", time.Now().UnixNano())
-	s.searches[id] = &SavedSearch{
-		ID:        id,
-		Name:      name,
-		Query:     query,
-		Tags:      tags,
-		CreatedAt: time.Now(),
-	}
-	return s.saveSearches()
-}
-
-// ListSearches lists saved searches.
-func (s *Store) ListSearches() []SavedSearch {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	var result []SavedSearch
-	for _, ss := range s.searches {
-		result = append(result, *ss)
+		result = append(result, Tag{Name: t.Name, Color: t.Color, Count: count, CreatedAt: t.CreatedAt})
 	}
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].Name < result[j].Name
@@ -356,65 +173,263 @@ func (s *Store) ListSearches() []SavedSearch {
 	return result
 }
 
-// ExecuteSearch executes a saved search.
-func (s *Store) ExecuteSearch(id string) ([]string, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+// TagSession adds tags to a session.
+func (m *Manager) TagSession(sessionID string, tags []string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	ss, ok := s.searches[id]
+	session, ok := m.sessions[sessionID]
 	if !ok {
-		return nil, fmt.Errorf("search %s not found", id)
+		session = &Session{
+			ID:        sessionID,
+			Tags:      []string{},
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			Metadata:  make(map[string]string),
+		}
+		m.sessions[sessionID] = session
 	}
 
-	ss.UseCount++
-	ss.LastUsed = time.Now()
-	s.saveSearches()
-
-	// Unlock for the find operation
-	s.mu.Unlock()
-	result := s.FindSessions(ss.Tags)
-	s.mu.Lock()
-
-	return result, nil
+	for _, tag := range tags {
+		if !containsString(session.Tags, tag) {
+			session.Tags = append(session.Tags, tag)
+		}
+	}
+	session.UpdatedAt = time.Now()
+	m.save()
+	return nil
 }
 
-// DeleteSearch removes a saved search.
-func (s *Store) DeleteSearch(id string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+// UntagSession removes tags from a session.
+func (m *Manager) UntagSession(sessionID string, tags []string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	delete(s.searches, id)
-	return s.saveSearches()
+	session, ok := m.sessions[sessionID]
+	if !ok {
+		return fmt.Errorf("session %q not found", sessionID)
+	}
+
+	for _, tag := range tags {
+		session.Tags = removeString(session.Tags, tag)
+	}
+	session.UpdatedAt = time.Now()
+	m.save()
+	return nil
 }
 
-// Stats returns tag statistics.
-func (s *Store) Stats() map[string]interface{} {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+// AutoTag applies auto-tagging rules to a session.
+func (m *Manager) AutoTag(sessionID, title string) []string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	totalSessions := len(s.sessions)
-	autoTags := 0
-	for _, t := range s.tags {
-		if t.AutoTag {
-			autoTags++
+	session, ok := m.sessions[sessionID]
+	if !ok {
+		session = &Session{
+			ID:        sessionID,
+			Title:     title,
+			Tags:      []string{},
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			Metadata:  make(map[string]string),
+		}
+		m.sessions[sessionID] = session
+	}
+	session.Title = title
+
+	var applied []string
+	for _, rule := range m.autoRules {
+		if !rule.Enabled {
+			continue
+		}
+		re, err := regexp.Compile(rule.Pattern)
+		if err != nil {
+			continue
+		}
+
+		text := ""
+		switch rule.Field {
+		case "title":
+			text = title
+		}
+
+		if re.MatchString(text) && !containsString(session.Tags, rule.Tag) {
+			session.Tags = append(session.Tags, rule.Tag)
+			applied = append(applied, rule.Tag)
 		}
 	}
 
-	return map[string]interface{}{
-		"total_tags":     len(s.tags),
-		"auto_tags":      autoTags,
-		"tagged_sessions": totalSessions,
-		"saved_searches": len(s.searches),
+	session.UpdatedAt = time.Now()
+	m.save()
+	return applied
+}
+
+// FindByTags finds sessions matching all specified tags.
+func (m *Manager) FindByTags(tags []string) []Session {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	var result []Session
+	for _, s := range m.sessions {
+		if allTagsMatch(s.Tags, tags) {
+			result = append(result, *s)
+		}
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].UpdatedAt.After(result[j].UpdatedAt)
+	})
+	return result
+}
+
+// FindByQuery finds sessions matching a text query.
+func (m *Manager) FindByQuery(query string) []Session {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	q := strings.ToLower(query)
+	var result []Session
+	for _, s := range m.sessions {
+		if strings.Contains(strings.ToLower(s.Title), q) ||
+			strings.Contains(strings.ToLower(s.ID), q) {
+			result = append(result, *s)
+		}
+	}
+	return result
+}
+
+// GetSession returns a session by ID.
+func (m *Manager) GetSession(id string) (*Session, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	s, ok := m.sessions[id]
+	if !ok {
+		return nil, false
+	}
+	copy := *s
+	return &copy, true
+}
+
+// ListSessions returns all sessions.
+func (m *Manager) ListSessions() []Session {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	result := make([]Session, 0, len(m.sessions))
+	for _, s := range m.sessions {
+		result = append(result, *s)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].UpdatedAt.After(result[j].UpdatedAt)
+	})
+	return result
+}
+
+// AddAutoRule adds an auto-tagging rule.
+func (m *Manager) AddAutoRule(rule AutoRule) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.autoRules = append(m.autoRules, rule)
+	m.save()
+}
+
+// SaveSearch saves a search for later reuse.
+func (m *Manager) SaveSearch(name string, tags []string, query string) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.savedSearches = append(m.savedSearches, SavedSearch{
+		Name: name, Tags: tags, Query: query, CreatedAt: time.Now(),
+	})
+	m.save()
+}
+
+// GetSavedSearches returns all saved searches.
+func (m *Manager) GetSavedSearches() []SavedSearch {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.savedSearches
+}
+
+func (m *Manager) save() {
+	if m.storeDir == "" {
+		return
+	}
+	os.MkdirAll(m.storeDir, 0755)
+	data, _ := json.MarshalIndent(map[string]interface{}{
+		"sessions":      m.sessions,
+		"tags":          m.tags,
+		"auto_rules":    m.autoRules,
+		"saved_searches": m.savedSearches,
+	}, "", "  ")
+	os.WriteFile(filepath.Join(m.storeDir, "session_tags.json"), data, 0644)
+}
+
+func (m *Manager) load() {
+	if m.storeDir == "" {
+		return
+	}
+	data, err := os.ReadFile(filepath.Join(m.storeDir, "session_tags.json"))
+	if err != nil {
+		return
+	}
+	var stored map[string]json.RawMessage
+	if json.Unmarshal(data, &stored) != nil {
+		return
+	}
+	if raw, ok := stored["sessions"]; ok {
+		json.Unmarshal(raw, &m.sessions)
+	}
+	if raw, ok := stored["tags"]; ok {
+		json.Unmarshal(raw, &m.tags)
+	}
+	if raw, ok := stored["auto_rules"]; ok {
+		json.Unmarshal(raw, &m.autoRules)
+	}
+	if raw, ok := stored["saved_searches"]; ok {
+		json.Unmarshal(raw, &m.savedSearches)
 	}
 }
 
-func containsAll(haystack, needles []string) bool {
-	needleSet := make(map[string]bool)
-	for _, n := range needles {
-		needleSet[n] = true
+// FormatSession formats a session for display.
+func FormatSession(s *Session) string {
+	tags := strings.Join(s.Tags, ", ")
+	if tags == "" {
+		tags = "(none)"
 	}
-	for _, h := range haystack {
-		delete(needleSet, h)
+	return fmt.Sprintf("%-20s %-30s [%s] %s",
+		s.ID, truncate(s.Title, 28), tags, s.UpdatedAt.Format("2006-01-02"))
+}
+
+func truncate(s string, max int) string {
+	if len(s) <= max {
+		return s
 	}
-	return len(needleSet) == 0
+	return s[:max-3] + "..."
+}
+
+func containsString(slice []string, s string) bool {
+	for _, v := range slice {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func removeString(slice []string, s string) []string {
+	var result []string
+	for _, v := range slice {
+		if v != s {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
+func allTagsMatch(sessionTags, requiredTags []string) bool {
+	for _, req := range requiredTags {
+		if !containsString(sessionTags, req) {
+			return false
+		}
+	}
+	return true
 }
