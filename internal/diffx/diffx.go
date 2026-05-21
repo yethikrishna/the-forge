@@ -182,7 +182,7 @@ func (d *Differ) Diff(oldContent, newContent string) *DiffResult {
 				if _, exists := newMap[oldName]; exists {
 					continue
 				}
-				if oldBlock.Type == newBlock.Type && similarity(oldBlock.Content, newBlock.Content) > 0.7 {
+				if oldBlock.Type == newBlock.Type && similarity(oldBlock.Content, newBlock.Content) > 0.6 {
 					result.Changes = append(result.Changes, SemanticChange{
 						Type:      ChangeRenamed,
 						BlockType: newBlock.Type,
