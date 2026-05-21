@@ -646,3 +646,75 @@ Relevance for the-forge: SAFE-MCP provides a concrete threat model to test the-f
 ### No Major New Launches
 
 Quiet overnight continues. All significant developments across 11 sweeps fully captured.
+
+---
+
+## Research Update — 2026-05-21 04:03 UTC
+
+### 1. Agent Orchestration Frameworks — Major Launches
+
+- **OpenAI Agents SDK** (Mar 2025 GA): Replaced Swarm. Production-grade handoff-based multi-agent patterns, built-in tracing/guardrails/streaming. OpenAI-model-locked. [Source](https://gurusup.com/blog/best-multi-agent-frameworks-2026)
+- **Google ADK** (Apr 2025): Hierarchical agent trees for Vertex AI/Gemini. Deep multimodal + GCP integration. [Source](https://gurusup.com/blog/best-multi-agent-frameworks-2026)
+- **Anthropic Agent SDK** (2026): Native Claude-based agent framework alongside Claude 4.6. [Source](https://pub.towardsai.net/top-ai-agent-frameworks-in-2026-a-production-ready-comparison-7ba5e39ad56d)
+- **Microsoft Agent Framework** (late 2025 preview, Q1 2026 GA): Merger of AutoGen + Semantic Kernel into unified Azure-native platform. Event-driven + dialogue patterns. [Source](https://www.digitalapplied.com/blog/ai-workflow-orchestration-platforms-comparison)
+- **Adobe Experience Platform Agent Orchestrator** (Mar 2025): Enterprise CX orchestration. [Source](https://www.digitalapplied.com/blog/ai-workflow-orchestration-platforms-comparison)
+- **Hugging Face Smolagents**: Lightweight agent library. Part of broader open-source ecosystem expansion.
+- **Mastra**: Open-source TypeScript agent framework with built-in tools, memory, multi-step orchestration. Rising star in JS ecosystem. [Source](https://brightdata.com/blog/ai/best-ai-agent-frameworks)
+- **Gartner**: 40% of enterprise apps to feature task-specific AI agents by 2026 (up from <5% in 2025). [Source](https://www.gartner.com/en/newsroom/press-releases/2025-08-26-gartner-predicts-40-percent-of-enterprise-apps-will-feature-task-specific-ai-agents-by-2026-up-from-less-than-5-percent-in-2025)
+
+### 2. Agent Protocol Landscape (MCP / ACP / A2A)
+
+Key consolidation happened in 2025:
+- **MCP** (Anthropic, late 2024): Tool/resource integration standard. Donated to Linux Foundation. MCP Developers Summit (May 2025). Authorization spec added Jun 2025. Remains the standard for agent-to-tool communication. [Source](https://boomi.com/blog/what-is-mcp-acp-a2a/)
+- **ACP** (IBM/BeeAI, Mar 2025): REST-based stateful inter-agent messaging. **Merged into A2A in Aug 2025** under Linux Foundation. [Source](https://www.jitendrazaa.com/blog/ai/mcp-vs-a2a-vs-acp-vs-anp-complete-ai-agent-protocol-guide/)
+- **A2A** (Google, Apr 2025): Agent discovery, secure messaging, task delegation. 50+ launch partners (Salesforce, SAP, etc.). Governance transferred to Linux Foundation Jun 2025. Post-ACP-merger, A2A is the leading agent-to-agent standard. [Source](https://heidloff.net/article/mcp-acp-a2a-agent-protocols/)
+- **Complementary model**: MCP = agent-to-tool, A2A = agent-to-agent. Industry converging on this dual-protocol stack. [Source](https://arxiv.org/html/2505.02279v1)
+
+### 3. Coding Agent Tool Updates
+
+- **Claude Code** (Anthropic): GA May 2025. Terminal-native agentic coding with plan/edit/run/diff workflow. Strong reasoning on complex tasks. Many devs switching from Cursor/Aider. [Source](https://www.faros.ai/blog/best-ai-coding-agents-2026)
+- **OpenAI Codex** (relaunched May 2025): Full autonomous coding agent (not just the old model). Available via ChatGPT, CLI, VS Code, cloud sandboxes. Background/async multi-step refactors. Later powered by GPT-5 Codex. [Source](https://medium.com/@oliver_wood/openai-codex-a-deep-dive-into-the-autonomous-ai-coding-agent-may-2025-update-b57cee503ae3)
+- **Cursor**: Mature AI-native IDE. Facing competition from terminal agents but holding strong for flow-state coding. Plan Mode and background agents in development. [Source](https://blog.patrickhulce.com/blog/2025/ai-code-comparison)
+- **Aider**: Stable open-source CLI pair-programmer. Continued model support updates. Frequently cited as more stable than newer agents. [Source](https://artificialanalysis.ai/agents/coding)
+- **Devin** (Cognition): AI software engineer. Acquired Windsurf/Cascade in 2025. ~67% PR merge rate on well-defined tasks. Subscription $20–500/mo. [Source](https://www.morphllm.com/ai-coding-agent)
+- **Goose** (Block, open-source): Local-first CLI agent framework. Privacy-focused, runs on-machine, model-agnostic. Rich tool use with action traces. [Source](https://medium.com/@mchechulin/opensource-agentic-coding-systems-what-can-they-deliver-for-10-41156244fc1b)
+- **Amp** (Sourcegraph): Code-graph-powered agentic tool. Deep codebase understanding, sub-agents, 200K+ context, MCP support. Enterprise-focused. [Source](https://ampcode.com/)
+
+### 4. Agent Sandboxing Security Best Practices
+
+Consensus shift: **plain Docker containers are insufficient** for untrusted agent-generated code.
+
+**Recommended isolation tiers:**
+1. **MicroVMs** (Firecracker, Kata Containers) — dedicated kernel per agent. Gold standard for production. [Source](https://northflank.com/blog/how-to-sandbox-ai-agents)
+2. **gVisor** — user-space syscall mediation. Good middle ground. Used in GKE Agent Sandbox. [Source](https://blaxel.ai/blog/container-escape)
+3. **Hardened containers** — only for low-risk workloads with extensive additional hardening.
+
+**Key practices:**
+- Never run agents as root; use rootless runtimes
+- Mount minimal volumes (only project workspace, never full home dir)
+- Read-only filesystems + ephemeral sandboxes
+- seccomp + Landlock + AppArmor/SELinux
+- Default-deny networking with explicit allowlists
+- CPU/memory/IO resource limits
+- Behavioral sandboxing (progressive enforcement + runtime monitoring)
+- K8s Agent Sandbox CRD (SIG Apps) for orchestrated environments [Source](https://kubernetes.io/blog/2026/03/20/running-agents-on-kubernetes-with-agent-sandbox/)
+
+### 5. Competitive Analysis — Unified Agent Platforms
+
+**Framework comparison (2025–2026):**
+
+| Framework | Philosophy | Model Support | Best For |
+|-----------|-----------|---------------|----------|
+| OpenAI Agents SDK | Handoff-based orchestration | OpenAI only | Quick OpenAI-native apps |
+| CrewAI | Role-based "crews" | Agnostic | Structured team workflows, enterprise |
+| AutoGen/AG2 | Conversational multi-agent | Agnostic | Research, iterative refinement |
+| LangGraph | Graph-native stateful | Agnostic | Complex/non-linear workflows |
+| Google ADK | Hierarchical agent trees | Gemini/Vertex | GCP-native multimodal |
+| Microsoft Agent Framework | Event-driven unified | Azure/multi | Enterprise Azure workflows |
+
+**Key trends:**
+- Teams increasingly combine frameworks (e.g., CrewAI + LangGraph state management)
+- Model-agnostic frameworks (CrewAI, AutoGen, LangGraph) dominate enterprise adoption
+- OpenAI SDK's model lock-in is its biggest limitation
+- Cognition (Devin) acquiring Windsurf signals consolidation in autonomous dev tools
+- 2026 dubbed "the year of agent orchestration" across industry analysts

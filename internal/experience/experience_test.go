@@ -61,13 +61,13 @@ func TestEmpathAnalyzer(t *testing.T) {
 
 	// Normal input
 	result := analyzer.Analyze("Hello, could you help me with this?")
-	if result.Score > 0.5 {
+	if result.Score > 50 {
 		t.Error("Normal input should have low frustration score")
 	}
 
 	// Frustrated input
 	result = analyzer.Analyze("WHY ISN'T THIS WORKING!!!")
-	if result.Score < 0.3 {
+	if result.Score < 30 {
 		t.Error("Caps + exclamation should have higher frustration score")
 	}
 }

@@ -22,9 +22,9 @@ func TestClistatFormatBytes(t *testing.T) {
 		want  string
 	}{
 		{0, "0 B"},
-		{1024, "1.0 KB"},
-		{1048576, "1.0 MB"},
-		{1073741824, "1.0 GB"},
+		{1024, "1.0 KiB"},
+		{1048576, "1.0 MiB"},
+		{1073741824, "1.0 GiB"},
 	}
 	for _, tt := range tests {
 		got := clistat.FormatBytes(tt.bytes)

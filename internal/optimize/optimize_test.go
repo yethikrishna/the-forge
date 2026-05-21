@@ -81,7 +81,7 @@ func TestBreedRecordRun(t *testing.T) {
 	traits := []breed.Trait{
 		{Name: "model", Values: []string{"a", "b"}},
 	}
-	evolver := breed.NewEvolver(traits, nil, t.TempDir())
+	evolver := breed.NewEvolver(traits, breed.FitnessFunc(func(g breed.Genome) float64 { return 0.5 }), t.TempDir())
 	population := evolver.Initialize()
 
 	evolver.RecordRun(population[0].ID, 0.85)
@@ -91,7 +91,7 @@ func TestBreedDiversity(t *testing.T) {
 	traits := []breed.Trait{
 		{Name: "model", Values: []string{"a", "b", "c"}},
 	}
-	evolver := breed.NewEvolver(traits, nil, t.TempDir())
+	evolver := breed.NewEvolver(traits, breed.FitnessFunc(func(g breed.Genome) float64 { return 0.5 }), t.TempDir())
 	evolver.Initialize()
 
 	div := evolver.Diversity()
