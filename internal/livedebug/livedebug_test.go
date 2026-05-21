@@ -2,6 +2,7 @@ package livedebug_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/forge/sword/internal/livedebug"
 )
@@ -152,12 +153,13 @@ func TestStopSession(t *testing.T) {
 
 func TestListSessions(t *testing.T) {
 	engine := livedebug.NewEngine()
-	engine.StartSession("cmd1", "/tmp", nil)
-	engine.StartSession("cmd2", "/tmp", nil)
+	s1 := engine.StartSession("cmd1", "/tmp", nil)
+	time.Sleep(2 * time.Millisecond)
+	s2 := engine.StartSession("cmd2", "/tmp", nil)
 
 	sessions := engine.ListSessions()
 	if len(sessions) != 2 {
-		t.Errorf("expected 2 sessions, got %d", len(sessions))
+		t.Errorf("expected 2 sessions, got %d (ids: %s, %s)", len(sessions), s1.ID, s2.ID)
 	}
 }
 
