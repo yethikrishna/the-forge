@@ -127,6 +127,12 @@ func (e *Engine) AnalyzeImpact(_ context.Context, target string, refType Refacto
 	e.mu.RLock()
 	defer e.mu.RUnlock()
 
+	return e.analyzeImpactUnlocked(target, refType)
+}
+
+// analyzeImpactUnlocked performs impact analysis without acquiring the lock.
+// Caller must hold e.mu (at least RLock).
+func (e *Engine) analyzeImpactUnlocked(target string, refType RefactorType) (*ImpactAnalysis, error) {
 	analysis := &ImpactAnalysis{
 		Target: target,
 		Type:   refType,
@@ -174,7 +180,7 @@ func (e *Engine) CreatePlan(_ context.Context, name string, refType RefactorType
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	analysis, err := e.AnalyzeImpact(context.Background(), target, refType)
+	analysis, err := e.analyzeImpactUnlocked(target, refType)
 	if err != nil {
 		return nil, fmt.Errorf("impact analysis failed: %w", err)
 	}

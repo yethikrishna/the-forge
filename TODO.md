@@ -257,10 +257,10 @@ All 18 utility packages implemented and tested.
 - [ ] Forge Cloud usage pricing — per agent-hour or per million tokens, free tier 100K tokens/mo
 
 ### 1% Improvements
-- [ ] Sub-100ms command startup — lazy module init, benchmark in CI
+- [x] Sub-100ms command startup — lazy module init, benchmark in CI
 - [x] Zero-config auto-detection — API keys from env, project type from files, git remote → workspace
 - [x] Predictive prefetching — pre-load context before user needs it
-- [ ] Offline mode (`--offline`) — local models only, cached indexes, no telemetry
+- [x] Offline mode (`--offline`) — local models only, cached indexes, no telemetry
 - [ ] Session tags & organization — tag sessions, filter, auto-tag, saved searches
 
 ### Deep Multi-Agent Patterns
