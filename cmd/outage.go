@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/forge/sword/internal/outage"
+	"github.com/forge/sword/internal/resilience/outage"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
 )

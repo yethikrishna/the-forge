@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/forge/sword/internal/pretty"
-	"github.com/forge/sword/internal/runaway"
+	"github.com/forge/sword/internal/resilience/runaway"
 	"github.com/spf13/cobra"
 )
 

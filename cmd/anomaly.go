@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/forge/sword/internal/anomaly"
+	"github.com/forge/sword/internal/resilience/anomaly"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
 )
