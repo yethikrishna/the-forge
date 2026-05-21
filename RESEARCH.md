@@ -586,3 +586,21 @@ Quiet overnight. All May 20–21 developments fully covered across 9 sweeps. Nex
 
 - https://releasebot.io/updates/langchain-ai
 - https://brightdata.com/blog/ai/best-ai-agent-frameworks
+
+---
+
+## 2026-05-21 (01:44 UTC) — Overnight Sweep
+
+### Antigravity 2.0 Additional Detail
+
+Earlier sweeps covered Antigravity broadly. Additional features from I/O developer keynote:
+- **Credential masking** — built-in protection for API keys and secrets in agent workflows
+- **Git policies** — configurable policies for what agents can commit/push
+- **CLI support** — full CLI interface alongside the IDE/agent surface
+- 85+ I/O sessions, codelabs, and demos now available on demand
+
+Relevance for the-forge: credential masking and Git policies are security primitives the-forge needs. Google's implementation is a reference model.
+
+### No Other New Developments
+
+Quiet overnight continues. All May 20–21 content fully covered across 10 sweeps.

@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/forge/sword/internal/forgeci"
+	"github.com/forge/sword/internal/cicd/forgeci"
 	"github.com/spf13/cobra"
 )
 
