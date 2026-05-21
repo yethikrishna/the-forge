@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
 	"github.com/forge/sword/internal/pretty"
@@ -154,7 +152,3 @@ func contextWithTimeout(seconds int) context.Context {
 	ctx, _ := context.WithTimeout(context.Background(), time.Duration(seconds)*time.Second)
 	return ctx
 }
-
-// Ensure signal is used
-var _ = syscall.SIGINT
-var _ = signal.Notify

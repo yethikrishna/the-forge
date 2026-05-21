@@ -1,10 +1,10 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"os/signal"
 	"syscall"
 
@@ -38,7 +38,7 @@ Examples:
 				MaxCommits: maxCommits,
 			})
 
-			ctx, cancel := contextWithSignal()
+			ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 			defer cancel()
 
 			fmt.Println(pretty.HeaderLine("Forge GitNFS — Git History as Filesystem"))
@@ -123,13 +123,3 @@ func splitString(s, sep string) []string {
 	return result
 }
 
-func contextWithSignal() (ctx interface{ Done() <-chan struct{} }, cancel func()) {
-	ch := make(chan struct{})
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigCh
-		close(ch)
-	}()
-	return struct{ done chan struct{} }{done: ch}, func() { close(ch) }
-}

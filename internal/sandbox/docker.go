@@ -371,6 +371,11 @@ func (m *DockerSandboxManager) load() {
 	}
 }
 
+func dockerAvailable() bool {
+	_, err := exec.LookPath("docker")
+	return err == nil
+}
+
 func truncateString(s string, max int) string {
 	if len(s) <= max {
 		return s

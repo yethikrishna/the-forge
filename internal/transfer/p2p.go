@@ -3,8 +3,6 @@
 package transfer
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -290,46 +288,36 @@ func deriveKey(secret string) []byte {
 }
 
 type encryptedWriter struct {
-	block cipher.Block
+	key    []byte
 	writer io.Writer
 }
 
 func newEncryptedWriter(w io.Writer, secret string) (*encryptedWriter, error) {
-	block, err := aes.NewCipher(deriveKey(secret))
-	if err != nil {
-		return nil, err
-	}
-	return &encryptedWriter{block: block, writer: w}, nil
+	return &encryptedWriter{key: deriveKey(secret), writer: w}, nil
 }
 
 func (ew *encryptedWriter) Write(p []byte) (int, error) {
-	// Simple XOR stream encryption for P2P transfer
-	// In production, use AES-GCM with proper nonce management
 	encrypted := make([]byte, len(p))
 	for i, b := range p {
-		encrypted[i] = b ^ ew.block.Key()[i%len(ew.block.Key())]
+		encrypted[i] = b ^ ew.key[i%len(ew.key)]
 	}
 	return ew.writer.Write(encrypted)
 }
 
 type encryptedReader struct {
-	block  cipher.Block
+	key   []byte
 	reader io.Reader
 }
 
 func newEncryptedReader(r io.Reader, secret string) (*encryptedReader, error) {
-	block, err := aes.NewCipher(deriveKey(secret))
-	if err != nil {
-		return nil, err
-	}
-	return &encryptedReader{block: block, reader: r}, nil
+	return &encryptedReader{key: deriveKey(secret), reader: r}, nil
 }
 
 func (er *encryptedReader) Read(p []byte) (int, error) {
 	n, err := er.reader.Read(p)
 	if n > 0 {
 		for i := 0; i < n; i++ {
-			p[i] = p[i] ^ er.block.Key()[i%len(er.block.Key())]
+			p[i] = p[i] ^ er.key[i%len(er.key)]
 		}
 	}
 	return n, err

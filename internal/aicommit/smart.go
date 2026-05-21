@@ -4,7 +4,6 @@
 package aicommit
 
 import (
-	"encoding/json"
 	"fmt"
 	"os/exec"
 	"strings"

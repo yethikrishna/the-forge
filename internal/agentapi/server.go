@@ -117,7 +117,7 @@ func (s *Server) Start(ctx context.Context) error {
 	s.startTime = time.Now()
 	s.status.StartedAt = s.startTime
 	s.status.Status = "running"
-	actualAddr := ln.Addr().String()
+	s.addr = ln.Addr().String()
 	s.mu.Unlock()
 
 	go func() {
@@ -126,7 +126,7 @@ func (s *Server) Start(ctx context.Context) error {
 		}
 	}()
 
-	fmt.Printf("agentapi: listening on %s\n", actualAddr)
+	fmt.Printf("agentapi: listening on %s\n", s.addr)
 
 	go func() {
 		<-ctx.Done()

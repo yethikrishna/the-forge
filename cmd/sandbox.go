@@ -1,11 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/forge/sword/internal/sandbox"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 func sandboxCmd() *cobra.Command {
@@ -24,7 +27,7 @@ Supports Docker and MicroVM backends.
 Examples:
   forge sandbox run -- echo hello
   forge sandbox run --cpu 1024 --memory 1024 -- go test ./...
-  forge sandbox run --network-off --network-off -- curl https://example.com
+  forge sandbox run --network-off -- curl https://example.com
   forge sandbox run --backend microvm -- uname -a`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -61,8 +64,9 @@ Examples:
 	return cmd
 }
 
-func runDockerSandbox(name, image string, command []string, cpu, mem int64, netOff, readonly bool, timeout int) error {
-	dir := dirFromHome(".forge/sandbox")
+func runDockerSandbox(name, image string, command []string, cpu, mem int64, netOff, readonly bool, timeoutSec int) error {
+	home, _ := os.UserHomeDir()
+	dir := home + "/.forge/sandbox"
 	mgr := sandbox.NewDockerSandboxManager(dir)
 
 	sb, err := mgr.Create(sandbox.DockerSandboxConfig{
@@ -82,7 +86,8 @@ func runDockerSandbox(name, image string, command []string, cpu, mem int64, netO
 	fmt.Printf("  Image:   %s\n", image)
 	fmt.Printf("  Command: %v\n", command)
 
-	ctx := contextWithTimeout(timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeoutSec)*time.Second)
+	defer cancel()
 
 	if err := mgr.Start(ctx, sb.ID); err != nil {
 		return fmt.Errorf("start sandbox: %w", err)
@@ -111,7 +116,7 @@ func runDockerSandbox(name, image string, command []string, cpu, mem int64, netO
 	return nil
 }
 
-func runMicroVMSandbox(name, image string, command []string, timeout int) error {
+func runMicroVMSandbox(name, image string, command []string, timeoutSec int) error {
 	fmt.Println(pretty.InfoLine("MicroVM sandbox backend (experimental)"))
 	fmt.Printf("  Name: %s, Command: %v\n", name, command)
 	return fmt.Errorf("MicroVM backend requires firecracker setup — use Docker backend for now")

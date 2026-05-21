@@ -76,7 +76,7 @@ func (d *Discoverer) Announce(ctx context.Context, listenPort int) error {
 		"ts":       time.Now().Unix(),
 	}
 
-	data, _ := json.Marshal(announcement)
+	_, _ = json.Marshal(announcement)
 
 	ticker := time.NewTicker(d.config.Interval)
 	defer ticker.Stop()
