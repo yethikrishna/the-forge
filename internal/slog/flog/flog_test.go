@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/forge/sword/internal/flog"
+	"github.com/forge/sword/internal/slog/flog"
 )
 
 func TestLoggerLevels(t *testing.T) {
