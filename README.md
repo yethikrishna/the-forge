@@ -49,6 +49,8 @@ make build
 | `forge init` | Project scaffolding |
 | `forge version` | Architecture diagram |
 | `forge help` | Help |
+| `forge doctor` | **Auto-repair** — environment diagnostics + self-fix |
+| `forge learn` | Interactive tutorial system (5 lessons) |
 
 ## 7-Layer Architecture
 
@@ -111,7 +113,7 @@ One command. Four agents. Unified. That's the pitch.
 
 | Metric | Value |
 |--------|-------|
-| Commands | 28 |
+| Commands | 30 |
 | Internal packages | 55 |
 | Go lines | 323K+ |
 | Absorbed repos | 50 |
