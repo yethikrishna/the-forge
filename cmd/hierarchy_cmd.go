@@ -40,7 +40,7 @@ func init() {
 	hierAddChildCmd.Flags().StringVar(&hierTask, "task", "", "Task description")
 }
 
-func getHierStore() (*hierarchy.Store, error) {
+func getHierStore() *hierarchy.Store {
 	return hierarchy.NewStore(hierDir)
 }
 
@@ -51,15 +51,12 @@ var hierCreateCmd = &cobra.Command{
 		if hierName == "" {
 			return fmt.Errorf("--name is required")
 		}
-		store, err := getHierStore()
-		if err != nil {
-			return err
-		}
+		store := getHierStore()
 		tree, root, err := store.CreateTree(hierName, hierAgentType, hierModel, hierTask)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Created tree: %s (root: %s)\n", tree.ID, root.ID)
+		fmt.Printf("Created tree: %s (root: %s)\n", tree.RootID, root.ID)
 		return nil
 	},
 }
@@ -72,15 +69,12 @@ var hierAddChildCmd = &cobra.Command{
 		if hierName == "" {
 			return fmt.Errorf("--name is required")
 		}
-		store, err := getHierStore()
-		if err != nil {
-			return err
-		}
+		store := getHierStore()
 		child, err := store.AddChild(args[0], hierName, hierAgentType, hierModel, hierTask)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("Added child: %s (id: %s, depth: %d)\n", child.Name, child.ID, child.Depth)
+		fmt.Printf("Added child: %s (id: %s, depth: %d)\n", child.AgentID, child.ID, child.Depth)
 		return nil
 	},
 }
@@ -90,18 +84,15 @@ var hierShowCmd = &cobra.Command{
 	Short: "Show node details",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		store, err := getHierStore()
-		if err != nil {
-			return err
-		}
+		store := getHierStore()
 		n, ok := store.GetNode(args[0])
 		if !ok {
 			return fmt.Errorf("node %q not found", args[0])
 		}
-		fmt.Printf("Node: %s (id: %s)\n", n.Name, n.ID)
-		fmt.Printf("Type: %s  Model: %s  Status: %s\n", n.AgentType, n.Model, n.Status)
+		fmt.Printf("Node: %s (id: %s)\n", n.AgentID, n.ID)
+		fmt.Printf("Role: %s  Status: %s\n", n.Role, n.Status)
 		fmt.Printf("Depth: %d  Children: %d\n", n.Depth, len(n.Children))
-		fmt.Printf("Cost: $%.4f  Total: $%.4f\n", n.Cost, n.TotalCost)
+		fmt.Printf("Cost: $%.4f\n", n.Cost.Dollars)
 		if n.Task != "" {
 			fmt.Printf("Task: %s\n", n.Task)
 		}
@@ -114,10 +105,7 @@ var hierTreeCmd = &cobra.Command{
 	Short: "Display hierarchy tree",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		store, err := getHierStore()
-		if err != nil {
-			return err
-		}
+		store := getHierStore()
 		fmt.Println(store.FormatTree(args[0]))
 		return nil
 	},
@@ -128,10 +116,7 @@ var hierStatsCmd = &cobra.Command{
 	Short: "Show tree statistics",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		store, err := getHierStore()
-		if err != nil {
-			return err
-		}
+		store := getHierStore()
 		stats, err := store.Stats(args[0])
 		if err != nil {
 			return err
@@ -149,10 +134,7 @@ var hierCancelCmd = &cobra.Command{
 	Short: "Cancel all nodes in subtree",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		store, err := getHierStore()
-		if err != nil {
-			return err
-		}
+		store := getHierStore()
 		count := store.CancelSubtree(args[0])
 		fmt.Printf("Cancelled %d nodes\n", count)
 		return nil

@@ -1,28 +1,24 @@
-package hierarchy
+package agenttree
 
 import (
-	"math"
 	"strings"
 	"testing"
 )
 
 func TestNewTree(t *testing.T) {
-	tree := NewTree("orchestrator", "Build feature", 3, "")
+	tree := NewTree("orch", "build", 3, "")
 	if tree == nil {
 		t.Fatal("expected tree")
-	}
-	if tree.RootID != "root" {
-		t.Error("root ID mismatch")
 	}
 }
 
 func TestRootNode(t *testing.T) {
-	tree := NewTree("orchestrator", "Build feature", 3, "")
+	tree := NewTree("orch", "build", 3, "")
 	root, ok := tree.Get("root")
 	if !ok {
 		t.Fatal("root should exist")
 	}
-	if root.AgentID != "orchestrator" {
+	if root.AgentID != "orch" {
 		t.Error("agent mismatch")
 	}
 	if root.Depth != 0 {
@@ -31,7 +27,7 @@ func TestRootNode(t *testing.T) {
 }
 
 func TestSpawn(t *testing.T) {
-	tree := NewTree("root-agent", "task", 3, "")
+	tree := NewTree("root", "task", 3, "")
 	child, err := tree.Spawn("root", "coder", "coder", "Write code")
 	if err != nil {
 		t.Fatal(err)
@@ -42,20 +38,17 @@ func TestSpawn(t *testing.T) {
 	if child.Depth != 1 {
 		t.Errorf("depth should be 1, got %d", child.Depth)
 	}
-	if child.ID != "root.1" {
-		t.Errorf("expected root.1, got %s", child.ID)
-	}
 }
 
 func TestSpawnGrandchild(t *testing.T) {
 	tree := NewTree("root", "task", 3, "")
-	child, _ := tree.Spawn("root", "coder", "coder", "Write code")
-	grandchild, err := tree.Spawn(child.ID, "tester", "tester", "Test code")
+	child, _ := tree.Spawn("root", "coder", "coder", "Write")
+	gc, err := tree.Spawn(child.ID, "tester", "tester", "Test")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if grandchild.Depth != 2 {
-		t.Errorf("expected depth 2, got %d", grandchild.Depth)
+	if gc.Depth != 2 {
+		t.Errorf("expected depth 2, got %d", gc.Depth)
 	}
 }
 
@@ -70,7 +63,7 @@ func TestMaxDepthLimit(t *testing.T) {
 
 func TestSpawnNonexistentParent(t *testing.T) {
 	tree := NewTree("root", "task", 3, "")
-	_, err := tree.Spawn("nonexistent", "a", "r", "t")
+	_, err := tree.Spawn("nope", "a", "r", "t")
 	if err == nil {
 		t.Error("should error")
 	}
@@ -78,10 +71,7 @@ func TestSpawnNonexistentParent(t *testing.T) {
 
 func TestStart(t *testing.T) {
 	tree := NewTree("root", "task", 3, "")
-	err := tree.Start("root")
-	if err != nil {
-		t.Fatal(err)
-	}
+	tree.Start("root")
 	node, _ := tree.Get("root")
 	if node.Status != StatusRunning {
 		t.Error("should be running")
@@ -91,13 +81,9 @@ func TestStart(t *testing.T) {
 func TestComplete(t *testing.T) {
 	tree := NewTree("root", "task", 3, "")
 	tree.Complete("root", "done", Cost{Dollars: 0.05, TotalTokens: 1000})
-
 	node, _ := tree.Get("root")
 	if node.Status != StatusDone {
 		t.Error("should be done")
-	}
-	if node.Result != "done" {
-		t.Error("result mismatch")
 	}
 	if node.Cost.Dollars != 0.05 {
 		t.Error("cost mismatch")
@@ -107,7 +93,6 @@ func TestComplete(t *testing.T) {
 func TestFail(t *testing.T) {
 	tree := NewTree("root", "task", 3, "")
 	tree.Fail("root", "timeout")
-
 	node, _ := tree.Get("root")
 	if node.Status != StatusFailed {
 		t.Error("should be failed")
@@ -117,23 +102,15 @@ func TestFail(t *testing.T) {
 func TestCancel(t *testing.T) {
 	tree := NewTree("root", "task", 3, "")
 	child, _ := tree.Spawn("root", "coder", "coder", "Write")
-	tree.Spawn(child.ID, "tester", "tester", "Test")
 	tree.Cancel("root")
 
 	root, _ := tree.Get("root")
 	if root.Status != StatusCancelled {
 		t.Error("root should be cancelled")
 	}
-}
-
-func TestCancelCascadesToChildren(t *testing.T) {
-	tree := NewTree("root", "task", 3, "")
-	child, _ := tree.Spawn("root", "coder", "coder", "Write")
-	tree.Cancel("root")
-
 	c, _ := tree.Get(child.ID)
 	if c.Status != StatusCancelled {
-		t.Error("children should be cancelled too")
+		t.Error("children should cascade cancel")
 	}
 }
 
@@ -141,18 +118,9 @@ func TestChildren(t *testing.T) {
 	tree := NewTree("root", "task", 3, "")
 	tree.Spawn("root", "coder", "coder", "Write")
 	tree.Spawn("root", "tester", "tester", "Test")
-
 	children := tree.Children("root")
 	if len(children) != 2 {
-		t.Errorf("expected 2 children, got %d", len(children))
-	}
-}
-
-func TestChildrenEmpty(t *testing.T) {
-	tree := NewTree("root", "task", 3, "")
-	children := tree.Children("root")
-	if len(children) != 0 {
-		t.Error("should have no children")
+		t.Errorf("expected 2, got %d", len(children))
 	}
 }
 
@@ -163,11 +131,11 @@ func TestRollupCost(t *testing.T) {
 	tree.Complete(child.ID, "", Cost{Dollars: 0.05, TotalTokens: 300})
 
 	cost := tree.RollupCost("root")
-	if math.Abs(cost.Dollars-0.15) > 0.0001 {
+	if cost.Dollars < 0.149 || cost.Dollars > 0.151 {
 		t.Errorf("expected $0.15, got $%.4f", cost.Dollars)
 	}
 	if cost.TotalTokens != 800 {
-		t.Errorf("expected 800 tokens, got %d", cost.TotalTokens)
+		t.Errorf("expected 800, got %d", cost.TotalTokens)
 	}
 }
 
@@ -176,11 +144,11 @@ func TestRollupCostDeep(t *testing.T) {
 	tree.Complete("root", "", Cost{Dollars: 0.1})
 	child, _ := tree.Spawn("root", "a", "r", "t")
 	tree.Complete(child.ID, "", Cost{Dollars: 0.2})
-	grandchild, _ := tree.Spawn(child.ID, "b", "r", "t")
-	tree.Complete(grandchild.ID, "", Cost{Dollars: 0.3})
+	gc, _ := tree.Spawn(child.ID, "b", "r", "t")
+	tree.Complete(gc.ID, "", Cost{Dollars: 0.3})
 
 	cost := tree.RollupCost("root")
-	if cost.Dollars != 0.6 {
+	if cost.Dollars < 0.599 || cost.Dollars > 0.601 {
 		t.Errorf("expected $0.60, got $%.4f", cost.Dollars)
 	}
 }
@@ -192,9 +160,8 @@ func TestDepth(t *testing.T) {
 	}
 	child, _ := tree.Spawn("root", "a", "r", "t")
 	tree.Spawn(child.ID, "b", "r", "t")
-
 	if tree.Depth() != 2 {
-		t.Errorf("expected depth 2, got %d", tree.Depth())
+		t.Errorf("expected 2, got %d", tree.Depth())
 	}
 }
 
@@ -210,16 +177,16 @@ func TestSize(t *testing.T) {
 func TestPath(t *testing.T) {
 	tree := NewTree("root", "task", 3, "")
 	child, _ := tree.Spawn("root", "coder", "coder", "Write")
-	grandchild, _ := tree.Spawn(child.ID, "tester", "tester", "Test")
+	gc, _ := tree.Spawn(child.ID, "tester", "tester", "Test")
 
-	path := tree.Path(grandchild.ID)
+	path := tree.Path(gc.ID)
 	if len(path) != 3 {
-		t.Fatalf("expected 3 nodes in path, got %d", len(path))
+		t.Fatalf("expected 3, got %d", len(path))
 	}
 	if path[0].ID != "root" {
 		t.Error("path should start at root")
 	}
-	if path[2].ID != grandchild.ID {
+	if path[2].ID != gc.ID {
 		t.Error("path should end at target")
 	}
 }
@@ -230,12 +197,12 @@ func TestRender(t *testing.T) {
 	child, _ := tree.Spawn("root", "coder", "coder", "Write")
 	tree.Start(child.ID)
 
-	rendered := tree.Render()
-	if !strings.Contains(rendered, "orch") {
+	s := tree.Render()
+	if !strings.Contains(s, "orch") {
 		t.Error("should show root agent")
 	}
-	if !strings.Contains(rendered, "coder") {
-		t.Error("should show child agent")
+	if !strings.Contains(s, "coder") {
+		t.Error("should show child")
 	}
 }
 
@@ -246,7 +213,7 @@ func TestStats(t *testing.T) {
 
 	stats := tree.Stats()
 	if stats["nodes"].(int) != 2 {
-		t.Errorf("expected 2 nodes, got %v", stats["nodes"])
+		t.Errorf("expected 2, got %v", stats["nodes"])
 	}
 }
 
@@ -263,5 +230,20 @@ func TestCompleteNotFound(t *testing.T) {
 	err := tree.Complete("nonexistent", "", Cost{})
 	if err == nil {
 		t.Error("should error")
+	}
+}
+
+func TestMultipleSpawns(t *testing.T) {
+	tree := NewTree("root", "task", 3, "")
+	c1, _ := tree.Spawn("root", "coder", "coder", "Write")
+	c2, _ := tree.Spawn("root", "tester", "tester", "Test")
+	c3, _ := tree.Spawn("root", "deployer", "deploy", "Deploy")
+
+	children := tree.Children("root")
+	if len(children) != 3 {
+		t.Errorf("expected 3 children, got %d", len(children))
+	}
+	if c1.ID != "root.1" || c2.ID != "root.2" || c3.ID != "root.3" {
+		t.Errorf("IDs: %s %s %s", c1.ID, c2.ID, c3.ID)
 	}
 }

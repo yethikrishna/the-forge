@@ -1,9 +1,9 @@
-// Package hierarchy provides hierarchical agent tree management.
+// Package agenttree provides hierarchical agent tree management.
 // Parent → child → grandchild delegation with cost rollup,
 // tree visualization, and depth limits.
 //
 // Power through structure.
-package hierarchy
+package agenttree
 
 import (
 	"encoding/json"
@@ -19,10 +19,10 @@ import (
 type NodeStatus string
 
 const (
-	StatusIdle     NodeStatus = "idle"
-	StatusRunning  NodeStatus = "running"
-	StatusDone     NodeStatus = "done"
-	StatusFailed   NodeStatus = "failed"
+	StatusIdle      NodeStatus = "idle"
+	StatusRunning   NodeStatus = "running"
+	StatusDone      NodeStatus = "done"
+	StatusFailed    NodeStatus = "failed"
 	StatusCancelled NodeStatus = "cancelled"
 )
 
@@ -37,27 +37,27 @@ type Cost struct {
 
 // Node is an agent in the tree.
 type Node struct {
-	ID         string     `json:"id"`
-	ParentID   string     `json:"parent_id,omitempty"`
-	AgentID    string     `json:"agent_id"`
-	Role       string     `json:"role"`
-	Task       string     `json:"task"`
-	Status     NodeStatus `json:"status"`
-	Depth      int        `json:"depth"`
-	Cost       Cost       `json:"cost"`
-	Result     string     `json:"result,omitempty"`
-	Children   []string   `json:"children"`
-	CreatedAt  time.Time  `json:"created_at"`
-	FinishedAt time.Time  `json:"finished_at,omitempty"`
+	ID        string     `json:"id"`
+	ParentID  string     `json:"parent_id,omitempty"`
+	AgentID   string     `json:"agent_id"`
+	Role      string     `json:"role"`
+	Task      string     `json:"task"`
+	Status    NodeStatus `json:"status"`
+	Depth     int        `json:"depth"`
+	Cost      Cost       `json:"cost"`
+	Result    string     `json:"result,omitempty"`
+	Children  []string   `json:"children"`
+	CreatedAt time.Time  `json:"created_at"`
+	FinishedAt time.Time `json:"finished_at,omitempty"`
 }
 
 // Tree manages a hierarchical agent tree.
 type Tree struct {
-	RootID    string           `json:"root_id"`
-	Nodes     map[string]*Node `json:"nodes"`
-	MaxDepth  int              `json:"max_depth"`
-	storeDir  string
-	mu        sync.RWMutex
+	RootID   string          `json:"root_id"`
+	Nodes    map[string]*Node `json:"nodes"`
+	MaxDepth int             `json:"max_depth"`
+	storeDir string
+	mu       sync.RWMutex
 }
 
 // NewTree creates a new agent tree.
@@ -156,7 +156,7 @@ func (t *Tree) Fail(nodeID, reason string) error {
 }
 
 // Cancel cancels a node and all descendants.
-func (t *Tree) Cancel(nodeID string) error {
+func (t *Tree) Cancel(nodeID string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
@@ -172,7 +172,6 @@ func (t *Tree) Cancel(nodeID string) error {
 	}
 	cancelAll(nodeID)
 	t.save()
-	return nil
 }
 
 // Get returns a node.
@@ -209,7 +208,6 @@ func (t *Tree) Children(parentID string) []Node {
 func (t *Tree) RollupCost(nodeID string) Cost {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-
 	return t.rollupCost(nodeID)
 }
 
@@ -218,15 +216,14 @@ func (t *Tree) rollupCost(nodeID string) Cost {
 	if !ok {
 		return Cost{}
 	}
-
 	total := node.Cost
 	for _, cid := range node.Children {
-		childCost := t.rollupCost(cid)
-		total.InputTokens += childCost.InputTokens
-		total.OutputTokens += childCost.OutputTokens
-		total.TotalTokens += childCost.TotalTokens
-		total.Dollars += childCost.Dollars
-		total.DurationMs += childCost.DurationMs
+		cc := t.rollupCost(cid)
+		total.InputTokens += cc.InputTokens
+		total.OutputTokens += cc.OutputTokens
+		total.TotalTokens += cc.TotalTokens
+		total.Dollars += cc.Dollars
+		total.DurationMs += cc.DurationMs
 	}
 	return total
 }
@@ -235,7 +232,6 @@ func (t *Tree) rollupCost(nodeID string) Cost {
 func (t *Tree) Depth() int {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
-
 	max := 0
 	for _, n := range t.Nodes {
 		if n.Depth > max {
@@ -285,7 +281,6 @@ func (t *Tree) renderNode(id, prefix string, isLast bool, b *strings.Builder) {
 	if !ok {
 		return
 	}
-
 	connector := "├── "
 	if isLast {
 		connector = "└── "
@@ -293,15 +288,12 @@ func (t *Tree) renderNode(id, prefix string, isLast bool, b *strings.Builder) {
 	if prefix == "" {
 		connector = ""
 	}
-
-	status := string(node.Status)
 	cost := ""
 	if node.Cost.Dollars > 0 {
 		cost = fmt.Sprintf(" ($%.4f)", node.Cost.Dollars)
 	}
-
 	b.WriteString(fmt.Sprintf("%s%s%s [%s] %s%s\n",
-		prefix, connector, node.AgentID, status, node.Role, cost))
+		prefix, connector, node.AgentID, node.Status, node.Role, cost))
 
 	childPrefix := prefix + "│   "
 	if isLast {
@@ -310,7 +302,6 @@ func (t *Tree) renderNode(id, prefix string, isLast bool, b *strings.Builder) {
 	if prefix == "" {
 		childPrefix = ""
 	}
-
 	for i, cid := range node.Children {
 		t.renderNode(cid, childPrefix, i == len(node.Children)-1, b)
 	}
@@ -325,14 +316,12 @@ func (t *Tree) Stats() map[string]interface{} {
 	for _, n := range t.Nodes {
 		statuses[n.Status]++
 	}
-
 	totalCost := t.rollupCost(t.RootID)
-
 	return map[string]interface{}{
-		"nodes":       len(t.Nodes),
-		"max_depth":   t.Depth(),
-		"statuses":    statuses,
-		"total_cost":  totalCost,
+		"nodes":      len(t.Nodes),
+		"max_depth":  t.Depth(),
+		"statuses":   statuses,
+		"total_cost": totalCost,
 	}
 }
 
@@ -355,149 +344,5 @@ func (t *Tree) save() {
 	}
 	os.MkdirAll(t.storeDir, 0755)
 	data, _ := json.MarshalIndent(t, "", "  ")
-	os.WriteFile(filepath.Join(t.storeDir, "tree.json"), data, 0644)
-}
-
-func (t *Tree) load() {
-	if t.storeDir == "" {
-		return
-	}
-	data, err := os.ReadFile(filepath.Join(t.storeDir, "tree.json"))
-	if err != nil {
-		return
-	}
-	json.Unmarshal(data, t)
-}
-
-// Root returns the root node of the tree.
-func (t *Tree) Root() *Node {
-	if n, ok := t.Nodes[t.RootID]; ok {
-		return n
-	}
-	return nil
-}
-
-// Store manages multiple hierarchy trees with persistence.
-type Store struct {
-	dir   string
-	trees map[string]*Tree
-}
-
-// TreeStats holds aggregated statistics for a tree.
-type TreeStats struct {
-	TotalNodes   int
-	Running      int
-	Completed    int
-	Failed       int
-	Idle         int
-	MaxDepth     int
-	TotalCost    float64
-	AvgCostPerNode float64
-}
-
-// NewStore creates a new hierarchy store.
-func NewStore(dir string) *Store {
-	return &Store{
-		dir:   dir,
-		trees: make(map[string]*Tree),
-	}
-}
-
-// CreateTree creates and stores a new hierarchy tree.
-func (s *Store) CreateTree(name, agentType, model, task string) (*Tree, *Node, error) {
-	treeDir := filepath.Join(s.dir, name)
-	tree := NewTree(name, task, 10, treeDir)
-	root := tree.Root()
-	root.Role = agentType
-	root.AgentID = name
-	s.trees[name] = tree
-	return tree, root, nil
-}
-
-// AddChild adds a child node to a parent in any stored tree.
-func (s *Store) AddChild(parentID, name, agentType, model, task string) (*Node, error) {
-	for _, tree := range s.trees {
-		if _, ok := tree.Get(parentID); ok {
-			child, err := tree.Spawn(parentID, name, agentType, task)
-			if err != nil {
-				return nil, err
-			}
-			return child, nil
-		}
-	}
-	return nil, fmt.Errorf("parent node %q not found in any tree", parentID)
-}
-
-// GetNode finds a node across all stored trees.
-func (s *Store) GetNode(id string) (*Node, bool) {
-	for _, tree := range s.trees {
-		if n, ok := tree.Get(id); ok {
-			return n, true
-		}
-	}
-	return nil, false
-}
-
-// FormatTree renders a tree starting from the given root.
-func (s *Store) FormatTree(rootID string) string {
-	for _, tree := range s.trees {
-		if tree.RootID == rootID {
-			return tree.Render()
-		}
-		if _, ok := tree.Get(rootID); ok {
-			return tree.Render()
-		}
-	}
-	return "tree not found"
-}
-
-// Stats returns aggregated statistics for a tree.
-func (s *Store) Stats(treeID string) (*TreeStats, error) {
-	for name, tree := range s.trees {
-		if name == treeID || tree.RootID == treeID {
-			stats := tree.Stats()
-			ts := &TreeStats{
-				TotalNodes: tree.Size(),
-				MaxDepth:   tree.Depth(),
-			}
-			if v, ok := stats["running"]; ok {
-				ts.Running = int(v.(float64))
-			}
-			if v, ok := stats["completed"]; ok {
-				ts.Completed = int(v.(float64))
-			}
-			if v, ok := stats["failed"]; ok {
-				ts.Failed = int(v.(float64))
-			}
-			if v, ok := stats["idle"]; ok {
-				ts.Idle = int(v.(float64))
-			}
-			if v, ok := stats["total_cost"]; ok {
-				ts.TotalCost = v.(float64)
-			}
-			if ts.TotalNodes > 0 {
-				ts.AvgCostPerNode = ts.TotalCost / float64(ts.TotalNodes)
-			}
-			return ts, nil
-		}
-	}
-	return nil, fmt.Errorf("tree %q not found", treeID)
-}
-
-// CancelSubtree cancels all nodes in a subtree.
-func (s *Store) CancelSubtree(rootID string) int {
-	count := 0
-	for _, tree := range s.trees {
-		if _, ok := tree.Get(rootID); ok {
-			tree.Cancel(rootID)
-			count++
-			// Cancel children
-			for _, child := range tree.Children(rootID) {
-				tree.Cancel(child.ID)
-				count++
-			}
-			return count
-		}
-	}
-	return 0
+	os.WriteFile(filepath.Join(t.storeDir, "agenttree.json"), data, 0644)
 }

@@ -264,9 +264,9 @@ All 18 utility packages implemented and tested.
 - [x] Session tags & organization — tag sessions, filter, auto-tag, saved searches
 
 ### Deep Multi-Agent Patterns
-- [ ] Agent handoff protocol — standardized context/artifact/confidence transfer between agents
+- [x] Agent handoff protocol — standardized context/artifact/confidence transfer between agents
 - [ ] Agent consensus engine — run N agents, majority/weighted/unanimous/adversarial vote
-- [ ] Hierarchical agent trees — parent → child → grandchild delegation with cost rollup
+- [x] Hierarchical agent trees — parent → child → grandchild delegation with cost rollup
 - [ ] Persistent agent personas — named personas with style preferences, memory, trust score
 
 ### The Impossible-Until-Now
