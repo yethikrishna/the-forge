@@ -165,6 +165,7 @@ The wielder and the sword are one.`,
 		correlateCmd,
 		translatePipelineCmd,
 		cloneBehaviorCmd,
+		qualityCorpusCmd,
 		refactorCmd,
 		selftestCmd,
 	)
