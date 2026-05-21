@@ -517,3 +517,24 @@
 - **Internal packages:** 168
 - **Commands:** 153
 - **Build:** ✅ **Vet:** ✅ **Tests:** ✅ (all session packages pass)
+
+### Session 2026-05-21: Feature Wave 3
+
+#### New Features
+- **forge diffx** — Semantic code diff (detects moved, renamed, reformatted code, not just line changes)
+- **forge ingest** — Multi-source data ingestion pipeline (file, URL, API, command, inline sources with chunking and dedup)
+- **forge blast** — Dependency blast radius analysis (know what's affected before deploying)
+- **forge migrate** — Database schema migration manager (create, apply, rollback with checksum verification)
+- **forge fuse** — Multi-agent knowledge fusion (vote, weighted, concat, best, consensus merge strategies)
+- **forge timeline** — Agent activity timeline (events, spans, ASCII visualization, time-bucketed summaries)
+
+#### Bug Fixes
+- Fixed `internal/synthesis/synthesis_test.go`: `Strategy` → `synthesis.Strategy` (external test package)
+- Fixed `internal/navigate/navigate_test.go`: `t.Context()` → `context.Background()` (Go testing API)
+- Fixed `internal/diffx/diffx.go`: `isReformat` return type `string` → `bool`, rename similarity threshold 0.7 → 0.6
+
+#### Stats
+- **Lines of Go:** ~163K
+- **Internal packages:** 173
+- **Commands:** 154
+- **Build:** ✅ **Vet:** ✅ **Tests:** ✅
