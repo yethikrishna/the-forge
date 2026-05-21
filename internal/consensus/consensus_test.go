@@ -5,256 +5,220 @@ import (
 	"testing"
 )
 
-func TestStartRound(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
-
-	round := e.StartRound("Review this code", StrategyMajority, []string{"agent-1", "agent-2", "agent-3"}, 0.6)
-
-	if round.ID == "" {
-		t.Error("expected non-empty round ID")
-	}
-	if round.Strategy != StrategyMajority {
-		t.Errorf("expected majority, got %s", round.Strategy)
-	}
-	if round.Status != RoundRunning {
-		t.Errorf("expected running, got %s", round.Status)
-	}
-	if len(round.Agents) != 3 {
-		t.Errorf("expected 3 agents, got %d", len(round.Agents))
+func TestNewEngine(t *testing.T) {
+	e := NewEngine("")
+	if e == nil {
+		t.Fatal("expected engine")
 	}
 }
 
-func TestAddResponse(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
+func TestNewRound(t *testing.T) {
+	e := NewEngine("")
+	r := e.NewRound("Should we use Go?", StrategyMajority)
+	if r.ID == "" {
+		t.Error("expected ID")
+	}
+	if r.Strategy != StrategyMajority {
+		t.Error("strategy mismatch")
+	}
+}
 
-	round := e.StartRound("Test task", StrategyMajority, []string{"agent-1", "agent-2"}, 0.5)
-
-	err := e.AddResponse(round.ID, AgentResponse{
-		AgentID: "agent-1",
-		Model:   "gpt-4",
-		Output:  "Result 1",
-		Score:   90,
-		Trust:   0.9,
-	})
+func TestCastVote(t *testing.T) {
+	e := NewEngine("")
+	r := e.NewRound("Question?", StrategyMajority)
+	err := e.CastVote(r.ID, "agent-1", "yes", "Go is great", 1.0, 0.9)
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatal(err)
 	}
 
-	got, _ := e.GetRound(round.ID)
-	if len(got.Responses) != 1 {
-		t.Errorf("expected 1 response, got %d", len(got.Responses))
+	got, _ := e.Get(r.ID)
+	if len(got.Votes) != 1 {
+		t.Error("should have 1 vote")
+	}
+	if got.Votes[0].Answer != "yes" {
+		t.Error("answer mismatch")
 	}
 }
 
-func TestAddResponseNotRunning(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
-
-	round := e.StartRound("Test task", StrategyMajority, []string{"agent-1"}, 0.5)
-	e.ResolveWithSimulatedResponses(round.ID) // completes the round
-
-	err := e.AddResponse(round.ID, AgentResponse{
-		AgentID: "agent-1",
-		Model:   "gpt-4",
-		Output:  "Late response",
-		Score:   80,
-	})
+func TestDuplicateVote(t *testing.T) {
+	e := NewEngine("")
+	r := e.NewRound("Q?", StrategyMajority)
+	e.CastVote(r.ID, "agent-1", "yes", "", 1.0, 0.9)
+	err := e.CastVote(r.ID, "agent-1", "no", "", 1.0, 0.5)
 	if err == nil {
-		t.Error("expected error for completed round")
+		t.Error("should reject duplicate vote")
 	}
 }
 
-func TestResolveMajority(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
+func TestMajorityConsensus(t *testing.T) {
+	e := NewEngine("")
+	r := e.NewRound("Go or Rust?", StrategyMajority)
+	e.CastVote(r.ID, "a1", "Go", "", 1.0, 0.9)
+	e.CastVote(r.ID, "a2", "Go", "", 1.0, 0.8)
+	e.CastVote(r.ID, "a3", "Rust", "", 1.0, 0.7)
 
-	round := e.StartRound("Test task", StrategyMajority, []string{"a1", "a2", "a3"}, 0.5)
-
-	e.AddResponse(round.ID, AgentResponse{AgentID: "a1", Output: "same result", Score: 85, Trust: 0.9})
-	e.AddResponse(round.ID, AgentResponse{AgentID: "a2", Output: "same result", Score: 88, Trust: 0.85})
-	e.AddResponse(round.ID, AgentResponse{AgentID: "a3", Output: "different", Score: 75, Trust: 0.8})
-
-	result, err := e.Resolve(round.ID)
+	resolved, err := e.Resolve(r.ID)
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatal(err)
 	}
-
-	if result.WinnerID == "" {
-		t.Error("expected a winner")
+	if resolved.Winner != "Go" {
+		t.Errorf("expected Go, got %s", resolved.Winner)
 	}
-	if result.Agreement < 0.5 {
-		t.Errorf("expected high agreement, got %.2f", result.Agreement)
+	if !resolved.Consensus {
+		t.Error("majority should reach consensus")
 	}
-}
-
-func TestResolveWeighted(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
-
-	round := e.StartRound("Test task", StrategyWeighted, []string{"a1", "a2"}, 0.5)
-
-	e.AddResponse(round.ID, AgentResponse{AgentID: "a1", Output: "Result A", Score: 80, Trust: 0.95})
-	e.AddResponse(round.ID, AgentResponse{AgentID: "a2", Output: "Result B", Score: 90, Trust: 0.7})
-
-	result, err := e.Resolve(round.ID)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	// a1: 0.95 * 80 = 76, a2: 0.7 * 90 = 63 → a1 wins
-	if result.WinnerID != "a1" {
-		t.Errorf("expected a1 to win with weighted strategy, got %s", result.WinnerID)
+	if resolved.Strength != 2.0/3.0 {
+		t.Errorf("strength should be %.2f, got %.2f", 2.0/3.0, resolved.Strength)
 	}
 }
 
-func TestResolveAdversarial(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
+func TestMajorityTie(t *testing.T) {
+	e := NewEngine("")
+	r := e.NewRound("Tie?", StrategyMajority)
+	e.CastVote(r.ID, "a1", "yes", "", 1.0, 0.5)
+	e.CastVote(r.ID, "a2", "no", "", 1.0, 0.5)
 
-	round := e.StartRound("Test task", StrategyAdversarial, []string{"a1", "a2", "a3"}, 0.5)
-
-	e.AddResponse(round.ID, AgentResponse{AgentID: "a1", Output: "A", Score: 85})
-	e.AddResponse(round.ID, AgentResponse{AgentID: "a2", Output: "B", Score: 95})
-	e.AddResponse(round.ID, AgentResponse{AgentID: "a3", Output: "C", Score: 80})
-
-	result, err := e.Resolve(round.ID)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	if result.WinnerID != "a2" {
-		t.Errorf("expected a2 (highest score) to win, got %s", result.WinnerID)
+	resolved, _ := e.Resolve(r.ID)
+	// Tie: first one found wins (both have 1 vote)
+	if resolved.Winner == "" {
+		t.Error("should pick a winner even in tie")
 	}
 }
 
-func TestResolveFirstOK(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
+func TestWeightedConsensus(t *testing.T) {
+	e := NewEngine("")
+	r := e.NewRound("Deploy?", StrategyWeighted)
+	e.CastVote(r.ID, "senior", "yes", "", 2.0, 0.9)
+	e.CastVote(r.ID, "junior", "no", "", 0.5, 0.6)
 
-	round := e.StartRound("Test task", StrategyFirstOK, []string{"a1", "a2"}, 0.5)
-
-	e.AddResponse(round.ID, AgentResponse{AgentID: "a1", Output: "First", Score: 75})
-	e.AddResponse(round.ID, AgentResponse{AgentID: "a2", Output: "Second", Score: 95})
-
-	result, err := e.Resolve(round.ID)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	// a1 is first with score >= 70
-	if result.WinnerID != "a1" {
-		t.Errorf("expected a1 (first acceptable) to win, got %s", result.WinnerID)
+	resolved, _ := e.Resolve(r.ID)
+	if resolved.Winner != "yes" {
+		t.Errorf("weighted should pick yes (2.0*0.9=1.8 > 0.5*0.6=0.3), got %s", resolved.Winner)
 	}
 }
 
-func TestResolveNoResponses(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
+func TestUnanimousConsensus(t *testing.T) {
+	e := NewEngine("")
+	r := e.NewRound("All agree?", StrategyUnanimous)
+	e.CastVote(r.ID, "a1", "yes", "", 1.0, 0.9)
+	e.CastVote(r.ID, "a2", "yes", "", 1.0, 0.8)
+	e.CastVote(r.ID, "a3", "yes", "", 1.0, 0.7)
 
-	round := e.StartRound("Test task", StrategyMajority, []string{"a1"}, 0.5)
+	resolved, _ := e.Resolve(r.ID)
+	if resolved.Winner != "yes" {
+		t.Error("unanimous should agree")
+	}
+	if resolved.Strength != 1.0 {
+		t.Error("unanimous strength should be 1.0")
+	}
+}
 
-	_, err := e.Resolve(round.ID)
+func TestUnanimousFail(t *testing.T) {
+	e := NewEngine("")
+	r := e.NewRound("Not unanimous?", StrategyUnanimous)
+	e.CastVote(r.ID, "a1", "yes", "", 1.0, 0.9)
+	e.CastVote(r.ID, "a2", "no", "", 1.0, 0.8)
+
+	resolved, _ := e.Resolve(r.ID)
+	if resolved.Consensus {
+		t.Error("should not reach consensus")
+	}
+	if resolved.Winner != "" {
+		t.Error("unanimous fail should have no winner")
+	}
+}
+
+func TestAdversarialConsensus(t *testing.T) {
+	e := NewEngine("")
+	r := e.NewRound("Best approach?", StrategyAdversarial)
+	e.CastVote(r.ID, "a1", "microservices", "", 1.0, 0.9)
+	e.CastVote(r.ID, "a2", "microservices", "", 1.0, 0.85)
+	e.CastVote(r.ID, "a3", "monolith", "", 1.0, 0.6)
+
+	resolved, _ := e.Resolve(r.ID)
+	if resolved.Winner != "microservices" {
+		t.Errorf("adversarial should pick microservices, got %s", resolved.Winner)
+	}
+}
+
+func TestResolveNoVotes(t *testing.T) {
+	e := NewEngine("")
+	r := e.NewRound("Q?", StrategyMajority)
+	_, err := e.Resolve(r.ID)
 	if err == nil {
-		t.Error("expected error for no responses")
+		t.Error("should error with no votes")
 	}
 }
 
-func TestSimulatedResponses(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
-
-	round := e.StartRound("Test task", StrategyMajority, []string{"a1", "a2", "a3"}, 0.5)
-
-	result, err := e.ResolveWithSimulatedResponses(round.ID)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+func TestResolveNotFound(t *testing.T) {
+	e := NewEngine("")
+	_, err := e.Resolve("nonexistent")
+	if err == nil {
+		t.Error("should error")
 	}
+}
 
-	if result.WinnerID == "" {
-		t.Error("expected a winner")
-	}
-	if len(result.Responses) != 3 {
-		t.Errorf("expected 3 responses, got %d", len(result.Responses))
+func TestGetNotFound(t *testing.T) {
+	e := NewEngine("")
+	_, ok := e.Get("nonexistent")
+	if ok {
+		t.Error("should not find")
 	}
 }
 
 func TestListRounds(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
-
-	e.StartRound("Task 1", StrategyMajority, []string{"a1"}, 0.5)
-	e.StartRound("Task 2", StrategyAdversarial, []string{"a1", "a2"}, 0.5)
+	e := NewEngine("")
+	e.NewRound("Q1?", StrategyMajority)
+	e.NewRound("Q2?", StrategyWeighted)
 
 	rounds := e.ListRounds()
 	if len(rounds) != 2 {
-		t.Errorf("expected 2 rounds, got %d", len(rounds))
+		t.Errorf("expected 2, got %d", len(rounds))
 	}
 }
 
-func TestDeleteRound(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
-
-	round := e.StartRound("Task", StrategyMajority, []string{"a1"}, 0.5)
-	e.DeleteRound(round.ID)
-
-	if len(e.ListRounds()) != 0 {
-		t.Error("expected round to be deleted")
+func TestFormatRound(t *testing.T) {
+	r := &Round{
+		ID:       "round-1",
+		Question: "Deploy to prod?",
+		Strategy: StrategyMajority,
+		Votes: []Vote{
+			{AgentID: "a1", Answer: "yes", Confidence: 0.9, Weight: 1.0},
+		},
+		Winner:    "yes",
+		Consensus: true,
+		Strength:  0.67,
 	}
-}
 
-func TestRoundReport(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
-
-	round := e.StartRound("Review this code for security", StrategyMajority, []string{"a1", "a2", "a3"}, 0.6)
-	e.ResolveWithSimulatedResponses(round.ID)
-
-	got, _ := e.GetRound(round.ID)
-	report := RoundReport(got)
-
-	if !strings.Contains(report, "majority") && !strings.Contains(report, "Majority") {
-		t.Error("expected strategy in report")
+	s := FormatRound(r)
+	if !strings.Contains(s, "yes") {
+		t.Error("should show winner")
 	}
-	if !strings.Contains(report, "Responses:") {
-		t.Error("expected responses section")
-	}
-}
-
-func TestStats(t *testing.T) {
-	dir := t.TempDir()
-	e := NewEngine(dir)
-
-	e.StartRound("Task 1", StrategyMajority, []string{"a1"}, 0.5)
-	e.StartRound("Task 2", StrategyAdversarial, []string{"a1"}, 0.5)
-
-	stats := e.Stats()
-	if stats["total_rounds"] != 2 {
-		t.Errorf("expected 2 rounds, got %v", stats["total_rounds"])
+	if !strings.Contains(s, "67%") {
+		t.Error("should show strength")
 	}
 }
 
 func TestPersistence(t *testing.T) {
 	dir := t.TempDir()
-
 	e1 := NewEngine(dir)
-	round := e1.StartRound("Persistent task", StrategyMajority, []string{"a1", "a2"}, 0.5)
-	e1.AddResponse(round.ID, AgentResponse{AgentID: "a1", Output: "Hello", Score: 90, Trust: 0.9})
+	r := e1.NewRound("Persist?", StrategyMajority)
+	e1.CastVote(r.ID, "a1", "yes", "", 1.0, 0.9)
 
 	e2 := NewEngine(dir)
-	rounds := e2.ListRounds()
-	if len(rounds) != 1 {
-		t.Fatalf("expected 1 round after reload, got %d", len(rounds))
+	got, ok := e2.Get(r.ID)
+	if !ok {
+		t.Fatal("round should persist")
+	}
+	if len(got.Votes) != 1 {
+		t.Error("votes should persist")
 	}
 }
 
-func TestStrategies(t *testing.T) {
-	strategies := []Strategy{StrategyMajority, StrategyWeighted, StrategyUnanimous, StrategyAdversarial, StrategyFirstOK}
-	for _, s := range strategies {
-		if s == "" {
-			t.Error("empty strategy")
-		}
+func TestCastVoteNotFound(t *testing.T) {
+	e := NewEngine("")
+	err := e.CastVote("nonexistent", "a1", "yes", "", 1.0, 0.9)
+	if err == nil {
+		t.Error("should error")
 	}
 }

@@ -18,9 +18,7 @@ var (
 	personaName      string
 	personaDesc      string
 	personaTone      string
-	personaVerbosity string
-	personaScope     string
-	personaMaxCost   float64
+	personaModel     string
 	personaPrefKey   string
 	personaPrefValue string
 )
@@ -39,9 +37,7 @@ func init() {
 	personaCreateCmd.Flags().StringVar(&personaName, "name", "", "Persona name")
 	personaCreateCmd.Flags().StringVar(&personaDesc, "desc", "", "Description")
 	personaCreateCmd.Flags().StringVar(&personaTone, "tone", "technical", "Tone (technical, casual, formal, friendly)")
-	personaCreateCmd.Flags().StringVar(&personaVerbosity, "verbosity", "moderate", "Verbosity (concise, moderate, detailed)")
-	personaCreateCmd.Flags().StringVar(&personaScope, "scope", "full", "Scope (read-only, src-only, sandbox, full)")
-	personaCreateCmd.Flags().Float64Var(&personaMaxCost, "max-cost", 0, "Max cost per session")
+	personaCreateCmd.Flags().StringVar(&personaModel, "model", "", "Preferred model")
 	personaTrustCmd.Flags().Float64("delta", 0, "Trust score delta")
 	personaPrefCmd.Flags().StringVar(&personaPrefKey, "key", "", "Preference key")
 	personaPrefCmd.Flags().StringVar(&personaPrefValue, "value", "", "Preference value")
@@ -67,7 +63,7 @@ var personaListCmd = &cobra.Command{
 		fmt.Printf("Personas (%d):\n", len(list))
 		for _, p := range list {
 			fmt.Printf("  %s [%s] trust:%.0f uses:%d — %s\n",
-				p.Name, p.TrustLevel, p.TrustScore, p.UseCount, p.Description)
+				p.Name, p.Style.Tone, p.TrustScore, p.UseCount, p.Description)
 		}
 		return nil
 	},
@@ -93,14 +89,24 @@ var personaShowCmd = &cobra.Command{
 		fmt.Printf("Persona: %s\n", p.Name)
 		fmt.Printf("ID: %s\n", p.ID)
 		fmt.Printf("Description: %s\n", p.Description)
-		fmt.Printf("Trust: %s (%.0f/100)\n", p.TrustLevel, p.TrustScore)
+		fmt.Printf("Tone: %s\n", p.Style.Tone)
+		fmt.Printf("Verbosity: %s\n", p.Style.Verbosity)
+		fmt.Printf("Trust: %.0f/100 (%s)\n", p.TrustScore, p.TrustLevel)
 		fmt.Printf("Uses: %d\n", p.UseCount)
-		fmt.Printf("Style: %s, %s\n", p.Style.Tone, p.Style.Verbosity)
+		if len(p.ModelPrefs) > 0 {
+			fmt.Println("Model Preferences:")
+			for k, v := range p.ModelPrefs {
+				fmt.Printf("  %s: %s\n", k, v)
+			}
+		}
+		if p.MaxCost > 0 {
+			fmt.Printf("Max Cost: $%.2f\n", p.MaxCost)
+		}
 		if p.Scope != "" {
 			fmt.Printf("Scope: %s\n", p.Scope)
 		}
-		if p.MaxCost > 0 {
-			fmt.Printf("Max Cost: $%.2f/session\n", p.MaxCost)
+		if len(p.Tags) > 0 {
+			fmt.Printf("Tags: %v\n", p.Tags)
 		}
 		if len(p.Preferences) > 0 {
 			fmt.Println("\nPreferences:")
@@ -128,10 +134,11 @@ var personaCreateCmd = &cobra.Command{
 			Description: personaDesc,
 			Style: persona.Style{
 				Tone:      personaTone,
-				Verbosity: personaVerbosity,
+				Verbosity: "moderate",
 			},
-			Scope:   personaScope,
-			MaxCost: personaMaxCost,
+		}
+		if personaModel != "" {
+			p.ModelPrefs = map[string]string{"default": personaModel}
 		}
 		if err := store.Create(p); err != nil {
 			return err
@@ -242,7 +249,7 @@ var personaDefaultsCmd = &cobra.Command{
 		for i := range defaults {
 			p := defaults[i]
 			if _, ok := store.GetByName(p.Name); ok {
-				continue // already exists
+				continue
 			}
 			if err := store.Create(&p); err != nil {
 				continue

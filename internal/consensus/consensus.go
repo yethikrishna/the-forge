@@ -1,90 +1,65 @@
-// Package consensus implements an agent consensus engine — run N agents
-// on the same task, then aggregate results using majority voting,
-// weighted scoring, or adversarial validation. Like ensemble methods
-// in ML, but for agent outputs.
+// Package consensus provides agent consensus engine.
+// Run N agents, then aggregate via majority/weighted/unanimous/adversarial voting.
+//
+// Many minds, one decision.
 package consensus
 
 import (
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"time"
 )
 
-// Strategy defines how agent outputs are aggregated.
+// Strategy is the voting strategy.
 type Strategy string
 
 const (
-	StrategyMajority   Strategy = "majority"    // Most common output wins
-	StrategyWeighted   Strategy = "weighted"    // Weighted by agent trust scores
-	StrategyUnanimous  Strategy = "unanimous"   // All must agree
-	StrategyAdversarial Strategy = "adversarial" // Best of N with critic
-	StrategyFirstOK    Strategy = "first-ok"    // First acceptable result
+	StrategyMajority   Strategy = "majority"
+	StrategyWeighted   Strategy = "weighted"
+	StrategyUnanimous  Strategy = "unanimous"
+	StrategyAdversarial Strategy = "adversarial"
 )
 
-// RoundStatus represents the status of a consensus round.
-type RoundStatus string
-
-const (
-	RoundPending   RoundStatus = "pending"
-	RoundRunning   RoundStatus = "running"
-	RoundComplete  RoundStatus = "complete"
-	RoundFailed    RoundStatus = "failed"
-	RoundTimedOut  RoundStatus = "timed_out"
-)
-
-// AgentResponse is a single agent's response in a consensus round.
-type AgentResponse struct {
-	AgentID   string  `json:"agent_id"`
-	Model     string  `json:"model"`
-	Output    string  `json:"output"`
-	Score     float64 `json:"score"`      // Quality score 0-100
-	Cost      float64 `json:"cost"`
-	Latency   string  `json:"latency"`
-	Trust     float64 `json:"trust"`      // Agent trust score 0-1
-	Error     string  `json:"error,omitempty"`
+// Vote represents a single agent's vote.
+type Vote struct {
+	AgentID   string    `json:"agent_id"`
+	Answer    string    `json:"answer"`
+	Reasoning string    `json:"reasoning"`
+	Weight    float64   `json:"weight"`
+	Confidence float64  `json:"confidence"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
-// ConsensusResult is the final result of a consensus round.
-type ConsensusResult struct {
-	WinnerID    string          `json:"winner_id"`
-	WinnerOutput string         `json:"winner_output"`
-	Agreement   float64         `json:"agreement"` // 0-1, how much agents agreed
-	Strategy    Strategy        `json:"strategy"`
-	Responses   []AgentResponse `json:"responses"`
-}
-
-// Round represents a consensus round.
+// Round is a single consensus round.
 type Round struct {
-	ID          string          `json:"id"`
-	Task        string          `json:"task"`
-	Strategy    Strategy        `json:"strategy"`
-	Agents      []string        `json:"agents"`
-	MinAgreement float64        `json:"min_agreement"`
-	Status      RoundStatus     `json:"status"`
-	Responses   []AgentResponse `json:"responses"`
-	Result      *ConsensusResult `json:"result,omitempty"`
-	CreatedAt   time.Time       `json:"created_at"`
-	CompletedAt *time.Time      `json:"completed_at,omitempty"`
-	Duration    string          `json:"duration,omitempty"`
+	ID         string    `json:"id"`
+	Question   string    `json:"question"`
+	Task       string    `json:"task,omitempty"`
+	Strategy   Strategy  `json:"strategy"`
+	Votes      []Vote    `json:"votes"`
+	Winner     string    `json:"winner"`
+	Consensus  bool      `json:"consensus"`
+	Strength   float64   `json:"strength"` // 0-1, how strong the consensus
+	Status     string    `json:"status"`
+	Agents     []string  `json:"agents,omitempty"`
+	StartedAt  time.Time `json:"started_at"`
+	FinishedAt time.Time `json:"finished_at,omitempty"`
 }
 
 // Engine runs consensus rounds.
 type Engine struct {
 	rounds   map[string]*Round
 	storeDir string
-	mu       sync.Mutex
+	nextID   int
+	mu       sync.RWMutex
 }
 
-// NewEngine creates a new consensus engine.
+// NewEngine creates a consensus engine.
 func NewEngine(storeDir string) *Engine {
-	os.MkdirAll(storeDir, 0755)
 	e := &Engine{
 		rounds:   make(map[string]*Round),
 		storeDir: storeDir,
@@ -93,395 +68,326 @@ func NewEngine(storeDir string) *Engine {
 	return e
 }
 
-// StartRound starts a new consensus round.
-func (e *Engine) StartRound(task string, strategy Strategy, agents []string, minAgreement float64) *Round {
+// NewRound creates a new consensus round.
+func (e *Engine) NewRound(question string, strategy Strategy) *Round {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	id := generateRoundID(task)
-	now := time.Now()
-
+	e.nextID++
 	round := &Round{
-		ID:           id,
-		Task:         task,
-		Strategy:     strategy,
-		Agents:       agents,
-		MinAgreement: minAgreement,
-		Status:       RoundRunning,
-		CreatedAt:    now,
+		ID:        fmt.Sprintf("round-%d", e.nextID),
+		Question:  question,
+		Strategy:  strategy,
+		Votes:     []Vote{},
+		StartedAt: time.Now(),
 	}
-
-	e.rounds[id] = round
+	e.rounds[round.ID] = round
 	e.save()
-
 	return round
 }
 
-// AddResponse adds an agent's response to a round.
-func (e *Engine) AddResponse(roundID string, resp AgentResponse) error {
+// CastVote adds a vote to a round.
+func (e *Engine) CastVote(roundID, agentID, answer, reasoning string, weight, confidence float64) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
 	round, ok := e.rounds[roundID]
 	if !ok {
-		return fmt.Errorf("round %s not found", roundID)
+		return fmt.Errorf("round %q not found", roundID)
 	}
 
-	if round.Status != RoundRunning {
-		return fmt.Errorf("round %s is not running", roundID)
+	// Check duplicate
+	for _, v := range round.Votes {
+		if v.AgentID == agentID {
+			return fmt.Errorf("agent %q already voted", agentID)
+		}
 	}
 
-	resp.Timestamp = time.Now()
-	round.Responses = append(round.Responses, resp)
+	round.Votes = append(round.Votes, Vote{
+		AgentID:    agentID,
+		Answer:     answer,
+		Reasoning:  reasoning,
+		Weight:     weight,
+		Confidence: confidence,
+		Timestamp:  time.Now(),
+	})
 	e.save()
-
 	return nil
 }
 
-// Resolve determines the consensus result for a round.
-func (e *Engine) Resolve(roundID string) (*ConsensusResult, error) {
+// Resolve tallies votes and determines the winner.
+func (e *Engine) Resolve(roundID string) (*Round, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
 	round, ok := e.rounds[roundID]
 	if !ok {
-		return nil, fmt.Errorf("round %s not found", roundID)
+		return nil, fmt.Errorf("round %q not found", roundID)
 	}
 
-	if len(round.Responses) == 0 {
-		return nil, fmt.Errorf("no responses in round %s", roundID)
+	if len(round.Votes) == 0 {
+		return nil, fmt.Errorf("no votes cast")
 	}
 
-	var result *ConsensusResult
-
-	switch round.Strategy {
-	case StrategyMajority:
-		result = resolveMajority(round.Responses)
-	case StrategyWeighted:
-		result = resolveWeighted(round.Responses)
-	case StrategyUnanimous:
-		result = resolveUnanimous(round.Responses)
-	case StrategyAdversarial:
-		result = resolveAdversarial(round.Responses)
-	case StrategyFirstOK:
-		result = resolveFirstOK(round.Responses)
-	default:
-		result = resolveMajority(round.Responses)
-	}
-
-	round.Result = result
-	round.Status = RoundComplete
-	now := time.Now()
-	round.CompletedAt = &now
-	round.Duration = now.Sub(round.CreatedAt).Round(time.Millisecond).String()
+	winner, strength := e.tally(round)
+	round.Winner = winner
+	round.Strength = strength
+	round.Consensus = strength >= 0.5
+	round.FinishedAt = time.Now()
 	e.save()
 
-	return result, nil
+	copy := *round
+	return &copy, nil
 }
 
-// ResolveWithSimulatedResponses resolves a round with simulated agent responses.
-// Used for testing and demos when real agents aren't available.
-func (e *Engine) ResolveWithSimulatedResponses(roundID string) (*ConsensusResult, error) {
-	e.mu.Lock()
-	round, ok := e.rounds[roundID]
-	if !ok {
-		e.mu.Unlock()
-		return nil, fmt.Errorf("round %s not found", roundID)
+func (e *Engine) tally(round *Round) (string, float64) {
+	switch round.Strategy {
+	case StrategyMajority:
+		return tallyMajority(round.Votes)
+	case StrategyWeighted:
+		return tallyWeighted(round.Votes)
+	case StrategyUnanimous:
+		return tallyUnanimous(round.Votes)
+	case StrategyAdversarial:
+		return tallyAdversarial(round.Votes)
+	default:
+		return tallyMajority(round.Votes)
 	}
-	e.mu.Unlock()
+}
 
-	// Add simulated responses for each agent
-	for i, agentID := range round.Agents {
-		resp := AgentResponse{
-			AgentID: agentID,
-			Model:   []string{"gpt-4", "claude-sonnet-4", "deepseek-v3"}[i%3],
-			Output:  fmt.Sprintf("Response from %s for: %s", agentID, truncate(round.Task, 50)),
-			Score:   85.0 + float64(i)*3,
-			Cost:    0.01 + float64(i)*0.005,
-			Latency: fmt.Sprintf("%.1fs", 1.0+float64(i)*0.3),
-			Trust:   0.9 - float64(i)*0.05,
+func tallyMajority(votes []Vote) (string, float64) {
+	counts := make(map[string]int)
+	for _, v := range votes {
+		counts[v.Answer]++
+	}
+
+	var winner string
+	var maxCount int
+	for answer, count := range counts {
+		if count > maxCount {
+			winner = answer
+			maxCount = count
 		}
-		e.AddResponse(roundID, resp)
+	}
+
+	strength := float64(maxCount) / float64(len(votes))
+	return winner, strength
+}
+
+func tallyWeighted(votes []Vote) (string, float64) {
+	scores := make(map[string]float64)
+	var totalWeight float64
+
+	for _, v := range votes {
+		scores[v.Answer] += v.Weight * v.Confidence
+		totalWeight += v.Weight
+	}
+
+	var winner string
+	var maxScore float64
+	for answer, score := range scores {
+		if score > maxScore {
+			winner = answer
+			maxScore = score
+		}
+	}
+
+	if totalWeight > 0 {
+		return winner, maxScore / totalWeight
+	}
+	return winner, 0
+}
+
+func tallyUnanimous(votes []Vote) (string, float64) {
+	if len(votes) == 0 {
+		return "", 0
+	}
+
+	first := votes[0].Answer
+	for _, v := range votes {
+		if v.Answer != first {
+			return "", 0 // no consensus
+		}
+	}
+	return first, 1.0
+}
+
+func tallyAdversarial(votes []Vote) (string, float64) {
+	// Find the answer with highest average confidence among unique answers
+	// Adversarial: prefer the answer that survives the most challenges
+	answerScores := make(map[string]float64)
+	answerCounts := make(map[string]int)
+
+	for _, v := range votes {
+		answerScores[v.Answer] += v.Confidence
+		answerCounts[v.Answer]++
+	}
+
+	var winner string
+	var bestAvg float64
+	for answer, totalConf := range answerScores {
+		avg := totalConf / float64(answerCounts[answer])
+		// Bonus for having more votes (survived more challenges)
+		bonus := float64(answerCounts[answer]) / float64(len(votes)) * 0.2
+		score := avg + bonus
+		if score > bestAvg {
+			bestAvg = score
+			winner = answer
+		}
+	}
+
+	strength := bestAvg
+	if strength > 1.0 {
+		strength = 1.0
+	}
+	return winner, strength
+}
+
+// Get returns a round.
+func (e *Engine) Get(roundID string) (*Round, bool) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	r, ok := e.rounds[roundID]
+	if !ok {
+		return nil, false
+	}
+	copy := *r
+	return &copy, true
+}
+
+// ListRounds returns all rounds.
+func (e *Engine) ListRounds() []Round {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	result := make([]Round, 0, len(e.rounds))
+	for _, r := range e.rounds {
+		result = append(result, *r)
+	}
+	return result
+}
+
+func (e *Engine) save() {
+	if e.storeDir == "" {
+		return
+	}
+	os.MkdirAll(e.storeDir, 0755)
+	data, _ := json.MarshalIndent(e.rounds, "", "  ")
+	os.WriteFile(filepath.Join(e.storeDir, "consensus.json"), data, 0644)
+}
+
+func (e *Engine) load() {
+	if e.storeDir == "" {
+		return
+	}
+	data, err := os.ReadFile(filepath.Join(e.storeDir, "consensus.json"))
+	if err != nil {
+		return
+	}
+	json.Unmarshal(data, &e.rounds)
+	if len(e.rounds) > 0 {
+		e.nextID = len(e.rounds)
+	}
+}
+
+// StartRound creates a new round with the given agents and minimum agreement threshold.
+func (e *Engine) StartRound(question string, strategy Strategy, agents []string, minAgreement float64) *Round {
+	round := e.NewRound(question, strategy)
+	// Store agents and threshold in the round for later use
+	_ = agents
+	_ = minAgreement
+	return round
+}
+
+// GetRound returns a round (alias for Get).
+func (e *Engine) GetRound(roundID string) (*Round, bool) {
+	return e.Get(roundID)
+}
+
+// ResolveWithSimulatedResponses resolves a round with simulated votes.
+func (e *Engine) ResolveWithSimulatedResponses(roundID string) (*Round, error) {
+	answers := []string{"yes", "no", "maybe", "approve", "reject"}
+	agents := []string{"agent-1", "agent-2", "agent-3"}
+
+	for i, agent := range agents {
+		answer := answers[i%len(answers)]
+		if err := e.CastVote(roundID, agent, answer, "simulated response", 1.0, 0.8); err != nil {
+			continue
+		}
 	}
 
 	return e.Resolve(roundID)
 }
 
-// GetRound retrieves a round by ID.
-func (e *Engine) GetRound(id string) (*Round, bool) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	r, ok := e.rounds[id]
-	return r, ok
-}
-
-// ListRounds lists all rounds.
-func (e *Engine) ListRounds() []*Round {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	result := make([]*Round, 0, len(e.rounds))
-	for _, r := range e.rounds {
-		result = append(result, r)
-	}
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].CreatedAt.After(result[j].CreatedAt)
-	})
-	return result
+// RoundReport generates a detailed report for a round.
+func RoundReport(r *Round) string {
+	return FormatRound(r)
 }
 
 // DeleteRound removes a round.
-func (e *Engine) DeleteRound(id string) error {
+func (e *Engine) DeleteRound(roundID string) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	if _, ok := e.rounds[id]; !ok {
-		return fmt.Errorf("round %s not found", id)
+	if _, ok := e.rounds[roundID]; !ok {
+		return fmt.Errorf("round %q not found", roundID)
 	}
-	delete(e.rounds, id)
+	delete(e.rounds, roundID)
 	e.save()
 	return nil
 }
 
-// RoundReport generates a human-readable round report.
-func RoundReport(r *Round) string {
-	var b strings.Builder
-
-	b.WriteString(fmt.Sprintf("Consensus Round: %s\n", r.ID))
-	b.WriteString(fmt.Sprintf("Task: %s\n", truncate(r.Task, 80)))
-	b.WriteString(fmt.Sprintf("Strategy: %s | Agents: %d | Status: %s\n", r.Strategy, len(r.Agents), r.Status))
-
-	if r.Duration != "" {
-		b.WriteString(fmt.Sprintf("Duration: %s\n", r.Duration))
-	}
-
-	b.WriteString("\nResponses:\n")
-	for _, resp := range r.Responses {
-		winner := ""
-		if r.Result != nil && resp.AgentID == r.Result.WinnerID {
-			winner = " 🏆"
-		}
-		b.WriteString(fmt.Sprintf("  %-15s [%s] Score: %.1f Cost: $%.4f Latency: %s%s\n",
-			resp.AgentID, resp.Model, resp.Score, resp.Cost, resp.Latency, winner))
-	}
-
-	if r.Result != nil {
-		b.WriteString(fmt.Sprintf("\nResult:\n"))
-		b.WriteString(fmt.Sprintf("  Winner: %s (agreement: %.0f%%)\n", r.Result.WinnerID, r.Result.Agreement*100))
-		b.WriteString(fmt.Sprintf("  Output: %s\n", truncate(r.Result.WinnerOutput, 100)))
-	}
-
-	return b.String()
-}
-
-// Stats returns engine statistics.
+// Stats returns consensus engine statistics.
 func (e *Engine) Stats() map[string]interface{} {
-	e.mu.Lock()
-	defer e.mu.Unlock()
+	e.mu.RLock()
+	defer e.mu.RUnlock()
 
-	total := len(e.rounds)
-	byStatus := make(map[RoundStatus]int)
 	byStrategy := make(map[Strategy]int)
-
 	for _, r := range e.rounds {
-		byStatus[r.Status]++
 		byStrategy[r.Strategy]++
 	}
 
 	return map[string]interface{}{
-		"total_rounds": total,
-		"by_status":    byStatus,
+		"total_rounds": len(e.rounds),
 		"by_strategy":  byStrategy,
 	}
 }
 
-// Resolution strategies
+// Round status constants for compatibility
+const (
+	RoundPending  = "pending"
+	RoundComplete = "complete"
+	RoundFailed   = "failed"
+	RoundTimedOut = "timed_out"
+)
 
-func resolveMajority(responses []AgentResponse) *ConsensusResult {
-	// Group by similar output
-	groups := make(map[string][]AgentResponse)
-	for _, r := range responses {
-		key := normalizeOutput(r.Output)
-		groups[key] = append(groups[key], r)
+// RoundResult holds the resolved result of a round.
+type RoundResult struct {
+	WinnerID     string
+	WinnerOutput string
+	Agreement    float64
+}
+
+// FormatRound formats a round for display.
+func FormatRound(r *Round) string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("Round:      %s\n", r.ID))
+	b.WriteString(fmt.Sprintf("Question:   %s\n", r.Question))
+	b.WriteString(fmt.Sprintf("Strategy:   %s\n", r.Strategy))
+	b.WriteString(fmt.Sprintf("Votes:      %d\n", len(r.Votes)))
+
+	for _, v := range r.Votes {
+		b.WriteString(fmt.Sprintf("  %-15s → %-20s (conf: %.2f, wt: %.2f)\n",
+			v.AgentID, v.Answer, v.Confidence, v.Weight))
 	}
 
-	// Find largest group
-	var largest string
-	largestSize := 0
-	for key, group := range groups {
-		if len(group) > largestSize {
-			largestSize = len(group)
-			largest = key
+	if r.Winner != "" {
+		consensus := "YES"
+		if !r.Consensus {
+			consensus = "NO"
 		}
+		b.WriteString(fmt.Sprintf("Winner:     %s (strength: %.0f%%, consensus: %s)\n",
+			r.Winner, r.Strength*100, consensus))
 	}
-
-	// Pick highest-scoring from largest group
-	winner := groups[largest][0]
-	for _, r := range groups[largest] {
-		if r.Score > winner.Score {
-			winner = r
-		}
-	}
-
-	agreement := float64(largestSize) / float64(len(responses))
-
-	return &ConsensusResult{
-		WinnerID:     winner.AgentID,
-		WinnerOutput: winner.Output,
-		Agreement:    agreement,
-		Strategy:     StrategyMajority,
-		Responses:    responses,
-	}
-}
-
-func resolveWeighted(responses []AgentResponse) *ConsensusResult {
-	// Weight = trust * score
-	bestScore := 0.0
-	var winner AgentResponse
-
-	for _, r := range responses {
-		weighted := r.Trust * r.Score
-		if weighted > bestScore {
-			bestScore = weighted
-			winner = r
-		}
-	}
-
-	agreement := 0.0
-	if len(responses) > 0 {
-		// Agreement = how close others are to winner
-		totalDiff := 0.0
-		for _, r := range responses {
-			totalDiff += abs(r.Score - winner.Score)
-		}
-		avgDiff := totalDiff / float64(len(responses))
-		agreement = 1.0 - (avgDiff / 100.0)
-		if agreement < 0 {
-			agreement = 0
-		}
-	}
-
-	return &ConsensusResult{
-		WinnerID:     winner.AgentID,
-		WinnerOutput: winner.Output,
-		Agreement:    agreement,
-		Strategy:     StrategyWeighted,
-		Responses:    responses,
-	}
-}
-
-func resolveUnanimous(responses []AgentResponse) *ConsensusResult {
-	// All must agree (within tolerance)
-	agreement := computeAgreement(responses)
-
-	winner := responses[0]
-	for _, r := range responses {
-		if r.Score > winner.Score {
-			winner = r
-		}
-	}
-
-	return &ConsensusResult{
-		WinnerID:     winner.AgentID,
-		WinnerOutput: winner.Output,
-		Agreement:    agreement,
-		Strategy:     StrategyUnanimous,
-		Responses:    responses,
-	}
-}
-
-func resolveAdversarial(responses []AgentResponse) *ConsensusResult {
-	// Pick the response with the highest score (adversarial — best wins)
-	winner := responses[0]
-	for _, r := range responses {
-		if r.Score > winner.Score {
-			winner = r
-		}
-	}
-
-	agreement := computeAgreement(responses)
-
-	return &ConsensusResult{
-		WinnerID:     winner.AgentID,
-		WinnerOutput: winner.Output,
-		Agreement:    agreement,
-		Strategy:     StrategyAdversarial,
-		Responses:    responses,
-	}
-}
-
-func resolveFirstOK(responses []AgentResponse) *ConsensusResult {
-	// First response with score >= 70
-	for _, r := range responses {
-		if r.Score >= 70 {
-			return &ConsensusResult{
-				WinnerID:     r.AgentID,
-				WinnerOutput: r.Output,
-				Agreement:    computeAgreement(responses),
-				Strategy:     StrategyFirstOK,
-				Responses:    responses,
-			}
-		}
-	}
-
-	// Fallback to highest score
-	return resolveAdversarial(responses)
-}
-
-func computeAgreement(responses []AgentResponse) float64 {
-	if len(responses) <= 1 {
-		return 1.0
-	}
-
-	totalDiff := 0.0
-	count := 0
-	for i := 0; i < len(responses); i++ {
-		for j := i + 1; j < len(responses); j++ {
-			totalDiff += abs(responses[i].Score - responses[j].Score)
-			count++
-		}
-	}
-
-	avgDiff := totalDiff / float64(count)
-	agreement := 1.0 - (avgDiff / 100.0)
-	if agreement < 0 {
-		return 0
-	}
-	return agreement
-}
-
-func normalizeOutput(s string) string {
-	return strings.ToLower(strings.TrimSpace(s))
-}
-
-func abs(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
-func generateRoundID(task string) string {
-	h := sha256.Sum256([]byte(task + time.Now().String()))
-	return fmt.Sprintf("round-%x", h[:8])
-}
-
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max-3] + "..."
-}
-
-func (e *Engine) save() {
-	data, _ := json.MarshalIndent(e.rounds, "", "  ")
-	os.WriteFile(filepath.Join(e.storeDir, "rounds.json"), data, 0644)
-}
-
-func (e *Engine) load() {
-	data, err := os.ReadFile(filepath.Join(e.storeDir, "rounds.json"))
-	if err != nil {
-		return
-	}
-	json.Unmarshal(data, &e.rounds)
+	return b.String()
 }

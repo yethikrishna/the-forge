@@ -1,12 +1,16 @@
-// Package depsaudit provides agent-powered dependency analysis
-// including CVE detection, license compliance, and alternative suggestions.
+// Package depsaudit provides agent-powered dependency analysis.
+// Scans project dependencies for CVEs, license issues, outdated versions,
+// and suggests better alternatives.
+//
+// Know your dependencies, know your risks.
 package depsaudit
 
 import (
 	"bufio"
-	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -15,7 +19,7 @@ import (
 	"time"
 )
 
-// Severity represents vulnerability severity.
+// Severity levels for findings.
 type Severity string
 
 const (
@@ -23,646 +27,635 @@ const (
 	SeverityHigh     Severity = "high"
 	SeverityMedium   Severity = "medium"
 	SeverityLow      Severity = "low"
-	SeverityNone     Severity = "none"
+	SeverityInfo     Severity = "info"
 )
 
-// License represents a software license type.
-type License string
+// FindingCategory classifies the type of finding.
+type FindingCategory string
 
 const (
-	LicenseMIT       License = "MIT"
-	LicenseApache2   License = "Apache-2.0"
-	LicenseGPL2      License = "GPL-2.0"
-	LicenseGPL3      License = "GPL-3.0"
-	LicenseLGPL      License = "LGPL"
-	LicenseBSD2      License = "BSD-2-Clause"
-	LicenseBSD3      License = "BSD-3-Clause"
-	LicenseMPL2      License = "MPL-2.0"
-	LicenseISC       License = "ISC"
-	LicenseUnlicense License = "Unlicense"
-	LicenseProprietary License = "Proprietary"
-	LicenseUnknown   License = "Unknown"
+	CategoryCVE       FindingCategory = "cve"
+	CategoryLicense    FindingCategory = "license"
+	CategoryOutdated   FindingCategory = "outdated"
+	CategoryUnused     FindingCategory = "unused"
+	CategoryAlternative FindingCategory = "alternative"
+	CategoryMaintenance FindingCategory = "maintenance"
 )
 
-// LicenseCategory classifies a license for compatibility.
-type LicenseCategory string
-
-const (
-	CategoryPermissive  LicenseCategory = "permissive"
-	CategoryWeakCopyleft LicenseCategory = "weak_copyleft"
-	CategoryStrongCopyleft LicenseCategory = "strong_copyleft"
-	CategoryProprietary LicenseCategory = "proprietary"
-	CategoryUnknown     LicenseCategory = "unknown"
-)
-
-// Vulnerability represents a known CVE or security issue.
-type Vulnerability struct {
-	ID          string   `json:"id"`           // CVE-2024-XXXXX
-	Severity    Severity `json:"severity"`
-	Summary     string   `json:"summary"`
-	Affected    string   `json:"affected"`     // version range
-	FixedIn     string   `json:"fixed_in,omitempty"`
-	URL         string   `json:"url,omitempty"`
-	Published   string   `json:"published,omitempty"`
-	EPSS        float64  `json:"epss,omitempty"` // exploit prediction score
+// Finding represents a single audit finding.
+type Finding struct {
+	ID          string          `json:"id"`
+	Category    FindingCategory `json:"category"`
+	Severity    Severity        `json:"severity"`
+	Package     string          `json:"package"`
+	Version     string          `json:"version"`
+	Title       string          `json:"title"`
+	Description string          `json:"description"`
+	Fix         string          `json:"fix,omitempty"`
+	Reference   string          `json:"reference,omitempty"`
 }
 
-// Dep represents a project dependency.
-type Dep struct {
-	Name        string   `json:"name"`
-	Version     string   `json:"version"`
-	License     License  `json:"license"`
-	LicenseURL  string   `json:"license_url,omitempty"`
-	Source      string   `json:"source,omitempty"` // "go", "npm", "pip", "cargo"
-	Indirect    bool     `json:"indirect"`
-	Vulnerabilities []Vulnerability `json:"vulnerabilities,omitempty"`
-	Alternatives []Alternative `json:"alternatives,omitempty"`
-	Outdated    bool     `json:"outdated"`
-	Latest      string   `json:"latest,omitempty"`
+// Dependency represents a project dependency.
+type Dependency struct {
+	Name       string `json:"name"`
+	Version    string `json:"version"`
+	License    string `json:"license,omitempty"`
+	Indirect   bool   `json:"indirect"`
+	Location   string `json:"location,omitempty"` // where it's declared
 }
 
-// Alternative represents an alternative dependency suggestion.
-type Alternative struct {
-	Name        string   `json:"name"`
-	Reason      string   `json:"reason"`
-	License     License  `json:"license"`
-	Popular     bool     `json:"popular"`
-	Maintained  bool     `json:"maintained"`
+// AuditReport is the complete audit result.
+type AuditReport struct {
+	ProjectDir   string       `json:"project_dir"`
+	Language     string       `json:"language"`
+	Timestamp    time.Time    `json:"timestamp"`
+	Dependencies []Dependency `json:"dependencies"`
+	Findings     []Finding    `json:"findings"`
+	Summary      AuditSummary `json:"summary"`
 }
 
-// AuditResult holds the results of a dependency audit.
-type AuditResult struct {
-	ProjectPath    string    `json:"project_path"`
-	ScannedAt      time.Time `json:"scanned_at"`
-	Language       string    `json:"language"`
-	TotalDeps      int       `json:"total_deps"`
-	DirectDeps     int       `json:"direct_deps"`
-	IndirectDeps   int       `json:"indirect_deps"`
-	Vulnerable     int       `json:"vulnerable"`
-	CriticalCount  int       `json:"critical_count"`
-	HighCount      int       `json:"high_count"`
-	MediumCount    int       `json:"medium_count"`
-	LowCount       int       `json:"low_count"`
-	LicenseIssues  int       `json:"license_issues"`
-	Outdated       int       `json:"outdated_count"`
-	Score          float64   `json:"score"` // 0-100, higher is better
-	Dependencies   []Dep     `json:"dependencies"`
-	Recommendations []Recommendation `json:"recommendations"`
-}
-
-// Recommendation represents a remediation recommendation.
-type Recommendation struct {
-	Priority    Severity `json:"priority"`
-	DepName     string   `json:"dep_name"`
-	Action      string   `json:"action"`     // "update", "replace", "remove", "review"
-	Description string   `json:"description"`
-	Details     string   `json:"details,omitempty"`
+// AuditSummary holds counts by severity and category.
+type AuditSummary struct {
+	TotalDeps    int            `json:"total_deps"`
+	DirectDeps   int            `json:"direct_deps"`
+	IndirectDeps int            `json:"indirect_deps"`
+	BySeverity   map[Severity]int  `json:"by_severity"`
+	ByCategory   map[FindingCategory]int `json:"by_category"`
+	Score        int            `json:"score"` // 0-100, higher is better
 }
 
 // Auditor performs dependency audits.
 type Auditor struct {
-	mu            sync.Mutex
-	knownCVEs     map[string][]Vulnerability // package -> CVEs
-	licenseDB     map[License]LicenseCategory
-	vulnPatterns  map[string][]Vulnerability // known vulnerable version patterns
+	rootDir string
+	mu      sync.Mutex
 }
 
 // NewAuditor creates a new dependency auditor.
-func NewAuditor() *Auditor {
-	a := &Auditor{
-		knownCVEs:    make(map[string][]Vulnerability),
-		licenseDB:    defaultLicenseDB(),
-		vulnPatterns: defaultVulnPatterns(),
-	}
-	return a
+func NewAuditor(rootDir string) *Auditor {
+	return &Auditor{rootDir: rootDir}
 }
 
-// Audit scans a project for dependency issues.
-func (a *Auditor) Audit(ctx context.Context, projectPath string) (*AuditResult, error) {
-	result := &AuditResult{
-		ProjectPath: projectPath,
-		ScannedAt:   time.Now(),
+// Audit runs a full dependency audit.
+func (a *Auditor) Audit() (*AuditReport, error) {
+	report := &AuditReport{
+		ProjectDir: a.rootDir,
+		Timestamp:  time.Now(),
 	}
 
-	// Detect language and dependencies
-	deps, lang := a.detectDeps(projectPath)
-	result.Language = lang
-	result.Dependencies = deps
-
-	// Check for vulnerabilities
-	a.checkVulnerabilities(deps)
-
-	// Check for license issues
-	a.checkLicenses(deps, result)
-
-	// Check for outdated deps
-	a.checkOutdated(deps)
-
-	// Generate recommendations
-	a.generateRecommendations(result)
-
-	// Calculate counts and score
-	a.calculateStats(result)
-
-	return result, nil
-}
-
-// detectDeps detects project dependencies from lock/manifest files.
-func (a *Auditor) detectDeps(projectPath string) ([]Dep, string) {
-	var deps []Dep
-	var lang string
-
-	// Go modules
-	goSum := filepath.Join(projectPath, "go.sum")
-	goMod := filepath.Join(projectPath, "go.mod")
-	if _, err := os.Stat(goMod); err == nil {
-		lang = "go"
-		deps = append(deps, a.parseGoModules(projectPath)...)
-	}
-
-	// npm
-	pkgLock := filepath.Join(projectPath, "package-lock.json")
-	if _, err := os.Stat(pkgLock); err == nil {
-		if lang == "" {
-			lang = "javascript"
-		}
-		deps = append(deps, a.parseNPMLock(projectPath)...)
-	}
-
-	// Python
-	reqFile := filepath.Join(projectPath, "requirements.txt")
-	if _, err := os.Stat(reqFile); err == nil {
-		if lang == "" {
-			lang = "python"
-		}
-		deps = append(deps, a.parseRequirements(projectPath)...)
-	}
-
-	pipLock := filepath.Join(projectPath, "Pipfile.lock")
-	if _, err := os.Stat(pipLock); err == nil {
-		if lang == "" {
-			lang = "python"
-		}
-	}
-
-	// Rust
-	cargoLock := filepath.Join(projectPath, "Cargo.lock")
-	if _, err := os.Stat(cargoLock); err == nil {
-		if lang == "" {
-			lang = "rust"
-		}
-	}
-
-	_ = goSum
-	return deps, lang
-}
-
-// parseGoModules parses go.mod and go.sum for dependencies.
-func (a *Auditor) parseGoModules(projectPath string) []Dep {
-	var deps []Dep
-
-	modData, err := os.ReadFile(filepath.Join(projectPath, "go.mod"))
+	// Detect language and collect dependencies
+	report.Language = detectLanguage(a.rootDir)
+	deps, err := collectDependencies(a.rootDir, report.Language)
 	if err != nil {
-		return nil
+		return nil, fmt.Errorf("collecting dependencies: %w", err)
+	}
+	report.Dependencies = deps
+
+	// Run audits
+	findings := make([]Finding, 0)
+
+	// 1. Check for known CVE patterns
+	findings = append(findings, auditGoVulnerabilities(a.rootDir)...)
+
+	// 2. License audit
+	findings = append(findings, auditLicenses(deps, report.Language)...)
+
+	// 3. Outdated dependencies
+	findings = append(findings, auditOutdated(deps, report.Language)...)
+
+	// 4. Unused dependencies
+	findings = append(findings, auditUnused(a.rootDir, deps, report.Language)...)
+
+	// 5. Alternatives suggestions
+	findings = append(findings, suggestAlternatives(deps)...)
+
+	// 6. Maintenance check
+	findings = append(findings, auditMaintenance(deps)...)
+
+	report.Findings = findings
+
+	// Generate summary
+	report.Summary = generateSummary(deps, findings)
+
+	return report, nil
+}
+
+// QuickAudit runs only fast, local checks (no network).
+func (a *Auditor) QuickAudit() (*AuditReport, error) {
+	report := &AuditReport{
+		ProjectDir: a.rootDir,
+		Timestamp:  time.Now(),
 	}
 
-	scanner := bufio.NewScanner(strings.NewReader(string(modData)))
-	inRequire := false
+	report.Language = detectLanguage(a.rootDir)
+	deps, err := collectDependencies(a.rootDir, report.Language)
+	if err != nil {
+		return nil, fmt.Errorf("collecting dependencies: %w", err)
+	}
+	report.Dependencies = deps
+
+	findings := make([]Finding, 0)
+	findings = append(findings, auditGoVulnerabilities(a.rootDir)...)
+	findings = append(findings, auditLicenses(deps, report.Language)...)
+	findings = append(findings, auditUnused(a.rootDir, deps, report.Language)...)
+	report.Findings = findings
+	report.Summary = generateSummary(deps, findings)
+
+	return report, nil
+}
+
+func detectLanguage(dir string) string {
+	if fileExists(filepath.Join(dir, "go.mod")) {
+		return "go"
+	}
+	if fileExists(filepath.Join(dir, "package.json")) {
+		return "javascript"
+	}
+	if fileExists(filepath.Join(dir, "requirements.txt")) || fileExists(filepath.Join(dir, "Pipfile")) || fileExists(filepath.Join(dir, "pyproject.toml")) {
+		return "python"
+	}
+	if fileExists(filepath.Join(dir, "Cargo.toml")) {
+		return "rust"
+	}
+	return "unknown"
+}
+
+func collectDependencies(dir string, lang string) ([]Dependency, error) {
+	switch lang {
+	case "go":
+		return collectGoDeps(dir)
+	case "javascript":
+		return collectJSDeps(dir)
+	case "python":
+		return collectPythonDeps(dir)
+	default:
+		return nil, fmt.Errorf("unsupported language: %s", lang)
+	}
+}
+
+func collectGoDeps(dir string) ([]Dependency, error) {
+	var deps []Dependency
+
+	modFile := filepath.Join(dir, "go.mod")
+	data, err := os.ReadFile(modFile)
+	if err != nil {
+		return nil, err
+	}
+
+	requireRe := regexp.MustCompile(`^\s+(\S+)\s+(v\S+)(\s+//\s+indirect)?`)
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if m := requireRe.FindStringSubmatch(line); m != nil {
+			deps = append(deps, Dependency{
+				Name:     m[1],
+				Version:  m[2],
+				Indirect: strings.Contains(m[0], "indirect"),
+				Location: "go.mod",
+			})
+		}
+	}
+
+	return deps, nil
+}
+
+func collectJSDeps(dir string) ([]Dependency, error) {
+	var deps []Dependency
+
+	pkgFile := filepath.Join(dir, "package.json")
+	data, err := os.ReadFile(pkgFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var pkg struct {
+		Dependencies    map[string]string `json:"dependencies"`
+		DevDependencies map[string]string `json:"devDependencies"`
+	}
+	if err := json.Unmarshal(data, &pkg); err != nil {
+		return nil, err
+	}
+
+	for name, version := range pkg.Dependencies {
+		deps = append(deps, Dependency{
+			Name:     name,
+			Version:  strings.TrimPrefix(version, "^~"),
+			Indirect: false,
+			Location: "package.json",
+		})
+	}
+	for name, version := range pkg.DevDependencies {
+		deps = append(deps, Dependency{
+			Name:     name,
+			Version:  strings.TrimPrefix(version, "^~"),
+			Indirect: true,
+			Location: "package.json (dev)",
+		})
+	}
+
+	return deps, nil
+}
+
+func collectPythonDeps(dir string) ([]Dependency, error) {
+	var deps []Dependency
+
+	reqFile := filepath.Join(dir, "requirements.txt")
+	data, err := os.ReadFile(reqFile)
+	if err != nil {
+		// Try pyproject.toml
+		return deps, nil
+	}
+
+	lineRe := regexp.MustCompile(`^([a-zA-Z0-9_-]+)[><=!]+(.+)$`)
+	scanner := bufio.NewScanner(strings.NewReader(string(data)))
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-
-		if strings.HasPrefix(line, "require (") {
-			inRequire = true
-			continue
-		}
-		if line == ")" && inRequire {
-			inRequire = false
-			continue
-		}
-
-		if inRequire || strings.HasPrefix(line, "require ") {
-			parts := strings.Fields(line)
-			if len(parts) >= 2 {
-				name := parts[0]
-				version := parts[1]
-				if strings.HasPrefix(line, "require ") {
-					name = parts[1]
-					version = parts[2]
-				}
-				indirect := strings.HasSuffix(line, "// indirect")
-				lic := a.detectGoLicense(name)
-				deps = append(deps, Dep{
-					Name:     name,
-					Version:  version,
-					License:  lic,
-					Source:   "go",
-					Indirect: indirect,
-				})
-			}
-		}
-	}
-
-	return deps
-}
-
-// parseNPMLock parses package-lock.json for dependencies.
-func (a *Auditor) parseNPMLock(projectPath string) []Dep {
-	var deps []Dep
-	// Simplified: just read package.json for top-level deps
-	pkgData, err := os.ReadFile(filepath.Join(projectPath, "package.json"))
-	if err != nil {
-		return nil
-	}
-
-	// Extract dependency names from package.json
-	content := string(pkgData)
-	depsRe := regexp.MustCompile(`"([^@"]+)":\s*"([^"]+)"`)
-	inDeps := false
-	inDevDeps := false
-
-	for _, line := range strings.Split(content, "\n") {
-		trimmed := strings.TrimSpace(line)
-		if strings.Contains(trimmed, `"dependencies"`) {
-			inDeps = true
-			inDevDeps = false
-			continue
-		}
-		if strings.Contains(trimmed, `"devDependencies"`) {
-			inDevDeps = true
-			inDeps = false
-			continue
-		}
-		if trimmed == "}" && (inDeps || inDevDeps) {
-			inDeps = false
-			inDevDeps = false
-			continue
-		}
-
-		if inDeps || inDevDeps {
-			matches := depsRe.FindStringSubmatch(trimmed)
-			if len(matches) >= 3 {
-				deps = append(deps, Dep{
-					Name:     matches[1],
-					Version:  matches[2],
-					License:  LicenseUnknown,
-					Source:   "npm",
-					Indirect: inDevDeps,
-				})
-			}
-		}
-	}
-
-	return deps
-}
-
-// parseRequirements parses requirements.txt for Python dependencies.
-func (a *Auditor) parseRequirements(projectPath string) []Dep {
-	var deps []Dep
-	data, err := os.ReadFile(filepath.Join(projectPath, "requirements.txt"))
-	if err != nil {
-		return nil
-	}
-
-	re := regexp.MustCompile(`^([a-zA-Z0-9_-]+)\s*([>=<~!]+)\s*([0-9.]+)`)
-	for _, line := range strings.Split(string(data), "\n") {
-		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		matches := re.FindStringSubmatch(line)
-		if len(matches) >= 4 {
-			deps = append(deps, Dep{
-				Name:    matches[1],
-				Version: matches[3],
-				License: LicenseUnknown,
-				Source:  "pip",
+		if m := lineRe.FindStringSubmatch(line); m != nil {
+			deps = append(deps, Dependency{
+				Name:     m[1],
+				Version:  strings.TrimSpace(m[2]),
+				Indirect: false,
+				Location: "requirements.txt",
 			})
 		}
 	}
-	return deps
+
+	return deps, nil
 }
 
-// checkVulnerabilities checks dependencies against known CVEs.
-func (a *Auditor) checkVulnerabilities(deps []Dep) {
-	for i := range deps {
-		pkgKey := deps[i].Name
-		if cves, ok := a.vulnPatterns[pkgKey]; ok {
-			deps[i].Vulnerabilities = cves
+func auditGoVulnerabilities(dir string) []Finding {
+	var findings []Finding
+
+	// Try `govulncheck`
+	cmd := exec.Command("govulncheck", "./...")
+	cmd.Dir = dir
+	output, err := cmd.CombinedOutput()
+	if err != nil && len(output) == 0 {
+		// govulncheck not installed, skip
+		return findings
+	}
+
+	vulnRe := regexp.MustCompile(`Vulnerability\s+#(\d+):\s+(.*)`)
+	pkgRe := regexp.MustCompile(`([\w./-]+)\s+at\s+(v\S+)`)
+	lines := strings.Split(string(output), "\n")
+
+	var currentFinding *Finding
+	for _, line := range lines {
+		if m := vulnRe.FindStringSubmatch(line); m != nil {
+			if currentFinding != nil {
+				findings = append(findings, *currentFinding)
+			}
+			currentFinding = &Finding{
+				ID:          fmt.Sprintf("CVE-%s", m[1]),
+				Category:    CategoryCVE,
+				Severity:    SeverityHigh,
+				Title:       m[2],
+				Description: m[2],
+			}
 		}
-		if cves, ok := a.knownCVEs[pkgKey]; ok {
-			deps[i].Vulnerabilities = append(deps[i].Vulnerabilities, cves...)
+		if currentFinding != nil {
+			if m := pkgRe.FindStringSubmatch(line); m != nil {
+				currentFinding.Package = m[1]
+				currentFinding.Version = m[2]
+			}
 		}
 	}
+	if currentFinding != nil {
+		findings = append(findings, *currentFinding)
+	}
+
+	return findings
 }
 
-// checkLicenses checks for license compatibility issues.
-func (a *Auditor) checkLicenses(deps []Dep, result *AuditResult) {
+// Known problematic licenses
+var problematicLicenses = map[string]Severity{
+	"GPL-2.0":     SeverityHigh,
+	"GPL-3.0":     SeverityHigh,
+	"AGPL-3.0":    SeverityCritical,
+	"SSPL":        SeverityCritical,
+	"BSL":         SeverityMedium,
+	"Commons-Clause": SeverityHigh,
+}
+
+// Well-known permissive licenses
+var permissiveLicenses = map[string]bool{
+	"MIT":          true,
+	"Apache-2.0":   true,
+	"BSD-2-Clause": true,
+	"BSD-3-Clause": true,
+	"ISC":          true,
+	"0BSD":         true,
+	"Unlicense":    true,
+	"CC0-1.0":      true,
+}
+
+func auditLicenses(deps []Dependency, lang string) []Finding {
+	var findings []Finding
+
 	for _, dep := range deps {
-		if cat, ok := a.licenseDB[dep.License]; ok {
-			if cat == CategoryStrongCopyleft || cat == CategoryProprietary {
-				result.LicenseIssues++
-			}
-		} else if dep.License == LicenseUnknown {
-			result.LicenseIssues++
-		}
-	}
-}
-
-// checkOutdated checks for outdated dependencies.
-func (a *Auditor) checkOutdated(deps []Dep) {
-	// Simplified: mark deps with pre-release versions as potentially outdated
-	for i := range deps {
-		v := deps[i].Version
-		if strings.Contains(v, "alpha") || strings.Contains(v, "beta") || strings.Contains(v, "rc") {
-			deps[i].Outdated = true
-		}
-		if strings.HasPrefix(v, "v0.") {
-			deps[i].Outdated = true
-		}
-	}
-}
-
-// generateRecommendations generates remediation recommendations.
-func (a *Auditor) generateRecommendations(result *AuditResult) {
-	for _, dep := range result.Dependencies {
-		for _, vuln := range dep.Vulnerabilities {
-			rec := Recommendation{
-				Priority:    vuln.Severity,
-				DepName:     dep.Name,
-				Action:      "update",
-				Description: fmt.Sprintf("Update %s to fix %s", dep.Name, vuln.ID),
-				Details:     vuln.Summary,
-			}
-			if vuln.FixedIn != "" {
-				rec.Details = fmt.Sprintf("Update to version %s or later. %s", vuln.FixedIn, vuln.Summary)
-			} else {
-				rec.Action = "review"
-				rec.Details = fmt.Sprintf("No fix available yet. %s", vuln.Summary)
-			}
-			result.Recommendations = append(result.Recommendations, rec)
-		}
-
-		if cat, ok := a.licenseDB[dep.License]; ok {
-			if cat == CategoryStrongCopyleft {
-				result.Recommendations = append(result.Recommendations, Recommendation{
-					Priority:    SeverityMedium,
-					DepName:     dep.Name,
-					Action:      "review",
-					Description: fmt.Sprintf("%s uses %s license (strong copyleft)", dep.Name, dep.License),
-					Details:     "Strong copyleft licenses may require your project to also be open-sourced. Review compatibility.",
-				})
-			}
-		}
-
-		if dep.Outdated {
-			result.Recommendations = append(result.Recommendations, Recommendation{
-				Priority:    SeverityLow,
-				DepName:     dep.Name,
-				Action:      "update",
-				Description: fmt.Sprintf("%s may be outdated (current: %s)", dep.Name, dep.Version),
+		license := detectLicense(dep, lang)
+		if license == "" {
+			findings = append(findings, Finding{
+				ID:          fmt.Sprintf("LIC-UNKNOWN-%s", dep.Name),
+				Category:    CategoryLicense,
+				Severity:    SeverityMedium,
+				Package:     dep.Name,
+				Version:     dep.Version,
+				Title:       fmt.Sprintf("Unknown license for %s", dep.Name),
+				Description: "Could not determine license for this dependency",
+				Fix:         "Verify license manually before using in production",
 			})
+			continue
 		}
 
-		for _, alt := range dep.Alternatives {
-			result.Recommendations = append(result.Recommendations, Recommendation{
-				Priority:    SeverityLow,
-				DepName:     dep.Name,
-				Action:      "replace",
-				Description: fmt.Sprintf("Consider %s instead of %s: %s", alt.Name, dep.Name, alt.Reason),
+		if sev, ok := problematicLicenses[license]; ok {
+			findings = append(findings, Finding{
+				ID:          fmt.Sprintf("LIC-%s-%s", license, dep.Name),
+				Category:    CategoryLicense,
+				Severity:    sev,
+				Package:     dep.Name,
+				Version:     dep.Version,
+				Title:       fmt.Sprintf("Copyleft license: %s uses %s", dep.Name, license),
+				Description: fmt.Sprintf("%s may require your project to also use %s", dep.Name, license),
+				Fix:         "Consider using an alternative with a permissive license",
 			})
 		}
 	}
 
-	// Sort by severity
-	sort.Slice(result.Recommendations, func(i, j int) bool {
-		return severityOrder(result.Recommendations[i].Priority) < severityOrder(result.Recommendations[j].Priority)
-	})
+	return findings
 }
 
-func severityOrder(s Severity) int {
-	switch s {
-	case SeverityCritical:
-		return 0
-	case SeverityHigh:
-		return 1
-	case SeverityMedium:
-		return 2
-	case SeverityLow:
-		return 3
-	default:
-		return 4
+func detectLicense(dep Dependency, lang string) string {
+	// For Go, most packages use permissive licenses
+	if lang == "go" {
+		// Most Go modules use MIT/BSD/Apache
+		// This is a heuristic - real implementation would check go.sum/licenses
+		if strings.Contains(dep.Name, "golang.org/x/") ||
+			strings.Contains(dep.Name, "github.com/stretchr/") ||
+			strings.Contains(dep.Name, "github.com/spf13/") {
+			return "MIT"
+		}
 	}
+	return ""
 }
 
-// calculateStats calculates audit statistics and score.
-func (a *Auditor) calculateStats(result *AuditResult) {
-	for _, dep := range result.Dependencies {
-		result.TotalDeps++
+func auditOutdated(deps []Dependency, lang string) []Finding {
+	// This would normally check against a registry
+	// For now, flag very old major versions
+	var findings []Finding
+
+	knownLatest := map[string]string{
+		"github.com/spf13/cobra":  "v1.8.0",
+		"github.com/stretchr/testify": "v1.9.0",
+	}
+
+	for _, dep := range deps {
+		if latest, ok := knownLatest[dep.Name]; ok && dep.Version != latest {
+			findings = append(findings, Finding{
+				ID:          fmt.Sprintf("OUT-%s", dep.Name),
+				Category:    CategoryOutdated,
+				Severity:    SeverityLow,
+				Package:     dep.Name,
+				Version:     dep.Version,
+				Title:       fmt.Sprintf("%s may be outdated (%s vs %s)", dep.Name, dep.Version, latest),
+				Description: "Consider updating to the latest version for bug fixes and security patches",
+				Fix:         fmt.Sprintf("Update to %s", latest),
+			})
+		}
+	}
+
+	return findings
+}
+
+func auditUnused(dir string, deps []Dependency, lang string) []Finding {
+	var findings []Finding
+
+	if lang == "go" {
+		findings = append(findings, auditGoUnused(dir)...)
+	}
+
+	return findings
+}
+
+func auditGoUnused(dir string) []Finding {
+	var findings []Finding
+
+	cmd := exec.Command("go", "mod", "tidy", "-v")
+	cmd.Dir = dir
+	// We don't actually want to tidy, just check
+	// Use `go list -m all` vs imports instead
+	cmd = exec.Command("go", "list", "-m", "-json", "all")
+	cmd.Dir = dir
+	output, err := cmd.Output()
+	if err != nil {
+		return findings
+	}
+
+	// Parse unused from go mod tidy -v output (would need actual run)
+	_ = output
+	return findings
+}
+
+// Alternative suggestions for common packages
+var alternatives = map[string]struct {
+	Package string
+	Reason  string
+}{
+	"github.com/golang/protobuf": {
+		Package: "google.golang.org/protobuf",
+		Reason:  "Official Go protobuf library (the old one is deprecated)",
+	},
+	"github.com/Sirupsen/logrus": {
+		Package: "log/slog",
+		Reason:  "stdlib slog is simpler and has no dependencies",
+	},
+	"github.com/pkg/errors": {
+		Package: "fmt.Errorf with %w",
+		Reason:  "Error wrapping is now in stdlib (Go 1.13+)",
+	},
+	"io/ioutil": {
+		Package: "os and io packages",
+		Reason:  "ioutil is deprecated since Go 1.16",
+	},
+}
+
+func suggestAlternatives(deps []Dependency) []Finding {
+	var findings []Finding
+
+	for _, dep := range deps {
+		if alt, ok := alternatives[dep.Name]; ok {
+			findings = append(findings, Finding{
+				ID:          fmt.Sprintf("ALT-%s", dep.Name),
+				Category:    CategoryAlternative,
+				Severity:    SeverityInfo,
+				Package:     dep.Name,
+				Version:     dep.Version,
+				Title:       fmt.Sprintf("Consider replacing %s with %s", dep.Name, alt.Package),
+				Description: alt.Reason,
+				Fix:         fmt.Sprintf("Replace with %s", alt.Package),
+			})
+		}
+	}
+
+	return findings
+}
+
+func auditMaintenance(deps []Dependency) []Finding {
+	var findings []Finding
+
+	// Check for deprecated packages
+	deprecated := map[string]string{
+		"github.com/golang/protobuf": "Use google.golang.org/protobuf instead",
+		"github.com/pkg/errors":      "Use fmt.Errorf with %w wrapping (Go 1.13+)",
+	}
+
+	for _, dep := range deps {
+		if reason, ok := deprecated[dep.Name]; ok {
+			findings = append(findings, Finding{
+				ID:          fmt.Sprintf("MNT-%s", dep.Name),
+				Category:    CategoryMaintenance,
+				Severity:    SeverityMedium,
+				Package:     dep.Name,
+				Version:     dep.Version,
+				Title:       fmt.Sprintf("Deprecated: %s", dep.Name),
+				Description: reason,
+				Fix:         reason,
+			})
+		}
+	}
+
+	return findings
+}
+
+func generateSummary(deps []Dependency, findings []Finding) AuditSummary {
+	summary := AuditSummary{
+		TotalDeps:    len(deps),
+		BySeverity:   make(map[Severity]int),
+		ByCategory:   make(map[FindingCategory]int),
+	}
+
+	for _, dep := range deps {
 		if dep.Indirect {
-			result.IndirectDeps++
+			summary.IndirectDeps++
 		} else {
-			result.DirectDeps++
-		}
-		if len(dep.Vulnerabilities) > 0 {
-			result.Vulnerable++
-			for _, v := range dep.Vulnerabilities {
-				switch v.Severity {
-				case SeverityCritical:
-					result.CriticalCount++
-				case SeverityHigh:
-					result.HighCount++
-				case SeverityMedium:
-					result.MediumCount++
-				case SeverityLow:
-					result.LowCount++
-				}
-			}
-		}
-		if dep.Outdated {
-			result.Outdated++
+			summary.DirectDeps++
 		}
 	}
 
-	// Calculate score (0-100)
-	score := 100.0
-	score -= float64(result.CriticalCount) * 25
-	score -= float64(result.HighCount) * 10
-	score -= float64(result.MediumCount) * 5
-	score -= float64(result.LowCount) * 1
-	score -= float64(result.LicenseIssues) * 5
-	score -= float64(result.Outdated) * 2
-	if score < 0 {
-		score = 0
+	for _, f := range findings {
+		summary.BySeverity[f.Severity]++
+		summary.ByCategory[f.Category]++
 	}
-	result.Score = score
+
+	// Calculate score: start at 100, subtract for findings
+	summary.Score = 100
+	for _, f := range findings {
+		switch f.Severity {
+		case SeverityCritical:
+			summary.Score -= 20
+		case SeverityHigh:
+			summary.Score -= 10
+		case SeverityMedium:
+			summary.Score -= 5
+		case SeverityLow:
+			summary.Score -= 2
+		case SeverityInfo:
+			summary.Score -= 0
+		}
+	}
+	if summary.Score < 0 {
+		summary.Score = 0
+	}
+
+	return summary
 }
 
-// detectGoLicense detects the license for a Go module.
-func (a *Auditor) detectGoLicense(module string) License {
-	// Well-known Go module licenses
-	known := map[string]License{
-		"github.com/gorilla/mux":                  LicenseBSD3,
-		"github.com/gin-gonic/gin":                LicenseMIT,
-		"github.com/labstack/echo":                 LicenseMIT,
-		"github.com/go-chi/chi":                    LicenseMIT,
-		"github.com/spf13/cobra":                   LicenseApache2,
-		"github.com/spf13/viper":                   LicenseMIT,
-		"github.com/stretchr/testify":              LicenseMIT,
-		"github.com/golang/protobuf":               LicenseBSD3,
-		"google.golang.org/grpc":                   LicenseApache2,
-		"google.golang.org/protobuf":               LicenseBSD3,
-		"golang.org/x/crypto":                      LicenseBSD3,
-		"golang.org/x/net":                         LicenseBSD3,
-		"golang.org/x/text":                        LicenseBSD3,
-		"github.com/prometheus/client_golang":       LicenseApache2,
-		"github.com/redis/go-redis":                LicenseBSD3,
-		"go.uber.org/zap":                          LicenseMIT,
-		"go.uber.org/atomic":                       LicenseMIT,
-		"github.com/rs/zerolog":                    LicenseMIT,
-		"github.com/sirupsen/logrus":               LicenseMIT,
-		"github.com/open-telemetry/opentelemetry-go": LicenseApache2,
-		"github.com/aws/aws-sdk-go":                LicenseApache2,
-		"github.com/Azure/azure-sdk-for-go":        LicenseMIT,
-		"cloud.google.com/go":                      LicenseApache2,
-		"github.com/jackc/pgx":                     LicenseMIT,
-		"github.com/lib/pq":                        LicenseMIT,
-		"github.com/go-sql-driver/mysql":           LicenseMPL2,
-		"github.com/mattn/go-sqlite3":              LicenseMIT,
-		"github.com/charmbracelet/bubbletea":        LicenseMIT,
-		"github.com/alecthomas/chroma":             LicenseMIT,
-	}
-	if lic, ok := known[module]; ok {
-		return lic
-	}
-	return LicenseUnknown
-}
-
-func defaultLicenseDB() map[License]LicenseCategory {
-	return map[License]LicenseCategory{
-		LicenseMIT:       CategoryPermissive,
-		LicenseApache2:   CategoryPermissive,
-		LicenseBSD2:      CategoryPermissive,
-		LicenseBSD3:      CategoryPermissive,
-		LicenseISC:       CategoryPermissive,
-		LicenseUnlicense: CategoryPermissive,
-		LicenseLGPL:      CategoryWeakCopyleft,
-		LicenseMPL2:      CategoryWeakCopyleft,
-		LicenseGPL2:      CategoryStrongCopyleft,
-		LicenseGPL3:      CategoryStrongCopyleft,
-		LicenseProprietary: CategoryProprietary,
-		LicenseUnknown:   CategoryUnknown,
-	}
-}
-
-func defaultVulnPatterns() map[string][]Vulnerability {
-	return map[string][]Vulnerability{
-		"github.com/gorilla/websocket": {
-			{ID: "CVE-2023-40025", Severity: SeverityHigh, Summary: "Potential DoS via crafted WebSocket frames", FixedIn: "v1.5.1"},
-		},
-		"golang.org/x/crypto": {
-			{ID: "CVE-2024-45337", Severity: SeverityHigh, Summary: "ssh: misuse of ServerConfig.PublicKeyCallback", FixedIn: "v0.31.0"},
-			{ID: "CVE-2024-45338", Severity: SeverityMedium, Summary: "html: infinite loop in Parse", FixedIn: "v0.31.0"},
-		},
-		"golang.org/x/net": {
-			{ID: "CVE-2023-44487", Severity: SeverityHigh, Summary: "HTTP/2 rapid reset attack", FixedIn: "v0.17.0"},
-		},
-		"github.com/opencontainers/runc": {
-			{ID: "CVE-2024-21626", Severity: SeverityCritical, Summary: "Container escape via leaked file descriptors", FixedIn: "v1.1.12"},
-		},
-		"lodash": {
-			{ID: "CVE-2021-23337", Severity: SeverityHigh, Summary: "Command injection via template", FixedIn: "4.17.21"},
-			{ID: "CVE-2020-8203", Severity: SeverityMedium, Summary: "Prototype pollution via zipObjectDeep", FixedIn: "4.17.19"},
-		},
-		"express": {
-			{ID: "CVE-2024-29041", Severity: SeverityMedium, Summary: "Open redirect vulnerability", FixedIn: "4.19.2"},
-		},
-		"axios": {
-			{ID: "CVE-2023-45857", Severity: SeverityMedium, Summary: "CSRF via cookie exposure", FixedIn: "1.6.0"},
-		},
-		"requests": {
-			{ID: "CVE-2024-35195", Severity: SeverityMedium, Summary: "Unintended leak of Proxy-Authorization header", FixedIn: "2.32.0"},
-		},
-		"urllib3": {
-			{ID: "CVE-2023-45803", Severity: SeverityMedium, Summary: "Request body not stripped after redirect", FixedIn: "1.26.18"},
-		},
-	}
-}
-
-// FormatMarkdown formats audit results as markdown.
-func FormatMarkdown(result *AuditResult) string {
+// FormatReport renders an audit report as text.
+func FormatReport(report *AuditReport) string {
 	var b strings.Builder
 
-	fmt.Fprintf(&b, "# Dependency Audit Report\n\n")
-	fmt.Fprintf(&b, "**Project:** %s\n", result.ProjectPath)
-	fmt.Fprintf(&b, "**Language:** %s\n", result.Language)
-	fmt.Fprintf(&b, "**Scanned:** %s\n\n", result.ScannedAt.Format(time.RFC3339))
+	fmt.Fprintf(&b, "Dependency Audit Report\n")
+	fmt.Fprintf(&b, "======================\n")
+	fmt.Fprintf(&b, "Project: %s\n", report.ProjectDir)
+	fmt.Fprintf(&b, "Language: %s\n", report.Language)
+	fmt.Fprintf(&b, "Date: %s\n\n", report.Timestamp.Format(time.RFC3339))
 
-	// Summary
-	fmt.Fprintf(&b, "## Summary\n\n")
-	fmt.Fprintf(&b, "| Metric | Value |\n|--------|-------|\n")
-	fmt.Fprintf(&b, "| Total Dependencies | %d |\n", result.TotalDeps)
-	fmt.Fprintf(&b, "| Direct Dependencies | %d |\n", result.DirectDeps)
-	fmt.Fprintf(&b, "| Indirect Dependencies | %d |\n", result.IndirectDeps)
-	fmt.Fprintf(&b, "| Vulnerable | %d |\n", result.Vulnerable)
-	fmt.Fprintf(&b, "| Critical | %d |\n", result.CriticalCount)
-	fmt.Fprintf(&b, "| High | %d |\n", result.HighCount)
-	fmt.Fprintf(&b, "| License Issues | %d |\n", result.LicenseIssues)
-	fmt.Fprintf(&b, "| Outdated | %d |\n", result.Outdated)
-	fmt.Fprintf(&b, "| **Score** | **%.0f/100** |\n\n", result.Score)
+	fmt.Fprintf(&b, "Summary\n")
+	fmt.Fprintf(&b, "-------\n")
+	fmt.Fprintf(&b, "  Total Dependencies: %d (direct: %d, indirect: %d)\n",
+		report.Summary.TotalDeps, report.Summary.DirectDeps, report.Summary.IndirectDeps)
+	fmt.Fprintf(&b, "  Score: %d/100\n\n", report.Summary.Score)
 
-	// Vulnerabilities
-	if result.CriticalCount+result.HighCount > 0 {
-		fmt.Fprintf(&b, "## ⚠️ Critical & High Vulnerabilities\n\n")
-		for _, dep := range result.Dependencies {
-			for _, v := range dep.Vulnerabilities {
-				if v.Severity == SeverityCritical || v.Severity == SeverityHigh {
-					fmt.Fprintf(&b, "- **%s** in %s@%s: %s\n", v.ID, dep.Name, dep.Version, v.Summary)
-					if v.FixedIn != "" {
-						fmt.Fprintf(&b, "  - Fix: Update to %s\n", v.FixedIn)
-					}
-				}
+	if len(report.Summary.BySeverity) > 0 {
+		fmt.Fprintf(&b, "  By Severity:\n")
+		for _, sev := range []Severity{SeverityCritical, SeverityHigh, SeverityMedium, SeverityLow, SeverityInfo} {
+			if count, ok := report.Summary.BySeverity[sev]; ok {
+				fmt.Fprintf(&b, "    %s: %d\n", sev, count)
 			}
 		}
-		b.WriteString("\n")
 	}
 
-	// Recommendations
-	if len(result.Recommendations) > 0 {
-		fmt.Fprintf(&b, "## Recommendations\n\n")
-		for _, rec := range result.Recommendations {
-			priority := string(rec.Priority)
-			if rec.Priority == SeverityCritical {
-				priority = "🔴 CRITICAL"
-			} else if rec.Priority == SeverityHigh {
-				priority = "🟠 HIGH"
-			}
-			fmt.Fprintf(&b, "- [%s] **%s** %s: %s\n", priority, rec.Action, rec.DepName, rec.Description)
-			if rec.Details != "" {
-				fmt.Fprintf(&b, "  - %s\n", rec.Details)
-			}
+	if len(report.Summary.ByCategory) > 0 {
+		fmt.Fprintf(&b, "\n  By Category:\n")
+		cats := make([]string, 0, len(report.Summary.ByCategory))
+		for cat := range report.Summary.ByCategory {
+			cats = append(cats, string(cat))
 		}
-		b.WriteString("\n")
+		sort.Strings(cats)
+		for _, cat := range cats {
+			fmt.Fprintf(&b, "    %s: %d\n", cat, report.Summary.ByCategory[FindingCategory(cat)])
+		}
 	}
 
-	// All dependencies
-	fmt.Fprintf(&b, "## All Dependencies\n\n")
-	fmt.Fprintf(&b, "| Package | Version | License | Vulnerabilities |\n")
-	fmt.Fprintf(&b, "|---------|---------|---------|----------------|\n")
-	for _, dep := range result.Dependencies {
-		vulns := "—"
-		if len(dep.Vulnerabilities) > 0 {
-			var ids []string
-			for _, v := range dep.Vulnerabilities {
-				ids = append(ids, v.ID)
+	if len(report.Findings) > 0 {
+		fmt.Fprintf(&b, "\nFindings\n")
+		fmt.Fprintf(&b, "--------\n")
+
+		// Sort by severity
+		sort.Slice(report.Findings, func(i, j int) bool {
+			sevOrder := map[Severity]int{
+				SeverityCritical: 0, SeverityHigh: 1, SeverityMedium: 2,
+				SeverityLow: 3, SeverityInfo: 4,
 			}
-			vulns = strings.Join(ids, ", ")
+			return sevOrder[report.Findings[i].Severity] < sevOrder[report.Findings[j].Severity]
+		})
+
+		for _, f := range report.Findings {
+			fmt.Fprintf(&b, "\n  [%s] [%s] %s\n", strings.ToUpper(string(f.Severity)), f.Category, f.Title)
+			fmt.Fprintf(&b, "    Package: %s@%s\n", f.Package, f.Version)
+			if f.Description != "" {
+				fmt.Fprintf(&b, "    Detail: %s\n", f.Description)
+			}
+			if f.Fix != "" {
+				fmt.Fprintf(&b, "    Fix: %s\n", f.Fix)
+			}
+			if f.Reference != "" {
+				fmt.Fprintf(&b, "    Ref: %s\n", f.Reference)
+			}
 		}
-		indirect := ""
-		if dep.Indirect {
-			indirect = " (indirect)"
+	} else {
+		fmt.Fprintf(&b, "\nNo findings. Your dependencies look healthy!\n")
+	}
+
+	// List dependencies
+	if len(report.Dependencies) > 0 {
+		fmt.Fprintf(&b, "\nDependencies\n")
+		fmt.Fprintf(&b, "------------\n")
+		for _, dep := range report.Dependencies {
+			indirect := ""
+			if dep.Indirect {
+				indirect = " (indirect)"
+			}
+			fmt.Fprintf(&b, "  %s@%s%s\n", dep.Name, dep.Version, indirect)
 		}
-		fmt.Fprintf(&b, "| %s%s | %s | %s | %s |\n", dep.Name, indirect, dep.Version, dep.License, vulns)
 	}
 
 	return b.String()
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }

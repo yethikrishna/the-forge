@@ -27,9 +27,6 @@ func getNavigator() *navigate.Navigator {
 	return navInstance
 }
 
-func init() {
-	navigateCmd.AddCommand(navigateIndexCmd)
-
 // navigate index
 var navigateIndexCmd = &cobra.Command{
 	Use:   "index [path]",
@@ -54,7 +51,6 @@ var navigateIndexCmd = &cobra.Command{
 
 		navInstance = nav
 
-		// Show kind breakdown
 		kindCount := make(map[navigate.SymbolKind]int)
 		for _, sym := range idx.Symbols {
 			kindCount[sym.Kind]++
@@ -164,7 +160,6 @@ var navigateStatsCmd = &cobra.Command{
 
 		if byKind, ok := stats["by_kind"].(map[navigate.SymbolKind]int); ok {
 			fmt.Println("\n  By Kind:")
-			// Sort kinds for consistent output
 			kinds := make([]string, 0, len(byKind))
 			for k := range byKind {
 				kinds = append(kinds, string(k))
@@ -186,7 +181,6 @@ var navigateTreeCmd = &cobra.Command{
 		nav := getNavigator()
 		tree := nav.SymbolTree()
 
-		// Sort files
 		files := make([]string, 0, len(tree))
 		for f := range tree {
 			files = append(files, f)
@@ -210,6 +204,8 @@ var navigateTreeCmd = &cobra.Command{
 }
 
 func init() {
+	// registered in root.go
+
 	navigateCmd.AddCommand(navigateIndexCmd)
 	navigateCmd.AddCommand(navigateFindCmd)
 	navigateCmd.AddCommand(navigateOutlineCmd)
