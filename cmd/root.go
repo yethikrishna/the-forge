@@ -140,6 +140,9 @@ The wielder and the sword are one.`,
 		playbookCmd,
 		depsAuditCmd,
 		simulateCmd,
+		eventbusCmd,
+		handoffCmd,
+		gateCmd,
 	)
 	return root.ExecuteContext(ctx)
 }
