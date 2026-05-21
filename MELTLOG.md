@@ -209,3 +209,37 @@
 ### Stats
 - ~123K lines of Go, 162 internal packages, 112 commands
 - Build: ✅ Vet: ✅ Tests: ✅
+
+## Session 2026-05-21 — Subagent Dev Sprint
+
+### Packages built
+- `internal/eventbus` — Type-safe pub/sub event bus with async handlers, filters, dead letters (12 predefined topics)
+- `internal/hotreload` — Configuration hot-reload with validation, rollback, change notifications
+- `internal/agenthandoff` — Agent handoff protocol with context, artifacts, confidence transfer
+- `internal/featuregate` — Feature gates with gradual rollout, targeting rules, kill switches
+- `internal/sessiontag` — Session tagging, filtering, auto-tagging, saved searches (14 auto-tag rules)
+- `internal/persona` — Persistent agent personas with style, trust scores, system prompts (5 built-in personas)
+- `internal/autoconfig` — Zero-config auto-detection (API keys, project type, git remote)
+
+### Commands added
+- `forge events` — Event bus management (topics, stats, dead-letters)
+- `forge handoff` — Agent handoff (create, accept, reject, context)
+- `forge gate` — Feature gates (create, enable, disable, kill, rollout, check)
+- `forge stag` — Session tags (create, list, tag, untag, find, auto-tag)
+- `forge persona` — Persona management (create, list, show, prompt, trust, pref, defaults)
+- `forge autodetect` — Auto-detect project configuration
+
+### Fixes
+- Fixed eventbus deadlock (RLock → Lock during deliver, switched to atomic counters)
+- Fixed simulate_test.go trial count assertion (8 not 4)
+- Fixed playbook_test.go and simulate_test.go jsonMarshalIndent helpers
+- Fixed vet warning (redundant newline in Println)
+- Fixed depsaudit NPM test (added package-lock.json)
+- Fixed various missing imports in test files
+
+### Stats
+- **Lines of Go:** ~126.8K
+- **Internal packages:** 167
+- **Commands:** 119
+- **Build:** ✅ **Vet:** ✅ **All Tests:** ✅
+- **Version:** 1.1.0
