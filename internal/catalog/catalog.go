@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/forge/sword/internal/persistence"
 )
 
 // EntryType classifies what kind of catalog entry this is.
@@ -101,10 +103,11 @@ type Stats struct {
 
 // Store manages the catalog.
 type Store struct {
-	Dir  string
-	mu   sync.RWMutex
+	Dir       string
+	mu        sync.RWMutex
 	entries   map[string]*Entry
 	auditLogs []*AuditLog
+	pstore    *persistence.Store
 }
 
 // NewStore creates or loads a catalog store.
@@ -119,7 +122,39 @@ func NewStore(dir string) (*Store, error) {
 	if err := s.load(); err != nil {
 		return s, nil
 	}
+
+	ps, err := persistence.Open(dir)
+	if err != nil {
+		return nil, fmt.Errorf("catalog: open persistence store: %w", err)
+	}
+	s.pstore = ps
+	ps.Register("entries", func() ([]byte, error) {
+		s.mu.RLock()
+		defer s.mu.RUnlock()
+		return json.MarshalIndent(s.entries, "", "  ")
+	})
+	ps.Register("audit", func() ([]byte, error) {
+		s.mu.RLock()
+		defer s.mu.RUnlock()
+		return json.MarshalIndent(s.auditLogs, "", "  ")
+	})
 	return s, nil
+}
+
+// Close flushes pending writes and shuts down the background syncer.
+func (s *Store) Close() error {
+	if s.pstore != nil {
+		return s.pstore.Close()
+	}
+	return nil
+}
+
+// Flush forces an immediate write of all dirty keys to disk.
+func (s *Store) Flush() error {
+	if s.pstore != nil {
+		return s.pstore.Flush()
+	}
+	return nil
 }
 
 // Register creates a new catalog entry.
@@ -165,10 +200,7 @@ func (s *Store) Register(entry Entry) (*Entry, error) {
 
 	s.entries[entry.ID] = &entry
 	s.logAudit(entry.ID, "register", entry.CreatedBy, "registered "+string(entry.Type), "", &entry)
-
-	if err := s.save(); err != nil {
-		return nil, err
-	}
+	s.markDirty()
 	return &entry, nil
 }
 
@@ -217,10 +249,7 @@ func (s *Store) Update(id string, updates func(*Entry)) (*Entry, error) {
 	after, _ := json.Marshal(e)
 	s.logAudit(id, "update", e.UpdatedBy, "", string(before), nil)
 	_ = after
-
-	if err := s.save(); err != nil {
-		return nil, err
-	}
+	s.markDirty()
 	return e, nil
 }
 
@@ -236,7 +265,8 @@ func (s *Store) Delete(id string) error {
 
 	s.logAudit(id, "delete", "", "deleted "+e.Name, "", nil)
 	delete(s.entries, id)
-	return s.save()
+	s.markDirty()
+	return nil
 }
 
 // List returns entries matching optional filters.
@@ -330,10 +360,7 @@ func (s *Store) Transfer(entryID, newOwner, by string) (*Entry, error) {
 	e.UpdatedAt = time.Now().UTC()
 
 	s.logAudit(entryID, "transfer", by, fmt.Sprintf("owner changed from %s to %s", oldOwner, newOwner), "", nil)
-
-	if err := s.save(); err != nil {
-		return nil, err
-	}
+	s.markDirty()
 	return e, nil
 }
 
@@ -355,10 +382,7 @@ func (s *Store) Deprecate(entryID, replacement, by string) (*Entry, error) {
 	}
 
 	s.logAudit(entryID, "deprecate", by, "deprecated", "", nil)
-
-	if err := s.save(); err != nil {
-		return nil, err
-	}
+	s.markDirty()
 	return e, nil
 }
 
@@ -562,20 +586,11 @@ func (s *Store) load() error {
 	return nil
 }
 
-func (s *Store) save() error {
-	entriesData, err := json.MarshalIndent(s.entries, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal entries: %w", err)
+// markDirty tells the persistence store that both entries and audit need flushing.
+// Must be called with s.mu held (write lock).
+func (s *Store) markDirty() {
+	if s.pstore != nil {
+		s.pstore.Dirty("entries")
+		s.pstore.Dirty("audit")
 	}
-	auditData, err := json.MarshalIndent(s.auditLogs, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal audit: %w", err)
-	}
-	if err := os.WriteFile(filepath.Join(s.Dir, "entries.json"), entriesData, 0o644); err != nil {
-		return err
-	}
-	if err := os.WriteFile(filepath.Join(s.Dir, "audit.json"), auditData, 0o644); err != nil {
-		return err
-	}
-	return nil
 }

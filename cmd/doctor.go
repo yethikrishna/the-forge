@@ -16,6 +16,7 @@ import (
 
 func doctorCmd() *cobra.Command {
 	var verbose bool
+	var fix bool
 
 	cmd := &cobra.Command{
 		Use:   "doctor",
@@ -81,6 +82,14 @@ Examples:
 				fmt.Println()
 				fmt.Printf("  %s Run with --verbose for more details.\n",
 					pretty.Sprint(pretty.Info, pretty.Arrow))
+
+				if fix {
+					fmt.Println()
+					fmt.Println(pretty.Sprint(pretty.BoldF, "  Attempting auto-fix..."))
+					fixes := attemptFixes(results)
+					printFixResults(fixes)
+			}
+
 				return fmt.Errorf("environment has %d issue(s) that need attention", failed)
 			}
 
@@ -91,6 +100,7 @@ Examples:
 	}
 
 	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show detailed diagnostic output")
+	cmd.Flags().BoolVar(&fix, "fix", false, "Attempt to auto-fix detected issues")
 
 	return cmd
 }

@@ -397,6 +397,12 @@ func TestPersistence(t *testing.T) {
 		Tags:        []string{"test"},
 	})
 
+	// Flush before reload so write-behind cache has written to disk.
+	if err := s1.Flush(); err != nil {
+		t.Fatalf("Flush: %v", err)
+	}
+	s1.Close()
+
 	s2, err := NewStore(dir)
 	if err != nil {
 		t.Fatalf("NewStore reload: %v", err)
