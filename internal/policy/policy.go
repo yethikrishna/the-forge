@@ -188,8 +188,17 @@ func (e *Engine) Check(req CheckRequest) Decision {
 		Reason:  "no denying policy matched",
 	}
 
+	// Sort policies by priority
+	policies := make([]*Policy, 0, len(e.policies))
+	for _, p := range e.policies {
+		policies = append(policies, p)
+	}
+	sort.Slice(policies, func(i, j int) bool {
+		return policies[i].Priority > policies[j].Priority
+	})
+
 	// Evaluate policies in priority order (highest first)
-	for _, p := range e.Policies() {
+	for _, p := range policies {
 		if !p.Enabled {
 			continue
 		}
