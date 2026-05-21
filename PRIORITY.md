@@ -42,7 +42,7 @@
 ### 3. mcp2 Final Cutover
 **Assigned**: Forge Architect
 **Priority**: P0 (low effort)
-- Finish wiring, deprecate old mcp* packages, update all internal references. Ship in v0.5.1 alongside demo.
+**Status**: Advanced. mcp2 package + subpackages (server, compose, discover) fully wired with tests (mcp2_test.go). Persistence, governance, and resilience middleware integrated. Old mcpgateway references updated where possible. Remaining deprecation of legacy mcp* packages and full caller sweep deferred until after demo video (to avoid risk during recording). No build or benchmark regressions.
 
 ---
 
