@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Forge — Dashboard</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --border: #30363d;
+  --text: #c9d1d9;
+  --text-dim: #8b949e;
+  --accent: #58a6ff;
+  --green: #3fb950;
+  --red: #f85149;
+  --yellow: #d29922;
+  --purple: #bc8cff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; gap: 24px; }
+nav h1 { font-size: 18px; color: var(--accent); }
+nav a { color: var(--text-dim); text-decoration: none; font-size: 14px; }
+nav a:hover, nav a.active { color: var(--accent); }
+.container { max-width: 1400px; margin: 0 auto; padding: 24px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+.card h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-dim); margin-bottom: 8px; }
+.card .value { font-size: 32px; font-weight: 700; }
+.card .value.green { color: var(--green); }
+.card .value.red { color: var(--red); }
+.card .value.yellow { color: var(--yellow); }
+.card .value.purple { color: var(--purple); }
+.card .value.blue { color: var(--accent); }
+.section { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 24px; }
+.section-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.section-header h2 { font-size: 16px; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+.badge.running { background: rgba(63,185,80,0.2); color: var(--green); }
+.badge.pending { background: rgba(210,153,34,0.2); color: var(--yellow); }
+.badge.failed { background: rgba(248,81,73,0.2); color: var(--red); }
+.badge.idle { background: rgba(139,148,158,0.2); color: var(--text-dim); }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 12px 20px; text-align: left; border-bottom: 1px solid var(--border); font-size: 14px; }
+th { color: var(--text-dim); font-weight: 500; font-size: 12px; text-transform: uppercase; }
+tr:hover { background: rgba(88,166,255,0.05); }
+.mono { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 13px; }
+.sparkline { display: flex; align-items: flex-end; gap: 2px; height: 32px; }
+.sparkline .bar { width: 4px; border-radius: 2px; background: var(--accent); opacity: 0.7; transition: opacity 0.2s; }
+.sparkline .bar:hover { opacity: 1; }
+.refresh-btn { background: var(--accent); color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.refresh-btn:hover { opacity: 0.9; }
+#log { max-height: 300px; overflow-y: auto; padding: 12px 20px; font-family: monospace; font-size: 13px; }
+#log .entry { padding: 4px 0; border-bottom: 1px solid rgba(48,54,61,0.5); }
+#log .time { color: var(--text-dim); margin-right: 8px; }
+#log .level-info { color: var(--accent); }
+#log .level-warn { color: var(--yellow); }
+#log .level-error { color: var(--red); }
+</style>
+</head>
+<body>
+<nav>
+  <h1>⚒ The Forge</h1>
+  <a href="#" class="active">Dashboard</a>
+  <a href="#agents">Agents</a>
+  <a href="#tasks">Tasks</a>
+  <a href="#queue">Queue</a>
+  <a href="#hierarchy">Hierarchy</a>
+  <a href="#canary">Canary</a>
+  <span style="flex:1"></span>
+  <button class="refresh-btn" onclick="refresh()">↻ Refresh</button>
+</nav>
+
+<div class="container">
+  <div class="grid">
+    <div class="card">
+      <h3>Active Agents</h3>
+      <div class="value green" id="active-agents">0</div>
+    </div>
+    <div class="card">
+      <h3>Pending Tasks</h3>
+      <div class="value yellow" id="pending-tasks">0</div>
+    </div>
+    <div class="card">
+      <h3>Completed Today</h3>
+      <div class="value blue" id="completed-today">0</div>
+    </div>
+    <div class="card">
+      <h3>Session Cost</h3>
+      <div class="value purple" id="session-cost">$0.00</div>
+    </div>
+    <div class="card">
+      <h3>Queue Depth</h3>
+      <div class="value" id="queue-depth">0</div>
+    </div>
+    <div class="card">
+      <h3>Canary Status</h3>
+      <div class="value" id="canary-status">—</div>
+    </div>
+  </div>
+
+  <div class="section" id="agents">
+    <div class="section-header">
+      <h2>Agents</h2>
+      <span class="badge running" id="agents-count">0 running</span>
+    </div>
+    <table>
+      <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Status</th><th>Tasks</th><th>Cost</th><th>Last Activity</th></tr></thead>
+      <tbody id="agents-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="section" id="tasks">
+    <div class="section-header">
+      <h2>Recent Tasks</h2>
+    </div>
+    <table>
+      <thead><tr><th>ID</th><th>Queue</th><th>Priority</th><th>Status</th><th>Agent</th><th>Duration</th></tr></thead>
+      <tbody id="tasks-tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <div class="section-header">
+      <h2>Activity</h2>
+    </div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script>
+const API = '/api/v1';
+
+async function fetchJSON(path) {
+  try {
+    const r = await fetch(API + path);
+    return await r.json();
+  } catch(e) {
+    console.error('Fetch error:', e);
+    return null;
+  }
+}
+
+function badge(status) {
+  return `<span class="badge ${status}">${status}</span>`;
+}
+
+function fmtCost(c) {
+  return '$' + (c||0).toFixed(4);
+}
+
+function fmtTime(t) {
+  if (!t) return '—';
+  const d = new Date(t);
+  return d.toLocaleTimeString();
+}
+
+function fmtDuration(start, end) {
+  if (!start) return '—';
+  const s = new Date(start);
+  const e = end ? new Date(end) : new Date();
+  const diff = Math.floor((e - s) / 1000);
+  if (diff < 60) return diff + 's';
+  if (diff < 3600) return Math.floor(diff/60) + 'm ' + (diff%60) + 's';
+  return Math.floor(diff/3600) + 'h ' + Math.floor((diff%3600)/60) + 'm';
+}
+
+async function refresh() {
+  // Stats
+  const stats = await fetchJSON('/stats');
+  if (stats) {
+    document.getElementById('active-agents').textContent = stats.active_agents || 0;
+    document.getElementById('pending-tasks').textContent = stats.pending_tasks || 0;
+    document.getElementById('completed-today').textContent = stats.completed_today || 0;
+    document.getElementById('session-cost').textContent = fmtCost(stats.session_cost);
+    document.getElementById('queue-depth').textContent = stats.queue_depth || 0;
+    document.getElementById('canary-status').textContent = stats.canary_status || 'none';
+  }
+
+  // Agents
+  const agents = await fetchJSON('/agents');
+  if (agents && agents.length) {
+    document.getElementById('agents-count').textContent = agents.length + ' running';
+    const tbody = document.getElementById('agents-tbody');
+    tbody.innerHTML = agents.map(a => `<tr>
+      <td class="mono">${a.id?.substring(0,12) || '—'}</td>
+      <td>${a.name || '—'}</td>
+      <td>${a.type || '—'}</td>
+      <td>${badge(a.status || 'idle')}</td>
+      <td>${a.tasks || 0}</td>
+      <td>${fmtCost(a.cost)}</td>
+      <td>${fmtTime(a.last_activity)}</td>
+    </tr>`).join('');
+  }
+
+  // Tasks
+  const tasks = await fetchJSON('/tasks');
+  if (tasks && tasks.length) {
+    const tbody = document.getElementById('tasks-tbody');
+    tbody.innerHTML = tasks.slice(0, 20).map(t => `<tr>
+      <td class="mono">${t.id?.substring(0,12) || '—'}</td>
+      <td>${t.queue || '—'}</td>
+      <td>${t.priority || 1}</td>
+      <td>${badge(t.status || 'pending')}</td>
+      <td>${t.agent_id || '—'}</td>
+      <td>${fmtDuration(t.started_at, t.completed_at)}</td>
+    </tr>`).join('');
+  }
+
+  // Activity log
+  const log = await fetchJSON('/log');
+  if (log && log.length) {
+    const el = document.getElementById('log');
+    el.innerHTML = log.slice(-50).map(e => `<div class="entry">
+      <span class="time">${fmtTime(e.timestamp)}</span>
+      <span class="level-${e.level || 'info'}">[${e.level || 'info'}]</span>
+      ${e.message}
+    </div>`).join('');
+  }
+}
+
+refresh();
+setInterval(refresh, 30000);
+</script>
+</body>
+</html>

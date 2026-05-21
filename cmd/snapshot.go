@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/forge/sword/internal/pretty"
-	"github.com/forge/sword/internal/snapshot"
+	"github.com/forge/sword/internal/safety/snapshot"
 	"github.com/spf13/cobra"
 )
 
