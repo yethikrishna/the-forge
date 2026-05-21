@@ -219,7 +219,7 @@ All 18 utility packages implemented and tested.
 - [x] **MCP v2.1 Governance Gateway** — `forge mcp gateway` with auth + rate limiting + audit logging + schema validation + v2.1 compatibility (Cursor/Copilot/Claude all on v2.1)
 - [x] **Event-Driven Agent Triggers** — `forge watch --agent <pipeline>` spawns agents on file changes, PR events, webhooks (Cursor Automations parity)
 - [x] **Usage-Based Cost Transparency** — `forge cost live` real-time token tracking with projected monthly spend (Copilot usage billing creates opening)
-- [ ] **Cross-Tool Bridge MVP** — `forge bridge cursor` and `forge bridge copilot` (be the glue between tools, not a replacement)
+- [x] **Cross-Tool Bridge MVP** — `forge bridge cursor` and `forge bridge copilot` (be the glue between tools, not a replacement)
 - [ ] **60-Second Demo Video** — brew install → forge quickstart → agents running (blocking all growth)
 
 ### P1 — Next 2 Weeks (Run 5)
