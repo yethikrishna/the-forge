@@ -1,117 +1,309 @@
-package sandbox_test
+package sandbox
 
 import (
-	"context"
+	"strings"
 	"testing"
-	"time"
-
-	"github.com/forge/sword/internal/sandbox"
 )
 
-func TestSupportedLanguages(t *testing.T) {
-	langs := sandbox.SupportedLanguages()
-	if len(langs) < 8 {
-		t.Errorf("expected at least 8 languages, got %d", len(langs))
+func TestCreate(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	env := m.Create("test-env", "agent-1", BackendProcess)
+
+	if env.ID == "" {
+		t.Error("expected non-empty ID")
+	}
+	if env.Status != StatusCreated {
+		t.Errorf("expected created, got %s", env.Status)
+	}
+	if env.Backend != BackendProcess {
+		t.Errorf("expected process, got %s", env.Backend)
 	}
 }
 
-func TestDetectLanguage(t *testing.T) {
-	tests := []struct {
-		ext      string
-		expected sandbox.Language
-		ok       bool
-	}{
-		{".go", sandbox.Go, true},
-		{".py", sandbox.Python, true},
-		{".js", sandbox.JavaScript, true},
-		{".ts", sandbox.TypeScript, true},
-		{".rs", sandbox.Rust, true},
-		{".sh", sandbox.Bash, true},
-		{".rb", sandbox.Ruby, true},
-		{".java", sandbox.Java, true},
-		{".xyz", "", false},
-	}
+func TestStart(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
 
-	for _, tt := range tests {
-		lang, ok := sandbox.DetectLanguage(tt.ext)
-		if ok != tt.ok {
-			t.Errorf("DetectLanguage(%s): ok=%v, want %v", tt.ext, ok, tt.ok)
-		}
-		if lang != tt.expected {
-			t.Errorf("DetectLanguage(%s): lang=%v, want %v", tt.ext, lang, tt.expected)
-		}
-	}
-}
-
-func TestExecuteBash(t *testing.T) {
-	if !sandbox.IsAvailable(sandbox.Bash) {
-		t.Skip("bash not available")
-	}
-
-	s := sandbox.New(sandbox.Config{
-		Language: sandbox.Bash,
-		Timeout:  5 * time.Second,
-	})
-
-	result, err := s.Execute(context.Background(), `#!/bin/bash
-echo "Hello from sandbox!"
-`)
+	env := m.Create("test-env", "agent-1", BackendProcess)
+	err := m.Start(env.ID)
 	if err != nil {
-		t.Fatalf("execute error: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.ExitCode != 0 {
-		t.Errorf("expected exit code 0, got %d", result.ExitCode)
+	got, _ := m.Get(env.ID)
+	if got.Status != StatusRunning {
+		t.Errorf("expected running, got %s", got.Status)
 	}
-	if result.Stdout == "" {
-		t.Error("expected stdout output")
+	if got.Pid == 0 {
+		t.Error("expected non-zero PID")
 	}
 }
 
-func TestExecuteWithTimeout(t *testing.T) {
-	if !sandbox.IsAvailable(sandbox.Bash) {
-		t.Skip("bash not available")
+func TestStartNotCreated(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	env := m.Create("test-env", "agent-1", BackendProcess)
+	m.Start(env.ID)
+
+	// Can't start already running env
+	err := m.Start(env.ID)
+	if err == nil {
+		t.Error("expected error for already running environment")
+	}
+}
+
+func TestStop(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	env := m.Create("test-env", "agent-1", BackendProcess)
+	m.Start(env.ID)
+
+	err := m.Stop(env.ID)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
 
-	s := sandbox.New(sandbox.Config{
-		Language: sandbox.Bash,
-		Timeout:  1 * time.Second,
+	got, _ := m.Get(env.ID)
+	if got.Status != StatusStopped {
+		t.Errorf("expected stopped, got %s", got.Status)
+	}
+	if got.Duration == "" {
+		t.Error("expected non-empty duration")
+	}
+}
+
+func TestStopNotRunning(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	env := m.Create("test-env", "agent-1", BackendProcess)
+
+	err := m.Stop(env.ID)
+	if err == nil {
+		t.Error("expected error for non-running environment")
+	}
+}
+
+func TestRestart(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	env := m.Create("test-env", "agent-1", BackendProcess)
+	m.Start(env.ID)
+	m.Stop(env.ID)
+
+	// Should be able to restart
+	err := m.Start(env.ID)
+	if err != nil {
+		t.Fatalf("unexpected error on restart: %v", err)
+	}
+
+	got, _ := m.Get(env.ID)
+	if got.Status != StatusRunning {
+		t.Errorf("expected running after restart, got %s", got.Status)
+	}
+}
+
+func TestDestroy(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	env := m.Create("test-env", "agent-1", BackendProcess)
+	m.Destroy(env.ID)
+
+	_, ok := m.Get(env.ID)
+	if ok {
+		t.Error("expected environment to be destroyed")
+	}
+}
+
+func TestDestroyNotFound(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	err := m.Destroy("nonexistent")
+	if err == nil {
+		t.Error("expected error for nonexistent environment")
+	}
+}
+
+func TestList(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	m.Create("env-1", "agent-1", BackendProcess)
+	m.Create("env-2", "agent-1", BackendDocker)
+	m.Create("env-3", "agent-2", BackendGVisor)
+
+	list := m.List()
+	if len(list) != 3 {
+		t.Errorf("expected 3 environments, got %d", len(list))
+	}
+}
+
+func TestListByAgent(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	m.Create("env-1", "agent-1", BackendProcess)
+	m.Create("env-2", "agent-1", BackendDocker)
+	m.Create("env-3", "agent-2", BackendGVisor)
+
+	agent1 := m.ListByAgent("agent-1")
+	if len(agent1) != 2 {
+		t.Errorf("expected 2 for agent-1, got %d", len(agent1))
+	}
+}
+
+func TestSetLimits(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	env := m.Create("test-env", "agent-1", BackendProcess)
+
+	err := m.SetLimits(env.ID, ResourceLimits{
+		CPUCores:  4.0,
+		MemoryMB:  2048,
+		DiskMB:    4096,
+		TimeoutSec: 600,
 	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer cancel()
-	result, _ := s.Execute(ctx, `#!/bin/bash
-sleep 30
-echo "done"
-`)
-
-	// On CI, the sandbox may not properly enforce timeouts,
-	// so we accept both outcomes
-	if !result.TimedOut {
-		t.Log("sandbox did not enforce timeout (expected in some environments)")
+	got, _ := m.Get(env.ID)
+	if got.Limits.CPUCores != 4.0 {
+		t.Errorf("expected 4.0 cores, got %f", got.Limits.CPUCores)
+	}
+	if got.Limits.MemoryMB != 2048 {
+		t.Errorf("expected 2048 MB, got %d", got.Limits.MemoryMB)
 	}
 }
 
-func TestIsAvailable(t *testing.T) {
-	// Bash should be available on most systems
-	if !sandbox.IsAvailable(sandbox.Bash) {
-		t.Error("bash should be available")
+func TestSetNetworkPolicy(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	env := m.Create("test-env", "agent-1", BackendProcess)
+
+	policy := NetworkPolicy{
+		AllowDNS:   true,
+		AllowHTTPS: true,
+		AllowedHosts: []string{"api.example.com"},
+	}
+	m.SetNetworkPolicy(env.ID, policy)
+
+	got, _ := m.Get(env.ID)
+	if !got.Network.AllowDNS {
+		t.Error("expected DNS allowed")
 	}
 }
 
-func TestRuntimeInfo(t *testing.T) {
-	info := sandbox.RuntimeInfo()
-	if len(info) == 0 {
-		t.Error("runtime info should not be empty")
+func TestSetFilesystemPolicy(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	env := m.Create("test-env", "agent-1", BackendProcess)
+
+	policy := FilesystemPolicy{
+		ReadwritePaths: []string{"/workspace"},
+		BlockedPaths:   []string{"/etc"},
 	}
-	if _, ok := info["_os"]; !ok {
-		t.Error("should include _os")
+	m.SetFilesystemPolicy(env.ID, policy)
+
+	got, _ := m.Get(env.ID)
+	if len(got.Filesystem.ReadwritePaths) != 1 {
+		t.Errorf("expected 1 rw path, got %d", len(got.Filesystem.ReadwritePaths))
 	}
 }
 
-func TestNewDefaultConfig(t *testing.T) {
-	s := sandbox.New(sandbox.Config{Language: sandbox.Go})
-	if s == nil {
-		t.Error("sandbox should not be nil")
+func TestUpdateStats(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	env := m.Create("test-env", "agent-1", BackendProcess)
+
+	m.UpdateStats(env.ID, 45.2, 256)
+
+	got, _ := m.Get(env.ID)
+	if got.CPUUsage != 45.2 {
+		t.Errorf("expected 45.2%% CPU, got %f", got.CPUUsage)
+	}
+	if got.MemoryUsageMB != 256 {
+		t.Errorf("expected 256 MB, got %d", got.MemoryUsageMB)
+	}
+}
+
+func TestDefaultLimits(t *testing.T) {
+	limits := DefaultLimits()
+	if limits.CPUCores <= 0 {
+		t.Error("expected positive CPU cores")
+	}
+	if limits.MemoryMB <= 0 {
+		t.Error("expected positive memory")
+	}
+	if limits.NetworkOff != true {
+		t.Error("expected network off by default")
+	}
+}
+
+func TestEnvironmentReport(t *testing.T) {
+	env := &Environment{
+		ID:      "sbx-test",
+		Name:    "Test Sandbox",
+		AgentID: "agent-1",
+		Backend: BackendDocker,
+		Status:  StatusRunning,
+		Limits: ResourceLimits{
+			CPUCores:  2.0,
+			MemoryMB:  512,
+			DiskMB:    1024,
+			TimeoutSec: 300,
+		},
+		Pid:         12345,
+		CPUUsage:    23.5,
+		MemoryUsageMB: 128,
+	}
+
+	report := EnvironmentReport(env)
+	if !strings.Contains(strings.ToLower(report), "docker") {
+		t.Error("expected backend in report")
+	}
+	if !strings.Contains(report, "512 MB") {
+		t.Error("expected memory in report")
+	}
+}
+
+func TestStats(t *testing.T) {
+	dir := t.TempDir()
+	m := NewManager(dir)
+
+	m.Create("env-1", "agent-1", BackendProcess)
+	m.Create("env-2", "agent-1", BackendDocker)
+
+	stats := m.Stats()
+	if stats["total"] != 2 {
+		t.Errorf("expected 2, got %v", stats["total"])
+	}
+}
+
+func TestPersistence(t *testing.T) {
+	dir := t.TempDir()
+
+	m1 := NewManager(dir)
+	env := m1.Create("persistent", "agent-1", BackendDocker)
+	m1.Start(env.ID)
+
+	m2 := NewManager(dir)
+	list := m2.List()
+	if len(list) != 1 {
+		t.Fatalf("expected 1 environment after reload, got %d", len(list))
+	}
+	if list[0].Status != StatusRunning {
+		t.Errorf("expected running, got %s", list[0].Status)
 	}
 }

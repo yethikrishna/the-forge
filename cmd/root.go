@@ -120,6 +120,9 @@ The wielder and the sword are one.`,
 		gitserveCmd(),
 		migrateCmd(),
 		consensusCmd(),
+		tracesCmd(),
+		mcpComposeCmd(),
+		localInitCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }

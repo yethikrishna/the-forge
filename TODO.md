@@ -278,8 +278,45 @@ All 18 utility packages implemented and tested.
 - [ ] Cross-package event correlation — correlate anomalies across cost/health/lifecycle/replay
 
 ## Current Stats
-- ~88K lines of Go
-- 124 internal packages
-- 95+ commands
+- ~97K lines of Go
+- 133 internal packages
+- 99+ commands
 - Build: ✅ Vet: ✅
 - Version: 1.1.0
+
+## Phase 5: Consolidation & Focus (From Brainstorm #7)
+
+### Package Consolidation (132 → ~80)
+- [ ] Merge `bigdur` + `timer` → `internal/duration`
+- [ ] Merge `flog` + `slog` → `internal/slog`
+- [ ] Merge `retry` + `resilience` → `internal/resilience`
+- [ ] Merge `clistat` + `resource` + `monitor` → `internal/system`
+- [ ] Merge `errcode` + `errteach` + `errorexplain` → `internal/errors`
+- [ ] Merge `prompt` + `prompttest` → `internal/prompt`
+- [ ] Merge `agenttest` + `abtest` + `eval` → `internal/eval`
+- [ ] Merge `dream` + `breed` + `tune` → `internal/optimize`
+- [ ] Merge `debate` + `consensus` → `internal/consensus`
+- [ ] Merge `lineage` + `archaeologist` → `internal/lineage`
+- [ ] Merge `snapshot` + `undo` + `graceful` + `shutdown` → `internal/safety`
+- [ ] Merge `circuit` + `ratelimit` + `runaway` + `anomaly` + `outage` → `internal/resilience`
+- [ ] Merge `mcp` + `mcpcompose` + `mcpdiscover` → `internal/mcp` with sub-packages
+- [ ] Merge `feedback` + `empath` + `achievement` → `internal/experience`
+- [ ] Freeze Phase 0 packages (utilities + core) — no new features, bug fixes only
+
+### Growth & Discovery
+- [ ] GitHub topic tags — `ai-agent`, `agent-orchestration`, `llm`, `coding-agent`, `mcp`, `cli`, `go`
+- [ ] "Awesome Forge" curated list repo — `yethikrishna/awesome-forge`
+- [ ] `.devcontainer/` for GitHub Codespaces zero-install trial
+- [ ] "Forge in 60 Seconds" demo video — terminal recording, under 60s from install to value
+
+### New Features
+- [ ] `forge navigate` — semantic code navigation using index + LLM intent understanding
+- [ ] `forge playbooks` — auto-generate playbooks from solved agent sessions
+- [ ] `forge debug --live` — real-time collaborative debugging with agent watching terminal
+- [ ] `forge deps audit` — agent-powered dependency analysis (CVEs, licenses, alternatives)
+
+### Strategic Moats
+- [ ] Shared agent memory (opt-in) — cross-team learning, privacy-preserving pattern sharing
+- [ ] Agent quality corpus — opt-in data collection for `forge tune`/`forge breed` improvement
+- [ ] `.devcontainer/` for GitHub Codespaces zero-install trial
+- [ ] "Forge in 60 Seconds" demo video — terminal recording, under 60s from install to value

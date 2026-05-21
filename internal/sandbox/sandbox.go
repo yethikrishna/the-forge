@@ -4,9 +4,12 @@
 package sandbox
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -386,4 +389,207 @@ func (m *Manager) load() {
 		return
 	}
 	json.Unmarshal(data, &m.envs)
+}
+
+// Language represents a supported programming language for sandboxed execution.
+type Language string
+
+const (
+	LangGo         Language = "go"
+	LangPython     Language = "python"
+	LangJavaScript Language = "javascript"
+	LangTypeScript Language = "typescript"
+	LangRust       Language = "rust"
+	LangJava       Language = "java"
+	LangC          Language = "c"
+	LangCPP        Language = "cpp"
+	LangRuby       Language = "ruby"
+	LangBash       Language = "bash"
+)
+
+// SupportedLanguages returns all supported sandbox languages.
+func SupportedLanguages() []Language {
+	return []Language{
+		LangGo, LangPython, LangJavaScript, LangTypeScript,
+		LangRust, LangJava, LangC, LangCPP, LangRuby, LangBash,
+	}
+}
+
+// IsAvailable checks if a language runtime is available on the system.
+func IsAvailable(lang Language) bool {
+	switch lang {
+	case LangGo:
+		return hasCommand("go")
+	case LangPython:
+		return hasCommand("python3") || hasCommand("python")
+	case LangJavaScript, LangTypeScript:
+		return hasCommand("node")
+	case LangRust:
+		return hasCommand("rustc")
+	case LangJava:
+		return hasCommand("javac")
+	case LangC, LangCPP:
+		return hasCommand("gcc")
+	case LangRuby:
+		return hasCommand("ruby")
+	case LangBash:
+		return hasCommand("bash")
+	default:
+		return false
+	}
+}
+
+func hasCommand(name string) bool {
+	_, err := exec.LookPath(name)
+	return err == nil
+}
+
+// Config is a simplified sandbox configuration for the exec command.
+type Config struct {
+	Language    Language        `json:"language"`
+	Code        string          `json:"code"`
+	Timeout     time.Duration   `json:"timeout"`
+	MemoryLimit int64           `json:"memory_limit_mb"`
+	NetworkOff  bool            `json:"network_off"`
+	Network     bool            `json:"network"`
+	WorkDir     string          `json:"work_dir"`
+	Env         []string        `json:"env,omitempty"`
+}
+
+// Result is the result of a sandboxed execution.
+type Result struct {
+	ExitCode   int       `json:"exit_code"`
+	Stdout     string    `json:"stdout"`
+	Stderr     string    `json:"stderr"`
+	Duration   time.Duration `json:"duration"`
+	TimedOut   bool      `json:"timed_out"`
+	MemoryUsed int       `json:"memory_used_mb"`
+}
+
+// New creates a new sandbox executor from a Config.
+func New(cfg Config) *Executor {
+	return &Executor{cfg: cfg}
+}
+
+// Executor runs code in a sandboxed environment.
+type Executor struct {
+	cfg Config
+}
+
+// Run executes the configured code in the sandbox.
+func (e *Executor) Run() (*Result, error) {
+	start := time.Now()
+
+	// Create temp directory
+	tmpDir, err := os.MkdirTemp("", "forge-sandbox-*")
+	if err != nil {
+		return nil, fmt.Errorf("create temp dir: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Write code to file
+	filename := e.sourceFile()
+	path := filepath.Join(tmpDir, filename)
+	if err := os.WriteFile(path, []byte(e.cfg.Code), 0644); err != nil {
+		return nil, fmt.Errorf("write source: %w", err)
+	}
+
+	// Build command
+	cmd := e.buildCommand(path, tmpDir)
+	if e.cfg.Timeout > 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), e.cfg.Timeout)
+		defer cancel()
+		cmd = exec.CommandContext(ctx, cmd.Args[0], cmd.Args[1:]...)
+	}
+	cmd.Env = append(os.Environ(), e.cfg.Env...)
+	if e.cfg.WorkDir != "" {
+		cmd.Dir = e.cfg.WorkDir
+	}
+
+	var stdout, stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err = cmd.Run()
+	duration := time.Since(start)
+
+	result := &Result{
+		Stdout:   stdout.String(),
+		Stderr:   stderr.String(),
+		Duration: duration,
+	}
+
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			result.ExitCode = exitErr.ExitCode()
+		} else {
+			result.ExitCode = 1
+			if strings.Contains(err.Error(), "signal: killed") || strings.Contains(err.Error(), "deadline exceeded") {
+				result.TimedOut = true
+			}
+		}
+	}
+
+	return result, nil
+}
+
+// Execute runs code in the sandbox with context.
+func (e *Executor) Execute(ctx context.Context, code string) (*Result, error) {
+	e.cfg.Code = code
+	e.cfg.Language = LangBash // default to bash for shell commands
+	return e.Run()
+}
+
+func (e *Executor) sourceFile() string {
+	switch e.cfg.Language {
+	case LangGo:
+		return "main.go"
+	case LangPython:
+		return "main.py"
+	case LangJavaScript:
+		return "main.js"
+	case LangTypeScript:
+		return "main.ts"
+	case LangRust:
+		return "main.rs"
+	case LangJava:
+		return "Main.java"
+	case LangC:
+		return "main.c"
+	case LangCPP:
+		return "main.cpp"
+	case LangRuby:
+		return "main.rb"
+	case LangBash:
+		return "main.sh"
+	default:
+		return "main.txt"
+	}
+}
+
+func (e *Executor) buildCommand(path, tmpDir string) *exec.Cmd {
+	switch e.cfg.Language {
+	case LangGo:
+		return exec.Command("go", "run", path)
+	case LangPython:
+		return exec.Command("python3", path)
+	case LangJavaScript:
+		return exec.Command("node", path)
+	case LangTypeScript:
+		return exec.Command("npx", "ts-node", path)
+	case LangRust:
+		return exec.Command("rustc", "-o", filepath.Join(tmpDir, "main"), path)
+	case LangJava:
+		return exec.Command("javac", path)
+	case LangC:
+		return exec.Command("gcc", "-o", filepath.Join(tmpDir, "main"), path)
+	case LangCPP:
+		return exec.Command("g++", "-o", filepath.Join(tmpDir, "main"), path)
+	case LangRuby:
+		return exec.Command("ruby", path)
+	case LangBash:
+		return exec.Command("bash", path)
+	default:
+		return exec.Command("cat", path)
+	}
 }
