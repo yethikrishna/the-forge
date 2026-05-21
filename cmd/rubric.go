@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/forge/sword/internal/rubric"
+	"github.com/forge/sword/internal/quality/rubric"
 	"github.com/spf13/cobra"
 )
 

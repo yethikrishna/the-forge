@@ -262,7 +262,10 @@ func (m *Manager) ListPools() []Pool {
 func (m *Manager) PoolAgents(poolID string) []*Agent {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+	return m.poolAgentsUnlocked(poolID)
+}
 
+func (m *Manager) poolAgentsUnlocked(poolID string) []*Agent {
 	pool, ok := m.pools[poolID]
 	if !ok {
 		return nil
@@ -282,7 +285,7 @@ func (m *Manager) AssignTask(poolID string) (*Agent, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	agents := m.PoolAgents(poolID)
+	agents := m.poolAgentsUnlocked(poolID)
 	if len(agents) == 0 {
 		return nil, fmt.Errorf("no agents in pool %s", poolID)
 	}
@@ -396,7 +399,7 @@ func (m *Manager) Stats(poolID string) (*PoolStats, error) {
 	}
 
 	stats := &PoolStats{PoolID: poolID}
-	agents := m.PoolAgents(poolID)
+	agents := m.poolAgentsUnlocked(poolID)
 	stats.TotalAgents = len(agents)
 
 	var totalHealth, totalCPU, totalCost float64
