@@ -170,6 +170,7 @@ The wielder and the sword are one.`,
 		experimentCmd,
 		patchCmd,
 		replayCmd,
+		visionCmd,
 		refactorCmd,
 		selftestCmd,
 	)

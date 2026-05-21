@@ -106,7 +106,7 @@ func (m *Manager) Create(name, description string) *Patch {
 	defer m.mu.Unlock()
 
 	p := &Patch{
-		ID:          fmt.Sprintf("patch-%d", time.Now().UnixMilli()),
+		ID:          fmt.Sprintf("patch-%d", time.Now().UnixNano()),
 		Name:        name,
 		Description: description,
 		Files:       make([]FilePatch, 0),
@@ -252,13 +252,16 @@ func (m *Manager) Finalize(patchID string) error {
 // Validate checks if a patch can be applied cleanly.
 func (m *Manager) Validate(patchID, rootDir string) ([]string, error) {
 	m.mu.RLock()
-	defer m.mu.RUnlock()
-
 	p, ok := m.patches[patchID]
+	m.mu.RUnlock()
 	if !ok {
 		return nil, fmt.Errorf("patch %q not found", patchID)
 	}
+	return validatePatch(p, rootDir), nil
+}
 
+// validatePatch checks a patch against the filesystem without holding any lock.
+func validatePatch(p *Patch, rootDir string) []string {
 	var conflicts []string
 	for _, fp := range p.Files {
 		filePath := filepath.Join(rootDir, fp.File)
@@ -291,8 +294,7 @@ func (m *Manager) Validate(patchID, rootDir string) ([]string, error) {
 			}
 		}
 	}
-
-	return conflicts, nil
+	return conflicts
 }
 
 // Apply applies a patch to the filesystem.
@@ -309,11 +311,8 @@ func (m *Manager) Apply(patchID, rootDir string) error {
 		return fmt.Errorf("patch must be in ready state (current: %s)", p.Status)
 	}
 
-	// Validate first
-	conflicts, err := m.Validate(patchID, rootDir)
-	if err != nil {
-		return err
-	}
+	// Validate first (internal, no lock needed — we already hold the write lock)
+	conflicts := validatePatch(p, rootDir)
 	if len(conflicts) > 0 {
 		p.Status = StatusConflict
 		m.save()
