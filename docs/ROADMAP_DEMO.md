@@ -1,6 +1,7 @@
-# Forge 60-Second Demo Roadmap & Script (v0.5.0)
+# Forge 60-Second Demo Roadmap & Script (v0.5.1)
 
 **Date:** 2026-05-21  
+**Runtime:** Go 1.26.3 (upgraded 2026-05-21, 11 security fixes — net/http, crypto/tls, html/template, syscall, FIPS)  
 **Owner:** Forge Architect (technical validation)  
 **Goal:** Single <60s terminal recording proving end-to-end value. This is the sole P0.
 

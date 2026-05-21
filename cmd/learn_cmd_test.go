@@ -148,8 +148,7 @@ func TestLearnRootNumericArg(t *testing.T) {
 
 	// Verify the Args constraint allows numeric args.
 	// MaximumNArgs(1) means "0" is a valid positional argument to the root command.
-	err := cmd.ValidateArgs([]string{"0"})
-	if err != nil {
+	if err := cmd.ValidateArgs([]string{"0"}); err != nil {
 		t.Errorf("root learn command should accept numeric arg '0': %v", err)
 	}
 }
