@@ -204,7 +204,7 @@ All 18 utility packages implemented and tested.
 
 ### P1 — Next Month
 - [x] **Human-in-the-Loop** — `forge approve` + pause/resume + escalation (29% trust gap)
-- [ ] **Security Scanning Hooks** — pre/post agent run hooks integrated with `forge jail`
+- [x] **Security Scanning Hooks** — pre/post agent run hooks integrated with `forge jail`
 - [ ] **Forgefile v2** — TOML multi-agent workflow syntax (GitHub Actions for AI agents)
 - [ ] **Web Dashboard Real-Time** — WebSocket agent monitoring, cost charts, trace viewer
 - [ ] **Scheduled Memory Review (\"Dreaming\")** — `forge memory review` auto-extracts patterns from past sessions between runs (à la Claude Code with Claude 2026)

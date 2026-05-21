@@ -56,10 +56,10 @@ func TestGraphFindNodes(t *testing.T) {
 	g.AddNode(Node{Type: NodeStruct, Name: "Handler", Package: "api"})
 	g.AddNode(Node{Type: NodeFunction, Name: "ProcessData", Package: "data"})
 
-	// Search by pattern
-	results := g.FindNodes("handle", "")
+	// Search by pattern (case-insensitive substring)
+	results := g.FindNodes("handle", NodeFunction)
 	if len(results) != 2 {
-		t.Fatalf("expected 2 nodes matching 'handle', got %d", len(results))
+		t.Fatalf("expected 2 functions matching 'handle', got %d", len(results))
 	}
 
 	// Search by type
