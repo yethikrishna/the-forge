@@ -103,9 +103,9 @@ func (h *APIHandler) update(w http.ResponseWriter, r *http.Request) {
 		if name, ok := updates["name"].(string); ok {
 			t.Name = name
 		}
-		if plan, ok := updates["plan"].(string); ok {
-			t.Plan = plan
-			t.Quota = PlanDefaults(plan)
+		if planStr, ok := updates["plan"].(string); ok {
+			t.Plan = findPlan(planStr)
+			t.Quota = PlanDefaults(planStr)
 		}
 	})
 	if err != nil {
