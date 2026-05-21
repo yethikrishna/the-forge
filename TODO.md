@@ -213,7 +213,7 @@ All 18 utility packages implemented and tested.
 ### P2 — Next Quarter
 - [x] **Enterprise Auth (RBAC + SSO)** — OIDC/SAML for `forge serve`
 - [ ] **Plugin Marketplace** — registry + versioning + ratings + WASM plugins
-- [ ] **A2A Protocol** — Google Agent-to-Agent for inter-framework communication
+- [x] **A2A Protocol** — Google Agent-to-Agent for inter-framework communication
 
 ### Competitive Watchlist (Updated 23:14 UTC)
 - **Google Antigravity 2.0** — desktop agent orchestrator, sub-agents, parallel workflows. Counter: local-first, multi-provider, self-hosted
