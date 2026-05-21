@@ -275,10 +275,90 @@ forge memory onboard <agent>      # Agent goes through orientation
 - Kubernetes made container orchestration accessible → everyone runs fleets
 - Forge makes AI organizations accessible → everyone runs AI companies
 
+## 13 More Gaps — The Deeper, Messier, Real-World Ones
+
+The first 12 gaps are structural. These are the ones that kill products in practice:
+
+### 13. The Feedback Loop Gap
+Agents ship code, but nobody tells them if it worked. No error monitoring, no user feedback, no production metrics flowing back. In real companies: engineers get paged, support tickets pile up, users complain. Agents get nothing. Forge closes this: production signals (errors, latency, user reports) flow back to the division that caused them. The org learns from its mistakes in real-time.
+
+### 14. The Context Window Trap
+Every session starts from scratch or dumps everything into a context window and prays. Neither works. Real employees don't re-read the entire company wiki every morning — they have indexed knowledge and know where to look. Forge closes this: structured, queryable memory that agents access on demand, not by dumping everything into context.
+
+### 15. The Trust Verification Gap
+How do you know an agent actually did what it said? It says "tests pass" — did they? It says "deployed successfully" — really? It says "researched 10 sources" — are they real? In real companies: PR reviews, QA sign-offs, compliance audits. Agents get a free pass. Forge closes this: verification isn't optional. Every claim is checkable. Every action leaves evidence. Trust is earned, not assumed.
+
+### 16. The Cost Blindness Gap
+Agents don't know they're spending money. $0.03 per API call × 1000 calls × 24 hours = $720/day burned without anyone noticing. In real companies: budget approvals, cost centers, burn rate dashboards. Agents just run. Forge closes this: every agent has a budget. Every division has a cap. The org tracks spend in real-time and optimizes automatically.
+
+### 17. The Dependency Hell Gap
+Agent A builds a feature. Agent B breaks it the next day. Agent C doesn't know either happened. In real companies: CI/CD, integration tests, release coordination. Agents work in isolation and step on each other. Forge closes this: change coordination across agents. If Agent B's change might break Agent A's work, the system flags it before it ships.
+
+### 18. The Abandoned Work Gap
+An agent starts a task, hits an error, and... gives up. Or silently produces garbage. Or just stops. Nobody notices for days. In real companies: standups, 1:1s, managers who notice when someone is stuck. Agents suffer in silence. Forge closes this: stuck detection, automatic escalation, and progress checkpoints. An agent that's stuck for 30 minutes escalates to its division head.
+
+### 19. The Knowledge Silo Gap
+Agent A knows the database schema. Agent B needs it. Agent B doesn't know Agent A exists. In real companies: documentation, Slack channels, tribal knowledge that spreads. Agents reinvent the wheel because they can't find what other agents already know. Forge closes this: the org memory is shared and queryable. Any agent can find any knowledge any other agent has produced.
+
+### 20. The Alignment Decay Gap
+An agent starts with clear instructions. 50 tasks later, it's drifted. It's optimizing for speed over quality, or taking shortcuts the human would never approve. In real companies: performance reviews, value reinforcement, culture. Agents have none of this. Forge closes this: periodic alignment checks. Quality gates catch drift. The org's standards are enforced, not just suggested.
+
+### 21. The Onboarding Cliff Gap
+New agents start with zero context and immediately make mistakes that experienced agents wouldn't. In real companies: onboarding programs, mentorship, ramp-up periods. Agents get a prompt and are expected to perform. Forge closes this: structured onboarding (read docs → shadow an agent → handle easy tasks → get certified → work solo).
+
+### 22. The Stakeholder Communication Gap
+A human asks "what's the status?" and gets either silence or a wall of text. No middle ground. No executive summary with drill-down. In real companies: dashboards, status reports, Slack updates. Agents communicate in raw logs. Forge closes this: multi-resolution communication. Executive summary for the CEO, technical details for the engineer, financial impact for the CFO — all from the same data.
+
+### 23. The Experimentation Gap
+Companies run experiments: A/B tests, prototypes, spikes. Agents either don't experiment (just do the first thing that comes to mind) or experiment recklessly (no hypothesis, no measurement, no learning). Forge closes this: structured experimentation with hypothesis, measurement, and outcome logging. Failed experiments become org knowledge, not wasted effort.
+
+### 24. The Legal and Compliance Gap
+Who's responsible when an AI agent violates GDPR? When it uses copyrighted code? When it makes a financial commitment? In real companies: legal review, compliance checks, approval workflows. Agents operate in a legal vacuum. Forge closes this: compliance gates for regulated actions. The legal division reviews before anything ships that could create liability.
+
+### 25. The Scaling Ceiling Gap
+Add 10 agents, get 10× the output, right? Wrong. You get 10× the coordination overhead, 10× the conflicts, 10× the chaos. In real companies: management layers, communication protocols, standard operating procedures. Agent teams hit a ceiling at ~3-5 agents and can't scale past it. Forge closes this: the organizational structure scales. Divisions have heads. Communication has protocols. Work has processes. Add 100 agents, get 100× the output.
+
+## The Technology Stack
+
+Forge is built by melting in three open-source foundations:
+
+| Layer | What | Source | Why |
+|-------|------|--------|-----|
+| **Execution substrate** | CLI, terminal, cron, sessions, browser control, channel integrations, skills, memory files, node pairing | **OpenClaw** | Battle-tested runtime for AI agents. Already runs our org. The machine the agents live on. |
+| **User experience** | Frontend, sandbox UI, mobile, skill marketplace, 60+ built-in skills, 3000+ integrations, persistent Linux sandbox | **Suna (kortix-ai/suna)** | Best open-source agent UX. TypeScript frontend, Docker sandbox, the workspace agents see. |
+| **The novel layer** | Org structure, divisions, inter-agent communication, quality gates, time consciousness, memory continuity, apprenticeship, self-organization, goal decomposition, cost tracking, compliance, feedback loops, trust verification | **Forge (what we build)** | The things that DON'T EXIST anywhere. The organizational operating system. |
+
+The key insight: OpenClaw and Suna solve the execution and experience layers. Nobody solves the organizational layer. That's Forge's moat.
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                          Forge OS                            │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │           FORGE LAYER (we build this)                  │  │
+│  │  Org · Comm · Memory · Quality · Time · Ambition      │  │
+│  │  Learning · Trust · Cost · Compliance · Feedback       │  │
+│  │  Experimentation · Scaling · Visibility · Alignment    │  │
+│  └────────────────────┬───────────────────────────────────┘  │
+│                       │                                      │
+│  ┌────────────────────▼───────────────────────────────────┐  │
+│  │           OPENCLAW LAYER (execution)                   │  │
+│  │  CLI · Cron · Sessions · Browser · Channels · Skills  │  │
+│  │  Memory files · Node pairing · Process management      │  │
+│  └────────────────────┬───────────────────────────────────┘  │
+│                       │                                      │
+│  ┌────────────────────▼───────────────────────────────────┐  │
+│  │           SUNA LAYER (experience)                      │  │
+│  │  Frontend · Sandbox UI · Mobile · Marketplace          │  │
+│  │  60+ Skills · 3000+ Integrations · Linux sandbox       │  │
+│  └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
+```
+
 ## Why This Wins
 
-Every AI tool is optimizing the individual agent. Better prompts, better tools, better models. That's a commodity race.
+Suna has 19.8K stars and still misses the point. They built the machine but not the company. OpenClaw runs our 25-agent org but still requires a human to manage it. LangChain, CrewAI, AutoGen — all frameworks for building agents, not for running companies.
 
-Forge optimizes the **organization**. The compound advantage isn't one smart agent — it's a coordinated, remembering, learning, self-organizing team that gets smarter over time.
+Forge optimizes the **organization**, not the agent. The compound advantage isn't one smart agent — it's a coordinated, remembering, learning, self-organizing team that gets smarter over time.
 
-That's a moat. That's a category. That's the future.
+The execution layer (OpenClaw) and experience layer (Suna) are commoditized. The organizational layer is greenfield. That's the moat. That's the category. That's the future.
