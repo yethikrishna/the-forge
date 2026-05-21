@@ -51,7 +51,7 @@ var debugSessionsCmd = &cobra.Command{
 		}
 
 		for _, s := range sessions {
-			status := string(s.State)
+			status := s.State.String()
 			if s.ExitCode != 0 {
 				status = fmt.Sprintf("exit:%d", s.ExitCode)
 			}

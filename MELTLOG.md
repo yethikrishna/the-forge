@@ -359,3 +359,32 @@
 - **Commands:** 125+ (added: clone-behavior, correlate)
 - **Build:** ✅ **Vet:** ✅ **Tests:** ✅
 - **Version:** 1.1.0
+
+## Session 2025-05-21 (cont.) — New Features + Bug Fixes
+
+### New Features Built
+1. **forge refactor** — dependency-aware refactoring with migration plans, impact analysis, step-by-step execution
+2. **forge selftest** — agent self-diagnostic: runtime, memory, goroutines, disk, build, modules, DNS, CGO
+3. **forge quality-corpus** — agent quality evaluation: challenges, submissions, rubric grading, leaderboards
+4. **forge live-debug** — real-time collaborative debugging with agent assistance
+
+### Bug Fixes
+- Fixed `FormatServerInfo` test whitespace alignment in mcp2/server
+- Fixed deadlock in refactor Engine (AnalyzeImpact vs CreatePlan mutex contention)
+- Fixed `quantum/quantum.go` scored variable shadowing type name
+- Fixed `cmd/quantum_cmd.go` context import, rootCmd reference, ExecutorFunc type
+- Fixed `cmd/correlate_cmd.go` rootCmd reference
+- Fixed `cmd/stag.go` Tag struct usage (Color type, AutoTag signature)
+- Fixed `cmd/translate_pipeline_cmd.go` rootCmd reference
+- Fixed duplicate `splitKV` function in prompt_reg.go
+- Fixed `promptCmd` function vs variable in root.go
+- Removed duplicate `cmd/prompt_cmd.go`
+- Exported `PipelineToYAML` in pipetranslate package
+- Rewrote `cmd/clone_behavior_cmd.go` to match `internal/clonebehavior` API
+
+### Current Stats
+- 119K lines of Go
+- 153 internal packages
+- 136+ commands
+- 186 test files
+- Build: ✅ Vet: ✅
