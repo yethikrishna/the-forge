@@ -2,6 +2,7 @@ package transfer
 
 import (
 	"encoding/json"
+	"net"
 	"os"
 	"path/filepath"
 	"testing"

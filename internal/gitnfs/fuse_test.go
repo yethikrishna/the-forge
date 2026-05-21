@@ -1,7 +1,6 @@
 package gitnfs
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 )

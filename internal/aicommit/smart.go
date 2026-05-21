@@ -163,8 +163,12 @@ func (sc *SmartCommit) Generate(summary *ChangeSummary) CommitMessage {
 	}
 
 	// Truncate header
-	if len(header) > sc.config.MaxSubject {
-		header = header[:sc.config.MaxSubject-3] + "..."
+	if sc.config.MaxSubject > 0 && len(header) > sc.config.MaxSubject {
+		maxSubj := sc.config.MaxSubject - 3
+		if maxSubj < 0 {
+			maxSubj = 0
+		}
+		header = header[:maxSubj] + "..."
 	}
 
 	// Build full message

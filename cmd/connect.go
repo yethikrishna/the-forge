@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -91,12 +90,12 @@ func connectService(service, displayName, callbackURL string) error {
 
 		// Save connected state
 		writeConnectState(service, connectState{
-			Connected: true,
-			Account:   "user@example.com",
+			Connected:   true,
+			Account:     "user@example.com",
 			ConnectedAt: time.Now(),
 		})
 
-		fmt.Fprintf(w, "<html><body><h2>✅ %s connected!</h2><p>You can close this tab.</p></body></html>", displayName)
+		fmt.Fprintf(w, "<html><body><h2>%s connected!</h2><p>You can close this tab.</p></body></html>", displayName)
 		fmt.Println(pretty.SuccessLine(fmt.Sprintf("%s connected successfully!", displayName)))
 		close(done)
 	})
@@ -109,8 +108,6 @@ func connectService(service, displayName, callbackURL string) error {
 	fmt.Printf("  Callback URL: %s\n", callbackURL)
 	fmt.Println("  Waiting for authorization...")
 
-	// In production: open browser to OAuth URL
-	// For now: show instructions
 	fmt.Println()
 	fmt.Printf("  If browser didn't open, visit: https://forge.dev/connect/%s\n", service)
 
@@ -123,8 +120,8 @@ func connectService(service, displayName, callbackURL string) error {
 }
 
 type connectState struct {
-	Connected  bool      `json:"connected"`
-	Account    string    `json:"account,omitempty"`
+	Connected   bool      `json:"connected"`
+	Account     string    `json:"account,omitempty"`
 	ConnectedAt time.Time `json:"connected_at,omitempty"`
 }
 
@@ -135,9 +132,9 @@ func readConnectState(service string) connectState {
 	if err != nil {
 		return connectState{}
 	}
-	var state connectState
-	json.Unmarshal(data, &state)
-	return state
+	var s connectState
+	json.Unmarshal(data, &s)
+	return s
 }
 
 func writeConnectState(service string, state connectState) {
@@ -146,9 +143,4 @@ func writeConnectState(service string, state connectState) {
 	os.MkdirAll(dir, 0o755)
 	data, _ := json.MarshalIndent(state, "", "  ")
 	os.WriteFile(fmt.Sprintf("%s/%s.json", dir, service), data, 0o644)
-}
-
-func contextWithTimeout(seconds int) context.Context {
-	ctx, _ := context.WithTimeout(context.Background(), time.Duration(seconds)*time.Second)
-	return ctx
 }
