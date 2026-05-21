@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/forge/sword/internal/pretty"
-	"github.com/forge/sword/internal/timer"
+	"github.com/forge/sword/internal/duration/timer"
 	"github.com/spf13/cobra"
 )
 

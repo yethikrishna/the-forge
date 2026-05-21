@@ -10,7 +10,7 @@ import (
 
 	"github.com/forge/sword/internal/aibridge"
 	forgeslog "github.com/forge/sword/internal/slog"
-	"github.com/forge/sword/internal/timer"
+	"github.com/forge/sword/internal/duration/timer"
 	"github.com/spf13/cobra"
 )
 

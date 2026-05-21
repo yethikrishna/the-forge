@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/forge/sword/internal/timer"
+	"github.com/forge/sword/internal/duration/timer"
 )
 
 func TestTimerBasic(t *testing.T) {

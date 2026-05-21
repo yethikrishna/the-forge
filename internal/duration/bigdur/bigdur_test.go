@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/forge/sword/internal/bigdur"
+	"github.com/forge/sword/internal/duration/bigdur"
 )
 
 func TestParseStandardDurations(t *testing.T) {
