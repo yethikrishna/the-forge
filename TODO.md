@@ -278,6 +278,32 @@ All 18 utility packages implemented and tested.
 - [x] `forge selftest` — agent self-diagnostic and health check
 - [x] Cross-package event correlation — correlate anomalies across cost/health/lifecycle/replay
 
+## Phase 8: Security & Governance Alignment (From Brainstorm #13)
+
+### NSA/SAFE-MCP Compliance
+- [ ] `forge harden` — one-command security audit against NSA CSI + SAFE-MCP 80+ techniques
+- [ ] MCP tool signing & verification — cryptographic signatures for plugin manifests
+- [ ] Credential masking pipeline — runtime interception of secrets in tool responses
+- [ ] Git policy engine — forge.yaml policies for branch/block/review/commit patterns
+- [ ] SAFE-MCP test suite — `forge test --safe-mcp` runs all 80+ attack simulations
+
+### MCP Governance Layer
+- [ ] `forge mcp gateway` — governed MCP proxy with auth, rate limiting, audit, schema validation
+- [ ] MCP server registry with trust scores (code review, SBOM, vulnerability scan)
+- [ ] Per-tenant MCP access policies in multi-tenant `forge serve`
+
+### Compliance-as-Code
+- [ ] `forge regulate init` — generate compliance policies from IMDA/NIST/SOC2/HIPAA templates
+- [ ] `forge regulate check` — audit current runs against active policies
+- [ ] `forge regulate report` — generate auditor-ready compliance reports
+
+### Offline & Air-Gapped
+- [ ] `forge init --airgap` — bundle local models + pre-index codebase, zero internet
+
+### Agent Economics
+- [ ] `forge economy` — agent bidding marketplace (agents compete on cost/quality within budget)
+- [ ] `forge dream team` — data-driven optimal model/agent selection per task type
+
 ## Current Stats
 - ~108K lines of Go
 - 147 internal packages
