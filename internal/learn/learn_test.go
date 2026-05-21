@@ -29,15 +29,96 @@ func TestBuiltinLessonsSeeded(t *testing.T) {
 		t.Fatal("expected built-in lessons to be seeded")
 	}
 
-	// Should have at least the 6 built-in lessons (includes governance-and-persistence).
-	if len(lessons) < 6 {
-		t.Fatalf("expected >= 6 built-in lessons, got %d", len(lessons))
+	// Should have at least the 7 built-in lessons (includes forge-in-60-seconds + governance-and-persistence).
+	if len(lessons) < 7 {
+		t.Fatalf("expected >= 7 built-in lessons, got %d", len(lessons))
+	}
+
+	// Verify forge-in-60-seconds demo lesson exists.
+	l0, err := s.GetLesson("forge-in-60-seconds")
+	if err != nil {
+		t.Fatalf("forge-in-60-seconds lesson not found: %v", err)
+	}
+	if l0.Category != "getting-started" {
+		t.Errorf("expected getting-started, got %s", l0.Category)
+	}
+	if len(l0.Steps) != 5 {
+		t.Errorf("expected 5 demo steps, got %d", len(l0.Steps))
 	}
 
 	// Verify governance-and-persistence lesson exists and has correct content.
 	_, err = s.GetLesson("governance-and-persistence")
 	if err != nil {
 		t.Fatalf("governance-and-persistence lesson not found: %v", err)
+	}
+}
+
+func TestForgeIn60SecondsLesson(t *testing.T) {
+	s := tempLearnStore(t)
+
+	l, err := s.GetLesson("forge-in-60-seconds")
+	if err != nil {
+		t.Fatalf("forge-in-60-seconds lesson not found: %v", err)
+	}
+
+	// Must be a beginner-level 1-minute lesson.
+	if l.Difficulty != DiffBeginner {
+		t.Errorf("expected beginner, got %s", l.Difficulty)
+	}
+	if l.Duration != "1 min" {
+		t.Errorf("expected '1 min', got %s", l.Duration)
+	}
+
+	// Must have exactly 5 steps matching the demo flow.
+	if len(l.Steps) != 5 {
+		t.Fatalf("expected 5 steps, got %d", len(l.Steps))
+	}
+
+	// Each step must have an ID, command, and explanation.
+	for i, step := range l.Steps {
+		if step.ID == "" {
+			t.Errorf("step %d missing ID", i)
+		}
+		if step.Command == "" {
+			t.Errorf("step %d (%s) missing Command", i, step.Title)
+		}
+		if step.Explanation == "" {
+			t.Errorf("step %d (%s) missing Explanation", i, step.Title)
+		}
+	}
+
+	// Step 1 must run forge doctor --fix.
+	if !strings.Contains(l.Steps[0].Command, "doctor") {
+		t.Errorf("step 1 should run doctor, got: %s", l.Steps[0].Command)
+	}
+	// Step 2 must run forge init --local.
+	if !strings.Contains(l.Steps[1].Command, "init") {
+		t.Errorf("step 2 should run init, got: %s", l.Steps[1].Command)
+	}
+	// Last step must show cost live.
+	last := l.Steps[len(l.Steps)-1]
+	if !strings.Contains(last.Command, "cost") {
+		t.Errorf("last step should show cost, got: %s", last.Command)
+	}
+
+	// Must have demo tag.
+	foundDemo := false
+	for _, tag := range l.Tags {
+		if tag == "demo" {
+			foundDemo = true
+		}
+	}
+	if !foundDemo {
+		t.Error("forge-in-60-seconds lesson should have 'demo' tag")
+	}
+
+	// Verify lesson can be started.
+	_, p, err := s.StartLesson(l.ID)
+	if err != nil {
+		t.Fatalf("StartLesson: %v", err)
+	}
+	if p.Status != "in_progress" {
+		t.Errorf("expected in_progress, got %s", p.Status)
 	}
 }
 

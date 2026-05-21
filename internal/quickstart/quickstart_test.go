@@ -139,3 +139,45 @@ func TestStepFields(t *testing.T) {
 		t.Errorf("expected 1 tip, got %d", len(s.Tips))
 	}
 }
+
+func TestDemoSteps(t *testing.T) {
+	steps := DemoSteps()
+	if len(steps) != 5 {
+		t.Fatalf("expected 5 demo steps, got %d", len(steps))
+	}
+
+	// Verify sequence linkage.
+	for i := 0; i < len(steps)-1; i++ {
+		if steps[i].NextID != steps[i+1].ID {
+			t.Errorf("demo step %s NextID %s != next step %s",
+				steps[i].ID, steps[i].NextID, steps[i+1].ID)
+		}
+	}
+
+	// Verify last step has no NextID.
+	last := steps[len(steps)-1]
+	if last.NextID != "" {
+		t.Errorf("last demo step should have empty NextID, got %s", last.NextID)
+	}
+
+	// Verify IDs are unique.
+	ids := map[string]bool{}
+	for _, s := range steps {
+		if ids[s.ID] {
+			t.Errorf("duplicate demo step ID: %s", s.ID)
+		}
+		ids[s.ID] = true
+	}
+}
+
+func TestNewDemoQuickstart(t *testing.T) {
+	q := NewDemoQuickstart()
+	steps := q.Steps()
+	if len(steps) != 5 {
+		t.Fatalf("NewDemoQuickstart: expected 5 steps, got %d", len(steps))
+	}
+	// First step should reference doctor.
+	if !strings.Contains(steps[0].Action, "doctor") {
+		t.Errorf("first demo step should reference doctor, got: %s", steps[0].Action)
+	}
+}

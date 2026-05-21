@@ -10,22 +10,39 @@ import (
 
 func quickstartCmd() *cobra.Command {
 	var listOnly bool
+	var demo bool
 
 	cmd := &cobra.Command{
 		Use:   "quickstart",
 		Short: "5-minute interactive onboarding with guaranteed first win",
 		Long: `Interactive guide to get you from zero to productive in 5 minutes.
 
-Each step builds on the last. Complete them all and you'll have:
-- Verified your environment
-- Chatted with an agent
-- Created your first agent
-- Run your first pipeline
-- Reviewed costs
+The demo path (--demo) mirrors the 60-second promo video:
+  forge doctor --fix  →  forge init --local  →  forge learn 1
+  →  governance consent + catalog + cost  →  forge cost live
+
+Full interactive quickstart walks through:
+- Auto-fix your environment
+- Initialize a zero-cloud local project
+- Start the interactive tutorial
+- Enable governance (consent + catalog + cost tracking)
+- Route a request through the MCP gateway
+- View live cost dashboard
 
 Skippable at any time. No judgment.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			qs := quickstart.NewQuickstart()
+			var qs *quickstart.Quickstart
+			if demo {
+				qs = quickstart.NewDemoQuickstart()
+				fmt.Println()
+				fmt.Println(pretty.HeaderLine("Forge in 60 Seconds — Demo Path"))
+				fmt.Println()
+				fmt.Println("  This is the exact flow shown in the promo video.")
+				fmt.Println("  Each step shows the command to run. Execute each one in your terminal.")
+				fmt.Println()
+			} else {
+				qs = quickstart.NewQuickstart()
+			}
 
 			if listOnly {
 				fmt.Println(pretty.HeaderLine("Quickstart Steps"))
@@ -51,6 +68,7 @@ Skippable at any time. No judgment.`,
 	}
 
 	cmd.Flags().BoolVar(&listOnly, "list", false, "List steps without running")
+	cmd.Flags().BoolVar(&demo, "demo", false, "Run the 60-second demo path (mirrors the promo video)")
 
 	return cmd
 }

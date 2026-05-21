@@ -63,6 +63,18 @@ func NewQuickstart() *Quickstart {
 	}
 }
 
+// NewDemoQuickstart creates a quickstart using the 60-second demo flow.
+// Each step non-interactively prints the command to run, suitable for
+// a clean terminal recording session.
+func NewDemoQuickstart() *Quickstart {
+	return &Quickstart{
+		steps:     DemoSteps(),
+		completed: make(map[string]bool),
+		skipped:   make(map[string]bool),
+		reader:    bufio.NewReader(os.Stdin),
+	}
+}
+
 // Steps returns the onboarding steps.
 func (q *Quickstart) Steps() []Step {
 	return q.steps
@@ -191,57 +203,105 @@ func (q *Quickstart) skippedList() []string {
 func defaultSteps() []Step {
 	return []Step{
 		{
-			ID:          "check-env",
-			Title:       "Check your environment",
-			Description: "Verify Forge is installed and ready.",
-			Action:      "Run: forge doctor",
-			Verify:      "All checks pass",
-			Tips:        []string{"Fix any red items before continuing"},
-			NextID:      "first-chat",
+			ID:          "doctor-fix",
+			Title:       "Health check & auto-fix",
+			Description: "Diagnose and repair your Forge environment in one shot.",
+			Action:      "Run: forge doctor --fix",
+			Verify:      "All checks pass or auto-fixed",
+			Tips:        []string{"Fixes Go SDK path, WAL files, permissions automatically", "Run 'forge doctor --verbose' for full detail"},
+			NextID:      "local-init",
 		},
 		{
-			ID:          "first-chat",
-			Title:       "Your first chat",
-			Description: "Start a conversation with your first agent.",
-			Action:      "Run: forge chat \"Hello, what can you do?\"",
-			Verify:      "Agent responds",
-			Tips:        []string{"Try asking about Forge features", "Ask in natural language"},
-			NextID:      "create-agent",
+			ID:          "local-init",
+			Title:       "Initialize a local project",
+			Description: "Scaffold a zero-cloud project with Ollama + DeepSeek R1. No API keys needed.",
+			Action:      "Run: forge init --local",
+			Verify:      "Forgefile created with local model preset",
+			Tips:        []string{"Uses Ollama + DeepSeek R1:8b by default", "Add --preset ollama-qwen for Qwen, --preset lmstudio for LM Studio"},
+			NextID:      "learn-first",
 		},
 		{
-			ID:          "create-agent",
-			Title:       "Create your first agent",
-			Description: "Define an agent with a name and purpose.",
-			Action:      "Run: forge agent create my-agent --model=gpt-4",
-			Verify:      "Agent appears in 'forge agent list'",
-			Tips:        []string{"Start simple — you can customize later", "The default model works great"},
-			NextID:      "run-pipeline",
+			ID:          "learn-first",
+			Title:       "Start the interactive tutorial",
+			Description: "Walk through lesson 1: your first agent in 5 minutes.",
+			Action:      "Run: forge learn start your-first-agent",
+			Verify:      "Lesson started",
+			Tips:        []string{"Use 'forge learn list' to see all 6 lessons", "Lesson 6 covers governance + persistence"},
+			NextID:      "governance",
 		},
 		{
-			ID:          "run-pipeline",
-			Title:       "Run your first pipeline",
-			Description: "Execute a multi-step agent workflow.",
-			Action:      "Run: forge run my-agent \"Summarize this article: https://example.com\"",
-			Verify:      "Pipeline completes with output",
-			Tips:        []string{"Watch each step complete in real-time", "Check 'forge history' after"},
-			NextID:      "review-costs",
+			ID:          "governance",
+			Title:       "Grant consent & register an agent",
+			Description: "Enable governance: consent receipt, catalog registration, and cost tracking.",
+			Action:      "Run: forge consent grant --user demo --purposes execution,cost,audit\n       forge catalog register --name demo-agent --type agent --owner you\n       forge cost budget --set 10.00",
+			Verify:      "Consent granted, agent in catalog, budget set",
+			Tips:        []string{"All writes are async via write-behind cache (<100ns hot path)", "Check forge catalog list to see registered agents"},
+			NextID:      "mcp-gateway",
 		},
 		{
-			ID:          "review-costs",
-			Title:       "Review your costs",
-			Description: "See how much your agents have spent.",
-			Action:      "Run: forge cost report",
-			Verify:      "Cost report appears",
-			Tips:        []string{"Set budgets to avoid surprises", "Use 'forge cost budget' to set limits"},
-			NextID:      "explore-more",
+			ID:          "mcp-gateway",
+			Title:       "Route a request through the MCP gateway",
+			Description: "Send a request through Forge's governed MCP v2.1 proxy: auth → rate-limit → schema-validate → audit.",
+			Action:      "Run: forge gateway request --method tools/list --client demo",
+			Verify:      "Request allowed, audit entry created",
+			Tips:        []string{"Check forge gateway audit for the entry", "Add --token to test auth"},
+			NextID:      "cost-live",
 		},
 		{
-			ID:          "explore-more",
-			Title:       "Explore more",
-			Description: "Discover what else Forge can do.",
-			Action:      "Run: forge help",
-			Verify:      "Command list appears",
-			Tips:        []string{"Try 'forge seed' to bootstrap a project", "Use 'forge watch' during development", "Check 'forge tune' to optimize agents"},
+			ID:          "cost-live",
+			Title:       "View live cost dashboard",
+			Description: "See real-time token burn rate, projections, and per-agent cost breakdown.",
+			Action:      "Run: forge cost live",
+			Verify:      "Live cost dashboard appears",
+			Tips:        []string{"forge cost compare shows model pricing", "Local models show $0.00 cost — that's the point"},
+			NextID:      "",
+		},
+	}
+}
+
+// DemoSteps returns the exact 60-second demo flow used in the promo video.
+// Each step prints its own action without waiting for user confirmation,
+// designed to be run with --demo flag for a clean terminal recording.
+func DemoSteps() []Step {
+	return []Step{
+		{
+			ID:          "demo-doctor",
+			Title:       "1/5  forge doctor --fix",
+			Description: "Auto-diagnose and repair environment",
+			Action:      "forge doctor --fix",
+			Verify:      "clean",
+			NextID:      "demo-init",
+		},
+		{
+			ID:          "demo-init",
+			Title:       "2/5  forge init --local",
+			Description: "Zero-cloud project with Ollama/DeepSeek",
+			Action:      "forge init --local",
+			Verify:      "Forgefile",
+			NextID:      "demo-learn",
+		},
+		{
+			ID:          "demo-learn",
+			Title:       "3/5  forge learn 1",
+			Description: "Interactive tutorial — lesson 1",
+			Action:      "forge learn start your-first-agent",
+			Verify:      "started",
+			NextID:      "demo-governance",
+		},
+		{
+			ID:          "demo-governance",
+			Title:       "4/5  Governance in action",
+			Description: "Consent receipt + catalog registration + cost budget",
+			Action:      "forge govern assess --name demo",
+			Verify:      "score",
+			NextID:      "demo-cost",
+		},
+		{
+			ID:          "demo-cost",
+			Title:       "5/5  forge cost live",
+			Description: "Real-time cost dashboard — local models show $0.00",
+			Action:      "forge cost live --once",
+			Verify:      "dashboard",
 			NextID:      "",
 		},
 	}
