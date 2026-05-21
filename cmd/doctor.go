@@ -40,11 +40,14 @@ Examples:
 			results := []checkResult{}
 
 			results = append(results, checkGoVersion()...)
+			results = append(results, checkGoSDKPath()...)
 			results = append(results, checkOSArch()...)
 			results = append(results, checkForgeBinary()...)
 			results = append(results, checkAPIKeys()...)
 			results = append(results, checkNetworkConnectivity()...)
 			results = append(results, checkForgefile()...)
+			results = append(results, checkPersistenceWAL()...)
+			results = append(results, checkLocalModelPresets()...)
 			results = append(results, checkDiskSpace()...)
 			results = append(results, checkGit()...)
 
@@ -344,4 +347,158 @@ func checkGit() []checkResult {
 
 func init() {
 	// doctor is registered via root.go's AddCommand — no auto-reg needed
+}
+
+// checkGoSDKPath verifies that the Forge-managed Go SDK (~/go-sdk) is reachable
+// and its bin directory is on PATH. This SDK is required by agents that build
+// or validate Go code at runtime (e.g. Forge Coder).
+func checkGoSDKPath() []checkResult {
+	var results []checkResult
+
+	home, err := os.UserHomeDir()
+	if err != nil {
+		results = append(results, warn("Cannot determine home directory", ""))
+		return results
+	}
+
+	sdkBin := filepath.Join(home, "go-sdk", "go", "bin", "go")
+	if _, err := os.Stat(sdkBin); os.IsNotExist(err) {
+		results = append(results, warn(
+			"Forge Go SDK not found at ~/go-sdk/go/bin/go",
+			"Run 'forge doctor --fix' to install the Forge-managed Go SDK",
+		))
+		return results
+	}
+
+	// Check if it is on PATH.
+	out, err := exec.Command(sdkBin, "version").Output()
+	if err != nil {
+		results = append(results, warn(
+			"Forge Go SDK found but not executable at ~/go-sdk/go/bin/go",
+			"Check file permissions: chmod +x "+sdkBin,
+		))
+		return results
+	}
+
+	versionStr := strings.TrimSpace(string(out))
+	// Check PATH includes SDK bin.
+	pathEnv := os.Getenv("PATH")
+	sdkBinDir := filepath.Join(home, "go-sdk", "go", "bin")
+	if !strings.Contains(pathEnv, sdkBinDir) {
+		results = append(results, warn(
+			fmt.Sprintf("Forge Go SDK (%s) not in PATH", versionStr),
+			fmt.Sprintf("Add to shell profile: export PATH=$PATH:%s", sdkBinDir),
+		))
+	} else {
+		results = append(results, passDetail(
+			"Forge Go SDK: "+versionStr,
+			"Path: "+sdkBin,
+		))
+	}
+
+	return results
+}
+
+// checkPersistenceWAL checks that .forge/persist directories exist and that no
+// stale WAL files indicate a crash that was not replayed.
+func checkPersistenceWAL() []checkResult {
+	var results []checkResult
+
+	forgeDir := ".forge"
+	if _, err := os.Stat(forgeDir); os.IsNotExist(err) {
+		// Not a forge project dir — skip.
+		return results
+	}
+
+	// Check write permissions on .forge.
+	testFile := filepath.Join(forgeDir, ".doctor-write-test")
+	f, err := os.Create(testFile)
+	if err != nil {
+		results = append(results, fail(
+			".forge directory is not writable (persistence will fail)",
+			"Run: chmod u+w .forge",
+		))
+		return results
+	}
+	f.Close()
+	os.Remove(testFile)
+	results = append(results, pass(".forge directory is writable (persistence OK)"))
+
+	// Scan for any leftover WAL files — indicates a previous unclean shutdown.
+	staleWALs := []string{}
+	walDirs := []string{
+		filepath.Join(forgeDir, "catalog"),
+		filepath.Join(forgeDir, "govern"),
+		filepath.Join(forgeDir, "costlive"),
+		filepath.Join(forgeDir, "mcpgateway"),
+	}
+	for _, d := range walDirs {
+		entries, err := os.ReadDir(d)
+		if err != nil {
+			continue
+		}
+		for _, e := range entries {
+			if strings.HasSuffix(e.Name(), ".wal") {
+				staleWALs = append(staleWALs, filepath.Join(d, e.Name()))
+			}
+		}
+	}
+	if len(staleWALs) > 0 {
+		results = append(results, warn(
+			fmt.Sprintf("Stale WAL files found (%d) — previous shutdown may have been unclean", len(staleWALs)),
+			"These will be replayed automatically on next forge start. Run 'forge doctor --fix' to replay now.",
+		))
+	} else {
+		results = append(results, pass("Persistence WAL: no stale files (clean state)"))
+	}
+
+	return results
+}
+
+// checkLocalModelPresets verifies that at least one local model preset is
+// configured when no cloud API keys are present — this avoids a confusing
+// "no model found" error on first run.
+func checkLocalModelPresets() []checkResult {
+	var results []checkResult
+
+	// If any cloud API key is set, local presets are optional.
+	cloudKeys := []string{"OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GROQ_API_KEY", "TOGETHER_API_KEY", "XAI_API_KEY"}
+	hasCloud := false
+	for _, k := range cloudKeys {
+		if v := os.Getenv(k); v != "" && v != "your-key-here" {
+			hasCloud = true
+			break
+		}
+	}
+	if hasCloud {
+		results = append(results, pass("Model configuration: cloud API key present"))
+		return results
+	}
+
+	// Check for local model configuration in Forgefile or env.
+	forgefilePaths := []string{"Forgefile", "Forgefile.toml", "forge.toml"}
+	hasLocalPreset := false
+	for _, fp := range forgefilePaths {
+		data, err := os.ReadFile(fp)
+		if err != nil {
+			continue
+		}
+		content := string(data)
+		if strings.Contains(content, "[model]") || strings.Contains(content, "local_model") ||
+			strings.Contains(content, "ollama") || strings.Contains(content, "lmstudio") {
+			hasLocalPreset = true
+			break
+		}
+	}
+
+	if !hasLocalPreset {
+		results = append(results, warn(
+			"No cloud API key or local model preset found",
+			"Set OPENAI_API_KEY/ANTHROPIC_API_KEY, or add a [model] section to your Forgefile for local (Ollama/LM Studio)",
+		))
+	} else {
+		results = append(results, pass("Model configuration: local preset found"))
+	}
+
+	return results
 }

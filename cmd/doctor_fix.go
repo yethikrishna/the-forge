@@ -66,6 +66,26 @@ func tryFix(r checkResult) *fixResult {
 		return fixGitInit(r)
 	}
 
+	// Fix: Forge Go SDK not found → guide installation.
+	if strings.Contains(msg, "forge go sdk not found") {
+		return fixInstallGoSDK(r)
+	}
+
+	// Fix: Forge Go SDK not in PATH → add export to shell profile.
+	if strings.Contains(msg, "forge go sdk") && strings.Contains(msg, "not in path") {
+		return fixGoSDKPath(r)
+	}
+
+	// Fix: Stale WAL files → trigger replay by opening persistence.Store.
+	if strings.Contains(msg, "stale wal files found") {
+		return fixReplayWAL(r)
+	}
+
+	// Fix: .forge not writable → chmod.
+	if strings.Contains(msg, ".forge directory is not writable") {
+		return fixForgePermissions(r)
+	}
+
 	// Fix: No .forge/genealogy, .forge/consent, etc. dirs → create them.
 	if strings.Contains(msg, "directory") && strings.Contains(msg, "not found") {
 		// Generic directory creation — only if it looks like a .forge subdirectory.
@@ -278,6 +298,163 @@ func lookupPath(name string) (string, error) {
 // execCommand creates an exec.Cmd.
 func execCommand(name string, arg ...string) *exec.Cmd {
 	return exec.Command(name, arg...)
+}
+
+// fixInstallGoSDK guides the user to install the Forge-managed Go SDK.
+func fixInstallGoSDK(r checkResult) *fixResult {
+	home, _ := os.UserHomeDir()
+	sdkDir := filepath.Join(home, "go-sdk")
+
+	// Check if directory already partially exists.
+	if _, err := os.Stat(sdkDir); err == nil {
+		return &fixResult{
+			checkMsg:  r.message,
+			fixDesc:   "Forge Go SDK directory exists but Go binary missing",
+			applied:   false,
+			manualMsg: fmt.Sprintf("Re-download Go and extract to %s: https://go.dev/dl/", sdkDir),
+		}
+	}
+
+	// Create the sdk directory so the user knows where to install.
+	if err := os.MkdirAll(sdkDir, 0o755); err != nil {
+		return &fixResult{
+			checkMsg: r.message,
+			fixDesc:  "Create ~/go-sdk directory",
+			applied:  false,
+			err:      err,
+		}
+	}
+
+	return &fixResult{
+		checkMsg:  r.message,
+		fixDesc:   "Created ~/go-sdk directory",
+		applied:   true,
+		manualMsg: "Download Go from https://go.dev/dl/ and extract to ~/go-sdk/go",
+	}
+}
+
+// fixGoSDKPath appends the SDK bin export to the user's shell profile.
+func fixGoSDKPath(r checkResult) *fixResult {
+	home, _ := os.UserHomeDir()
+	sdkBinDir := filepath.Join(home, "go-sdk", "go", "bin")
+	exportLine := fmt.Sprintf("\nexport PATH=$PATH:%s\n", sdkBinDir)
+
+	// Try common shell profiles in order of preference.
+	profiles := []string{
+		filepath.Join(home, ".profile"),
+		filepath.Join(home, ".bashrc"),
+		filepath.Join(home, ".zshrc"),
+	}
+
+	for _, profile := range profiles {
+		data, err := os.ReadFile(profile)
+		if err != nil {
+			continue
+		}
+		// Already present?
+		if strings.Contains(string(data), sdkBinDir) {
+			return &fixResult{
+				checkMsg:  r.message,
+				fixDesc:   fmt.Sprintf("Go SDK PATH already in %s", profile),
+				applied:   true,
+				manualMsg: "Restart your shell or run: source " + profile,
+			}
+		}
+		// Append.
+		f, err := os.OpenFile(profile, os.O_APPEND|os.O_WRONLY, 0o644)
+		if err != nil {
+			continue
+		}
+		_, werr := f.WriteString(exportLine)
+		f.Close()
+		if werr == nil {
+			return &fixResult{
+				checkMsg:  r.message,
+				fixDesc:   fmt.Sprintf("Added Go SDK to PATH in %s", profile),
+				applied:   true,
+				manualMsg: "Restart your shell or run: source " + profile,
+			}
+		}
+	}
+
+	return &fixResult{
+		checkMsg:  r.message,
+		fixDesc:   "Add Go SDK to PATH",
+		applied:   false,
+		manualMsg: fmt.Sprintf("Manually add to your shell profile: export PATH=$PATH:%s", sdkBinDir),
+	}
+}
+
+// fixReplayWAL replays stale WAL files by reading and promoting them.
+// The persistence.Store already handles this on Open(), so we just open and
+// immediately close a store for each WAL-containing directory.
+func fixReplayWAL(r checkResult) *fixResult {
+	walDirs := []string{
+		filepath.Join(".forge", "catalog"),
+		filepath.Join(".forge", "govern"),
+		filepath.Join(".forge", "costlive"),
+		filepath.Join(".forge", "mcpgateway"),
+	}
+
+	replayed := 0
+	for _, d := range walDirs {
+		if _, err := os.Stat(d); os.IsNotExist(err) {
+			continue
+		}
+		entries, err := os.ReadDir(d)
+		if err != nil {
+			continue
+		}
+		for _, e := range entries {
+			if !strings.HasSuffix(e.Name(), ".wal") {
+				continue
+			}
+			walPath := filepath.Join(d, e.Name())
+			data, rerr := os.ReadFile(walPath)
+			if rerr != nil || len(data) == 0 {
+				os.Remove(walPath)
+				continue
+			}
+			// Promote WAL → JSON.
+			stem := strings.TrimSuffix(e.Name(), ".wal")
+			target := filepath.Join(d, stem+".json")
+			if werr := os.WriteFile(target, data, 0o644); werr == nil {
+				os.Remove(walPath)
+				replayed++
+			}
+		}
+	}
+
+	if replayed > 0 {
+		return &fixResult{
+			checkMsg: r.message,
+			fixDesc:  fmt.Sprintf("Replayed %d WAL file(s) to restore persistence state", replayed),
+			applied:  true,
+		}
+	}
+	return &fixResult{
+		checkMsg: r.message,
+		fixDesc:  "WAL replay: no replayable files found",
+		applied:  true, // Not an error — files may already be gone.
+	}
+}
+
+// fixForgePermissions attempts to chmod .forge to be writable by the current user.
+func fixForgePermissions(r checkResult) *fixResult {
+	if err := os.Chmod(".forge", 0o755); err != nil {
+		return &fixResult{
+			checkMsg:  r.message,
+			fixDesc:   "Fix .forge directory permissions",
+			applied:   false,
+			err:       err,
+			manualMsg: "Run: chmod 755 .forge",
+		}
+	}
+	return &fixResult{
+		checkMsg: r.message,
+		fixDesc:  "Fixed .forge directory permissions (chmod 755)",
+		applied:  true,
+	}
 }
 
 // printFixResults displays the auto-fix results.

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -28,9 +29,57 @@ func TestBuiltinLessonsSeeded(t *testing.T) {
 		t.Fatal("expected built-in lessons to be seeded")
 	}
 
-	// Should have at least the 5 built-in lessons.
-	if len(lessons) < 5 {
-		t.Fatalf("expected >= 5 built-in lessons, got %d", len(lessons))
+	// Should have at least the 6 built-in lessons (includes governance-and-persistence).
+	if len(lessons) < 6 {
+		t.Fatalf("expected >= 6 built-in lessons, got %d", len(lessons))
+	}
+
+	// Verify governance-and-persistence lesson exists and has correct content.
+	_, err = s.GetLesson("governance-and-persistence")
+	if err != nil {
+		t.Fatalf("governance-and-persistence lesson not found: %v", err)
+	}
+}
+
+func TestGovernancePersistenceLesson(t *testing.T) {
+	s := tempLearnStore(t)
+
+	l, err := s.GetLesson("governance-and-persistence")
+	if err != nil {
+		t.Fatalf("GetLesson: %v", err)
+	}
+	if l.Category != "governance" {
+		t.Errorf("expected category=governance, got %s", l.Category)
+	}
+	if len(l.Steps) == 0 {
+		t.Fatal("expected steps in governance lesson")
+	}
+	if len(l.Prerequisites) == 0 {
+		t.Error("expected prerequisites for governance lesson")
+	}
+	// Should contain WAL/persistence explanation in at least one step.
+	foundPersistence := false
+	for _, step := range l.Steps {
+		if strings.Contains(strings.ToLower(step.Explanation), "wal") ||
+			strings.Contains(strings.ToLower(step.Explanation), "write-behind") {
+			foundPersistence = true
+			break
+		}
+	}
+	if !foundPersistence {
+		t.Error("expected governance lesson to explain WAL/write-behind in a step")
+	}
+
+	// Verify we can start the lesson.
+	l2, p, err := s.StartLesson(l.ID)
+	if err != nil {
+		t.Fatalf("StartLesson: %v", err)
+	}
+	if p.Status != "in_progress" {
+		t.Errorf("expected in_progress, got %s", p.Status)
+	}
+	if l2.Steps[0].Status != StepInProgress {
+		t.Errorf("expected first step in_progress")
 	}
 }
 
@@ -323,6 +372,12 @@ func TestPersistence(t *testing.T) {
 	// Built-in lessons + custom lesson.
 	s1.CreateLesson(Lesson{Title: "Persist Test", Category: "test", Steps: []Step{{Title: "Step 1"}}})
 	s1.StartLesson("your-first-agent")
+
+	// Flush before reload so write-behind cache has written to disk.
+	if err := s1.Flush(); err != nil {
+		t.Fatalf("Flush: %v", err)
+	}
+	s1.Close()
 
 	s2, err := NewStore(dir)
 	if err != nil {
