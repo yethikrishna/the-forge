@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/forge/sword/internal/pretty"
-	"github.com/forge/sword/internal/worktree"
+	"github.com/forge/sword/internal/gitutil/worktree"
 	"github.com/spf13/cobra"
 )
 
