@@ -1,101 +1,284 @@
 # The Forge — Vision
 
-> The AI Developer's Operating System
+> AI Civilization Infrastructure
 
-## What Forge Is
+## The Real Problem
 
-Not a CLI aggregator. Not a wrapper around 50 repos. A **super app** — one binary, one experience, where every capability is melted into a unified whole.
+The models can think, research, code, deploy, market, and manage. What they CAN'T do is **work like an organization**. 
 
-Think of it like: what VS Code did for text editing, Forge does for AI agent development. What Docker did for containers, Forge does for AI agents.
+Every AI tool today is a single chat window that forgets everything. No structure. No will. No memory. No coordination. No standards. No ambition. No time consciousness. No real-world connection. No growth.
 
-## The 9 Core Experiences
+A single human with AI should be able to build and run an organization that rivals Google. A kid should be able to go from zero idea to a functioning company. That's not possible today — not because the models can't, but because **no product makes them work together**.
 
-### 1. Sessions
-Persistent, resumable agent sessions. Start a coding session, close your laptop, resume tomorrow. Sessions carry context, history, and state. Like tmux for AI agents — but with memory, branching, and collaboration.
+Forge is that product.
 
-### 2. Agents
-Create, configure, and manage AI agents. Not just "run Claude" — define agent personas, give them tools, set their boundaries. An agent registry where you can discover, share, and compose agents. Like a package manager, but for AI workers.
+## What Forge Actually Is
 
-### 3. Observe
-Real-time observability for every agent action. See what agents are doing, what they're thinking, what tools they're calling. Streaming logs, traces, metrics. Like DataDog for AI agents — but built in, not bolted on.
+**An AI company in a box.** Not agent orchestration. Not a CLI wrapper. The operating system for AI civilization — one person can spawn an entire organization that thinks, coordinates, remembers, learns, and grows.
 
-### 4. Discover
-Find agents, tools, patterns, and capabilities. A marketplace/registry of agent skills. "I need an agent that can do X" → discover it, install it, run it. Like Homebrew, but for AI agent behaviors.
+From one person's idea → structured team → coordinated execution → real-world deployment → organizational knowledge that compounds.
 
-### 5. Activity
-Complete audit trail of everything that happened. Who did what, when, why. Git-log for agent actions. Replay any session, diff any state change, answer "what broke and when?"
+## The 12 Gaps Forge Closes
 
-### 6. Govern
-Policy engine for agent governance. Define what agents can and cannot do. Rate limits, approval gates, restricted tools, data boundaries. Compliance-ready out of the box. Like OPA, but purpose-built for AI agents.
+### 1. Organizational Structure
+Real companies have departments. Forge has **Divisions** — self-organizing groups of agents with distinct roles:
 
-### 7. Context
-Shared context management across agents and sessions. RAG over your codebase, your docs, your history. Agents that actually know your project because they share a context layer. Like a brain for your entire dev environment.
+- **Engineering** — codes, reviews, deploys
+- **Research** — invents, experiments, discovers
+- **Operations** — deploys, monitors, maintains
+- **Finance** — tracks costs, optimizes spend, plans budgets
+- **Marketing** — content, outreach, growth
+- **Security** — audits, hardens, responds
+- **Product** — designs, prioritizes, validates
+- **Legal** — compliance, licensing, contracts
 
-### 8. Guardrails
-Safety constraints that prevent agents from going off the rails. Sandbox execution, network isolation, file system boundaries, cost caps. Agents that can push code but never push to production. Like seatbelts for AI.
+Each division has a head agent that coordinates, reports, and escalates. The org chart IS the product.
 
-### 9. Manage
-Lifecycle management for the entire agent fleet. Start, stop, scale, update. Resource allocation, priority queues, health checks. Like Kubernetes, but for AI agent workloads.
+### 2. Will and Quality Standards
+Agents don't take shortcuts because the system enforces quality gates:
 
-## The Super App Layer
+- Code MUST pass review before merge (not optional)
+- Deployments MUST pass tests (not skippable)
+- Research MUST be verified (not hallucinated)
+- Financial decisions MUST be justified (not arbitrary)
+- Communications MUST be reviewed (not sent raw)
 
-On top of the 9 experiences, Forge provides integrated tools:
+Quality isn't a flag. It's the default. Agents have **standards** — and the system holds them to it.
 
-### Mux
-Run multiple agents in parallel on the same or different tasks. Split-pane view. Agent-to-agent communication. Merge their outputs. Built on Coder's PTY and workspace orchestration — each agent gets a real workspace, a real terminal, real isolation. Like tmux, but the panes are intelligent and the sessions are persistent.
+### 3. Time Consciousness
+Agents understand time:
 
-### Blink
-Self-hosted bots that connect your agents to Slack, Discord, Telegram, GitHub. Deploy an agent as a bot in 30 seconds. Like a bot framework, but the bots are actually smart.
+- "Work on this for 2 hours" → agent paces itself, doesn't rush or stall
+- "This is due Friday" → agent works backward, schedules checkpoints
+- "This is urgent" → agent escalates, reallocates, communicates
+- Time tracking per task, per agent, per division
+- Burn rate awareness — "you've spent 4 hours on this, it should take 1"
 
-### Git as NFS
-Mount your git history as a filesystem. Browse commits as folders. Diff as files. `cd` into any point in time. Julia Evans-style deep integration — your codebase becomes a living filesystem.
+### 4. Memory Continuity
+Institutional knowledge that survives everything:
 
-### MicroVM Sandboxes
-Docker sandboxing powered by MicroVM API (Firecracker/vmm-sys-util). Lightning-fast spinup, kernel-level isolation. Agents run in real sandboxes, not just containers. Built on Coder's workspace provisioning — every agent execution happens in a provisioned, isolated workspace. Like Firecracker, but integrated into the agent workflow.
+- **Working memory** — what happened this session, this hour
+- **Project memory** — decisions, architecture, context for each project
+- **Organizational memory** — what worked, what failed, lessons learned
+- **Skill memory** — accumulated expertise per agent, per division
+- **Cross-device** — same brain, any device, any session, zero loss
 
-### Desktop
-A portable Linux desktop for agents that need GUI access. Browser automation, screenshot verification, visual testing. Like VNC, but the user is an AI.
+Memory isn't a context window. It's a **knowledge base that compounds**.
 
-### Transfer
-P2P encrypted file transfer between machines. WireGuard tunnels. Share agent state, code, data across your fleet. Like rsync, but with zero-config encryption.
+### 5. Inter-Agent Communication
+Agents talk to each other like humans in a company:
 
-### Commit
-AI-powered commits that understand your changes. Auto-generate meaningful commit messages, changelogs, release notes. Like aicommit, but aware of your entire project context.
+- **Division channels** — engineering Slack, research Slack, etc.
+- **Cross-division requests** — "Engineering needs a security audit by EOD"
+- **Hand-offs** — "Research found X, handing to Engineering to implement"
+- **Escalations** — "I'm stuck, escalating to division head"
+- **Standups** — periodic status updates visible to the org
+- **1:1s** — agents can DM each other for coordination
 
-## Architecture Principle
+Communication isn't a message queue. It's an **organizational nervous system**.
 
-Every feature is melted in, not bolted on. There are no plugins that feel like plugins. The git-as-NFS isn't a separate tool — it's how Forge sees your codebase. The sandboxing isn't a flag — it's how agents run by default. The observability isn't a dashboard you open — it's the air you breathe.
+### 6. Real-World Integration
+Agents know WHEN and HOW to connect to the real world:
 
-One binary. One experience. Zero seams.
+- OAuth flows handled autonomously (not "please log in")
+- Browser used when APIs don't exist (not randomly)
+- Email sent when needed (not for everything)
+- Phone calls made when urgent (not never)
+- Payments processed when authorized (not asked about)
+- Documents filed when required (not forgotten)
 
-## Coder/coder Foundation
+The system has **situational awareness** — it knows the right tool for the right moment.
 
-Forge's runtime substrate is built on Coder/coder's capabilities — melted in, not imported:
+### 7. Self-Organization
+The org restructures itself based on workload:
 
-| Coder Feature | What It Does | Forge Integration |
-|---|---|---|
-| **Workspace provisioning** | Create dev environments from Dockerfile/VM images | `forge env` — spin up agent workspaces on demand |
-| **Tailnet** | WireGuard mesh networking | `forge transfer` — P2P encrypted communication between agents and machines |
-| **PTY** | Terminal handling for agent I/O | Every agent session runs through a proper PTY — real terminal, real signals |
-| **Agent API** | HTTP API for agents to communicate | `forge serve` — the orchestration layer that talks to any agent |
-| **SDK** | Go SDK for programmatic management | `internal/codersdk` — programmatic control of workspaces, agents, sessions |
-| **Template system** | Define workspace templates (Docker, K8s, EC2) | `forge init` — scaffold workspace templates for any cloud |
-| **Auto-start/stop** | Spin up on demand, sleep when idle | `forge manage` — workspace lifecycle, cost optimization |
-| **Resource tracking** | CPU/memory/GPU per workspace, cost attribution | `forge cost` + `forge observe` — full resource and cost visibility |
+- Too many bugs? → spawn more QA agents
+- Big feature? → assign a team from engineering
+- Security incident? → restructure around response
+- Quiet period? → consolidate, reduce agents, save costs
+- New project? → spin up a new division
 
-These aren't plugins. They're the steel the sword is forged from.
+Nobody manages the org. **The org manages itself.**
+
+### 8. Knowledge Accumulation
+Agents learn like humans — through training, not just prompts:
+
+- **Onboarding** — new agents go through project orientation (read docs, understand architecture, learn standards)
+- **Apprenticeship** — junior agents shadow senior agents before working solo
+- **Training** — agents develop expertise over time (this agent knows Go deeply, that one knows security)
+- **Certification** — agents prove competency before taking on certain tasks
+- **Knowledge transfer** — when agents are replaced, knowledge transfers to successors
+- **Institutional learning** — the org gets smarter over time, not just individuals
+
+Skills aren't prompts. They're **earned expertise that compounds**.
+
+### 9. Ambition and Goal-Setting
+The org sets and pursues goals:
+
+- "Build a competitor to Google Docs" → org breaks it down, assigns work, tracks progress
+- "Get 100 users this month" → marketing division activates, growth experiments run
+- "Reduce costs by 30%" → finance division analyzes, operations optimizes
+- "Ship v1 by Q3" → engineering division plans, executes, delivers
+
+Goals aren't TODO items. They're **organizational momentum**.
+
+### 10. Visibility and Communication
+Everyone knows what's happening:
+
+- **Dashboard** — real-time org status: who's working on what, what's blocked, what's at risk
+- **Activity feed** — every action, every decision, every communication, timestamped
+- **Reports** — daily/weekly summaries generated automatically
+- **Alerts** — anomalies, blockers, cost overruns surfaced immediately
+- **Audit trail** — every decision traceable to who made it and why
+
+Visibility isn't a log file. It's **organizational consciousness**.
+
+### 11. Collaboration and Division of Labor
+Agents work together on complex tasks:
+
+- A feature goes: Product designs → Engineering builds → QA tests → Security audits → Ops deploys
+- A bug goes: QA finds → Engineering fixes → QA verifies → Ops rolls out
+- A research question goes: Research investigates → Engineering prototypes → Product evaluates → Leadership decides
+- A customer issue goes: Support receives → Engineering triages → Fix ships → Customer notified
+
+Collaboration isn't a pipeline. It's a **living workflow**.
+
+### 12. Multi-Device, Zero-Loss
+Same org, same context, any device:
+
+- Start on laptop, continue on phone, review on tablet
+- No context loss between devices
+- No duplicate work
+- No "I didn't see that update"
+- Offline capability with automatic sync
+
+Continuity isn't cloud sync. It's **permanent presence**.
+
+## The Technical Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Forge OS                             │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │                   Organization Layer                  │  │
+│  │  Divisions · Roles · Hand-offs · Escalations · Goals │  │
+│  └──────────────────────┬───────────────────────────────┘  │
+│                         │                                   │
+│  ┌──────────────────────▼───────────────────────────────┐  │
+│  │                 Communication Layer                    │  │
+│  │  Channels · DMs · Standups · Reports · Alerts        │  │
+│  └──────────────────────┬───────────────────────────────┘  │
+│                         │                                   │
+│  ┌──────────────────────▼───────────────────────────────┐  │
+│  │                  Intelligence Layer                    │  │
+│  │  Memory · Learning · Time · Quality · Ambition        │  │
+│  └──────────────────────┬───────────────────────────────┘  │
+│                         │                                   │
+│  ┌──────────────────────▼───────────────────────────────┐  │
+│  │                  Integration Layer                     │  │
+│  │  Browser · OAuth · APIs · Email · Payments · Phone    │  │
+│  └──────────────────────┬───────────────────────────────┘  │
+│                         │                                   │
+│  ┌──────────────────────▼───────────────────────────────┐  │
+│  │                  Runtime Layer                         │  │
+│  │  Coder/coder · Workspaces · PTY · Tailnet · Sandbox  │  │
+│  │  Mux · Blink · Transfer · Desktop · Git-as-NFS       │  │
+│  └──────────────────────┬───────────────────────────────┘  │
+│                         │                                   │
+│  ┌──────────────────────▼───────────────────────────────┐  │
+│  │                   Core (Go)                            │  │
+│  │  CLI · HTTP API · SSE · SQLite · Cobra                │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │              Knowledge Base (Persistent)               │  │
+│  │  Project Memory · Org Memory · Skill Memory · History │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## The Forge CLI (User-Facing)
+
+```bash
+# Organization management
+forge org init                    # Create a new AI organization
+forge org status                  # What's happening right now
+forge org goals                   # Current goals and progress
+forge org standup                 # Daily standup from all divisions
+forge org restructure             # Reorganize based on workload
+
+# Division management
+forge division list               # Show all divisions and their agents
+forge division spawn engineering  # Add agents to a division
+forge division assign <task>      # Assign work to a division
+
+# Agent management  
+forge agents list                 # All active agents and their state
+forge agents hire <role>          # Create a new agent with a role
+forge agents fire <id>            # Remove an agent
+forge agents onboard <id>         # Put agent through orientation
+
+# Communication
+forge chat                        # Talk to your org
+forge channel <division>          # Division-specific channel
+forge dm <agent>                  # Direct message an agent
+forge broadcast <message>         # Message the entire org
+
+# Sessions (persistent, resumable, branchable)
+forge session start               # Start a working session
+forge session resume <id>         # Resume where you left off
+forge session branch <id>         # Branch a session (like git)
+forge session merge <id>          # Merge session outcomes
+
+# Observability
+forge observe                     # Real-time dashboard
+forge activity                    # What happened recently
+forge cost                        # Resource and cost tracking
+forge audit                       # Full audit trail
+
+# Real-world integration
+forge connect gmail               # OAuth connect to Gmail
+forge connect github              # OAuth connect to GitHub  
+forge connect slack               # Connect to Slack workspace
+forge browse                      # Open browser for manual intervention
+
+# Workspace (Coder/coder substrate)
+forge env create                  # Provision a workspace
+forge env list                    # Running workspaces
+forge env stop <id>               # Sleep a workspace
+
+# Super app tools
+forge mux                         # Parallel agent execution
+forge blink deploy <channel>      # Deploy agent as bot
+forge git nfs <repo>              # Mount repo as filesystem
+forge sandbox run <cmd>           # Run in MicroVM sandbox
+forge transfer send <file>        # P2P encrypted transfer
+forge commit                      # AI-powered commit
+
+# Knowledge
+forge memory search <query>       # Search organizational memory
+forge memory teach <agent> <skill> # Teach an agent a skill
+forge memory onboard <agent>      # Agent goes through orientation
+```
 
 ## The Market
 
-Every developer using AI agents right now is cobbling together:
-- Claude Code for coding
-- Cursor for editing  
-- Aider for refactoring
-- Custom scripts for orchestration
-- Docker for sandboxing
-- GitHub Actions for automation
-- Slack bots for communication
+**Today:** Developers cobble together Claude Code + Cursor + Aider + Docker + Slack bots + GitHub Actions + custom scripts. It's chaos.
 
-Forge replaces all of that. One tool. One workflow. One super app.
+**With Forge:** One command creates an AI organization. The org codes, researches, deploys, markets, secures, and grows. One human becomes a company.
 
-This is the AI-native development environment. This is what the industry will need.
+**Nobody has built this.** Agent frameworks exist (LangChain, CrewAI, AutoGen) but they're developer tools for building agents. Forge isn't a framework — it's an operating system for AI civilization. You don't build agents. You hire them. You don't orchestrate workflows. You set goals. The org does the rest.
+
+**The analogy:**
+- Docker made containers accessible → everyone deploys containers
+- Kubernetes made container orchestration accessible → everyone runs fleets
+- Forge makes AI organizations accessible → everyone runs AI companies
+
+## Why This Wins
+
+Every AI tool is optimizing the individual agent. Better prompts, better tools, better models. That's a commodity race.
+
+Forge optimizes the **organization**. The compound advantage isn't one smart agent — it's a coordinated, remembering, learning, self-organizing team that gets smarter over time.
+
+That's a moat. That's a category. That's the future.
