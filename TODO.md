@@ -270,7 +270,7 @@ All 18 utility packages implemented and tested.
 - [x] Persistent agent personas — named personas with style preferences, memory, trust score
 
 ### The Impossible-Until-Now
-- [ ] `forge simulate` — test agents on historical data (bug reports, reviews, cost patterns)
+- [x] `forge simulate` — test agents on historical data (bug reports, reviews, cost patterns)
 - [ ] `forge translate-pipeline` — natural language → forge.yaml and vice versa
 - [x] `forge refactor` — whole-codebase dependency-aware refactoring with migration plans
 - [ ] `forge clone-behavior` — record human task → create agent that repeats it
@@ -297,7 +297,7 @@ All 18 utility packages implemented and tested.
 
 ### New Features
 - [ ] `forge navigate` — semantic code navigation using index + LLM intent understanding
-- [ ] `forge playbooks` — auto-generate playbooks from solved agent sessions
+- [x] `forge playbooks` — auto-generate playbooks from solved agent sessions
 - [ ] `forge debug --live` — real-time collaborative debugging with agent watching terminal
 - [x] `forge deps audit` — agent-powered dependency analysis (CVEs, licenses, alternatives)
 

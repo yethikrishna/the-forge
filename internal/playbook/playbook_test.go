@@ -1,344 +1,258 @@
 package playbook
 
 import (
-	"context"
-	"encoding/json"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 )
 
-func TestCreatePlaybook(t *testing.T) {
-	dir := t.TempDir()
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatalf("NewStore: %v", err)
-	}
-
-	pb := &Playbook{
-		Name:        "Test Playbook",
-		Description: "A test playbook",
-		Version:     "1.0.0",
-		Tags:        []string{"test"},
-		Steps: []Step{
-			{ID: "step-1", Name: "First step", Type: StepPrompt, Action: "Do something", Status: StatusPending},
+func sampleLog() SessionLog {
+	return SessionLog{
+		SessionID: "sess-1",
+		AgentID:   "coder",
+		Goal:      "Fix authentication bug in login handler",
+		Outcome:   "Fixed null pointer in auth middleware",
+		Success:   true,
+		Actions: []Action{
+			{Type: "read", Target: "auth/middleware.go", Success: true, Duration: 100, Time: time.Now()},
+			{Type: "search", Target: "null pointer auth", Success: true, Duration: 200, Time: time.Now()},
+			{Type: "write", Target: "auth/middleware.go", Success: true, Duration: 300, Time: time.Now()},
+			{Type: "execute", Target: "go test ./auth/", Success: true, Duration: 1500, Time: time.Now()},
 		},
+		Timestamp: time.Now(),
 	}
+}
 
-	if err := store.Create(pb); err != nil {
-		t.Fatalf("Create: %v", err)
+func TestNewGenerator(t *testing.T) {
+	g := NewGenerator("")
+	if g == nil {
+		t.Fatal("expected generator")
 	}
+}
 
+func TestGenerate(t *testing.T) {
+	g := NewGenerator("")
+	pb, err := g.Generate(sampleLog())
+	if err != nil {
+		t.Fatal(err)
+	}
 	if pb.ID == "" {
-		t.Error("Expected ID to be set")
+		t.Error("expected ID")
 	}
-
-	// Verify persisted
-	data, err := os.ReadFile(filepath.Join(dir, pb.ID+".json"))
-	if err != nil {
-		t.Fatalf("File not persisted: %v", err)
+	if len(pb.Steps) != 4 {
+		t.Errorf("expected 4 steps, got %d", len(pb.Steps))
 	}
-	if len(data) == 0 {
-		t.Error("Expected non-empty file")
+	if pb.Source != "auto" {
+		t.Error("should be auto-generated")
 	}
 }
 
-func TestGetPlaybook(t *testing.T) {
-	dir := t.TempDir()
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatalf("NewStore: %v", err)
+func TestGenerateEmptyActions(t *testing.T) {
+	g := NewGenerator("")
+	_, err := g.Generate(SessionLog{SessionID: "s1"})
+	if err == nil {
+		t.Error("should error with no actions")
 	}
+}
 
-	pb := &Playbook{Name: "Test", Description: "test"}
-	store.Create(pb)
+func TestGenerateSuccessRate(t *testing.T) {
+	g := NewGenerator("")
+	log := sampleLog()
+	log.Actions[2].Success = false
+	pb, _ := g.Generate(log)
+	if pb.SuccessRate != 0.75 {
+		t.Errorf("expected 0.75, got %.2f", pb.SuccessRate)
+	}
+}
 
-	retrieved, ok := store.Get(pb.ID)
+func TestGenerateTags(t *testing.T) {
+	g := NewGenerator("")
+	pb, _ := g.Generate(sampleLog())
+	found := false
+	for _, tag := range pb.Tags {
+		if tag == "successful" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("should tag as successful")
+	}
+}
+
+func TestCreate(t *testing.T) {
+	g := NewGenerator("")
+	pb := g.Create("Manual PB", "Test playbook", []Step{
+		{Title: "Step 1", Action: "read", Success: true},
+		{Title: "Step 2", Action: "write", Success: true},
+	})
+
+	if pb.Source != "manual" {
+		t.Error("should be manual")
+	}
+	if pb.Steps[0].Index != 1 {
+		t.Error("first step should be index 1")
+	}
+}
+
+func TestGet(t *testing.T) {
+	g := NewGenerator("")
+	pb, _ := g.Generate(sampleLog())
+	got, ok := g.Get(pb.ID)
 	if !ok {
-		t.Fatal("Expected to find playbook")
+		t.Fatal("should find")
 	}
-	if retrieved.Name != "Test" {
-		t.Errorf("Expected name 'Test', got %q", retrieved.Name)
-	}
-}
-
-func TestListPlaybooks(t *testing.T) {
-	dir := t.TempDir()
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatalf("NewStore: %v", err)
-	}
-
-	store.Create(&Playbook{Name: "Alpha", Tags: []string{"security"}})
-	store.Create(&Playbook{Name: "Beta", Tags: []string{"testing"}})
-	store.Create(&Playbook{Name: "Gamma", Tags: []string{"security", "testing"}})
-
-	// List all
-	all := store.List("")
-	if len(all) != 3 {
-		t.Errorf("Expected 3 playbooks, got %d", len(all))
-	}
-
-	// Filter by tag
-	security := store.List("security")
-	if len(security) != 2 {
-		t.Errorf("Expected 2 security playbooks, got %d", len(security))
+	if got.Name != pb.Name {
+		t.Error("name mismatch")
 	}
 }
 
-func TestUpdatePlaybook(t *testing.T) {
-	dir := t.TempDir()
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatalf("NewStore: %v", err)
-	}
-
-	pb := &Playbook{Name: "Original", Description: "test"}
-	store.Create(pb)
-
-	pb.Name = "Updated"
-	if err := store.Update(pb); err != nil {
-		t.Fatalf("Update: %v", err)
-	}
-
-	retrieved, _ := store.Get(pb.ID)
-	if retrieved.Name != "Updated" {
-		t.Errorf("Expected 'Updated', got %q", retrieved.Name)
-	}
-}
-
-func TestDeletePlaybook(t *testing.T) {
-	dir := t.TempDir()
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatalf("NewStore: %v", err)
-	}
-
-	pb := &Playbook{Name: "ToDelete", Description: "test"}
-	store.Create(pb)
-
-	if err := store.Delete(pb.ID); err != nil {
-		t.Fatalf("Delete: %v", err)
-	}
-
-	_, ok := store.Get(pb.ID)
+func TestGetNotFound(t *testing.T) {
+	g := NewGenerator("")
+	_, ok := g.Get("nonexistent")
 	if ok {
-		t.Error("Expected playbook to be deleted")
+		t.Error("should not find")
 	}
 }
 
-func TestGenerateFromSession(t *testing.T) {
-	session := Session{
-		ID:      "sess-123",
-		Prompt:  "Implement user authentication with OAuth2",
-		Outcome: "success",
-		Tags:    []string{"auth", "security"},
-		Steps: []SessionStep{
-			{Type: StepPrompt, Action: "Create OAuth2 provider struct", Status: StatusCompleted, Duration: 5 * time.Second},
-			{Type: StepTool, Action: "Write file auth/oauth2.go", Status: StatusCompleted, Duration: 2 * time.Second},
-			{Type: StepPrompt, Action: "Add tests for OAuth2 flow", Status: StatusCompleted, Duration: 8 * time.Second},
-			{Type: StepPrompt, Action: "This step failed", Status: StatusFailed, Duration: 1 * time.Second},
-		},
-	}
+func TestList(t *testing.T) {
+	g := NewGenerator("")
+	g.Generate(sampleLog())
+	log2 := sampleLog()
+	log2.Goal = "Second playbook"
+	g.Generate(log2)
 
-	pb, err := GenerateFromSession(session)
-	if err != nil {
-		t.Fatalf("GenerateFromSession: %v", err)
-	}
-
-	if pb.Name == "" {
-		t.Error("Expected non-empty name")
-	}
-	if pb.Source != "sess-123" {
-		t.Errorf("Expected source sess-123, got %q", pb.Source)
-	}
-	// Should have 3 steps (skipping the failed one)
-	if len(pb.Steps) != 3 {
-		t.Errorf("Expected 3 steps, got %d", len(pb.Steps))
+	list := g.List()
+	if len(list) != 2 {
+		t.Errorf("expected 2, got %d", len(list))
 	}
 }
 
-func TestGenerateFromSessionFailed(t *testing.T) {
-	session := Session{
-		ID:      "sess-456",
-		Prompt:  "This failed",
-		Outcome: "failed",
-	}
+func TestSearch(t *testing.T) {
+	g := NewGenerator("")
+	g.Generate(sampleLog())
 
-	_, err := GenerateFromSession(session)
+	results := g.Search("authentication")
+	if len(results) == 0 {
+		t.Error("should find by name")
+	}
+}
+
+func TestSearchByTag(t *testing.T) {
+	g := NewGenerator("")
+	g.Generate(sampleLog())
+
+	results := g.Search("successful")
+	if len(results) == 0 {
+		t.Error("should find by tag")
+	}
+}
+
+func TestRecordUse(t *testing.T) {
+	g := NewGenerator("")
+	pb, _ := g.Generate(sampleLog())
+	g.RecordUse(pb.ID)
+	g.RecordUse(pb.ID)
+
+	got, _ := g.Get(pb.ID)
+	if got.Uses != 2 {
+		t.Errorf("expected 2 uses, got %d", got.Uses)
+	}
+}
+
+func TestRecordUseNotFound(t *testing.T) {
+	g := NewGenerator("")
+	err := g.RecordUse("nonexistent")
 	if err == nil {
-		t.Error("Expected error for failed session")
+		t.Error("should error")
 	}
 }
 
-func TestExecutePlaybook(t *testing.T) {
-	dir := t.TempDir()
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatalf("NewStore: %v", err)
-	}
+func TestDelete(t *testing.T) {
+	g := NewGenerator("")
+	pb, _ := g.Generate(sampleLog())
+	g.Delete(pb.ID)
 
-	pb := &Playbook{
-		Name:        "Exec Test",
-		Description: "test execution",
-		Variables: map[string]Variable{
-			"name": {Name: "name", Type: "string", Required: true},
-		},
-		Steps: []Step{
-			{ID: "step-1", Name: "Greet", Type: StepPrompt, Action: "Hello {{.name}}", Status: StatusPending},
-			{ID: "step-2", Name: "Bye", Type: StepPrompt, Action: "Goodbye {{.name}}", Status: StatusPending, DependsOn: []string{"step-1"}},
-		},
-	}
-	store.Create(pb)
-
-	run, err := store.Execute(context.Background(), pb.ID, map[string]string{"name": "World"})
-	if err != nil {
-		t.Fatalf("Execute: %v", err)
-	}
-
-	if run.Status != StatusCompleted {
-		t.Errorf("Expected completed status, got %s", run.Status)
-	}
-	if len(run.StepResults) != 2 {
-		t.Errorf("Expected 2 step results, got %d", len(run.StepResults))
+	_, ok := g.Get(pb.ID)
+	if ok {
+		t.Error("should be deleted")
 	}
 }
 
-func TestExecuteMissingVariable(t *testing.T) {
-	dir := t.TempDir()
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatalf("NewStore: %v", err)
-	}
-
-	pb := &Playbook{
-		Name:        "Missing Var",
-		Description: "test",
-		Variables: map[string]Variable{
-			"required_var": {Name: "required_var", Type: "string", Required: true},
-		},
-	}
-	store.Create(pb)
-
-	_, err = store.Execute(context.Background(), pb.ID, map[string]string{})
+func TestDeleteNotFound(t *testing.T) {
+	g := NewGenerator("")
+	err := g.Delete("nonexistent")
 	if err == nil {
-		t.Error("Expected error for missing required variable")
+		t.Error("should error")
 	}
 }
 
-func TestRecordRun(t *testing.T) {
+func TestTop(t *testing.T) {
+	g := NewGenerator("")
+	_, _ = g.Generate(sampleLog())
+	log2 := sampleLog()
+	log2.Goal = "Second"
+	pb2, _ := g.Generate(log2)
+	g.RecordUse(pb2.ID)
+	g.RecordUse(pb2.ID)
+
+	top := g.Top(1)
+	if len(top) != 1 {
+		t.Fatal("expected 1")
+	}
+	if top[0].ID != pb2.ID {
+		t.Error("most used should be first")
+	}
+}
+
+func TestPersistence(t *testing.T) {
 	dir := t.TempDir()
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatalf("NewStore: %v", err)
-	}
+	g1 := NewGenerator(dir)
+	g1.Generate(sampleLog())
 
-	pb := &Playbook{Name: "Run Test", Description: "test"}
-	store.Create(pb)
-
-	run := &Run{
-		PlaybookID: pb.ID,
-		Status:     StatusCompleted,
-		StartedAt:  time.Now(),
-	}
-	store.RecordRun(run)
-
-	runs := store.GetRuns(pb.ID)
-	if len(runs) != 1 {
-		t.Errorf("Expected 1 run, got %d", len(runs))
-	}
-
-	// Check playbook stats updated
-	updated, _ := store.Get(pb.ID)
-	if updated.RunCount != 1 {
-		t.Errorf("Expected run count 1, got %d", updated.RunCount)
+	g2 := NewGenerator(dir)
+	list := g2.List()
+	if len(list) != 1 {
+		t.Fatal("playbook should persist")
 	}
 }
 
-func TestExportMarkdown(t *testing.T) {
+func TestFormatPlaybook(t *testing.T) {
 	pb := &Playbook{
-		Name:        "Test Playbook",
-		Description: "A test",
-		Version:     "1.0.0",
-		Tags:        []string{"test"},
-		Variables: map[string]Variable{
-			"name": {Name: "name", Type: "string", Required: true, Description: "The name"},
-		},
+		Name:        "Fix auth bug",
+		ID:          "pb-1",
+		Source:      "auto",
+		SuccessRate: 1.0,
+		Uses:        5,
+		Tags:        []string{"read", "write", "successful"},
 		Steps: []Step{
-			{ID: "step-1", Name: "First", Type: StepPrompt, Action: "Hello {{.name}}", Status: StatusPending},
+			{Index: 1, Title: "Read middleware", Success: true},
+			{Index: 2, Title: "Write fix", Success: true},
 		},
 	}
 
-	md := ExportMarkdown(pb)
-	if md == "" {
-		t.Error("Expected non-empty markdown")
+	s := FormatPlaybook(pb)
+	if !strings.Contains(s, "Fix auth bug") {
+		t.Error("should show name")
 	}
-	if !strings.Contains(md, "# Playbook: Test Playbook") {
-		t.Error("Expected title in markdown")
+	if !strings.Contains(s, "100%") {
+		t.Error("should show success rate")
 	}
-	if !strings.Contains(md, "Variables") {
-		t.Error("Expected variables section")
-	}
-	if !strings.Contains(md, "Steps") {
-		t.Error("Expected steps section")
+	if !strings.Contains(s, "Read middleware") {
+		t.Error("should show steps")
 	}
 }
 
-func TestExportYAML(t *testing.T) {
-	pb := &Playbook{
-		Name:        "YAML Test",
-		Description: "A test",
-		Version:     "1.0.0",
-		Steps: []Step{
-			{ID: "step-1", Name: "First", Type: StepPrompt, Action: "Do thing", Status: StatusPending},
-		},
-	}
-
-	yaml := ExportYAML(pb)
-	if yaml == "" {
-		t.Error("Expected non-empty YAML")
-	}
-	if !strings.Contains(yaml, "name:") {
-		t.Error("Expected name field in YAML")
-	}
-	if !strings.Contains(yaml, "steps:") {
-		t.Error("Expected steps field in YAML")
+func TestExtractNameTruncation(t *testing.T) {
+	long := strings.Repeat("a", 100)
+	name := extractName(long)
+	if len(name) > 60 {
+		t.Error("should truncate long names")
 	}
 }
 
-func TestLoadExistingPlaybooks(t *testing.T) {
-	dir := t.TempDir()
-
-	// Create a playbook file manually
-	pb := Playbook{
-		ID:          "test-pb",
-		Name:        "Pre-existing",
-		Description: "Loaded from disk",
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
-	}
-	data, err := json.MarshalIndent(pb, "", "  ")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(dir, "test-pb.json"), data, 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	// Load
-	store, err := NewStore(dir)
-	if err != nil {
-		t.Fatalf("NewStore: %v", err)
-	}
-
-	retrieved, ok := store.Get("test-pb")
-	if !ok {
-		t.Fatal("Expected to load pre-existing playbook")
-	}
-	if retrieved.Name != "Pre-existing" {
-		t.Errorf("Expected 'Pre-existing', got %q", retrieved.Name)
+func TestCalcSuccessRateEmpty(t *testing.T) {
+	rate := calcSuccessRate(nil)
+	if rate != 0 {
+		t.Error("empty actions should be 0")
 	}
 }
-

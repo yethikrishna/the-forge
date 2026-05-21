@@ -1,13 +1,13 @@
-// Package simulate provides historical data simulation for testing
-// agents against past bug reports, reviews, and cost patterns.
-// It enables replay of historical scenarios to evaluate agent performance.
+// Package simulate tests agents on historical data.
+// Replays bug reports, reviews, and cost patterns against agents
+// to measure accuracy and catch regressions.
+//
+// History repeats. Be ready.
 package simulate
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -16,694 +16,337 @@ import (
 	"time"
 )
 
-// ScenarioType represents the type of simulation scenario.
+// ScenarioType is the type of simulation scenario.
 type ScenarioType string
 
 const (
-	ScenarioBugFix     ScenarioType = "bug_fix"
-	ScenarioCodeReview ScenarioType = "code_review"
-	ScenarioFeature    ScenarioType = "feature"
-	ScenarioRefactor   ScenarioType = "refactor"
-	ScenarioSecurity   ScenarioType = "security"
-	ScenarioPerf       ScenarioType = "performance"
-	ScenarioCost       ScenarioType = "cost_estimation"
+	ScenarioBugReport ScenarioType = "bug_report"
+	ScenarioReview    ScenarioType = "code_review"
+	ScenarioCost      ScenarioType = "cost_pattern"
+	ScenarioTask      ScenarioType = "task_completion"
 )
 
-// ScenarioStatus represents the status of a scenario.
-type ScenarioStatus string
-
-const (
-	StatusDraft     ScenarioStatus = "draft"
-	StatusReady     ScenarioStatus = "ready"
-	StatusRunning   ScenarioStatus = "running"
-	StatusComplete  ScenarioStatus = "complete"
-	StatusFailed    ScenarioStatus = "failed"
-)
-
-// Metric represents a measurable outcome.
-type Metric struct {
-	Name     string  `json:"name"`
-	Value    float64 `json:"value"`
-	Unit     string  `json:"unit,omitempty"`
-	Best     float64 `json:"best,omitempty"` // best known value
-	Worst    float64 `json:"worst,omitempty"`
-	Target   float64 `json:"target,omitempty"`
-	Pass     bool    `json:"pass"`
-}
-
-// Scenario represents a testable scenario from historical data.
+// Scenario is a test scenario from historical data.
 type Scenario struct {
 	ID          string            `json:"id"`
-	Name        string            `json:"name"`
 	Type        ScenarioType      `json:"type"`
+	Title       string            `json:"title"`
 	Description string            `json:"description"`
-	CreatedAt   time.Time         `json:"created_at"`
-	Source      string            `json:"source,omitempty"` // "git", "jira", "github", "manual"
-	SourceRef   string            `json:"source_ref,omitempty"` // issue ID, commit, etc.
-	Tags        []string          `json:"tags,omitempty"`
-	Difficulty  int               `json:"difficulty"` // 1-5
-	Context     string            `json:"context"`    // the problem description / code context
-	Input       ScenarioInput     `json:"input"`
-	Expected    ScenarioExpected  `json:"expected"`
-	Status      ScenarioStatus    `json:"status"`
+	Input       string            `json:"input"`
+	Expected    string            `json:"expected"`
+	Difficulty  float64           `json:"difficulty"` // 0-1
+	Tags        []string          `json:"tags"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
-// ScenarioInput represents the input for a scenario.
-type ScenarioInput struct {
-	Prompt      string            `json:"prompt"`
-	Files       map[string]string `json:"files,omitempty"` // filename -> content
-	Language    string            `json:"language,omitempty"`
-	AgentConfig string            `json:"agent_config,omitempty"`
-	Model       string            `json:"model,omitempty"`
-	Variables   map[string]string `json:"variables,omitempty"`
+// Result is the result of running a scenario.
+type Result struct {
+	ID           string    `json:"id"`
+	ScenarioID   string    `json:"scenario_id"`
+	AgentID      string    `json:"agent_id"`
+	Pass         bool      `json:"pass"`
+	Score        float64   `json:"score"` // 0-1
+	Output       string    `json:"output,omitempty"`
+	Duration     string    `json:"duration"`
+	Error        string    `json:"error,omitempty"`
+	Timestamp    time.Time `json:"timestamp"`
 }
 
-// ScenarioExpected represents the expected outcome.
-type ScenarioExpected struct {
-	OutputContains   []string        `json:"output_contains,omitempty"`
-	OutputNotContain []string        `json:"output_not_contains,omitempty"`
-	FilesCreated     []string        `json:"files_created,omitempty"`
-	FilesModified    []string        `json:"files_modified,omitempty"`
-	TestsPass        bool            `json:"tests_pass,omitempty"`
-	MaxCost          float64         `json:"max_cost,omitempty"`
-	MaxDuration      time.Duration   `json:"max_duration,omitempty"`
-	MinQualityScore  float64         `json:"min_quality_score,omitempty"`
-	Metrics          []Metric        `json:"metrics,omitempty"`
-	Description      string          `json:"description,omitempty"`
+// Run is a collection of scenario results.
+type Run struct {
+	ID         string    `json:"id"`
+	AgentID    string    `json:"agent_id"`
+	Type       ScenarioType `json:"type"`
+	ScenarioIDs []string  `json:"scenario_ids"`
+	Results    []Result  `json:"results"`
+	PassRate   float64   `json:"pass_rate"`
+	AvgScore   float64   `json:"avg_score"`
+	StartedAt  time.Time `json:"started_at"`
+	FinishedAt time.Time `json:"finished_at"`
 }
 
-// Trial represents a single execution of a scenario.
-type Trial struct {
-	ID          string        `json:"id"`
-	ScenarioID  string        `json:"scenario_id"`
-	Agent       string        `json:"agent"`
-	Model       string        `json:"model"`
-	StartedAt   time.Time     `json:"started_at"`
-	CompletedAt time.Time     `json:"completed_at,omitempty"`
-	Duration    time.Duration `json:"duration"`
-	Cost        float64       `json:"cost"`
-	Output      string        `json:"output,omitempty"`
-	Metrics     []Metric      `json:"metrics,omitempty"`
-	Score       float64       `json:"score"` // 0-100
-	Pass        bool          `json:"pass"`
-	Error       string        `json:"error,omitempty"`
-}
-
-// SimulationResult holds the aggregated results of running scenarios.
-type SimulationResult struct {
-	ScenarioID    string    `json:"scenario_id"`
-	ScenarioName  string    `json:"scenario_name"`
-	Trials        []Trial   `json:"trials"`
-	BestScore     float64   `json:"best_score"`
-	AverageScore  float64   `json:"average_score"`
-	PassRate      float64   `json:"pass_rate"`
-	AverageCost   float64   `json:"average_cost"`
-	AverageDuration time.Duration `json:"average_duration"`
-	Winner        string    `json:"winner,omitempty"` // best trial agent/model
-	CompletedAt   time.Time `json:"completed_at"`
-}
-
-// Report represents a full simulation report.
-type Report struct {
-	ID            string             `json:"id"`
-	Name          string             `json:"name"`
-	CreatedAt     time.Time          `json:"created_at"`
-	ScenarioCount int                `json:"scenario_count"`
-	TrialCount    int                `json:"trial_count"`
-	Results       []SimulationResult `json:"results"`
-	Summary       ReportSummary      `json:"summary"`
-}
-
-// ReportSummary holds aggregate statistics.
-type ReportSummary struct {
-	OverallPassRate    float64          `json:"overall_pass_rate"`
-	AverageScore       float64          `json:"average_score"`
-	TotalCost          float64          `json:"total_cost"`
-	TotalDuration      time.Duration    `json:"total_duration"`
-	BestPerformer      string           `json:"best_performer,omitempty"`
-	ByType             map[ScenarioType]TypeSummary `json:"by_type"`
-}
-
-// TypeSummary holds per-type statistics.
-type TypeSummary struct {
-	Count     int     `json:"count"`
-	PassRate  float64 `json:"pass_rate"`
-	AvgScore  float64 `json:"avg_score"`
-	AvgCost   float64 `json:"avg_cost"`
-}
-
-// Store manages scenarios and trial data.
-type Store struct {
-	mu        sync.RWMutex
-	dir       string
+// Engine manages simulations.
+type Engine struct {
 	scenarios map[string]*Scenario
-	trials    map[string][]*Trial // scenarioID -> trials
+	results   []Result
+	runs      map[string]*Run
+	storeDir  string
+	nextID    int
+	runID     int
+	mu        sync.RWMutex
 }
 
-// NewStore creates a new simulation store.
-func NewStore(dir string) (*Store, error) {
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, fmt.Errorf("create sim dir: %w", err)
-	}
-	if err := os.MkdirAll(filepath.Join(dir, "trials"), 0755); err != nil {
-		return nil, fmt.Errorf("create trials dir: %w", err)
-	}
-
-	s := &Store{
-		dir:       dir,
+// NewEngine creates a simulation engine.
+func NewEngine(storeDir string) *Engine {
+	e := &Engine{
 		scenarios: make(map[string]*Scenario),
-		trials:    make(map[string][]*Trial),
+		results:   make([]Result, 0),
+		runs:      make(map[string]*Run),
+		storeDir:  storeDir,
 	}
-	s.load()
-	return s, nil
+	e.registerDefaults()
+	e.load()
+	return e
 }
 
-func (s *Store) load() {
-	// Load scenarios
-	entries, err := os.ReadDir(s.dir)
-	if err != nil {
-		return
-	}
-	for _, e := range entries {
-		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
-			continue
-		}
-		data, err := os.ReadFile(filepath.Join(s.dir, e.Name()))
-		if err != nil {
-			continue
-		}
-		var sc Scenario
-		if err := json.Unmarshal(data, &sc); err != nil {
-			continue
-		}
-		s.scenarios[sc.ID] = &sc
+func (e *Engine) registerDefaults() {
+	defaults := []Scenario{
+		{ID: "bug-1", Type: ScenarioBugReport, Title: "Null pointer in auth", Description: "Login fails with nil pointer", Input: "stack trace: panic at auth.go:42", Expected: "Add nil check for user object", Difficulty: 0.3, Tags: []string{"auth", "bug"}},
+		{ID: "bug-2", Type: ScenarioBugReport, Title: "Race condition in cache", Description: "Concurrent writes corrupt cache", Input: "data corruption after concurrent requests", Expected: "Add mutex/sync around cache writes", Difficulty: 0.6, Tags: []string{"concurrency", "bug"}},
+		{ID: "bug-3", Type: ScenarioBugReport, Title: "SQL injection in search", Description: "Search param not sanitized", Input: "SELECT * FROM users WHERE name = '' OR 1=1", Expected: "Use parameterized queries", Difficulty: 0.4, Tags: []string{"security", "sql"}},
+		{ID: "review-1", Type: ScenarioReview, Title: "Review error handling", Description: "Check error handling in API handler", Input: "func handler(w http.ResponseWriter, r *http.Request) { result, _ := doWork(); w.Write(result) }", Expected: "Handle error from doWork(), return 500 on failure", Difficulty: 0.3, Tags: []string{"error-handling", "review"}},
+		{ID: "review-2", Type: ScenarioReview, Title: "Review goroutine leak", Description: "Check for goroutine leak", Input: "go func() { ch <- val }()", Expected: "Ensure channel is consumed or goroutine has exit condition", Difficulty: 0.5, Tags: []string{"concurrency", "review"}},
+		{ID: "cost-1", Type: ScenarioCost, Title: "Token usage spike", Description: "Agent used 10x normal tokens", Input: "Normal: 1K tokens, Current: 10K tokens", Expected: "Detect anomaly, suggest context window reduction", Difficulty: 0.4, Tags: []string{"cost", "anomaly"}},
+		{ID: "task-1", Type: ScenarioTask, Title: "Implement CRUD API", Description: "Create a basic CRUD API", Input: "Design REST endpoints for user management", Expected: "Implement GET/POST/PUT/DELETE with proper status codes", Difficulty: 0.5, Tags: []string{"api", "rest"}},
+		{ID: "task-2", Type: ScenarioTask, Title: "Write unit tests", Description: "Write tests for a module", Input: "Module has 3 functions: Add, Subtract, Multiply", Expected: "Table-driven tests covering edge cases", Difficulty: 0.3, Tags: []string{"testing"}},
 	}
 
-	// Load trials
-	trialsDir := filepath.Join(s.dir, "trials")
-	entries, err = os.ReadDir(trialsDir)
-	if err != nil {
-		return
-	}
-	for _, e := range entries {
-		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
-			continue
-		}
-		data, err := os.ReadFile(filepath.Join(trialsDir, e.Name()))
-		if err != nil {
-			continue
-		}
-		var trial Trial
-		if err := json.Unmarshal(data, &trial); err != nil {
-			continue
-		}
-		s.trials[trial.ScenarioID] = append(s.trials[trial.ScenarioID], &trial)
+	for i := range defaults {
+		e.scenarios[defaults[i].ID] = &defaults[i]
 	}
 }
 
-// CreateScenario creates a new scenario.
-func (s *Store) CreateScenario(sc *Scenario) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if sc.ID == "" {
-		sc.ID = fmt.Sprintf("sc-%d", time.Now().UnixNano())
+// AddScenario adds a custom scenario.
+func (e *Engine) AddScenario(s Scenario) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if s.ID == "" {
+		e.nextID++
+		s.ID = fmt.Sprintf("custom-%d", e.nextID)
 	}
-	if sc.CreatedAt.IsZero() {
-		sc.CreatedAt = time.Now()
-	}
-	if sc.Status == "" {
-		sc.Status = StatusDraft
-	}
-	s.scenarios[sc.ID] = sc
-	return s.saveScenario(sc)
+	e.scenarios[s.ID] = &s
+	e.save()
 }
 
-// GetScenario retrieves a scenario.
-func (s *Store) GetScenario(id string) (*Scenario, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	sc, ok := s.scenarios[id]
-	return sc, ok
+// GetScenario returns a scenario.
+func (e *Engine) GetScenario(id string) (*Scenario, bool) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	s, ok := e.scenarios[id]
+	if !ok {
+		return nil, false
+	}
+	copy := *s
+	return &copy, true
 }
 
-// ListScenarios lists scenarios, optionally filtered by type.
-func (s *Store) ListScenarios(scenarioType ScenarioType) []*Scenario {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+// ListScenarios returns all scenarios, optionally filtered by type.
+func (e *Engine) ListScenarios(scenarioType ScenarioType) []Scenario {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
 
-	var result []*Scenario
-	for _, sc := range s.scenarios {
-		if scenarioType != "" && sc.Type != scenarioType {
-			continue
+	var result []Scenario
+	for _, s := range e.scenarios {
+		if scenarioType == "" || s.Type == scenarioType {
+			result = append(result, *s)
 		}
-		result = append(result, sc)
 	}
 	sort.Slice(result, func(i, j int) bool {
-		return result[i].CreatedAt.After(result[j].CreatedAt)
+		return result[i].ID < result[j].ID
 	})
 	return result
 }
 
-// RecordTrial records a trial result.
-func (s *Store) RecordTrial(trial *Trial) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+// SubmitResult submits a simulation result.
+func (e *Engine) SubmitResult(scenarioID, agentID, output string, pass bool, score float64) (*Result, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 
-	if trial.ID == "" {
-		trial.ID = fmt.Sprintf("trial-%d", time.Now().UnixNano())
-	}
-	s.trials[trial.ScenarioID] = append(s.trials[trial.ScenarioID], trial)
-
-	data, err := json.MarshalIndent(trial, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal trial: %w", err)
-	}
-	return os.WriteFile(filepath.Join(s.dir, "trials", trial.ID+".json"), data, 0644)
-}
-
-// GetTrials returns trials for a scenario.
-func (s *Store) GetTrials(scenarioID string) []*Trial {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.trials[scenarioID]
-}
-
-// RunScenario simulates running a scenario with the given agent/model configuration.
-func (s *Store) RunScenario(ctx context.Context, scenarioID, agent, model string) (*Trial, error) {
-	sc, ok := s.GetScenario(scenarioID)
-	if !ok {
-		return nil, fmt.Errorf("scenario %s not found", scenarioID)
+	if _, ok := e.scenarios[scenarioID]; !ok {
+		return nil, fmt.Errorf("scenario %q not found", scenarioID)
 	}
 
-	trial := &Trial{
-		ID:         fmt.Sprintf("trial-%d", time.Now().UnixNano()),
+	e.nextID++
+	r := &Result{
+		ID:         fmt.Sprintf("result-%d", e.nextID),
 		ScenarioID: scenarioID,
-		Agent:      agent,
-		Model:      model,
-		StartedAt:  time.Now(),
+		AgentID:    agentID,
+		Pass:       pass,
+		Score:      score,
+		Output:     output,
+		Timestamp:  time.Now(),
+	}
+	e.results = append(e.results, *r)
+	e.save()
+	return r, nil
+}
+
+// RunSimulation runs multiple scenarios and returns a Run.
+func (e *Engine) RunSimulation(agentID string, scenarioIDs []string, fn func(Scenario) (string, bool, float64)) (*Run, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+
+	e.runID++
+	run := &Run{
+		ID:          fmt.Sprintf("run-%d", e.runID),
+		AgentID:     agentID,
+		ScenarioIDs: scenarioIDs,
+		StartedAt:   time.Now(),
 	}
 
-	// Simulate execution (in reality, this would invoke the agent)
-	// For now, generate a synthetic result based on scenario difficulty
-	baseScore := 100.0 - float64(sc.Difficulty)*10
-	// Add some variance based on model quality
-	modelBonus := modelScoreBonus(model)
-	score := baseScore + modelBonus
-	if score > 100 {
-		score = 100
-	}
-	if score < 0 {
-		score = 0
+	for _, sid := range scenarioIDs {
+		scenario, ok := e.scenarios[sid]
+		if !ok {
+			continue
+		}
+
+		start := time.Now()
+		output, pass, score := fn(*scenario)
+		duration := time.Since(start)
+
+		e.nextID++
+		result := Result{
+			ID:         fmt.Sprintf("result-%d", e.nextID),
+			ScenarioID: sid,
+			AgentID:    agentID,
+			Pass:       pass,
+			Score:      score,
+			Output:     output,
+			Duration:   duration.String(),
+			Timestamp:  time.Now(),
+		}
+		run.Results = append(run.Results, result)
+		e.results = append(e.results, result)
 	}
 
-	trial.Score = score
-	trial.Pass = score >= sc.Expected.MinQualityScore || (sc.Expected.MinQualityScore == 0 && score >= 50)
-	trial.Cost = estimateCost(sc, model)
-	trial.Duration = estimateDuration(sc, model)
-	trial.Output = fmt.Sprintf("[Simulated] Completed %s with score %.1f", sc.Name, score)
-	trial.Metrics = generateMetrics(sc, score)
-	trial.CompletedAt = time.Now()
+	run.FinishedAt = time.Now()
 
-	// Check specific expectations
-	if len(sc.Expected.OutputContains) > 0 {
-		allFound := true
-		for _, expected := range sc.Expected.OutputContains {
-			if !strings.Contains(trial.Output, expected) {
-				allFound = false
-				break
+	// Calculate stats
+	if len(run.Results) > 0 {
+		passCount := 0
+		var totalScore float64
+		for _, r := range run.Results {
+			if r.Pass {
+				passCount++
 			}
+			totalScore += r.Score
 		}
-		if !allFound {
-			trial.Score -= 10
-			trial.Pass = false
-		}
+		run.PassRate = float64(passCount) / float64(len(run.Results))
+		run.AvgScore = totalScore / float64(len(run.Results))
 	}
 
-	if sc.Expected.MaxCost > 0 && trial.Cost > sc.Expected.MaxCost {
-		trial.Score -= 15
-		trial.Pass = false
-	}
-
-	if trial.Score < 0 {
-		trial.Score = 0
-	}
-
-	if err := s.RecordTrial(trial); err != nil {
-		return nil, fmt.Errorf("record trial: %w", err)
-	}
-
-	return trial, nil
+	e.runs[run.ID] = run
+	e.save()
+	return run, nil
 }
 
-// RunSimulation runs multiple scenarios and produces a report.
-func (s *Store) RunSimulation(ctx context.Context, scenarioTypes []ScenarioType, agents []string, models []string) (*Report, error) {
-	report := &Report{
-		ID:        fmt.Sprintf("sim-%d", time.Now().UnixNano()),
-		Name:      fmt.Sprintf("Simulation %s", time.Now().Format("2006-01-02")),
-		CreatedAt: time.Now(),
+// GetRun returns a run by ID.
+func (e *Engine) GetRun(id string) (*Run, bool) {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+	r, ok := e.runs[id]
+	if !ok {
+		return nil, false
 	}
-
-	// Collect scenarios
-	var scenarios []*Scenario
-	for _, sc := range s.ListScenarios("") {
-		if len(scenarioTypes) > 0 {
-			found := false
-			for _, t := range scenarioTypes {
-				if sc.Type == t {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-		}
-		scenarios = append(scenarios, sc)
-	}
-
-	if len(scenarios) == 0 {
-		return nil, fmt.Errorf("no scenarios found")
-	}
-
-	report.ScenarioCount = len(scenarios)
-
-	// Run each scenario with each agent/model combo
-	for _, sc := range scenarios {
-		result := SimulationResult{
-			ScenarioID:   sc.ID,
-			ScenarioName: sc.Name,
-		}
-
-		for _, agent := range agents {
-			for _, model := range models {
-				if ctx.Err() != nil {
-					break
-				}
-				trial, err := s.RunScenario(ctx, sc.ID, agent, model)
-				if err != nil {
-					continue
-				}
-				result.Trials = append(result.Trials, *trial)
-				report.TrialCount++
-			}
-		}
-
-		// Calculate result stats
-		calculateResultStats(&result)
-		report.Results = append(report.Results, result)
-	}
-
-	// Calculate overall summary
-	calculateReportSummary(report)
-
-	return report, nil
+	copy := *r
+	return &copy, true
 }
 
-// GenerateFromGit creates scenarios from git history.
-func GenerateFromGit(projectPath string, limit int) ([]Scenario, error) {
-	var scenarios []Scenario
+// ListRuns returns all runs.
+func (e *Engine) ListRuns() []Run {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
 
-	// Read git log for bug fixes
-	// This would use git commands in a real implementation
-	// For now, generate template scenarios
-	templates := []Scenario{
-		{
-			Name: "Fix nil pointer dereference in handler",
-			Type: ScenarioBugFix,
-			Description: "A nil pointer dereference occurs when the handler receives an empty request body",
-			Difficulty: 2,
-			Context: "The getUserHandler function does not check if the request body is nil before accessing fields",
-			Source: "git",
-			Expected: ScenarioExpected{
-				OutputContains:   []string{"nil", "check", "error"},
-				MinQualityScore: 60,
-			},
-		},
-		{
-			Name: "Review PR with security implications",
-			Type: ScenarioCodeReview,
-			Description: "Review a pull request that introduces SQL query construction from user input",
-			Difficulty: 3,
-			Context: "PR adds a new search endpoint that constructs SQL queries from URL parameters",
-			Source: "github",
-			Expected: ScenarioExpected{
-				OutputContains:   []string{"SQL injection", "parameterized", "sanitize"},
-				MinQualityScore: 70,
-			},
-		},
-		{
-			Name: "Implement rate limiting middleware",
-			Type: ScenarioFeature,
-			Description: "Add rate limiting to the API server with configurable limits per endpoint",
-			Difficulty: 3,
-			Context: "Current API has no rate limiting and is vulnerable to abuse",
-			Source: "jira",
-			Expected: ScenarioExpected{
-				OutputContains:   []string{"rate", "limit", "middleware"},
-				FilesCreated:     []string{"middleware/ratelimit.go"},
-				MinQualityScore: 65,
-			},
-		},
-		{
-			Name: "Refactor monolithic handler into service layer",
-			Type: ScenarioRefactor,
-			Description: "Extract business logic from HTTP handlers into a service layer",
-			Difficulty: 4,
-			Context: "All business logic is currently in HTTP handlers, making it hard to test",
-			Source: "manual",
-			Expected: ScenarioExpected{
-				MinQualityScore: 55,
-			},
-		},
-		{
-			Name: "Fix authentication bypass vulnerability",
-			Type: ScenarioSecurity,
-			Description: "Authentication can be bypassed by manipulating the JWT token header",
-			Difficulty: 4,
-			Context: "The JWT validation does not verify the algorithm field",
-			Source: "git",
-			Expected: ScenarioExpected{
-				OutputContains:   []string{"algorithm", "verify", "validate"},
-				MinQualityScore: 80,
-			},
-		},
+	result := make([]Run, 0, len(e.runs))
+	for _, r := range e.runs {
+		result = append(result, *r)
 	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].StartedAt.After(result[j].StartedAt)
+	})
+	return result
+}
 
-	for i := range templates {
-		t := templates[i]
-		t.ID = fmt.Sprintf("sc-git-%d", i+1)
-		t.CreatedAt = time.Now()
-		t.Status = StatusReady
-		scenarios = append(scenarios, t)
-		if limit > 0 && len(scenarios) >= limit {
-			break
+// AgentStats returns simulation stats for an agent.
+func (e *Engine) AgentStats(agentID string) map[string]interface{} {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	var agentResults []Result
+	for _, r := range e.results {
+		if r.AgentID == agentID {
+			agentResults = append(agentResults, r)
 		}
 	}
 
-	return scenarios, nil
-}
-
-// helper functions
-
-func (s *Store) saveScenario(sc *Scenario) error {
-	data, err := json.MarshalIndent(sc, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal scenario: %w", err)
+	if len(agentResults) == 0 {
+		return map[string]interface{}{
+			"agent":   agentID,
+			"results": 0,
+		}
 	}
-	return os.WriteFile(filepath.Join(s.dir, sc.ID+".json"), data, 0644)
-}
 
-func modelScoreBonus(model string) float64 {
-	// Simulated model quality differences
-	bonuses := map[string]float64{
-		"claude-sonnet-4":  15,
-		"claude-opus-4":    20,
-		"gpt-4.1":          12,
-		"gpt-4.1-mini":     5,
-		"deepseek-v3":      10,
-		"llama-3":          3,
-		"ollama/llama3":    0,
+	passCount := 0
+	var totalScore float64
+	for _, r := range agentResults {
+		if r.Pass {
+			passCount++
+		}
+		totalScore += r.Score
 	}
-	if bonus, ok := bonuses[model]; ok {
-		return bonus
-	}
-	return 5 // default for unknown models
-}
 
-func estimateCost(sc *Scenario, model string) float64 {
-	// Rough cost estimation based on difficulty and model
-	baseCost := float64(sc.Difficulty) * 0.02
-	modelMultiplier := 1.0
-	expensive := map[string]float64{
-		"claude-opus-4": 3.0,
-		"claude-sonnet-4": 1.5,
-		"gpt-4.1": 1.2,
-		"gpt-4.1-mini": 0.3,
-		"deepseek-v3": 0.2,
-	}
-	if m, ok := expensive[model]; ok {
-		modelMultiplier = m
-	}
-	return baseCost * modelMultiplier
-}
-
-func estimateDuration(sc *Scenario, model string) time.Duration {
-	baseSeconds := float64(sc.Difficulty) * 15
-	return time.Duration(baseSeconds) * time.Second
-}
-
-func generateMetrics(sc *Scenario, score float64) []Metric {
-	return []Metric{
-		{Name: "quality", Value: score, Unit: "score", Best: 100, Worst: 0, Target: 70, Pass: score >= 70},
-		{Name: "cost_efficiency", Value: math.Max(0, 100-score*0.5), Unit: "score", Pass: true},
-		{Name: "completeness", Value: math.Min(100, score+5), Unit: "%", Pass: score >= 60},
+	return map[string]interface{}{
+		"agent":      agentID,
+		"results":    len(agentResults),
+		"pass_rate":  float64(passCount) / float64(len(agentResults)),
+		"avg_score":  totalScore / float64(len(agentResults)),
 	}
 }
 
-func calculateResultStats(result *SimulationResult) {
-	if len(result.Trials) == 0 {
+func (e *Engine) save() {
+	if e.storeDir == "" {
 		return
 	}
-
-	var totalScore, totalCost float64
-	var totalDuration time.Duration
-	var passes int
-	var bestTrial *Trial
-
-	for i := range result.Trials {
-		t := &result.Trials[i]
-		totalScore += t.Score
-		totalCost += t.Cost
-		totalDuration += t.Duration
-		if t.Pass {
-			passes++
-		}
-		if bestTrial == nil || t.Score > bestTrial.Score {
-			bestTrial = t
-		}
-	}
-
-	n := float64(len(result.Trials))
-	result.AverageScore = totalScore / n
-	result.BestScore = bestTrial.Score
-	result.PassRate = float64(passes) / n * 100
-	result.AverageCost = totalCost / n
-	result.AverageDuration = time.Duration(float64(totalDuration) / n)
-	result.Winner = fmt.Sprintf("%s/%s", bestTrial.Agent, bestTrial.Model)
-	result.CompletedAt = time.Now()
+	os.MkdirAll(e.storeDir, 0755)
+	data, _ := json.MarshalIndent(map[string]interface{}{
+		"scenarios": e.scenarios,
+		"results":   e.results,
+		"runs":      e.runs,
+	}, "", "  ")
+	os.WriteFile(filepath.Join(e.storeDir, "simulation.json"), data, 0644)
 }
 
-func calculateReportSummary(report *Report) {
-	var totalPassRate, totalScore, totalCost float64
-	var totalDuration time.Duration
-	bestScore := 0.0
-	bestPerformer := ""
-	byType := make(map[ScenarioType]TypeSummary)
-
-	for _, result := range report.Results {
-		totalPassRate += result.PassRate
-		totalScore += result.AverageScore
-		totalCost += result.AverageCost
-		totalDuration += result.AverageDuration
-
-		if result.BestScore > bestScore {
-			bestScore = result.BestScore
-			bestPerformer = result.Winner
-		}
+func (e *Engine) load() {
+	if e.storeDir == "" {
+		return
 	}
-
-	n := float64(len(report.Results))
-	if n > 0 {
-		report.Summary.OverallPassRate = totalPassRate / n
-		report.Summary.AverageScore = totalScore / n
-		report.Summary.BestPerformer = bestPerformer
+	data, err := os.ReadFile(filepath.Join(e.storeDir, "simulation.json"))
+	if err != nil {
+		return
 	}
-	report.Summary.TotalCost = totalCost
-	report.Summary.TotalDuration = totalDuration
-
-	// Per-type stats
-	typeData := make(map[ScenarioType][]float64)
-	for _, result := range report.Results {
-		if sc, ok := report.getScenarioByID(result.ScenarioID); ok {
-			data := typeData[sc.Type]
-			data = append(data, result.AverageScore, result.PassRate, result.AverageCost)
-			typeData[sc.Type] = data
-		}
+	var stored map[string]json.RawMessage
+	if json.Unmarshal(data, &stored) != nil {
+		return
 	}
-
-	for t, data := range typeData {
-		n := float64(len(data) / 3)
-		if n > 0 {
-			var scoreSum, passSum, costSum float64
-			for i := 0; i < len(data); i += 3 {
-				scoreSum += data[i]
-				passSum += data[i+1]
-				costSum += data[i+2]
-			}
-			byType[t] = TypeSummary{
-				Count:    int(n),
-				AvgScore: scoreSum / n,
-				PassRate: passSum / n,
-				AvgCost:  costSum / n,
-			}
-		}
+	if raw, ok := stored["scenarios"]; ok {
+		json.Unmarshal(raw, &e.scenarios)
 	}
-	report.Summary.ByType = byType
+	if raw, ok := stored["results"]; ok {
+		json.Unmarshal(raw, &e.results)
+	}
+	if raw, ok := stored["runs"]; ok {
+		json.Unmarshal(raw, &e.runs)
+	}
+	e.nextID = len(e.results)
+	e.runID = len(e.runs)
 }
 
-func (r *Report) getScenarioByID(id string) (*Scenario, bool) {
-	// This is a helper - in practice, we'd need the store reference
-	_ = id
-	return nil, false
-}
-
-// FormatReport formats a simulation report as markdown.
-func FormatReport(report *Report) string {
+// FormatRun formats a run for display.
+func FormatRun(r *Run) string {
 	var b strings.Builder
+	b.WriteString(fmt.Sprintf("Run:        %s\n", r.ID))
+	b.WriteString(fmt.Sprintf("Agent:      %s\n", r.AgentID))
+	b.WriteString(fmt.Sprintf("Scenarios:  %d\n", len(r.Results)))
+	b.WriteString(fmt.Sprintf("Pass Rate:  %.0f%%\n", r.PassRate*100))
+	b.WriteString(fmt.Sprintf("Avg Score:  %.2f\n", r.AvgScore))
+	b.WriteString(fmt.Sprintf("Duration:   %s\n", r.FinishedAt.Sub(r.StartedAt)))
 
-	fmt.Fprintf(&b, "# Simulation Report: %s\n\n", report.Name)
-	fmt.Fprintf(&b, "**Created:** %s\n", report.CreatedAt.Format(time.RFC3339))
-	fmt.Fprintf(&b, "**Scenarios:** %d | **Trials:** %d\n\n", report.ScenarioCount, report.TrialCount)
-
-	// Summary
-	fmt.Fprintf(&b, "## Summary\n\n")
-	fmt.Fprintf(&b, "| Metric | Value |\n|--------|-------|\n")
-	fmt.Fprintf(&b, "| Overall Pass Rate | %.1f%% |\n", report.Summary.OverallPassRate)
-	fmt.Fprintf(&b, "| Average Score | %.1f |\n", report.Summary.AverageScore)
-	fmt.Fprintf(&b, "| Total Cost | $%.4f |\n", report.Summary.TotalCost)
-	fmt.Fprintf(&b, "| Total Duration | %s |\n", report.Summary.TotalDuration)
-	if report.Summary.BestPerformer != "" {
-		fmt.Fprintf(&b, "| Best Performer | %s |\n", report.Summary.BestPerformer)
-	}
-	b.WriteString("\n")
-
-	// Per-scenario results
-	fmt.Fprintf(&b, "## Scenario Results\n\n")
-	for _, result := range report.Results {
-		fmt.Fprintf(&b, "### %s\n\n", result.ScenarioName)
-		fmt.Fprintf(&b, "- Pass Rate: %.1f%%\n", result.PassRate)
-		fmt.Fprintf(&b, "- Best Score: %.1f\n", result.BestScore)
-		fmt.Fprintf(&b, "- Average Score: %.1f\n", result.AverageScore)
-		fmt.Fprintf(&b, "- Average Cost: $%.4f\n", result.AverageCost)
-		if result.Winner != "" {
-			fmt.Fprintf(&b, "- Winner: %s\n", result.Winner)
+	for _, res := range r.Results {
+		status := "PASS"
+		if !res.Pass {
+			status = "FAIL"
 		}
-
-		if len(result.Trials) > 0 {
-			fmt.Fprintf(&b, "\n| Agent/Model | Score | Cost | Duration | Pass |\n|-------------|-------|------|----------|------|\n")
-			for _, t := range result.Trials {
-				pass := "❌"
-				if t.Pass {
-					pass = "✅"
-				}
-				fmt.Fprintf(&b, "| %s/%s | %.1f | $%.4f | %s | %s |\n",
-					t.Agent, t.Model, t.Score, t.Cost, t.Duration.Round(time.Second), pass)
-			}
-			b.WriteString("\n")
-		}
+		b.WriteString(fmt.Sprintf("  [%s] %s (score: %.2f)\n", status, res.ScenarioID, res.Score))
 	}
-
 	return b.String()
 }

@@ -195,6 +195,34 @@ func (b *Breaker) Trip() {
 	})
 }
 
+// Allow checks if a request is allowed through the circuit breaker.
+func (b *Breaker) Allow() bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	switch b.state {
+	case StateClosed:
+		return true
+	case StateOpen:
+		if time.Since(b.lastFailure) > b.config.Timeout {
+			return true // transition to half-open
+		}
+		return false
+	case StateHalfOpen:
+		return true
+	}
+	return false
+}
+
+// RecordSuccess records a successful operation (for manual tracking).
+func (b *Breaker) RecordSuccess() {
+	b.onSuccess(0)
+}
+
+// RecordFailure records a failed operation (for manual tracking).
+func (b *Breaker) RecordFailure() {
+	b.onFailure(fmt.Errorf("manual failure record"), 0)
+}
+
 func (b *Breaker) onSuccess(duration time.Duration) {
 	b.recordEvent(Event{
 		Type: "success", Service: b.config.Name,

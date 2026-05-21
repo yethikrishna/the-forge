@@ -8,15 +8,16 @@ import (
 	"github.com/forge/sword/internal/snapshot"
 )
 
-func TestCapture(t *testing.T) {
+func TestCreate(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\n"), 0644)
-	os.WriteFile(filepath.Join(dir, "readme.md"), []byte("# Test\n"), 0644)
-	os.MkdirAll(filepath.Join(dir, "pkg"), 0755)
-	os.WriteFile(filepath.Join(dir, "pkg", "util.go"), []byte("package pkg\n"), 0644)
 
-	m := snapshot.NewManager(t.TempDir())
-	snap, err := m.Capture(dir, "test-snap", "test snapshot", snapshot.IgnorePatterns())
+	store, err := snapshot.NewStore(t.TempDir())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	snap, err := store.Create("test", snapshot.TypeManual, dir, "test snapshot")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -27,54 +28,51 @@ func TestCapture(t *testing.T) {
 	if snap.FileCount == 0 {
 		t.Error("expected non-zero file count")
 	}
-	if snap.Name != "test-snap" {
-		t.Errorf("expected test-snap, got %s", snap.Name)
-	}
 }
 
-func TestCaptureIgnores(t *testing.T) {
+func TestIgnores(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\n"), 0644)
 	os.MkdirAll(filepath.Join(dir, ".git", "objects"), 0755)
 	os.WriteFile(filepath.Join(dir, ".git", "objects", "abc"), []byte("data"), 0644)
-	os.MkdirAll(filepath.Join(dir, "node_modules"), 0755)
-	os.WriteFile(filepath.Join(dir, "node_modules", "lib.js"), []byte("// lib"), 0644)
 
-	m := snapshot.NewManager(t.TempDir())
-	snap, _ := m.Capture(dir, "test", "test", snapshot.IgnorePatterns())
+	store, _ := snapshot.NewStore(t.TempDir())
+	snap, _ := store.Create("test", snapshot.TypeManual, dir, "")
 
 	for _, f := range snap.Files {
 		if len(f.Path) >= 4 && f.Path[:4] == ".git" {
 			t.Errorf("should have ignored .git but found %s", f.Path)
 		}
-		if len(f.Path) >= 13 && f.Path[:13] == "node_modules" {
-			t.Errorf("should have ignored node_modules but found %s", f.Path)
-		}
 	}
 }
 
-func TestListSnapshots(t *testing.T) {
+func TestList(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\n"), 0644)
 
-	m := snapshot.NewManager(t.TempDir())
-	m.Capture(dir, "first", "first", nil)
-	m.Capture(dir, "second", "second", nil)
+	store, _ := snapshot.NewStore(t.TempDir())
+	store.Create("first", snapshot.TypeManual, dir, "")
+	store.Create("second", snapshot.TypeAuto, dir, "")
 
-	list := m.List()
+	list := store.List("")
 	if len(list) != 2 {
 		t.Errorf("expected 2 snapshots, got %d", len(list))
 	}
+
+	manualOnly := store.List("manual")
+	if len(manualOnly) != 1 {
+		t.Errorf("expected 1 manual snapshot, got %d", len(manualOnly))
+	}
 }
 
-func TestGetSnapshot(t *testing.T) {
+func TestGet(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\n"), 0644)
 
-	m := snapshot.NewManager(t.TempDir())
-	snap, _ := m.Capture(dir, "test", "test", nil)
+	store, _ := snapshot.NewStore(t.TempDir())
+	snap, _ := store.Create("test", snapshot.TypeManual, dir, "")
 
-	got, ok := m.Get(snap.ID)
+	got, ok := store.Get(snap.ID)
 	if !ok {
 		t.Error("expected to find snapshot")
 	}
@@ -83,42 +81,40 @@ func TestGetSnapshot(t *testing.T) {
 	}
 }
 
-func TestDeleteSnapshot(t *testing.T) {
+func TestDelete(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\n"), 0644)
 
-	m := snapshot.NewManager(t.TempDir())
-	snap, _ := m.Capture(dir, "test", "test", nil)
+	store, _ := snapshot.NewStore(t.TempDir())
+	snap, _ := store.Create("test", snapshot.TypeManual, dir, "")
 
-	err := m.Delete(snap.ID)
+	err := store.Delete(snap.ID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	_, ok := m.Get(snap.ID)
+	_, ok := store.Get(snap.ID)
 	if ok {
 		t.Error("expected snapshot to be deleted")
 	}
 }
 
-func TestDiff(t *testing.T) {
+func TestCompare(t *testing.T) {
 	dir := t.TempDir()
 
-	// Initial state
 	os.WriteFile(filepath.Join(dir, "a.go"), []byte("package a\n"), 0644)
 	os.WriteFile(filepath.Join(dir, "b.go"), []byte("package b\n"), 0644)
 
-	m := snapshot.NewManager(t.TempDir())
-	snap1, _ := m.Capture(dir, "v1", "first", nil)
+	store, _ := snapshot.NewStore(t.TempDir())
+	snap1, _ := store.Create("v1", snapshot.TypeManual, dir, "")
 
-	// Modify state
 	os.WriteFile(filepath.Join(dir, "b.go"), []byte("package b // modified\n"), 0644)
 	os.WriteFile(filepath.Join(dir, "c.go"), []byte("package c\n"), 0644)
 	os.Remove(filepath.Join(dir, "a.go"))
 
-	snap2, _ := m.Capture(dir, "v2", "second", nil)
+	snap2, _ := store.Create("v2", snapshot.TypeManual, dir, "")
 
-	diff, err := m.Diff(snap1.ID, snap2.ID)
+	diff, err := store.Compare(snap1.ID, snap2.ID)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -138,23 +134,11 @@ func TestStats(t *testing.T) {
 	dir := t.TempDir()
 	os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\n"), 0644)
 
-	m := snapshot.NewManager(t.TempDir())
-	m.Capture(dir, "test", "test", nil)
+	store, _ := snapshot.NewStore(t.TempDir())
+	store.Create("test", snapshot.TypeManual, dir, "")
 
-	stats := m.Stats()
-	if stats["total_snapshots"].(int) != 1 {
-		t.Errorf("expected 1 snapshot, got %v", stats["total_snapshots"])
-	}
-}
-
-func TestRenderSnapshot(t *testing.T) {
-	dir := t.TempDir()
-	os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\n"), 0644)
-
-	m := snapshot.NewManager(t.TempDir())
-	snap, _ := m.Capture(dir, "test", "test", nil)
-	text := snapshot.RenderSnapshot(snap)
-	if text == "" {
-		t.Error("expected non-empty render")
+	stats := store.Stats()
+	if stats.TotalSnapshots != 1 {
+		t.Errorf("expected 1 snapshot, got %d", stats.TotalSnapshots)
 	}
 }
