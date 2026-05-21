@@ -1,6 +1,7 @@
 package simulate
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -104,7 +105,7 @@ func TestRunScenario(t *testing.T) {
 	}
 	store.CreateScenario(sc)
 
-	trial, err := store.RunScenario(t.Context(), sc.ID, "coder", "claude-sonnet-4")
+	trial, err := store.RunScenario(context.Background(), sc.ID, "coder", "claude-sonnet-4")
 	if err != nil {
 		t.Fatalf("RunScenario: %v", err)
 	}
@@ -127,7 +128,7 @@ func TestRunScenarioNotFound(t *testing.T) {
 		t.Fatalf("NewStore: %v", err)
 	}
 
-	_, err = store.RunScenario(t.Context(), "nonexistent", "agent", "model")
+	_, err = store.RunScenario(context.Background(), "nonexistent", "agent", "model")
 	if err == nil {
 		t.Error("Expected error for nonexistent scenario")
 	}
@@ -177,7 +178,7 @@ func TestRunSimulation(t *testing.T) {
 		Expected: ScenarioExpected{MinQualityScore: 50},
 	})
 
-	report, err := store.RunSimulation(t.Context(),
+	report, err := store.RunSimulation(context.Background(),
 		nil, // all types
 		[]string{"agent-a", "agent-b"},
 		[]string{"claude-sonnet-4", "gpt-4.1"},

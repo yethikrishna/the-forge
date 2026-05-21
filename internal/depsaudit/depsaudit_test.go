@@ -1,6 +1,7 @@
 package depsaudit
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -95,7 +96,7 @@ func TestAuditGoProject(t *testing.T) {
 	dir := createGoProject(t)
 	auditor := NewAuditor()
 
-	result, err := auditor.Audit(t.Context(), dir)
+	result, err := auditor.Audit(context.Background(), dir)
 	if err != nil {
 		t.Fatalf("Audit failed: %v", err)
 	}
@@ -112,7 +113,7 @@ func TestAuditNPMProject(t *testing.T) {
 	dir := createNPMProject(t)
 	auditor := NewAuditor()
 
-	result, err := auditor.Audit(t.Context(), dir)
+	result, err := auditor.Audit(context.Background(), dir)
 	if err != nil {
 		t.Fatalf("Audit failed: %v", err)
 	}
@@ -129,7 +130,7 @@ func TestAuditPythonProject(t *testing.T) {
 	dir := createPythonProject(t)
 	auditor := NewAuditor()
 
-	result, err := auditor.Audit(t.Context(), dir)
+	result, err := auditor.Audit(context.Background(), dir)
 	if err != nil {
 		t.Fatalf("Audit failed: %v", err)
 	}
@@ -143,7 +144,7 @@ func TestVulnerabilityDetection(t *testing.T) {
 	dir := createGoProject(t)
 	auditor := NewAuditor()
 
-	result, err := auditor.Audit(t.Context(), dir)
+	result, err := auditor.Audit(context.Background(), dir)
 	if err != nil {
 		t.Fatalf("Audit failed: %v", err)
 	}
@@ -164,7 +165,7 @@ func TestScoreCalculation(t *testing.T) {
 	dir := createGoProject(t)
 	auditor := NewAuditor()
 
-	result, err := auditor.Audit(t.Context(), dir)
+	result, err := auditor.Audit(context.Background(), dir)
 	if err != nil {
 		t.Fatalf("Audit failed: %v", err)
 	}
@@ -179,7 +180,7 @@ func TestRecommendations(t *testing.T) {
 	dir := createGoProject(t)
 	auditor := NewAuditor()
 
-	result, err := auditor.Audit(t.Context(), dir)
+	result, err := auditor.Audit(context.Background(), dir)
 	if err != nil {
 		t.Fatalf("Audit failed: %v", err)
 	}
@@ -194,7 +195,7 @@ func TestFormatMarkdown(t *testing.T) {
 	dir := createGoProject(t)
 	auditor := NewAuditor()
 
-	result, err := auditor.Audit(t.Context(), dir)
+	result, err := auditor.Audit(context.Background(), dir)
 	if err != nil {
 		t.Fatalf("Audit failed: %v", err)
 	}
@@ -231,7 +232,7 @@ func TestEmptyProject(t *testing.T) {
 	dir := t.TempDir()
 	auditor := NewAuditor()
 
-	result, err := auditor.Audit(t.Context(), dir)
+	result, err := auditor.Audit(context.Background(), dir)
 	if err != nil {
 		t.Fatalf("Audit failed: %v", err)
 	}

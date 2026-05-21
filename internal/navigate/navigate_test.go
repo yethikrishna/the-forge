@@ -1,6 +1,7 @@
 package navigate
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -69,7 +70,7 @@ class World:
 func TestIndex(t *testing.T) {
 	dir := createTestProject(t)
 	nav := New(dir)
-	if err := nav.Index(t.Context()); err != nil {
+	if err := nav.Index(context.Background()); err != nil {
 		t.Fatalf("Index failed: %v", err)
 	}
 
@@ -85,7 +86,7 @@ func TestIndex(t *testing.T) {
 func TestSearchSymbols(t *testing.T) {
 	dir := createTestProject(t)
 	nav := New(dir)
-	if err := nav.Index(t.Context()); err != nil {
+	if err := nav.Index(context.Background()); err != nil {
 		t.Fatalf("Index failed: %v", err)
 	}
 
@@ -114,7 +115,7 @@ func TestSearchSymbols(t *testing.T) {
 func TestGotoDefinition(t *testing.T) {
 	dir := createTestProject(t)
 	nav := New(dir)
-	if err := nav.Index(t.Context()); err != nil {
+	if err := nav.Index(context.Background()); err != nil {
 		t.Fatalf("Index failed: %v", err)
 	}
 
@@ -133,7 +134,7 @@ func TestGotoDefinition(t *testing.T) {
 func TestFindReferences(t *testing.T) {
 	dir := createTestProject(t)
 	nav := New(dir)
-	if err := nav.Index(t.Context()); err != nil {
+	if err := nav.Index(context.Background()); err != nil {
 		t.Fatalf("Index failed: %v", err)
 	}
 
@@ -157,7 +158,7 @@ func TestFindReferences(t *testing.T) {
 func TestSymbolsByFile(t *testing.T) {
 	dir := createTestProject(t)
 	nav := New(dir)
-	if err := nav.Index(t.Context()); err != nil {
+	if err := nav.Index(context.Background()); err != nil {
 		t.Fatalf("Index failed: %v", err)
 	}
 
@@ -170,7 +171,7 @@ func TestSymbolsByFile(t *testing.T) {
 func TestOutline(t *testing.T) {
 	dir := createTestProject(t)
 	nav := New(dir)
-	if err := nav.Index(t.Context()); err != nil {
+	if err := nav.Index(context.Background()); err != nil {
 		t.Fatalf("Index failed: %v", err)
 	}
 
@@ -209,7 +210,7 @@ func TestParseIntent(t *testing.T) {
 func TestExecuteIntent(t *testing.T) {
 	dir := createTestProject(t)
 	nav := New(dir)
-	if err := nav.Index(t.Context()); err != nil {
+	if err := nav.Index(context.Background()); err != nil {
 		t.Fatalf("Index failed: %v", err)
 	}
 
@@ -232,7 +233,7 @@ func TestExecuteIntent(t *testing.T) {
 func TestStats(t *testing.T) {
 	dir := createTestProject(t)
 	nav := New(dir)
-	if err := nav.Index(t.Context()); err != nil {
+	if err := nav.Index(context.Background()); err != nil {
 		t.Fatalf("Index failed: %v", err)
 	}
 
@@ -272,7 +273,7 @@ func MainFunc() {}
 	}
 
 	nav := New(dir)
-	if err := nav.Index(t.Context()); err != nil {
+	if err := nav.Index(context.Background()); err != nil {
 		t.Fatalf("Index failed: %v", err)
 	}
 

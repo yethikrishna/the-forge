@@ -1,6 +1,7 @@
 package playbook
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -192,7 +193,7 @@ func TestExecutePlaybook(t *testing.T) {
 	}
 	store.Create(pb)
 
-	run, err := store.Execute(t.Context(), pb.ID, map[string]string{"name": "World"})
+	run, err := store.Execute(context.Background(), pb.ID, map[string]string{"name": "World"})
 	if err != nil {
 		t.Fatalf("Execute: %v", err)
 	}
@@ -221,7 +222,7 @@ func TestExecuteMissingVariable(t *testing.T) {
 	}
 	store.Create(pb)
 
-	_, err = store.Execute(t.Context(), pb.ID, map[string]string{})
+	_, err = store.Execute(context.Background(), pb.ID, map[string]string{})
 	if err == nil {
 		t.Error("Expected error for missing required variable")
 	}

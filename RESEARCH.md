@@ -561,3 +561,28 @@ Quiet overnight period. All significant May 20 developments covered in previous 
 - https://docs.channel.io/updates/en/articles/Notice-Channel-Talk-Major-May-Updates-May-21-2026-b3d45997
 - https://mashable.com/article/google-io-2026-agentic-shopping-google-search
 - https://learn.microsoft.com/en-us/dotnet/framework/release-notes/2026/05-12-may-cumulative-update
+
+---
+
+## 2026-05-21 (01:13 UTC) — Overnight Sweep
+
+### LangGraph v1.2 Detail Fill
+
+Earlier sweeps noted LangGraph v1.2 in passing. Full release details:
+- **Per-node timeouts** — individual nodes can have their own execution time limits
+- **Error recovery** — improved handling of partial failures in long-running agent graphs
+- **Graceful shutdown** — clean state persistence when agents are interrupted
+- **DeltaChannel** — new mechanism reducing checkpoint overhead for streaming updates
+- Released early-mid May (v1.2.0 around May 3–11), building on stable v1.0 from late 2025
+- Production reliability focus for long-running agent workflows
+
+Relevance for the-forge: DeltaChannel pattern and per-node timeouts are architectural patterns worth considering for the-forge's agent execution engine.
+
+### No Other New Developments
+
+Quiet overnight. All May 20–21 developments fully covered across 9 sweeps. Next significant updates expected during business hours (EU/US morning).
+
+### Sources
+
+- https://releasebot.io/updates/langchain-ai
+- https://brightdata.com/blog/ai/best-ai-agent-frameworks
