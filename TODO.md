@@ -138,7 +138,7 @@ All 18 utility packages implemented and tested.
 - [x] Multi-tenancy in `forge serve`
 - [x] Data residency controls
 - [x] Dead letter queue for failed tasks
-- [ ] Jira/Linear/Notion integration
+- [x] Jira/Linear/Notion integration
 - [x] Git worktree auto-management for parallel agents
 - [x] Docker Compose integration for test environments
 
@@ -587,3 +587,21 @@ All 18 utility packages implemented and tested.
 - [ ] Multi-agent agreement: blast + fuse + consensus + debate → internal/agreement
 - [ ] Continue: security hardening (input validation, sanitization)
 - [ ] Continue: docs site
+
+## Phase 9: Trust & Memory (From Brainstorm #16, 2026-05-21)
+
+### Trust Infrastructure (High Priority — addresses 29% trust gap)
+- [ ] `forge trust report` — aggregate trust score (0-100) from test/undo/review/guard/cost signals
+- [ ] `forge trust policy` — enforceable trust thresholds for auto-merge, production deploy, etc.
+- [ ] `forge mcp search` — universal MCP server discovery across registries (official, Smithery, Glama.ai, Cline)
+- [ ] `forge mcp audit` — MCP server security audit (SBOM, CVE, permissions, SAFE-MCP checks)
+
+### Memory Architecture Alignment (Medium Priority)
+- [ ] Four-tier memory refactor: working/semantic/procedural/state under internal/memory
+- [ ] `forge memory curate` — write-time curation pipeline (add/update/delete/none) vs append-only
+
+### Strategic Bridges (Later Phase)
+- [ ] `forge bridge openai` — OpenAI Agents SDK interoperability
+- [ ] `forge bridge anthropic` — Claude Agent SDK interoperability
+- [ ] `forge bridge google` — Google ADK interoperability
+- [ ] `forge stack validate` — cross-SDK compatibility checker

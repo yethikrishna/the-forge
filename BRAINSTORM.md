@@ -3379,3 +3379,116 @@ The brainstorm cron has been running every ~45 minutes. In the time between sess
 **My recommendation: Option B.** Keep a reduced-frequency competitive watch but stop the ideation treadmill.
 
 *— Session #15 complete. Recommending frequency reduction or termination. —*
+
+---
+
+## 2026-05-21 08:01 UTC — Brainstorm Session #16
+
+*Focused session — competitive intelligence + actionable features based on new research.*
+
+---
+
+### Signal 1: 4% of GitHub Commits — Forge Needs a Trust Metric
+
+Claude Code writes ~4% of all public GitHub commits. 84% of devs use AI coding daily but only 29% trust the output. The trust gap is widening, not closing.
+
+**B34. `forge trust report` — Trust Score Dashboard**
+- Aggregate trust signals from existing Forge subsystems:
+  - `forge test` pass rate → quality signal
+  - `forge undo` frequency → correction signal (high undo = low trust)
+  - `forge review` severity scores → code quality signal
+  - `forge guard` block rate → risk signal
+  - `forge cost` anomaly rate → reliability signal
+- Output: single 0-100 trust score with breakdown by dimension
+- `forge trust report --period week` → weekly trend
+- Enterprise hook: auditors ask "do you trust your AI agents?" — Forge gives a quantified answer
+- Differentiator: nobody else measures agent trust holistically
+
+**B35. `forge trust policy` — Enforceable Trust Thresholds**
+- Define minimum trust scores for different operations:
+  - `forge trust policy set --auto-merge 85` — only auto-merge if trust ≥ 85
+  - `forge trust policy set --production-deploy 95` — higher bar for prod
+- If trust drops below threshold, require human approval or auto-rollback
+- This is the governance answer to "29% trust"
+
+---
+
+### Signal 2: Layered Memory Architecture — Forge Memory Upgrade
+
+The 2026 standard is 4-layer: working, semantic, procedural, system-of-record. Forge's `internal/memory` currently does semantic search + persistence but doesn't separate these concerns.
+
+**B36. Memory Layer Refactor — Four-Tier Architecture**
+- `internal/memory/working` — in-context conversation buffer + summaries (ephemeral)
+- `internal/memory/semantic` — vector embeddings + similarity search (existing, enhanced)
+- `internal/memory/procedural` — tool schemas, workflow patterns, agent capabilities (new)
+- `internal/memory/state` — structured authoritative state (SQL-backed, facts/entities/transactions)
+- Migration: existing `internal/memory` becomes `internal/memory/semantic` with facade for backward compat
+- Why: aligns with production patterns from Mem0, Letta, and Continuum Memory research
+
+**B37. `forge memory curate` — Write-Time Memory Curation**
+- Instead of append-only, add a curation pipeline:
+  - ADD new facts
+  - UPDATE existing facts (contradiction resolution)
+  - DELETE stale/wrong facts
+  - NONE (skip, not worth storing)
+- Run automatically after each agent session
+- Fights memory pollution — the #1 complaint about persistent agent memory
+- Aligns with Mem0's add/update/delete loop pattern
+
+---
+
+### Signal 3: Big Tech SDK Convergence — Forge as the Glue
+
+All 4 major labs have agent SDKs. Forge can't be the 5th framework. It must be the **universal bridge** that makes them interoperate.
+
+**B38. `forge bridge openai` / `forge bridge anthropic` / `forge bridge google` — Lab SDK Bridges**
+- OpenAI Agents SDK → Forge agent (translate handoffs to Forge orchestration)
+- Claude Agent SDK → Forge agent (translate MCP tool use to Forge tool registry)
+- Google ADK → Forge agent (translate hierarchical trees to Forge agent trees)
+- All behind `forge bridge <sdk>` — unified interface to all lab SDKs
+- Use case: "I have OpenAI agents and Claude agents and need them to collaborate" → Forge bridges them
+- This is the "USB hub" positioning: MCP is USB-C, Forge is the hub that connects everything
+
+**B39. `forge stack validate` — Cross-SDK Compatibility Checker**
+- Validate that agent definitions work across multiple SDKs
+- Detect: incompatible tool schemas, conflicting model requirements, protocol mismatches
+- Output: compatibility matrix + suggested fixes
+- Enterprise use: "Will our OpenAI agents work with our new Google ADK deployment?"
+
+---
+
+### Signal 4: MCP Marketplace Explosion — Forge as Registry Client
+
+9,400+ MCP servers. Multiple marketplaces (official, Smithery, Cline, Databricks). Developers need a unified discovery and governance layer.
+
+**B40. `forge mcp search` — Universal MCP Server Discovery**
+- Search across all registries (official MCP Registry, Smithery, Glama.ai, Cline Marketplace) in one query
+- Filter by: category (connector/dev tool/data/system), governance status, trust score, maintainer
+- Auto-install: `forge mcp search stripe --install` → finds best Stripe MCP server, installs, configures
+- Governance integration: `forge mcp search stripe --trust-verified` → only show servers that pass `forge harden`
+
+**B41. `forge mcp audit` — MCP Server Security Audit**
+- Given an MCP server (URL or package), run security checks:
+  - SBOM generation (dependencies)
+  - Known CVE scan
+  - Permission analysis (what can this server access?)
+  - Supply chain provenance (who maintains it, how many contributors)
+  - SAFE-MCP technique coverage (test against known attack patterns)
+- Output: security score 0-100 with detailed findings
+- Enterprise: "Before we install this MCP server, is it safe?"
+
+---
+
+### Assessment — Confirming Session #15 Diminishing Returns
+
+This session produced 8 ideas (B34-B41). Session #15 recommended reducing brainstorm frequency. Reaffirming:
+
+- **Ideas are not the bottleneck.** 200+ in backlog, ~50 unimplemented TODOs.
+- **Execution, distribution, and consolidation are the bottlenecks.**
+- **Recommendation:** Convert this cron to competitive-intelligence-only (every 6 hours, skip if no new signals).
+
+Actionable items from this session:
+- B34-B35 (trust metrics) — high value, builds on existing subsystems
+- B36-B37 (memory refactor) — aligns with production standard, needs internal refactoring
+- B40-B41 (MCP discovery/audit) — directly addresses 9,400 server ecosystem pain point
+- B38-B39 (SDK bridges) — strategic positioning, later-phase work

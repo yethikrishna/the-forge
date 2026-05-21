@@ -855,3 +855,70 @@ Key distinction: **RAG ≠ agent memory**. RAG is reactive/stateless per query. 
 - **Cognee** — Graph-native memory
 - **Hybrid stores recommended**: TiDB (SQL + vector + HTAP), Redis (vector + caching), SurrealDB (multi-model ACID) reduce complexity vs separate systems. [Source](https://www.pingcap.com/compare/best-database-for-ai-agents/)
 [Source](https://atlan.com/know/best-ai-agent-memory-frameworks-2026/)
+
+---
+
+## 2026-05-21 08:01 UTC — Research Update #16
+
+### 1. Enterprise AI Coding Agent Market — Gartner Data
+
+- **$9.8–11B annualized spend** as of April 2026 on enterprise AI coding agents
+- **90% of engineering leaders** report average **19.3% productivity gain**
+- Pricing shifting firmly toward **usage-based models** (Copilot June 2026, Cursor already moved)
+- Implication: cost transparency and budget controls (Forge's `forge cost`) are a direct market need, not a nice-to-have
+- [Source](https://www.gartner.com/en/articles/enterprise-ai-coding-agent-market)
+
+### 2. Agent Memory Architecture — Layered Stack Emerging as Standard
+
+2026 production standard for agent memory is a **four-layer stack** (not just RAG):
+1. **Working/Episodic** — LLM context window (conversation buffer, summaries, current task state)
+2. **Semantic/Long-term** — Vector DB embeddings (persistent facts, experiences, knowledge)
+3. **Procedural/Tool** — Schemas, workflows, agent capabilities
+4. **System of Record** — Structured data (SQL/graph/KV for authoritative state: profiles, entities, transactions)
+
+Key insight: **RAG ≠ agent memory**. RAG is reactive/stateless per query. Agent memory maintains evolving internal state.
+
+**Emerging research:** Continuum Memory Architectures ([arxiv.org/html/2601.09913v1](https://arxiv.org/html/2601.09913v1)) — evolving graph-structured substrates with temporal chaining and consolidation beyond simple append-only vector stores.
+
+**Hybrid storage dominance:** Vector + graph + structured KV. Write-time curation (add/update/delete loops) over pure append-only to fight memory pollution. Mem0 (~48K GitHub stars) is the most adopted drop-in memory layer with 21+ framework integrations.
+
+[Source](https://medium.com/data-science-collective/designing-memory-architecture-for-ai-agents-27d53bd68c31) [Source](https://mem0.ai/blog/state-of-ai-agent-memory-2026) [Source](https://pub.towardsai.net/the-state-of-ai-agent-memory-in-2026-what-the-research-actually-shows-0b77063c2c2b)
+
+### 3. Big Tech Agent SDK Convergence
+
+All four major labs now have official agent SDKs — this is new in 2026:
+
+| Lab | SDK | Key Pattern |
+|-----|-----|-------------|
+| OpenAI | Agents SDK (Mar 2025) | Handoff-based multi-agent |
+| Google | ADK + Antigravity SDK | Hierarchical agent trees |
+| Anthropic | Claude Agent SDK | MCP-native tool use |
+| Microsoft | Agent Framework 1.0 GA (Apr 2026) | Event-driven, AutoGen + Semantic Kernel unified |
+
+**Implication for Forge:** Forge can't compete as "yet another agent SDK." Its differentiation must be: **multi-provider, self-hosted, governance-first orchestration layer that works with all of these.** The universal bridge, not the 5th framework.
+
+### 4. Claude Code Adoption Signal
+
+- Claude Code reportedly writes **~4% of all public GitHub commits** (early 2026 estimate)
+- 84% of devs now use AI coding tools daily, but only **29% trust** what they ship
+- Trust gap = Forge's governance/verification wedge
+
+[Source](https://medium.com/@chaos.architect25/the-best-ai-coding-tools-of-may-2026-cf2db2804a0f) [Source](https://blog.stackademic.com/84-of-developers-use-ai-coding-tools-in-april-2026-only-29-trust-what-they-ship-d0cb7ec9320a)
+
+### 5. SAFE-MCP + NSA Guidance — Complementary Governance Stack
+
+- **SAFE-MCP**: Community framework (MITRE ATT&CK model) with 80+ attack techniques across 14 tactic categories. Adopted by Linux Foundation + OpenID Foundation.
+- **NSA CSI**: Implementation-focused design considerations (sandboxing, cryptographic signing, schema validation, SIEM logging, network scanning)
+- Combined pattern: SAFE-MCP for threat taxonomy, NSA for implementation controls
+- Forge relevance: `forge harden` should map to both SAFE-MCP techniques and NSA recommendations
+
+[Source](https://thenewstack.io/safe-mcp-a-community-built-framework-for-ai-agent-security/) [Source](https://www.nsa.gov/Portals/75/documents/Cybersecurity/CSI_MCP_SECURITY.pdf)
+
+### 6. MCP Ecosystem — 9,400+ Public Servers
+
+- ~9,400 distinct public MCP servers tracked as of mid-April 2026
+- Tool taxonomy: Connectors/SaaS (~38%), Developer tooling (~27%), Data/search (~18%), System/browser (~11%), Creative (~6%)
+- Multiple marketplace infrastructures matured: Official MCP Registry, MCP Market, Glama.ai, Cline Marketplace, Databricks Marketplace, Smithery
+- Databricks Marketplace launched governed MCP server marketplace for enterprise — "register once, govern everywhere" pattern
+
+[Source](https://www.digitalapplied.com/blog/mcp-ecosystem-h1-2026-retrospective-adoption-data-points) [Source](https://www.databricks.com/blog/mcp-marketplace-brings-real-time-intelligence-agentic-applications)
