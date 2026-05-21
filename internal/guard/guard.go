@@ -178,6 +178,7 @@ func (g *Guard) Check(action Action) Verdict {
 	defer g.mu.Unlock()
 
 	verdict := Verdict{Allowed: true}
+	explicitlyAllowed := false
 
 	// Sort rules by priority (already sorted in ListRules)
 	rules := make([]*Rule, 0, len(g.rules))
@@ -198,9 +199,13 @@ func (g *Guard) Check(action Action) Verdict {
 		switch rule.Type {
 		case RuleAllow:
 			verdict.Allowed = true
+			explicitlyAllowed = true
 			verdict.RuleIDs = append(verdict.RuleIDs, rule.ID)
 
 		case RuleBlock:
+			if explicitlyAllowed {
+				continue // allow rule overrides
+			}
 			verdict.Allowed = false
 			verdict.Reason = rule.Description
 			verdict.RuleIDs = append(verdict.RuleIDs, rule.ID)

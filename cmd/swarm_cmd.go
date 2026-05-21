@@ -172,5 +172,4 @@ func init() {
 	swarmCmd.AddCommand(swarmListCmd)
 	swarmCmd.AddCommand(swarmStatsCmd)
 
-	rootCmd.AddCommand(swarmCmd)
 }
