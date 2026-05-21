@@ -272,7 +272,7 @@ All 18 utility packages implemented and tested.
 ### The Impossible-Until-Now
 - [ ] `forge simulate` — test agents on historical data (bug reports, reviews, cost patterns)
 - [ ] `forge translate-pipeline` — natural language → forge.yaml and vice versa
-- [ ] `forge refactor` — whole-codebase dependency-aware refactoring with migration plans
+- [x] `forge refactor` — whole-codebase dependency-aware refactoring with migration plans
 - [ ] `forge clone-behavior` — record human task → create agent that repeats it
 - [ ] `forge quantum` — parallel universe exploration (N approaches, pick the best)
 - [ ] Cross-package event correlation — correlate anomalies across cost/health/lifecycle/replay
