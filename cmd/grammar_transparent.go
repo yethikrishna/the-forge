@@ -26,7 +26,7 @@ func grammarCmd() *cobra.Command {
 				return nil
 			}
 			// List all patterns
-			fmt.Println("Registered command patterns:\n")
+			fmt.Println("Registered command patterns:")
 			for _, noun := range grammarAuditor.Nouns() {
 				verbs := grammarAuditor.VerbsFor(noun)
 				fmt.Printf("  %-12s %s\n", noun, strings.Join(verbs, ", "))

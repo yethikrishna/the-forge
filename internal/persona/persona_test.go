@@ -1,6 +1,7 @@
 package persona
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -285,6 +286,3 @@ func TestLoadExistingPersonas(t *testing.T) {
 	}
 }
 
-func jsonMarshalIndent(v interface{}, prefix, indent string) ([]byte, error) {
-	return json.MarshalIndent(v, prefix, indent)
-}

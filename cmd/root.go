@@ -119,6 +119,7 @@ The wielder and the sword are one.`,
 		previewCmd(),
 		grammarCmd(),
 		transparentCmd(),
+		autodetectCmd(),
 		ciCmd(),
 		errteachCmd(),
 		notifyCmd(),
@@ -145,6 +146,8 @@ The wielder and the sword are one.`,
 		eventbusCmd,
 		handoffCmd,
 		gateCmd,
+		stagCmd,
+		personaCmd,
 	)
 	return root.ExecuteContext(ctx)
 }
