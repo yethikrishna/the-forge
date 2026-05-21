@@ -96,9 +96,8 @@ func TestMCPComposeAddServer(t *testing.T) {
 }
 
 func TestMCPComposeRemoveServer(t *testing.T) {
-	gw := compose.NewComposeGateway(compose.ComposeConfig{
-		Servers: []compose.ServerConfig{{Command: "test"}},
-	})
+	gw := compose.NewComposeGateway(compose.ComposeConfig{})
+	gw.AddServer(compose.ServerConfig{Name: "rm-srv", Command: "test"})
 	err := gw.RemoveServer("rm-srv")
 	if err != nil {
 		t.Fatalf("RemoveServer error: %v", err)

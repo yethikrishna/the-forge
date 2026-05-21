@@ -190,8 +190,13 @@ func TestBenchmarkHistory(t *testing.T) {
 	runner := benchmark.NewRunner(t.TempDir())
 	runner.WithScorer(&benchmark.ContainsScorer{})
 
-	bm := benchmark.Benchmark{Name: "test", Prompt: "test", Expected: "test"}
-	runner.RunBenchmark(bm, "agent", "model", "test", time.Second, 0.01)
+	// RunBenchmark adds results internally via RunAll
+	bms := []benchmark.Benchmark{
+		{Name: "test", Prompt: "test", Expected: "test"},
+	}
+	runner.RunAll(bms, "agent", "model", func(bm benchmark.Benchmark) (string, time.Duration, float64, error) {
+		return "test output", time.Second, 0.01, nil
+	})
 
 	history := runner.History()
 	if len(history) < 1 {
