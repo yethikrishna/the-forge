@@ -1,7 +1,7 @@
 # Trend Report — The Forge
 
-**Generated:** 2026-05-20 23:42 UTC  
-**Previous:** 2026-05-20 23:14 UTC  
+**Generated:** 2026-05-21 00:11 UTC  
+**Previous:** 2026-05-20 23:42 UTC  
 **Purpose:** Cross-reference current market signals with The Forge roadmap to prioritize next-phase features.
 
 ---
@@ -158,7 +158,7 @@ Three significant new signals emerged today:
 
 | Competitor | What They Do | Forge's Counter |
 |-----------|-------------|-----------------|
-| **Google Antigravity 2.0** | Desktop agent orchestrator, sub-agents, parallel workflows | Local-first, multi-provider (not Gemini-only), self-hosted |
+| **Google Antigravity 2.0 + Gemini 3.5** | Desktop agent orchestrator, sub-agents, parallel workflows, built-in sandboxing | Local-first, multi-provider (not Gemini-only), self-hosted |
 | **Warp Oz** | Cloud agent orchestration, sandboxes, audit logs | No cloud lock-in, single binary, self-hosted |
 | **Microsoft AF 1.0** | Enterprise multi-agent (.NET/Python), Azure-native | Go binary, lightweight, no Azure dependency |
 | **Mastra/VoltAgent** | TS-native orchestration + observability | No Node.js required, binary distribution |
@@ -195,7 +195,8 @@ forge init --local        # zero cloud, zero cost
 | 1 | 2026-05-20 20:07 | Baseline: MCP, Mastra, VoltAgent, enterprise adoption |
 | 2 | 2026-05-20 21:20 | Warp Oz, Microsoft AF 1.0, MCP 110M downloads, codegraph |
 | 3 | 2026-05-20 23:14 | Gartner IDE prediction, Antigravity 2.0, Command A+, Optimizely growth |
-| 4 | 2026-05-20 23:42 | Anthropic Dreaming/Outcomes (Code with Claude 2026) — no other new signals |
+| 4 | 2026-05-20 23:42 | Anthropic Dreaming/Outcomes (Code with Claude 2026) |
+| 5 | 2026-05-21 00:11 | Gemini 3.5 paired with Antigravity 2.0 (I/O on-demand); no major new announcements |
 
 ---
 
