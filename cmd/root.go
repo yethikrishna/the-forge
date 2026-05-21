@@ -131,6 +131,7 @@ The wielder and the sword are one.`,
 		codegraphCmd(),
 		forgefileCmd(),
 		dreamReviewCmd(),
+		rubricCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }

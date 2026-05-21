@@ -320,3 +320,38 @@ All 18 utility packages implemented and tested.
 - [ ] Agent quality corpus — opt-in data collection for `forge tune`/`forge breed` improvement
 - [ ] `.devcontainer/` for GitHub Codespaces zero-install trial
 - [ ] "Forge in 60 Seconds" demo video — terminal recording, under 60s from install to value
+
+## Phase 5.5: Platform Economics (From Brainstorm #8)
+
+- [ ] Agent-as-a-Service hosting — `forge serve --public` with usage billing, API keys, rate limiting
+- [ ] White-label Forge — `forge build white-label` for companies to rebrand and resell
+- [ ] Agent API Gateway — `forge gateway` exposes agents as REST APIs with auth, billing, CORS
+- [ ] Agent monetization infrastructure — Stripe integration, freemium tiers, invoice generation
+
+## Phase 5.5: Strategic Roadmap — Top 10 Priorities (Definitive)
+
+1. [ ] **Package consolidation** — 148 → ~80 packages, freeze Phase 0
+2. [ ] **60-second demo video** — record `brew install` → `forge quickstart` → value, post everywhere
+3. [ ] **Web dashboard (real-time)** — WebSocket monitoring, cost charts, replay, traces
+4. [ ] **Plugin marketplace MVP** — git-based registry, publish/install/version
+5. [ ] **Provider resilience** — complete circuit breaker + auto-fallback + incident reports
+6. [ ] **forge.yaml schema + IDE autocomplete** — JSON Schema, VS Code association, `forge config validate`
+7. [ ] **Documentation website** — command reference, tutorials, architecture guide, comparisons
+8. [ ] **Cross-package event correlation** — unified incident analysis across all subsystems
+9. [ ] **Agent trust scores + permission scoping** — trust 0-100, `--scope=read-only`, action preview
+10. [ ] **Forge Cloud sync (MVP)** — sync agents/memory/pipelines across machines
+
+## Anti-Roadmap — Explicitly NOT Building (Yet)
+- ~~`forge canvas`~~ → CLI-first; visual builders are a different product
+- ~~K8s Operator / Terraform Provider~~ → Enterprise, after GA
+- ~~WASM plugins~~ → Go plugins first; WASM ecosystem immature
+- ~~A2A protocol~~ → MCP winning; A2A adoption slower than expected
+- ~~ForgeConf~~ → Needs 5K+ community first
+- ~~`forge desktop` (Electron)~~ → Web dashboard + CLI cover 95%
+
+## Revenue Roadmap
+- [ ] Month 1-3: Free OSS + GitHub Sponsors
+- [ ] Month 4-6: Pro tier ($20/mo) — cloud sync, analytics, team features
+- [ ] Month 6-9: Marketplace (30% of agent/plugin sales)
+- [ ] Month 9-12: Enterprise (per-seat annual license)
+- [ ] Month 12+: Platform (Agent-as-a-Service hosting fees)
