@@ -6,6 +6,7 @@
 package integration
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -180,8 +181,7 @@ func (m *Manager) Disconnect(id string) error {
 }
 
 // FetchTasks retrieves tasks from a connection.
-// In production, this would make API calls. Here it returns
-// cached/simulated data for the CLI workflow.
+// Tries the live provider first, falls back to local cache.
 func (m *Manager) FetchTasks(connID string) ([]*Task, error) {
 	m.mu.RLock()
 	c, ok := m.connections[connID]
@@ -190,42 +190,33 @@ func (m *Manager) FetchTasks(connID string) ([]*Task, error) {
 		return nil, fmt.Errorf("connection %q not found", connID)
 	}
 
+	// Try live provider
+	client := NewProviderClient(c.Config.Provider)
+	if client != nil {
+		tasks, err := client.FetchTasks(context.Background(), c, TaskFilters{})
+		if err == nil {
+			// Cache results locally
+			m.cacheTasks(connID, tasks)
+			now := time.Now()
+			c.LastSync = &now
+			m.save(c)
+			return tasks, nil
+		}
+		// Provider error — fall back to cache
+	}
+
 	// Check for cached tasks
-	cacheDir := filepath.Join(m.dir, connID, "tasks")
-	entries, err := os.ReadDir(cacheDir)
-	if err != nil {
-		return nil, nil // no cached tasks
-	}
-
-	var tasks []*Task
-	for _, e := range entries {
-		if !strings.HasSuffix(e.Name(), ".json") {
-			continue
-		}
-		data, err := os.ReadFile(filepath.Join(cacheDir, e.Name()))
-		if err != nil {
-			continue
-		}
-		var t Task
-		if err := json.Unmarshal(data, &t); err != nil {
-			continue
-		}
-		tasks = append(tasks, &t)
-	}
-
-	now := time.Now()
-	c.LastSync = &now
-	m.save(c)
-
-	return tasks, nil
+	return m.fetchCachedTasks(connID, c)
 }
 
 // CreateTask creates a task in the connected provider.
+// Tries the live provider first, caches locally as fallback.
 func (m *Manager) CreateTask(connID string, task *Task) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if _, ok := m.connections[connID]; !ok {
+	c, ok := m.connections[connID]
+	if !ok {
 		return fmt.Errorf("connection %q not found", connID)
 	}
 
@@ -235,6 +226,16 @@ func (m *Manager) CreateTask(connID string, task *Task) error {
 	task.UpdatedAt = time.Now()
 	if task.CreatedAt.IsZero() {
 		task.CreatedAt = time.Now()
+	}
+
+	// Try live provider
+	client := NewProviderClient(c.Config.Provider)
+	if client != nil {
+		providerKey, err := client.CreateTask(context.Background(), c, task)
+		if err == nil {
+			task.ProviderKey = providerKey
+		}
+		// Cache regardless — even on provider error we save locally
 	}
 
 	cacheDir := filepath.Join(m.dir, connID, "tasks")
@@ -248,11 +249,13 @@ func (m *Manager) CreateTask(connID string, task *Task) error {
 }
 
 // UpdateTask updates a task.
+// Applies the mutation function, pushes to the live provider, and updates cache.
 func (m *Manager) UpdateTask(connID, taskID string, fn func(*Task) error) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if _, ok := m.connections[connID]; !ok {
+	c, ok := m.connections[connID]
+	if !ok {
 		return fmt.Errorf("connection %q not found", connID)
 	}
 
@@ -269,14 +272,51 @@ func (m *Manager) UpdateTask(connID, taskID string, fn func(*Task) error) error 
 		return err
 	}
 	task.UpdatedAt = time.Now()
+
+	// Try live provider
+	client := NewProviderClient(c.Config.Provider)
+	if client != nil {
+		_ = client.UpdateTask(context.Background(), c, &task)
+	}
+
 	updated, _ := json.MarshalIndent(&task, "", "  ")
 	return os.WriteFile(filepath.Join(cacheDir, taskID+".json"), updated, 0o644)
 }
 
 // AddComment adds a comment to a task.
 func (m *Manager) AddComment(connID, taskID, author, body string) error {
+	m.mu.RLock()
+	c, ok := m.connections[connID]
+	m.mu.RUnlock()
+	if !ok {
+		return fmt.Errorf("connection %q not found", connID)
+	}
+
+	// Find the task to get the provider key
+	cacheDir := filepath.Join(m.dir, connID, "tasks")
+	data, err := os.ReadFile(filepath.Join(cacheDir, taskID+".json"))
+	if err != nil {
+		return fmt.Errorf("task %q not found", taskID)
+	}
+	var task Task
+	if err := json.Unmarshal(data, &task); err != nil {
+		return err
+	}
+
+	// Try live provider
+	providerKey := task.ProviderKey
+	if providerKey == "" {
+		providerKey = taskID
+	}
+	client := NewProviderClient(c.Config.Provider)
+	if client != nil {
+		if err := client.AddComment(context.Background(), c, providerKey, author, body); err == nil {
+			return nil
+		}
+	}
+
+	// Fallback: store as custom field
 	return m.UpdateTask(connID, taskID, func(t *Task) error {
-		// Comments are stored as custom fields for simplicity
 		if t.CustomFields == nil {
 			t.CustomFields = make(map[string]string)
 		}
@@ -295,6 +335,51 @@ func (m *Manager) LinkTask(connID, taskID, sessionID string) error {
 		t.CustomFields["forge_session"] = sessionID
 		return nil
 	})
+}
+
+// cacheTasks writes tasks to the local cache.
+func (m *Manager) cacheTasks(connID string, tasks []*Task) {
+	cacheDir := filepath.Join(m.dir, connID, "tasks")
+	os.MkdirAll(cacheDir, 0o755)
+	for _, t := range tasks {
+		data, err := json.MarshalIndent(t, "", "  ")
+		if err != nil {
+			continue
+		}
+		filename := t.ID + ".json"
+		if filename == ".json" {
+			filename = t.ProviderKey + ".json"
+		}
+		os.WriteFile(filepath.Join(cacheDir, filename), data, 0o644)
+	}
+}
+
+// fetchCachedTasks reads tasks from the local cache.
+func (m *Manager) fetchCachedTasks(connID string, c *Connection) ([]*Task, error) {
+	cacheDir := filepath.Join(m.dir, connID, "tasks")
+	entries, err := os.ReadDir(cacheDir)
+	if err != nil {
+		return nil, nil
+	}
+	var tasks []*Task
+	for _, e := range entries {
+		if !strings.HasSuffix(e.Name(), ".json") {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(cacheDir, e.Name()))
+		if err != nil {
+			continue
+		}
+		var t Task
+		if err := json.Unmarshal(data, &t); err != nil {
+			continue
+		}
+		tasks = append(tasks, &t)
+	}
+	now := time.Now()
+	c.LastSync = &now
+	m.save(c)
+	return tasks, nil
 }
 
 // FormatTask renders a task for display.
