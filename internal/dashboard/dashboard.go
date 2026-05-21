@@ -26,6 +26,7 @@ type DashboardServer struct {
 	mu        sync.RWMutex
 	running   bool
 	server    *http.Server
+	handler   http.Handler
 }
 
 // Store provides data for the dashboard.
@@ -54,38 +55,38 @@ type AgentStatus struct {
 
 // SessionInfo represents a completed or running session.
 type SessionInfo struct {
-	ID           string    `json:"id"`
-	AgentID      string    `json:"agent_id"`
-	AgentName    string    `json:"agent_name"`
-	Model        string    `json:"model"`
-	Status       string    `json:"status"`
-	StartedAt    time.Time `json:"started_at"`
-	FinishedAt   *time.Time `json:"finished_at,omitempty"`
-	Duration     string    `json:"duration"`
-	TokensIn     int64     `json:"tokens_in"`
-	TokensOut    int64     `json:"tokens_out"`
-	Cost         float64   `json:"cost"`
-	OutputPreview string   `json:"output_preview,omitempty"`
+	ID            string     `json:"id"`
+	AgentID       string     `json:"agent_id"`
+	AgentName     string     `json:"agent_name"`
+	Model         string     `json:"model"`
+	Status        string     `json:"status"`
+	StartedAt     time.Time  `json:"started_at"`
+	FinishedAt    *time.Time `json:"finished_at,omitempty"`
+	Duration      string     `json:"duration"`
+	TokensIn      int64      `json:"tokens_in"`
+	TokensOut     int64      `json:"tokens_out"`
+	Cost          float64    `json:"cost"`
+	OutputPreview string    `json:"output_preview,omitempty"`
 }
 
 // CostSummary represents cost data for a period.
 type CostSummary struct {
-	Period       string           `json:"period"`
-	TotalCost    float64          `json:"total_cost"`
-	TotalTokens  int64            `json:"total_tokens"`
-	ByModel      []ModelCost      `json:"by_model"`
-	ByAgent      []AgentCost      `json:"by_agent"`
-	DailyCosts   []DailyCost      `json:"daily_costs"`
-	BudgetUsed   float64          `json:"budget_used"`
-	BudgetTotal  float64          `json:"budget_total"`
+	Period      string      `json:"period"`
+	TotalCost   float64     `json:"total_cost"`
+	TotalTokens int64       `json:"total_tokens"`
+	ByModel     []ModelCost `json:"by_model"`
+	ByAgent     []AgentCost `json:"by_agent"`
+	DailyCosts  []DailyCost `json:"daily_costs"`
+	BudgetUsed  float64     `json:"budget_used"`
+	BudgetTotal float64     `json:"budget_total"`
 }
 
 // ModelCost is cost breakdown by model.
 type ModelCost struct {
-	Model     string  `json:"model"`
-	Cost      float64 `json:"cost"`
-	Tokens    int64   `json:"tokens"`
-	Requests  int     `json:"requests"`
+	Model    string  `json:"model"`
+	Cost     float64 `json:"cost"`
+	Tokens   int64   `json:"tokens"`
+	Requests int     `json:"requests"`
 }
 
 // AgentCost is cost breakdown by agent.
@@ -107,21 +108,21 @@ type DailyCost struct {
 
 // TraceSummary represents trace data.
 type TraceSummary struct {
-	TotalTraces   int            `json:"total_traces"`
-	AvgDuration   float64        `json:"avg_duration_ms"`
-	ErrorRate     float64        `json:"error_rate"`
-	ByOperation   []OpTrace      `json:"by_operation"`
-	RecentTraces  []TraceEntry   `json:"recent_traces"`
+	TotalTraces  int          `json:"total_traces"`
+	AvgDuration  float64      `json:"avg_duration_ms"`
+	ErrorRate    float64      `json:"error_rate"`
+	ByOperation  []OpTrace    `json:"by_operation"`
+	RecentTraces []TraceEntry `json:"recent_traces"`
 }
 
 // OpTrace is trace data grouped by operation.
 type OpTrace struct {
-	Operation  string  `json:"operation"`
-	Count      int     `json:"count"`
-	AvgMs      float64 `json:"avg_ms"`
-	ErrorRate  float64 `json:"error_rate"`
-	P50Ms      float64 `json:"p50_ms"`
-	P99Ms      float64 `json:"p99_ms"`
+	Operation string  `json:"operation"`
+	Count     int     `json:"count"`
+	AvgMs     float64 `json:"avg_ms"`
+	ErrorRate float64 `json:"error_rate"`
+	P50Ms     float64 `json:"p50_ms"`
+	P99Ms     float64 `json:"p99_ms"`
 }
 
 // TraceEntry is a single trace.
@@ -147,10 +148,10 @@ type DashboardMetrics struct {
 
 // DashboardEvent is a real-time event pushed to the dashboard.
 type DashboardEvent struct {
-	Type      string    `json:"type"` // agent_start, agent_stop, cost_update, error, trace
-	AgentID   string    `json:"agent_id,omitempty"`
-	Message   string    `json:"message"`
-	Timestamp time.Time `json:"timestamp"`
+	Type      string      `json:"type"` // agent_start, agent_stop, cost_update, error, trace
+	AgentID   string      `json:"agent_id,omitempty"`
+	Message   string      `json:"message"`
+	Timestamp time.Time   `json:"timestamp"`
 	Data      interface{} `json:"data,omitempty"`
 }
 
@@ -297,23 +298,18 @@ func NewDashboardServer(addr string, store Store) *DashboardServer {
 		"div": func(a, b float64) float64 { return a / b },
 	}).ParseFS(staticFS, "static/*.html"))
 
-	return &DashboardServer{
+	ds := &DashboardServer{
 		addr:      addr,
 		store:     store,
 		hub:       NewWebSocketHub(),
 		templates: templates,
 	}
+	ds.handler = ds.buildHandler()
+	return ds
 }
 
-// Start starts the dashboard server.
-func (ds *DashboardServer) Start() error {
-	ds.mu.Lock()
-	defer ds.mu.Unlock()
-
-	if ds.running {
-		return fmt.Errorf("dashboard already running")
-	}
-
+// buildHandler creates the HTTP handler.
+func (ds *DashboardServer) buildHandler() http.Handler {
 	mux := http.NewServeMux()
 
 	// Static files
@@ -336,9 +332,21 @@ func (ds *DashboardServer) Start() error {
 	// WebSocket
 	mux.HandleFunc("/ws", ds.handleWebSocket)
 
+	return mux
+}
+
+// Start starts the dashboard server.
+func (ds *DashboardServer) Start() error {
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+
+	if ds.running {
+		return fmt.Errorf("dashboard already running")
+	}
+
 	ds.server = &http.Server{
 		Addr:    ds.addr,
-		Handler: mux,
+		Handler: ds.handler,
 	}
 
 	go ds.hub.Run()
@@ -378,6 +386,11 @@ func (ds *DashboardServer) IsRunning() bool {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 	return ds.running
+}
+
+// Handler returns the HTTP handler (for testing).
+func (ds *DashboardServer) Handler() http.Handler {
+	return ds.handler
 }
 
 // ---- Page Handlers ----

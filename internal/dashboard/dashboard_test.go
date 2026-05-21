@@ -119,7 +119,7 @@ func TestDashboardServerAPIs(t *testing.T) {
 	for _, tt := range tests {
 		req := httptest.NewRequest("GET", tt.path, nil)
 		rec := httptest.NewRecorder()
-		srv.server.Handler.ServeHTTP(rec, req)
+		srv.Handler().ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusOK {
 			t.Errorf("%s: expected 200, got %d", tt.path, rec.Code)
@@ -140,7 +140,7 @@ func TestDashboardServerPages(t *testing.T) {
 	for _, path := range tests {
 		req := httptest.NewRequest("GET", path, nil)
 		rec := httptest.NewRecorder()
-		srv.server.Handler.ServeHTTP(rec, req)
+		srv.Handler().ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusOK {
 			t.Errorf("%s: expected 200, got %d", path, rec.Code)
