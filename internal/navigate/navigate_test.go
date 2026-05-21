@@ -244,8 +244,8 @@ type Thing struct{}
 
 func TestSkipDirectories(t *testing.T) {
 	dir := createTestDir(t, map[string]string{
-		"main.go":            `package main; func Main() {}`,
-		"vendor/v.go":        `package vendor; func V() {}`,
+		"main.go":            "package main\nfunc Main() {}",
+		"vendor/v.go":        "package vendor\nfunc V() {}",
 		".git/config":        `git config`,
 		"node_modules/x.js":  `function x() {}`,
 	})
