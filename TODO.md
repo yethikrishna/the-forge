@@ -305,7 +305,7 @@ All 18 utility packages implemented and tested.
 ### Governance Moat (From Brainstorm #14)
 - [ ] `forge catalog` — unified agent & tool catalog (Databricks Unity Catalog pattern, register/govern/lineage)
 - [ ] `forge govern` — composite governance scoring (0-100) + auditor-ready reports
-- [ ] `forge consent` — data usage consent management with consent receipts (GDPR)
+- [x] `forge consent` — data usage consent management with consent receipts (GDPR)
 
 ### A2A v1.0 Identity & Federation (From Brainstorm #14)
 - [ ] `forge identity` — A2A v1.0 signed Agent Cards + key management + trust tiers

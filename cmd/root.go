@@ -193,6 +193,7 @@ The wielder and the sword are one.`,
 		refactorCmd,
 		selftestCmd,
 		genealogyCmdFn(),
+		consentCmdFn(),
 	)
 	return root.ExecuteContext(ctx)
 }
