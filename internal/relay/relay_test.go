@@ -1,156 +1,258 @@
-package relay_test
+package relay
 
 import (
 	"testing"
-
-	"github.com/forge/sword/internal/relay"
+	"time"
 )
 
-func TestSubscribe(t *testing.T) {
-	r := relay.NewRelay(t.TempDir())
-	s := r.Subscribe("agent-1", "build-events", "")
-
-	if s.AgentID != "agent-1" {
-		t.Errorf("expected agent-1, got %s", s.AgentID)
+func TestNewRelay(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	if r == nil {
+		t.Fatal("NewRelay should return a relay")
 	}
-	if s.Topic != "build-events" {
-		t.Errorf("expected build-events, got %s", s.Topic)
+}
+
+func TestSendDirect(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	msg, err := r.Send(Message{From: "agent-1", To: "agent-2", Subject: "hello", Body: "world"})
+	if err != nil {
+		t.Fatalf("Send error: %v", err)
+	}
+	if msg.ID == "" {
+		t.Error("Message should have an ID")
+	}
+	if msg.State != StateQueued {
+		t.Errorf("State = %q, want %q", msg.State, StateQueued)
+	}
+}
+
+func TestReceive(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	r.Send(Message{From: "agent-1", To: "agent-2", Subject: "hello"})
+
+	msg, err := r.Receive("agent-2")
+	if err != nil {
+		t.Fatalf("Receive error: %v", err)
+	}
+	if msg == nil {
+		t.Fatal("Should receive a message")
+	}
+	if msg.Subject != "hello" {
+		t.Errorf("Subject = %q, want %q", msg.Subject, "hello")
+	}
+	if msg.State != StateDelivered {
+		t.Errorf("State = %q, want %q", msg.State, StateDelivered)
+	}
+}
+
+func TestReceiveEmpty(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	msg, _ := r.Receive("agent-1")
+	if msg != nil {
+		t.Error("Should return nil for empty queue")
+	}
+}
+
+func TestAck(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	r.Send(Message{From: "a", To: "b", Subject: "test"})
+	msg, _ := r.Receive("b")
+
+	err := r.Ack(msg.ID)
+	if err != nil {
+		t.Fatalf("Ack error: %v", err)
+	}
+
+	m, _ := r.Message(msg.ID)
+	if m.State != StateAcked {
+		t.Errorf("State = %q, want %q", m.State, StateAcked)
+	}
+}
+
+func TestAckNotFound(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	err := r.Ack("nonexistent")
+	if err == nil {
+		t.Error("Should error for nonexistent message")
+	}
+}
+
+func TestNackRetry(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	r.Send(Message{From: "a", To: "b", Subject: "test", MaxRetries: 3})
+	msg, _ := r.Receive("b")
+
+	r.Nack(msg.ID)
+
+	m, _ := r.Message(msg.ID)
+	if m.Retries != 1 {
+		t.Errorf("Retries = %d, want 1", m.Retries)
+	}
+}
+
+func TestNackDeadLetter(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	r.Send(Message{From: "a", To: "b", Subject: "test", MaxRetries: 1})
+	msg, _ := r.Receive("b")
+
+	r.Nack(msg.ID)
+
+	dl := r.DeadLetters()
+	if len(dl) != 1 {
+		t.Fatalf("DeadLetters = %d, want 1", len(dl))
+	}
+	if dl[0].State != StateDeadLetter {
+		t.Errorf("State = %q, want %q", dl[0].State, StateDeadLetter)
+	}
+}
+
+func TestSubscribe(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	sub, err := r.Subscribe("agent-1", "alerts", "")
+	if err != nil {
+		t.Fatalf("Subscribe error: %v", err)
+	}
+	if sub.AgentID != "agent-1" {
+		t.Errorf("AgentID = %q, want %q", sub.AgentID, "agent-1")
 	}
 }
 
 func TestUnsubscribe(t *testing.T) {
-	r := relay.NewRelay(t.TempDir())
-	s := r.Subscribe("agent-1", "events", "")
+	r := NewRelay(t.TempDir())
+	r.Subscribe("agent-1", "alerts", "")
+	r.Unsubscribe("agent-1", "alerts")
 
-	err := r.Unsubscribe(s.ID)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-
-	subs := r.Subscriptions("events", "")
+	subs := r.Subscriptions("alerts")
 	if len(subs) != 0 {
-		t.Error("expected no subscriptions after unsubscribe")
+		t.Error("Should have no subscriptions after unsubscribe")
 	}
 }
 
-func TestPublish(t *testing.T) {
-	r := relay.NewRelay(t.TempDir())
+func TestPubSub(t *testing.T) {
+	r := NewRelay(t.TempDir())
 	r.Subscribe("agent-1", "events", "")
-
-	msg := r.Publish("coordinator", "events", "build started", nil)
-	if msg.State != relay.StateDelivered {
-		t.Errorf("expected delivered, got %s", msg.State)
-	}
-}
-
-func TestPublishNoSubscribers(t *testing.T) {
-	r := relay.NewRelay(t.TempDir())
-	msg := r.Publish("coordinator", "events", "build started", nil)
-
-	// Should go to dead letters
-	dl := r.DeadLetters(10)
-	if len(dl) == 0 {
-		t.Error("expected dead letter for no subscribers")
-	}
-	if msg.State != relay.StatePending {
-		t.Errorf("expected pending, got %s", msg.State)
-	}
-}
-
-func TestPublishWithFilter(t *testing.T) {
-	r := relay.NewRelay(t.TempDir())
-	r.Subscribe("agent-1", "events", "error")
 	r.Subscribe("agent-2", "events", "")
 
-	r.Publish("coordinator", "events", "build started", nil)
-	r.Publish("coordinator", "events", "build error occurred", nil)
+	r.Send(Message{From: "publisher", Channel: "events", Subject: "deploy", Body: "deployed v2"})
 
-	// agent-1 should only get the error message
-	d1 := r.Deliveries("agent-1", 0)
-	if len(d1) != 1 {
-		t.Errorf("expected 1 delivery for agent-1, got %d", len(d1))
+	msg1, _ := r.Receive("agent-1")
+	if msg1 == nil || msg1.Subject != "deploy" {
+		t.Error("agent-1 should receive the event")
 	}
 
-	// agent-2 should get both
-	d2 := r.Deliveries("agent-2", 0)
-	if len(d2) != 2 {
-		t.Errorf("expected 2 deliveries for agent-2, got %d", len(d2))
+	msg2, _ := r.Receive("agent-2")
+	if msg2 == nil || msg2.Subject != "deploy" {
+		t.Error("agent-2 should receive the event")
 	}
 }
 
-func TestDeliveries(t *testing.T) {
-	r := relay.NewRelay(t.TempDir())
-	r.Subscribe("agent-1", "events", "")
-	r.Publish("coordinator", "events", "msg1", nil)
-	r.Publish("coordinator", "events", "msg2", nil)
+func TestBroadcast(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	r.Subscribe("agent-1", "broadcast", "")
+	r.Subscribe("agent-2", "broadcast", "")
 
-	d := r.Deliveries("agent-1", 0)
-	if len(d) != 2 {
-		t.Errorf("expected 2 deliveries, got %d", len(d))
+	r.Send(Message{From: "system", To: "broadcast", Subject: "shutdown", Body: "shutting down in 5 min"})
+
+	msg1, _ := r.Receive("agent-1")
+	if msg1 == nil {
+		t.Error("agent-1 should receive broadcast")
+	}
+
+	msg2, _ := r.Receive("agent-2")
+	if msg2 == nil {
+		t.Error("agent-2 should receive broadcast")
 	}
 }
 
-func TestMessages(t *testing.T) {
-	r := relay.NewRelay(t.TempDir())
-	r.Subscribe("agent-1", "events", "")
-	r.Publish("coordinator", "events", "msg1", nil)
+func TestPendingCount(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	r.Send(Message{From: "a", To: "b", Subject: "msg1"})
+	r.Send(Message{From: "a", To: "b", Subject: "msg2"})
 
-	msgs := r.Messages("events", 0)
-	if len(msgs) != 1 {
-		t.Errorf("expected 1 message, got %d", len(msgs))
+	if r.PendingCount("b") != 2 {
+		t.Errorf("PendingCount = %d, want 2", r.PendingCount("b"))
 	}
 }
 
-func TestMessagesLimit(t *testing.T) {
-	r := relay.NewRelay(t.TempDir())
-	r.Subscribe("agent-1", "events", "")
-	for i := 0; i < 10; i++ {
-		r.Publish("coordinator", "events", "msg", nil)
-	}
+func TestChannelStats(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	r.Subscribe("agent-1", "alerts", "")
+	r.Subscribe("agent-2", "alerts", "")
+	r.Subscribe("agent-3", "events", "")
 
-	msgs := r.Messages("events", 5)
-	if len(msgs) != 5 {
-		t.Errorf("expected 5 messages, got %d", len(msgs))
-	}
-}
-
-func TestRedeliver(t *testing.T) {
-	r := relay.NewRelay(t.TempDir())
-	r.Publish("coordinator", "events", "orphan msg", nil)
-
-	// Now add subscriber
-	r.Subscribe("agent-1", "events", "")
-
-	count := r.Redeliver()
-	if count != 1 {
-		t.Errorf("expected 1 redelivered, got %d", count)
-	}
-
-	dl := r.DeadLetters(10)
-	if len(dl) != 0 {
-		t.Error("expected no dead letters after redeliver")
+	stats := r.ChannelStats()
+	if len(stats) != 2 {
+		t.Errorf("ChannelStats = %d channels, want 2", len(stats))
 	}
 }
 
 func TestStats(t *testing.T) {
-	r := relay.NewRelay(t.TempDir())
-	r.Subscribe("agent-1", "events", "")
-	r.Publish("coordinator", "events", "msg", nil)
+	r := NewRelay(t.TempDir())
+	r.Send(Message{From: "a", To: "b", Subject: "test"})
 
 	stats := r.Stats()
-	if stats["messages"].(int) != 1 {
-		t.Errorf("expected 1 message, got %v", stats["messages"])
+	if stats.TotalSent != 1 {
+		t.Errorf("TotalSent = %d, want 1", stats.TotalSent)
 	}
 }
 
-func TestSubscriptionsFilter(t *testing.T) {
-	r := relay.NewRelay(t.TempDir())
-	r.Subscribe("agent-1", "events", "")
-	r.Subscribe("agent-2", "events", "")
-	r.Subscribe("agent-1", "builds", "")
+func TestExpiredMessages(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	r.Send(Message{
+		From:      "a",
+		To:        "b",
+		Subject:   "expires",
+		ExpiresAt: time.Now().Add(-1 * time.Hour), // already expired
+	})
 
-	subs := r.Subscriptions("", "agent-1")
-	if len(subs) != 2 {
-		t.Errorf("expected 2 subscriptions for agent-1, got %d", len(subs))
+	count := r.Expire()
+	if count != 1 {
+		t.Errorf("Expired = %d, want 1", count)
+	}
+}
+
+func TestExportMarkdown(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	r.Subscribe("agent-1", "alerts", "")
+	r.Send(Message{From: "a", To: "agent-1", Subject: "test"})
+
+	md := r.ExportMarkdown()
+	if md == "" {
+		t.Error("ExportMarkdown should not be empty")
+	}
+}
+
+func TestMessageFIFO(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	r.Send(Message{From: "a", To: "b", Subject: "first"})
+	r.Send(Message{From: "a", To: "b", Subject: "second"})
+
+	msg1, _ := r.Receive("b")
+	if msg1.Subject != "first" {
+		t.Errorf("First message = %q, want %q", msg1.Subject, "first")
+	}
+
+	msg2, _ := r.Receive("b")
+	if msg2.Subject != "second" {
+		t.Errorf("Second message = %q, want %q", msg2.Subject, "second")
+	}
+}
+
+func TestCorrelationID(t *testing.T) {
+	r := NewRelay(t.TempDir())
+	r.Send(Message{
+		From:          "requester",
+		To:            "responder",
+		Subject:       "request",
+		CorrelationID: "corr-123",
+		ReplyTo:       "responses",
+	})
+
+	msg, _ := r.Receive("responder")
+	if msg.CorrelationID != "corr-123" {
+		t.Errorf("CorrelationID = %q, want %q", msg.CorrelationID, "corr-123")
+	}
+	if msg.ReplyTo != "responses" {
+		t.Errorf("ReplyTo = %q, want %q", msg.ReplyTo, "responses")
 	}
 }

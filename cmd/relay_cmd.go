@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/forge/sword/internal/relay"
@@ -9,191 +10,149 @@ import (
 
 var relayCmd = &cobra.Command{
 	Use:   "relay",
-	Short: "Inter-agent message relay (pub/sub)",
-	Long:  `Publish/subscribe message relay between agents. Topics, filters, dead letters, redelivery. Messages flow, agents listen.`,
+	Short: "Inter-agent message relay",
+	Long: `Send messages between agents with pub/sub, request/response,
+and broadcast patterns. Supports delivery guarantees, retries,
+and dead letter handling.
+
+Examples:
+  forge relay send --from agent-1 --to agent-2 --subject "task done"
+  forge relay receive --agent agent-2
+  forge relay subscribe --agent agent-1 --channel alerts
+  forge relay broadcast --channel events --subject "deploy"
+  forge relay dead-letters
+  forge relay stats`,
 }
 
-var relayHub *relay.Relay
+var relayDir string
 
-func getRelayHub() *relay.Relay {
-	if relayHub == nil {
-		relayHub = relay.NewRelay(getForgeDir() + "/relay")
-	}
-	return relayHub
+var relaySendCmd = &cobra.Command{
+	Use:   "send",
+	Short: "Send a message",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		from, _ := cmd.Flags().GetString("from")
+		to, _ := cmd.Flags().GetString("to")
+		channel, _ := cmd.Flags().GetString("channel")
+		subject, _ := cmd.Flags().GetString("subject")
+		body, _ := cmd.Flags().GetString("body")
+
+		r := relay.NewRelay(relayDir)
+		msg, err := r.Send(relay.Message{
+			From:    from,
+			To:      to,
+			Channel: channel,
+			Subject: subject,
+			Body:    body,
+		})
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Message sent: %s\n", msg.ID)
+		return nil
+	},
 }
 
-func init() {
-	relayCmd.AddCommand(relaySubscribeCmd)
-	relayCmd.AddCommand(relayUnsubscribeCmd)
-	relayCmd.AddCommand(relayPublishCmd)
-	relayCmd.AddCommand(relayMessagesCmd)
-	relayCmd.AddCommand(relayDeliveriesCmd)
-	relayCmd.AddCommand(relaySubsCmd)
-	relayCmd.AddCommand(relayDeadLettersCmd)
-	relayCmd.AddCommand(relayRedeliverCmd)
-	relayCmd.AddCommand(relayStatsCmd)
+var relayReceiveCmd = &cobra.Command{
+	Use:   "receive",
+	Short: "Receive next message for an agent",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		agent, _ := cmd.Flags().GetString("agent")
+		r := relay.NewRelay(relayDir)
+		msg, err := r.Receive(agent)
+		if err != nil {
+			return err
+		}
+		if msg == nil {
+			fmt.Println("No messages.")
+			return nil
+		}
+
+		if jsonOut, _ := cmd.Flags().GetBool("json"); jsonOut {
+			data, _ := json.MarshalIndent(msg, "", "  ")
+			fmt.Println(string(data))
+		} else {
+			fmt.Printf("From: %s\nSubject: %s\nBody: %s\n", msg.From, msg.Subject, msg.Body)
+		}
+		return nil
+	},
 }
 
-// relay subscribe
 var relaySubscribeCmd = &cobra.Command{
-	Use:   "subscribe [agent-id] [topic]",
-	Short: "Subscribe an agent to a topic",
-	Args:  cobra.ExactArgs(2),
+	Use:   "subscribe",
+	Short: "Subscribe an agent to a channel",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		filter, _ := cmd.Flags().GetString("filter")
-		r := getRelayHub()
-		s := r.Subscribe(args[0], args[1], filter)
-		fmt.Printf("Subscribed: %s (id: %s)\n", args[0], s.ID)
+		agent, _ := cmd.Flags().GetString("agent")
+		channel, _ := cmd.Flags().GetString("channel")
+		pattern, _ := cmd.Flags().GetString("pattern")
+
+		r := relay.NewRelay(relayDir)
+		sub, err := r.Subscribe(agent, channel, pattern)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("Subscribed: %s → %s\n", sub.AgentID, sub.Channel)
 		return nil
 	},
 }
 
-// relay unsubscribe
-var relayUnsubscribeCmd = &cobra.Command{
-	Use:   "unsubscribe [subscription-id]",
-	Short: "Unsubscribe from a topic",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return getRelayHub().Unsubscribe(args[0])
-	},
-}
-
-// relay publish
-var relayPublishCmd = &cobra.Command{
-	Use:   "publish [from] [topic] [payload]",
-	Short: "Publish a message to a topic",
-	Args:  cobra.ExactArgs(3),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		r := getRelayHub()
-		msg := r.Publish(args[0], args[1], args[2], nil)
-		fmt.Printf("Published: %s (state: %s)\n", msg.ID, msg.State)
-		return nil
-	},
-}
-
-// relay messages
-var relayMessagesCmd = &cobra.Command{
-	Use:   "messages [topic]",
-	Short: "List messages for a topic",
-	Args:  cobra.MaximumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		topic := ""
-		if len(args) > 0 {
-			topic = args[0]
-		}
-		limit, _ := cmd.Flags().GetInt("limit")
-
-		r := getRelayHub()
-		msgs := r.Messages(topic, limit)
-		if len(msgs) == 0 {
-			fmt.Println("No messages")
-			return nil
-		}
-
-		for _, m := range msgs {
-			fmt.Printf("  [%s] %s → %s: %s (%s)\n", m.ID, m.From, m.Topic, m.Payload, m.State)
-		}
-		return nil
-	},
-}
-
-// relay deliveries
-var relayDeliveriesCmd = &cobra.Command{
-	Use:   "deliveries [agent-id]",
-	Short: "List deliveries for an agent",
-	Args:  cobra.MaximumNArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		agentID := ""
-		if len(args) > 0 {
-			agentID = args[0]
-		}
-		limit, _ := cmd.Flags().GetInt("limit")
-
-		r := getRelayHub()
-		deliveries := r.Deliveries(agentID, limit)
-		if len(deliveries) == 0 {
-			fmt.Println("No deliveries")
-			return nil
-		}
-
-		for _, d := range deliveries {
-			fmt.Printf("  [%s] → %s: %s (%s)\n", d.MessageID, d.AgentID, d.Topic, d.State)
-		}
-		return nil
-	},
-}
-
-// relay subs
-var relaySubsCmd = &cobra.Command{
-	Use:   "subs",
-	Short: "List subscriptions",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		r := getRelayHub()
-		subs := r.Subscriptions("", "")
-		if len(subs) == 0 {
-			fmt.Println("No subscriptions")
-			return nil
-		}
-
-		for _, s := range subs {
-			filter := ""
-			if s.Filter != "" {
-				filter = fmt.Sprintf(" (filter: %s)", s.Filter)
-			}
-			fmt.Printf("  %s → %s%s\n", s.AgentID, s.Topic, filter)
-		}
-		return nil
-	},
-}
-
-// relay dead-letters
 var relayDeadLettersCmd = &cobra.Command{
 	Use:   "dead-letters",
-	Short: "Show undelivered messages",
+	Short: "Show dead-lettered messages",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		r := getRelayHub()
-		dl := r.DeadLetters(20)
+		r := relay.NewRelay(relayDir)
+		dl := r.DeadLetters()
+
 		if len(dl) == 0 {
-			fmt.Println("No dead letters")
+			fmt.Println("No dead letters.")
 			return nil
 		}
 
-		for _, m := range dl {
-			fmt.Printf("  [%s] %s → %s: %s\n", m.ID, m.From, m.Topic, m.Payload)
+		for _, msg := range dl {
+			fmt.Printf("%s → %s: %s (retries: %d)\n", msg.From, msg.To, msg.Subject, msg.Retries)
 		}
 		return nil
 	},
 }
 
-// relay redeliver
-var relayRedeliverCmd = &cobra.Command{
-	Use:   "redeliver",
-	Short: "Attempt to redeliver dead letters",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		r := getRelayHub()
-		count := r.Redeliver()
-		fmt.Printf("Redelivered %d messages\n", count)
-		return nil
-	},
-}
-
-// relay stats
 var relayStatsCmd = &cobra.Command{
 	Use:   "stats",
 	Short: "Show relay statistics",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		stats := getRelayHub().Stats()
-		fmt.Printf("Topics: %v\n", stats["topics"])
-		fmt.Printf("Subscriptions: %v\n", stats["subscriptions"])
-		fmt.Printf("Messages: %v\n", stats["messages"])
-		fmt.Printf("Deliveries: %v\n", stats["deliveries"])
-		fmt.Printf("Dead Letters: %v\n", stats["dead_letters"])
+		r := relay.NewRelay(relayDir)
+		stats := r.Stats()
+
+		if jsonOut, _ := cmd.Flags().GetBool("json"); jsonOut {
+			data, _ := json.MarshalIndent(stats, "", "  ")
+			fmt.Println(string(data))
+		} else {
+			fmt.Printf("Sent:      %d\n", stats.TotalSent)
+			fmt.Printf("Delivered: %d\n", stats.TotalDelivered)
+			fmt.Printf("Acked:     %d\n", stats.TotalAcked)
+			fmt.Printf("Failed:    %d\n", stats.TotalFailed)
+			fmt.Printf("Dead:      %d\n", stats.TotalDead)
+		}
 		return nil
 	},
 }
 
 func init() {
-	relaySubscribeCmd.Flags().String("filter", "", "Content filter for subscription")
-	relayMessagesCmd.Flags().Int("limit", 20, "Max messages")
-	relayDeliveriesCmd.Flags().Int("limit", 20, "Max deliveries")
+	relayCmd.PersistentFlags().StringVar(&relayDir, "dir", ".forge/relay", "Relay directory")
+	relayCmd.PersistentFlags().Bool("json", false, "Output as JSON")
+
+	relaySendCmd.Flags().String("from", "", "Sender agent ID")
+	relaySendCmd.Flags().String("to", "", "Recipient agent ID")
+	relaySendCmd.Flags().String("channel", "", "Channel name (for pub/sub)")
+	relaySendCmd.Flags().String("subject", "", "Message subject")
+	relaySendCmd.Flags().String("body", "", "Message body")
+
+	relayReceiveCmd.Flags().String("agent", "", "Agent ID")
+	relaySubscribeCmd.Flags().String("agent", "", "Agent ID")
+	relaySubscribeCmd.Flags().String("channel", "", "Channel name")
+	relaySubscribeCmd.Flags().String("pattern", "", "Subject pattern (glob)")
+
+	relayCmd.AddCommand(relaySendCmd)
+	relayCmd.AddCommand(relayReceiveCmd)
+	relayCmd.AddCommand(relaySubscribeCmd)
+	relayCmd.AddCommand(relayDeadLettersCmd)
+	relayCmd.AddCommand(relayStatsCmd)
 }
