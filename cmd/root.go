@@ -129,6 +129,8 @@ The wielder and the sword are one.`,
 		subagentCmd(),
 		agentRoleCmd(),
 		codegraphCmd(),
+		forgefileCmd(),
+		dreamReviewCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }

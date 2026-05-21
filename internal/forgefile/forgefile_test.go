@@ -215,7 +215,7 @@ func TestSaveAndLoad(t *testing.T) {
 	dir := t.TempDir()
 
 	ff := Example()
-	path := filepath.Join(dir, "Forgefile")
+	path := filepath.Join(dir, "Forgefile.json")
 
 	if err := ff.Save(path, "json"); err != nil {
 		t.Fatalf("Save: %v", err)

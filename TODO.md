@@ -198,16 +198,16 @@ All 18 utility packages implemented and tested.
 - [x] **`forge init --local`** — one-command preset: Ollama + DeepSeek/Qwen/Command A+. Zero cloud.
 
 ### P0 — Next 2 Weeks
-- [ ] **Sub-Agent Spawning** — agents spawn sub-agents for parallel tasks (parity with Antigravity 2.0)
+- [x] **Sub-Agent Spawning** — agents spawn sub-agents for parallel tasks (parity with Antigravity 2.0)
 - [x] **Agent Role System** — role definitions (planner, coder, tester, reviewer) for `forge orchestrate`
-- [ ] **Code Knowledge Graph** — enhance `forge index` with pre-indexed relationship graph (codegraph-style)
+- [x] **Code Knowledge Graph** — enhance `forge index` with pre-indexed relationship graph (codegraph-style)
 
 ### P1 — Next Month
 - [x] **Human-in-the-Loop** — `forge approve` + pause/resume + escalation (29% trust gap)
 - [x] **Security Scanning Hooks** — pre/post agent run hooks integrated with `forge jail`
-- [ ] **Forgefile v2** — TOML multi-agent workflow syntax (GitHub Actions for AI agents)
+- [x] **Forgefile v2** — TOML multi-agent workflow syntax (GitHub Actions for AI agents)
 - [ ] **Web Dashboard Real-Time** — WebSocket agent monitoring, cost charts, trace viewer
-- [ ] **Scheduled Memory Review (\"Dreaming\")** — `forge memory review` auto-extracts patterns from past sessions between runs (à la Claude Code with Claude 2026)
+- [x] **Scheduled Memory Review (\"Dreaming\")** — `forge memory review` auto-extracts patterns from past sessions between runs (à la Claude Code with Claude 2026)
 - [ ] **Rubric-Based Output Grading** — extend `forge test` with rubric scoring; below-threshold triggers re-runs (à la Claude Outcomes)
 
 ### P2 — Next Quarter
@@ -278,9 +278,9 @@ All 18 utility packages implemented and tested.
 - [ ] Cross-package event correlation — correlate anomalies across cost/health/lifecycle/replay
 
 ## Current Stats
-- ~102K lines of Go
-- 141 internal packages
-- 101 commands
+- ~108K lines of Go
+- 147 internal packages
+- 104+ commands
 - Build: ✅ Vet: ✅
 - Version: 1.1.0
 
