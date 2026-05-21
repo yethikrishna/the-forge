@@ -1,125 +1,95 @@
-package wgtunnel_test
+package wgtunnel
 
 import (
 	"testing"
-
-	"github.com/forge/sword/internal/wgtunnel"
+	"time"
 )
 
-func TestGenerateKey(t *testing.T) {
-	key, err := wgtunnel.GenerateKey()
+func TestNewMesh(t *testing.T) {
+	mesh, err := NewMesh("node-1")
 	if err != nil {
-		t.Fatalf("generate key error: %v", err)
+		t.Fatal(err)
 	}
-	if key.String() == "" {
-		t.Error("key string should not be empty")
-	}
-
-	// Generate a second key and verify they're different
-	key2, _ := wgtunnel.GenerateKey()
-	if key.String() == key2.String() {
-		t.Error("two generated keys should be different")
+	if mesh.LocalID() != "node-1" {
+		t.Error("wrong local ID")
 	}
 }
 
-func TestNewManager(t *testing.T) {
-	mgr := wgtunnel.NewManager()
-	if mgr == nil {
-		t.Fatal("manager should not be nil")
-	}
-}
-
-func TestCreateTunnel(t *testing.T) {
-	key, _ := wgtunnel.GenerateKey()
-	mgr := wgtunnel.NewManager()
-
-	tunnel, err := mgr.CreateTunnel(wgtunnel.TunnelConfig{
-		Name:       "wg0",
-		Port:       51820,
-		PrivateKey: key,
-		Address:    "10.0.0.1/24",
-	})
+func TestKeyGeneration(t *testing.T) {
+	km, err := NewKeyManager()
 	if err != nil {
-		t.Fatalf("create tunnel error: %v", err)
+		t.Fatal(err)
 	}
-	if tunnel.Status != wgtunnel.TunnelCreated {
-		t.Errorf("expected created status, got %s", tunnel.Status)
-	}
-}
-
-func TestCreateTunnelDuplicate(t *testing.T) {
-	key, _ := wgtunnel.GenerateKey()
-	mgr := wgtunnel.NewManager()
-
-	mgr.CreateTunnel(wgtunnel.TunnelConfig{Name: "wg0", PrivateKey: key})
-	_, err := mgr.CreateTunnel(wgtunnel.TunnelConfig{Name: "wg0", PrivateKey: key})
-	if err == nil {
-		t.Error("should error for duplicate tunnel")
+	if km.PublicKey() == "" {
+		t.Error("public key should not be empty")
 	}
 }
 
-func TestGetTunnel(t *testing.T) {
-	key, _ := wgtunnel.GenerateKey()
-	mgr := wgtunnel.NewManager()
-	mgr.CreateTunnel(wgtunnel.TunnelConfig{Name: "wg0", PrivateKey: key})
+func TestKeyRotation(t *testing.T) {
+	km, _ := NewKeyManager()
+	old := km.PublicKey()
+	km.Rotate()
+	new := km.PublicKey()
+	if old == new {
+		t.Error("rotation should generate new key")
+	}
+}
 
-	tunnel, err := mgr.GetTunnel("wg0")
+func TestPairAndPeers(t *testing.T) {
+	mesh, _ := NewMesh("node-1")
+	token := mesh.GeneratePairToken()
+
+	peer, err := mesh.Pair(token)
 	if err != nil {
-		t.Fatalf("get tunnel error: %v", err)
+		t.Fatal(err)
 	}
-	if tunnel.ID != "wg0" {
-		t.Errorf("expected wg0, got %s", tunnel.ID)
-	}
-}
-
-func TestDeleteTunnel(t *testing.T) {
-	key, _ := wgtunnel.GenerateKey()
-	mgr := wgtunnel.NewManager()
-	mgr.CreateTunnel(wgtunnel.TunnelConfig{Name: "wg0", PrivateKey: key})
-
-	if err := mgr.DeleteTunnel("wg0"); err != nil {
-		t.Fatalf("delete error: %v", err)
+	if peer.ID == "" {
+		t.Error("peer should have an ID")
 	}
 
-	if _, err := mgr.GetTunnel("wg0"); err == nil {
-		t.Error("should error after delete")
+	peers := mesh.Peers()
+	if len(peers) != 1 {
+		t.Errorf("expected 1 peer, got %d", len(peers))
 	}
 }
 
-func TestGenerateConfig(t *testing.T) {
-	key, _ := wgtunnel.GenerateKey()
-	peerKey, _ := wgtunnel.GenerateKey()
-	mgr := wgtunnel.NewManager()
+func TestHealthCheck(t *testing.T) {
+	mesh, _ := NewMesh("node-1")
+	token := mesh.GeneratePairToken()
+	mesh.Pair(token)
 
-	mgr.CreateTunnel(wgtunnel.TunnelConfig{
-		Name:       "wg0",
-		Port:       51820,
-		PrivateKey: key,
-		Address:    "10.0.0.1/24",
-		Peers: []wgtunnel.PeerConfig{
-			{
-				PublicKey:  peerKey.PublicKey(),
-				Endpoint:   "1.2.3.4:51820",
-				AllowedIPs: []string{"10.0.0.2/32"},
-			},
-		},
-	})
-
-	config, err := mgr.GenerateTunnelConfig("wg0")
-	if err != nil {
-		t.Fatalf("generate config error: %v", err)
+	health := mesh.HealthCheck()
+	if len(health) != 1 {
+		t.Errorf("expected 1 health report, got %d", len(health))
 	}
-	if config == "" {
-		t.Error("config should not be empty")
+	if len(health[0].Issues) == 0 {
+		t.Error("unconnected peer should have issues")
 	}
 }
 
-func TestFindFreePort(t *testing.T) {
-	port, err := wgtunnel.FindFreePort()
-	if err != nil {
-		t.Fatalf("find free port error: %v", err)
+func TestTrafficAndConnectivity(t *testing.T) {
+	mesh, _ := NewMesh("node-1")
+	token := mesh.GeneratePairToken()
+	peer, _ := mesh.Pair(token)
+
+	mesh.MarkConnected(peer.ID, 12.5)
+	mesh.RecordTraffic(peer.ID, 1024, 2048)
+
+	stats, ok := mesh.Stats(peer.ID)
+	if !ok {
+		t.Fatal("expected stats for peer")
 	}
-	if port <= 0 {
-		t.Errorf("expected positive port, got %d", port)
+	if stats.BytesSent != 1024 {
+		t.Errorf("expected 1024 bytes sent, got %d", stats.BytesSent)
+	}
+}
+
+func TestKeyRotationNeeded(t *testing.T) {
+	mesh, _ := NewMesh("node-1")
+	if mesh.KeyRotationNeeded(24 * time.Hour) {
+		t.Error("fresh keys should not need rotation")
+	}
+	if !mesh.KeyRotationNeeded(0) {
+		t.Error("zero max age should always need rotation")
 	}
 }
