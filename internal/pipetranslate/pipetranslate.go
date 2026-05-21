@@ -504,3 +504,9 @@ func (t *Translator) GetTemplate(name string) (*Pipeline, error) {
 	}
 	return clonePipeline(p), nil
 }
+
+
+// PipelineToYAML exports the pipelineToYAML function for external use.
+func PipelineToYAML(p *Pipeline) string {
+	return pipelineToYAML(p)
+}

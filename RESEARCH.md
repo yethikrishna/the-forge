@@ -604,3 +604,27 @@ Relevance for the-forge: credential masking and Git policies are security primit
 ### No Other New Developments
 
 Quiet overnight continues. All May 20–21 content fully covered across 10 sweeps.
+
+---
+
+## 2026-05-21 (02:10 UTC) — Overnight Sweep
+
+### SAFE-MCP Threat Catalog (OpenSSF)
+
+OpenSSF AI/ML Security Working Group launched **SAFE-MCP** — a standardized threat catalog for agentic AI, modeled after MITRE ATT&CK:
+
+- **80+ attack techniques** specifically targeting tool-based LLMs and agentic AI systems
+- Standardized IDs (e.g., SAFE-T1201 for "MCP Rugpull Attack") enabling clear threat communication
+- Covers: confused deputy problems, prompt injection at tool/API boundaries, context exfiltration, reasoning chain logging needs
+- Part of broader 7-layer AI security stack (UI/dependencies down to silicon)
+- Emphasizes SBOM visibility and patch management for thousands of OSS components
+- Highlighted at OpenSSF Community Day (May 21, Minnesota)
+
+**Also noted:** NIST AI Agent Standards Initiative launched February 2026 — federal framework for agent security.
+
+Relevance for the-forge: SAFE-MCP provides a concrete threat model to test the-forge's security posture against. Should reference these attack IDs in security documentation.
+
+### Sources
+
+- https://openssf.org/blog/2026/04/08/openssf-tech-talk-recap-securing-agentic-ai/
+- https://labs.cloudsecurityalliance.org/research/csa-research-note-nist-ai-agent-standards-federal-framework/

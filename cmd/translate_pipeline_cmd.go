@@ -31,7 +31,6 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(translatePipelineCmd)
 
 	translatePipelineCmd.Flags().StringVarP(&translatePipeOutput, "output", "o", "text", "output format: text, json, yaml")
 	translatePipelineCmd.Flags().StringVar(&translatePipeFromFile, "from-file", "", "read pipeline from YAML file and explain in natural language")

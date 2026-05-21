@@ -288,28 +288,6 @@ All 18 utility packages implemented and tested.
 ## Phase 5: Consolidation & Focus (From Brainstorm #7)
 
 ### Package Consolidation (158 → ~100, 19 groups merged)
-### Package Consolidation (158 → ~100)
-- [x] Merge `errcode` + `errteach` + `errorexplain` → `internal/errors` (catalog, teach, explain)
-- [x] Merge `circuit` + `ratelimit` + `runaway` + `anomaly` + `outage` + `selfheal` → `internal/resilience`
-- [x] Merge `snapshot` + `undo` + `graceful` + `shutdown` → `internal/safety`
-- [x] Merge `eval` + `agenttest` + `abtest` → `internal/eval2` (benchmark, agenttest, abtest)
-- [x] Merge `dream` + `breed` + `tune` → `internal/optimize`
-- [x] Merge `mcp` + `mcpcompose` + `mcpdiscover` → `internal/mcp2` (server, compose, discover)
-- [x] Merge `archaeologist` → `internal/lineage/forensics`
-- [x] Merge `debate` → `internal/consensus/debate`
-- [x] Merge `bigdur` + `timer` → `internal/duration` (bigdur, timer)
-- [x] Merge `flog` → `internal/slog/flog`
-- [x] Merge `clistat` + `resource` + `monitor` → `internal/system` (clistat, resource, monitor)
-- [x] Merge `feedback` + `empath` + `achievement` → `internal/experience`
-- [x] Merge `filelock` + `worktree` → `internal/gitutil` (filelock, worktree)
-- [x] Merge `costoptimizer` → `internal/cost/optimizer`
-- [x] Merge `rbac` + `sso` + `identity` → `internal/auth` (rbac, sso, identity)
-- [x] Merge `forgeci` → `internal/cicd/forgeci`
-- [x] Merge `rubric` → `internal/quality/rubric`
-- [x] Merge `scanhooks` → `internal/sandbox/scanhooks`
-- [x] Merge `prompttest` → `internal/prompt/prompttest`
-- [ ] Freeze Phase 0 packages (utilities + core) — no new features, bug fixes only
-
 
 ### Growth & Discovery
 - [ ] GitHub topic tags — `ai-agent`, `agent-orchestration`, `llm`, `coding-agent`, `mcp`, `cli`, `go`
