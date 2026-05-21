@@ -35,7 +35,6 @@ var (
 )
 
 func init() {
-	rootCmd.AddCommand(correlateCmd)
 
 	correlateCmd.AddCommand(correlateIncidentsCmd)
 	correlateCmd.AddCommand(correlateIngestCmd)

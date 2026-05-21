@@ -163,9 +163,11 @@ The wielder and the sword are one.`,
 		snapCmd,
 		marketCmd,
 		quantumCmd,
+		correlateCmd,
 		refactorCmd,
 		selftestCmd,
 		quantumCmd,
+		correlateCmd,
 	)
 	return root.ExecuteContext(ctx)
 }
