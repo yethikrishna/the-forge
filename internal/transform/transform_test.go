@@ -35,7 +35,7 @@ func TestAddRule(t *testing.T) {
 
 func TestAddRuleDuplicate(t *testing.T) {
 	e := NewEngine(t.TempDir())
-	rule := Rule{Name: "test", Type: TransformReplace, Find: "a", Replace: "b"}
+	rule := Rule{ID: "fixed-id", Name: "test", Type: TransformReplace, Find: "a", Replace: "b"}
 	e.AddRule(rule)
 
 	err := e.AddRule(rule)
