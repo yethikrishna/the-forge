@@ -355,6 +355,20 @@ All 18 utility packages implemented and tested.
 - [ ] `forge rollback` — time-travel for agent work (snapshot + undo + ledger integration)
 - [ ] `forge benchmark` — standardized agent benchmarks (SWE-bench, Terminal-Bench) + community leaderboard
 
+### Minimalism & Adoption (From Brainstorm #15)
+- [ ] `forge core` — extract minimal orchestration core (~5K lines) as standalone importable package
+- [ ] `forge lite` — zero-dependency minimal binary (chat, run, serve only, <10MB)
+
+### Benchmark & Quality (From Brainstorm #15)
+- [ ] Forge Benchmark Program — run standardized benchmarks (SWE-bench, Terminal-Bench), publish comparison table
+- [ ] `forge eval-sprint` — rapid 50-task quality assessment with model comparison
+
+### Platform SDK (From Brainstorm #15)
+- [ ] Forge Python SDK (`pip install forge-sdk`) — priority, dominant AI language
+- [ ] Forge TypeScript SDK (`npm install @forge/sdk`)
+- [ ] Forge Go SDK (`import forge-sdk`) — extend internal/pluginsdk to public
+- [ ] Forge Managed Agents — `forge serve --managed` with remote sandbox, API keys, usage tracking
+
 ### Offline & Air-Gapped
 - [ ] `forge init --airgap` — bundle local models + pre-index codebase, zero internet
 
