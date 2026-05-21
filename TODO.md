@@ -199,11 +199,11 @@ All 18 utility packages implemented and tested.
 
 ### P0 — Next 2 Weeks
 - [ ] **Sub-Agent Spawning** — agents spawn sub-agents for parallel tasks (parity with Antigravity 2.0)
-- [ ] **Agent Role System** — role definitions (planner, coder, tester, reviewer) for `forge orchestrate`
+- [x] **Agent Role System** — role definitions (planner, coder, tester, reviewer) for `forge orchestrate`
 - [ ] **Code Knowledge Graph** — enhance `forge index` with pre-indexed relationship graph (codegraph-style)
 
 ### P1 — Next Month
-- [ ] **Human-in-the-Loop** — `forge approve` + pause/resume + escalation (29% trust gap)
+- [x] **Human-in-the-Loop** — `forge approve` + pause/resume + escalation (29% trust gap)
 - [ ] **Security Scanning Hooks** — pre/post agent run hooks integrated with `forge jail`
 - [ ] **Forgefile v2** — TOML multi-agent workflow syntax (GitHub Actions for AI agents)
 - [ ] **Web Dashboard Real-Time** — WebSocket agent monitoring, cost charts, trace viewer
