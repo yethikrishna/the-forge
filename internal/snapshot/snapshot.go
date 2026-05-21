@@ -1,6 +1,9 @@
-// Package snapshot provides project state snapshots that capture the full
-// state of a project at a point in time — files, config, git info, and
-// agent context. Snapshots enable time-travel debugging and state comparison.
+// Package snapshot provides time-travel filesystem snapshots.
+// Capture, browse, diff, and restore project states without git.
+// Each snapshot records file hashes and metadata, enabling instant
+// comparison and selective restoration.
+//
+// Every moment, preserved.
 package snapshot
 
 import (
@@ -16,152 +19,95 @@ import (
 	"time"
 )
 
-// Type represents the snapshot type.
-type Type string
-
-const (
-	TypeManual  Type = "manual"
-	TypeAuto    Type = "auto"
-	TypePreOp   Type = "pre-operation"
-	TypePostOp  Type = "post-operation"
-	TypeMilestone Type = "milestone"
-)
-
-// FileEntry represents a file in the snapshot.
+// FileEntry records a single file's state in a snapshot.
 type FileEntry struct {
-	Path     string `json:"path"`
-	Checksum string `json:"checksum"`
-	Size     int64  `json:"size"`
-	Modified string `json:"modified"`
+	Path    string `json:"path"`
+	SHA256  string `json:"sha256"`
+	Size    int64  `json:"size"`
+	ModTime string `json:"mod_time"`
+	IsDir   bool   `json:"is_dir"`
 }
 
-// Snapshot represents a project state snapshot.
+// Snapshot is a point-in-time capture of a directory tree.
 type Snapshot struct {
 	ID          string      `json:"id"`
 	Name        string      `json:"name"`
-	Type        Type        `json:"type"`
 	Description string      `json:"description"`
-	CreatedAt   time.Time   `json:"created_at"`
-	ProjectDir  string      `json:"project_dir"`
-	GitBranch   string      `json:"git_branch,omitempty"`
-	GitCommit   string      `json:"git_commit,omitempty"`
-	GitDirty    bool        `json:"git_dirty"`
+	RootDir     string      `json:"root_dir"`
 	Files       []FileEntry `json:"files"`
 	FileCount   int         `json:"file_count"`
 	TotalSize   int64       `json:"total_size"`
-	Tags        []string    `json:"tags"`
-	Metadata    map[string]string `json:"metadata,omitempty"`
+	CreatedAt   time.Time   `json:"created_at"`
+	Tags        []string    `json:"tags,omitempty"`
 }
 
-// Diff represents differences between two snapshots.
-type Diff struct {
-	Added    []string `json:"added"`
-	Removed  []string `json:"removed"`
-	Modified []string `json:"modified"`
-	Unchanged int     `json:"unchanged"`
+// DiffResult describes a difference between two snapshots.
+type DiffResult struct {
+	Added    []FileEntry `json:"added"`
+	Removed  []FileEntry `json:"removed"`
+	Modified []FileEntry `json:"modified"`
+	Unchanged int        `json:"unchanged"`
 }
 
-// Store manages snapshots.
-type Store struct {
-	mu        sync.RWMutex
+// Manager manages snapshots.
+type Manager struct {
 	dir       string
 	snapshots map[string]*Snapshot
+	mu        sync.RWMutex
 }
 
-// NewStore creates a new snapshot store.
-func NewStore(dir string) (*Store, error) {
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return nil, fmt.Errorf("create snapshot dir: %w", err)
-	}
-	s := &Store{
+// NewManager creates a new snapshot manager.
+func NewManager(dir string) *Manager {
+	os.MkdirAll(dir, 0755)
+	m := &Manager{
 		dir:       dir,
 		snapshots: make(map[string]*Snapshot),
 	}
-	s.load()
-	return s, nil
+	m.load()
+	return m
 }
 
-func (s *Store) load() {
-	entries, err := os.ReadDir(s.dir)
-	if err != nil {
-		return
-	}
-	for _, e := range entries {
-		if e.IsDir() || filepath.Ext(e.Name()) != ".json" {
-			continue
-		}
-		data, err := os.ReadFile(filepath.Join(s.dir, e.Name()))
-		if err != nil {
-			continue
-		}
-		var snap Snapshot
-		if err := json.Unmarshal(data, &snap); err == nil {
-			s.snapshots[snap.ID] = &snap
-		}
+// IgnorePatterns returns default ignore patterns.
+func IgnorePatterns() []string {
+	return []string{
+		".git", ".svn", ".hg",
+		"node_modules", "vendor",
+		"__pycache__", ".pytest_cache",
+		"bin", "dist", "out", "build",
+		".DS_Store", "Thumbs.db",
+		"*.pyc", "*.pyo",
+		"*.exe", "*.dll", "*.so", "*.dylib",
 	}
 }
 
-func (s *Store) save(snap *Snapshot) error {
-	data, _ := json.MarshalIndent(snap, "", "  ")
-	return os.WriteFile(filepath.Join(s.dir, snap.ID+".json"), data, 0644)
-}
-
-// Create creates a new snapshot of a project directory.
-func (s *Store) Create(name string, snapType Type, projectDir string, description string) (*Snapshot, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	snap := &Snapshot{
-		ID:          fmt.Sprintf("snap-%d", time.Now().UnixNano()),
-		Name:        name,
-		Type:        snapType,
-		Description: description,
-		CreatedAt:   time.Now(),
-		ProjectDir:  projectDir,
-		Tags:        []string{},
-		Metadata:    make(map[string]string),
+// Capture creates a new snapshot of the given directory.
+func (m *Manager) Capture(rootDir, name, description string, ignorePatterns []string) (*Snapshot, error) {
+	ignoreSet := make(map[string]bool)
+	for _, p := range ignorePatterns {
+		ignoreSet[p] = true
 	}
 
-	// Scan files
-	files, err := s.scanDir(projectDir)
-	if err != nil {
-		return nil, fmt.Errorf("scan project: %w", err)
-	}
-	snap.Files = files
-	snap.FileCount = len(files)
-	for _, f := range files {
-		snap.TotalSize += f.Size
-	}
-
-	// Get git info
-	snap.GitBranch = s.getGitBranch(projectDir)
-	snap.GitCommit = s.getGitCommit(projectDir)
-	snap.GitDirty = s.getGitDirty(projectDir)
-
-	s.snapshots[snap.ID] = snap
-	return snap, s.save(snap)
-}
-
-func (s *Store) scanDir(dir string) ([]FileEntry, error) {
 	var files []FileEntry
-	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	var totalSize int64
+
+	err := filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return nil // skip errors
+		}
+
+		rel, err := filepath.Rel(rootDir, path)
 		if err != nil {
 			return nil
 		}
-		if d.IsDir() {
-			// Skip hidden and common ignore dirs
-			name := d.Name()
-			if strings.HasPrefix(name, ".") && name != "." {
-				return filepath.SkipDir
+
+		// Check ignore patterns
+		for _, part := range strings.Split(rel, string(filepath.Separator)) {
+			if ignoreSet[part] {
+				if d.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
 			}
-			ignored := map[string]bool{
-				"node_modules": true, "vendor": true, "__pycache__": true,
-				".git": true, "dist": true, "build": true, "target": true,
-			}
-			if ignored[name] {
-				return filepath.SkipDir
-			}
-			return nil
 		}
 
 		info, err := d.Info()
@@ -169,80 +115,68 @@ func (s *Store) scanDir(dir string) ([]FileEntry, error) {
 			return nil
 		}
 
-		relPath, err := filepath.Rel(dir, path)
-		if err != nil {
-			relPath = path
+		entry := FileEntry{
+			Path:    rel,
+			Size:    info.Size(),
+			ModTime: info.ModTime().Format(time.RFC3339),
+			IsDir:   d.IsDir(),
 		}
 
-		checksum, _ := s.fileChecksum(path)
-		files = append(files, FileEntry{
-			Path:     relPath,
-			Checksum: checksum,
-			Size:     info.Size(),
-			Modified: info.ModTime().Format(time.RFC3339),
-		})
+		if !d.IsDir() {
+			data, err := os.ReadFile(path)
+			if err == nil {
+				h := sha256.Sum256(data)
+				entry.SHA256 = fmt.Sprintf("%x", h[:])
+			}
+			totalSize += info.Size()
+		}
+
+		files = append(files, entry)
 		return nil
 	})
-	return files, err
-}
-
-func (s *Store) fileChecksum(path string) (string, error) {
-	data, err := os.ReadFile(path)
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("walking directory: %w", err)
 	}
-	hash := sha256.Sum256(data)
-	return fmt.Sprintf("%x", hash[:16]), nil
+
+	snap := &Snapshot{
+		ID:          fmt.Sprintf("snap-%d", time.Now().UnixNano()),
+		Name:        name,
+		Description: description,
+		RootDir:     rootDir,
+		Files:       files,
+		FileCount:   len(files),
+		TotalSize:   totalSize,
+		CreatedAt:   time.Now(),
+	}
+
+	m.mu.Lock()
+	m.snapshots[snap.ID] = snap
+	m.save()
+	m.mu.Unlock()
+
+	return snap, nil
 }
 
-func (s *Store) getGitBranch(dir string) string {
-	data, err := os.ReadFile(filepath.Join(dir, ".git", "HEAD"))
-	if err != nil {
-		return ""
+// Get returns a snapshot by ID.
+func (m *Manager) Get(id string) (*Snapshot, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	s, ok := m.snapshots[id]
+	if !ok {
+		return nil, false
 	}
-	line := strings.TrimSpace(string(data))
-	if strings.HasPrefix(line, "ref: refs/heads/") {
-		return strings.TrimPrefix(line, "ref: refs/heads/")
-	}
-	return ""
+	copy := *s
+	return &copy, true
 }
 
-func (s *Store) getGitCommit(dir string) string {
-	branch := s.getGitBranch(dir)
-	if branch == "" {
-		return ""
-	}
-	data, err := os.ReadFile(filepath.Join(dir, ".git", "refs", "heads", branch))
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(string(data))[:12]
-}
+// List returns all snapshots.
+func (m *Manager) List() []Snapshot {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 
-func (s *Store) getGitDirty(dir string) bool {
-	// Simple check — if we can't determine, assume clean
-	return false
-}
-
-// Get retrieves a snapshot.
-func (s *Store) Get(id string) (*Snapshot, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	snap, ok := s.snapshots[id]
-	return snap, ok
-}
-
-// List lists snapshots, optionally filtered by type.
-func (s *Store) List(snapType Type) []Snapshot {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
-	var result []Snapshot
-	for _, snap := range s.snapshots {
-		if snapType != "" && snap.Type != snapType {
-			continue
-		}
-		result = append(result, *snap)
+	result := make([]Snapshot, 0, len(m.snapshots))
+	for _, s := range m.snapshots {
+		result = append(result, *s)
 	}
 	sort.Slice(result, func(i, j int) bool {
 		return result[i].CreatedAt.After(result[j].CreatedAt)
@@ -251,99 +185,199 @@ func (s *Store) List(snapType Type) []Snapshot {
 }
 
 // Delete removes a snapshot.
-func (s *Store) Delete(id string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (m *Manager) Delete(id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	if _, ok := s.snapshots[id]; !ok {
-		return fmt.Errorf("snapshot %s not found", id)
+	if _, ok := m.snapshots[id]; !ok {
+		return fmt.Errorf("snapshot %q not found", id)
 	}
-	delete(s.snapshots, id)
-	os.Remove(filepath.Join(s.dir, id+".json"))
+	delete(m.snapshots, id)
+	m.save()
 	return nil
 }
 
-// Compare compares two snapshots and returns the diff.
-func (s *Store) Compare(id1, id2 string) (*Diff, error) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+// Diff compares two snapshots.
+func (m *Manager) Diff(oldID, newID string) (*DiffResult, error) {
+	m.mu.RLock()
+	oldSnap, ok1 := m.snapshots[oldID]
+	newSnap, ok2 := m.snapshots[newID]
+	m.mu.RUnlock()
 
-	s1, ok1 := s.snapshots[id1]
-	s2, ok2 := s.snapshots[id2]
-	if !ok1 || !ok2 {
-		return nil, fmt.Errorf("one or both snapshots not found")
+	if !ok1 {
+		return nil, fmt.Errorf("snapshot %q not found", oldID)
+	}
+	if !ok2 {
+		return nil, fmt.Errorf("snapshot %q not found", newID)
 	}
 
-	// Build file maps
-	files1 := make(map[string]FileEntry)
-	for _, f := range s1.Files {
-		files1[f.Path] = f
-	}
-	files2 := make(map[string]FileEntry)
-	for _, f := range s2.Files {
-		files2[f.Path] = f
+	oldFiles := make(map[string]FileEntry)
+	for _, f := range oldSnap.Files {
+		oldFiles[f.Path] = f
 	}
 
-	diff := &Diff{}
+	newFiles := make(map[string]FileEntry)
+	for _, f := range newSnap.Files {
+		newFiles[f.Path] = f
+	}
 
-	// Added and modified
-	for path, f2 := range files2 {
-		f1, exists := files1[path]
-		if !exists {
-			diff.Added = append(diff.Added, path)
-		} else if f1.Checksum != f2.Checksum {
-			diff.Modified = append(diff.Modified, path)
-		} else {
-			diff.Unchanged++
+	result := &DiffResult{}
+
+	// Find added and modified
+	for path, newEntry := range newFiles {
+		if oldEntry, ok := oldFiles[path]; ok {
+			if oldEntry.SHA256 != newEntry.SHA256 && !oldEntry.IsDir && !newEntry.IsDir {
+				result.Modified = append(result.Modified, newEntry)
+			} else if !oldEntry.IsDir && !newEntry.IsDir {
+				result.Unchanged++
+			}
+		} else if !newEntry.IsDir {
+			result.Added = append(result.Added, newEntry)
 		}
 	}
 
-	// Removed
-	for path := range files1 {
-		if _, exists := files2[path]; !exists {
-			diff.Removed = append(diff.Removed, path)
+	// Find removed
+	for path, oldEntry := range oldFiles {
+		if _, ok := newFiles[path]; !ok && !oldEntry.IsDir {
+			result.Removed = append(result.Removed, oldEntry)
 		}
 	}
 
-	sort.Strings(diff.Added)
-	sort.Strings(diff.Removed)
-	sort.Strings(diff.Modified)
-
-	return diff, nil
+	return result, nil
 }
 
-// Stats returns snapshot store statistics.
-type Stats struct {
-	TotalSnapshots int            `json:"total_snapshots"`
-	ByType         map[Type]int   `json:"by_type"`
-	TotalFiles     int            `json:"total_files"`
-	TotalSize      int64          `json:"total_size"`
-	Oldest         time.Time      `json:"oldest,omitempty"`
-	Newest         time.Time      `json:"newest,omitempty"`
+// RestoreFiles restores specific files from a snapshot.
+func (m *Manager) RestoreFiles(snapID, rootDir string, filePaths []string) error {
+	m.mu.RLock()
+	snap, ok := m.snapshots[snapID]
+	m.mu.RUnlock()
+
+	if !ok {
+		return fmt.Errorf("snapshot %q not found", snapID)
+	}
+
+	fileSet := make(map[string]bool)
+	for _, p := range filePaths {
+		fileSet[p] = true
+	}
+
+	for _, entry := range snap.Files {
+		if !fileSet[entry.Path] || entry.IsDir {
+			continue
+		}
+
+		srcPath := filepath.Join(snap.RootDir, entry.Path)
+		dstPath := filepath.Join(rootDir, entry.Path)
+
+		data, err := os.ReadFile(srcPath)
+		if err != nil {
+			return fmt.Errorf("reading %s: %w", entry.Path, err)
+		}
+
+		os.MkdirAll(filepath.Dir(dstPath), 0755)
+		if err := os.WriteFile(dstPath, data, 0644); err != nil {
+			return fmt.Errorf("writing %s: %w", entry.Path, err)
+		}
+	}
+
+	return nil
 }
 
-// Stats returns store statistics.
-func (s *Store) Stats() *Stats {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
+// Stats returns snapshot manager statistics.
+func (m *Manager) Stats() map[string]interface{} {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 
-	stats := &Stats{
-		TotalSnapshots: len(s.snapshots),
-		ByType:         make(map[Type]int),
+	var totalFiles int
+	var totalSize int64
+	for _, s := range m.snapshots {
+		totalFiles += s.FileCount
+		totalSize += s.TotalSize
 	}
 
-	for _, snap := range s.snapshots {
-		stats.ByType[snap.Type]++
-		stats.TotalFiles += snap.FileCount
-		stats.TotalSize += snap.TotalSize
+	return map[string]interface{}{
+		"total_snapshots": len(m.snapshots),
+		"total_files":     totalFiles,
+		"total_size":      totalSize,
+	}
+}
 
-		if stats.Oldest.IsZero() || snap.CreatedAt.Before(stats.Oldest) {
-			stats.Oldest = snap.CreatedAt
-		}
-		if snap.CreatedAt.After(stats.Newest) {
-			stats.Newest = snap.CreatedAt
-		}
+// RenderSnapshot renders a snapshot for display.
+func RenderSnapshot(s *Snapshot) string {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "Snapshot: %s\n", s.Name)
+	fmt.Fprintf(&b, "ID: %s\n", s.ID)
+	fmt.Fprintf(&b, "Root: %s\n", s.RootDir)
+	fmt.Fprintf(&b, "Description: %s\n", s.Description)
+	fmt.Fprintf(&b, "Files: %d\n", s.FileCount)
+	fmt.Fprintf(&b, "Size: %s\n", formatSize(s.TotalSize))
+	fmt.Fprintf(&b, "Created: %s\n", s.CreatedAt.Format(time.RFC3339))
+	if len(s.Tags) > 0 {
+		fmt.Fprintf(&b, "Tags: %s\n", strings.Join(s.Tags, ", "))
 	}
 
-	return stats
+	return b.String()
+}
+
+// RenderDiff renders a diff result for display.
+func RenderDiff(d *DiffResult) string {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "Added: %d files\n", len(d.Added))
+	for _, f := range d.Added {
+		fmt.Fprintf(&b, "  + %s (%s)\n", f.Path, formatSize(f.Size))
+	}
+
+	fmt.Fprintf(&b, "Removed: %d files\n", len(d.Removed))
+	for _, f := range d.Removed {
+		fmt.Fprintf(&b, "  - %s (%s)\n", f.Path, formatSize(f.Size))
+	}
+
+	fmt.Fprintf(&b, "Modified: %d files\n", len(d.Modified))
+	for _, f := range d.Modified {
+		fmt.Fprintf(&b, "  ~ %s (%s)\n", f.Path, formatSize(f.Size))
+	}
+
+	fmt.Fprintf(&b, "Unchanged: %d files\n", d.Unchanged)
+
+	return b.String()
+}
+
+func formatSize(bytes int64) string {
+	const (
+		KB = 1024
+		MB = KB * 1024
+		GB = MB * 1024
+	)
+	switch {
+	case bytes >= GB:
+		return fmt.Sprintf("%.1f GB", float64(bytes)/float64(GB))
+	case bytes >= MB:
+		return fmt.Sprintf("%.1f MB", float64(bytes)/float64(MB))
+	case bytes >= KB:
+		return fmt.Sprintf("%.1f KB", float64(bytes)/float64(KB))
+	default:
+		return fmt.Sprintf("%d B", bytes)
+	}
+}
+
+func (m *Manager) save() {
+	if m.dir == "" {
+		return
+	}
+	os.MkdirAll(m.dir, 0755)
+	data, _ := json.MarshalIndent(m.snapshots, "", "  ")
+	os.WriteFile(filepath.Join(m.dir, "snapshots.json"), data, 0644)
+}
+
+func (m *Manager) load() {
+	if m.dir == "" {
+		return
+	}
+	data, err := os.ReadFile(filepath.Join(m.dir, "snapshots.json"))
+	if err != nil {
+		return
+	}
+	json.Unmarshal(data, &m.snapshots)
 }

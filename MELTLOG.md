@@ -424,3 +424,34 @@
 
 ### Stats
 - **Build:** ✅ **Vet:** ✅ **Tests:** ✅ (except pre-existing navigate TestSkipDirectories)
+
+### Session 2026-05-21 02:30 UTC — Feature Sprint + Build Fix Marathon
+
+#### New packages built
+- `internal/experiment` — A/B experiment framework with multi-variant testing, Z-test statistical significance, confidence intervals, metric-driven decisions
+- `internal/pluginsdk` — Plugin SDK with Plugin interface, Hook/Tool/Middleware lifecycle, Registry, in-memory Store/Logger/Metrics
+- `internal/replay` — Session replay and time-travel debugging (Recorder, Player, Checkpoint, Branch, Compare)
+- `internal/dream` — Agent dream/vision system with 6 dream types, insight generation, scoring, scheduling, budgeting
+- `internal/patch` — Unified diff/patch generation (from concurrent agent)
+
+#### New commands
+- `forge experiment create/add-variant/start/record/analyze/decide/list/show/complete/pause/resume/export`
+- `forge replay list/show/step/summary/compare/delete`
+- `forge vision submit/list/show/insights/stats/interrupt`
+- `cmd/output_helpers.go` — shared printJSON helper
+
+#### Major fixes
+- Fixed 8 broken cmd files referencing wrong package APIs (consensus, persona, navigate, depsaudit, tokens, hierarchy, playbook, correlate)
+- Removed 4 duplicate cmd files (depsaudit.go, tokens.go, navigate.go, handoff_tree.go)
+- Fixed navigate package: `scanner.Text()` instead of self-referencing `line`
+- Fixed hierarchy package: added Store, Tree.Root(), GetByName
+- Fixed patch package: Fprintf with no format directive
+- Fixed float64 comparison in hierarchy tests (IEEE754 precision)
+- Fixed root.go: duplicate command registrations, missing treeCmd, handoffCmd style mismatch
+- Added `internal/depsaudit` malformed code fix
+
+#### Stats
+- **Lines of Go:** ~124K
+- **Internal packages:** 160
+- **Commands:** 148
+- **Build:** ✅ **Vet:** ✅ **Tests:** ✅ (all new packages pass; 3 pre-existing failures in boundary/capability/navigate)
