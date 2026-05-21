@@ -356,7 +356,7 @@ All 18 utility packages implemented and tested.
 
 ### Developer Experience (From Brainstorm #14)
 - [ ] `forge studio` — visual pipeline builder (drag-and-drop, exports to forge.yaml)
-- [ ] `forge learn` — interactive terminal tutorial system (hands-on lessons, progressive)
+- [x] `forge learn` — interactive terminal tutorial system (hands-on lessons, progressive)
 - [ ] `forge doctor --fix` — automatic environment repair
 
 ### Novel Features (From Brainstorm #14)
