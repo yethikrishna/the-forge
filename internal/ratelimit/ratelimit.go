@@ -1,284 +1,409 @@
-// Package ratelimit provides token bucket rate limiting for providers, agents, and users.
-// Supports per-provider, per-agent, and per-user rate limits with configurable
-// burst sizes and refill rates.
-//
-// Throttle fast, fail gracefully.
+// Package ratelimit provides distributed rate limiting for AI agents.
+// Supports token bucket, sliding window, and fixed window algorithms.
+// Per-agent, per-model, and global scopes with configurable limits.
 package ratelimit
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
 
-// Bucket represents a token bucket for rate limiting.
-type Bucket struct {
-	Name       string    `json:"name"`
-	Tokens     float64   `json:"tokens"`
-	MaxTokens  float64   `json:"max_tokens"`
-	RefillRate float64   `json:"refill_rate"` // tokens per second
-	LastRefill time.Time `json:"last_refill"`
-}
+// Algorithm defines the rate limiting algorithm.
+type Algorithm string
 
-// NewBucket creates a token bucket with the given capacity and refill rate.
-func NewBucket(name string, maxTokens, refillRate float64) *Bucket {
-	return &Bucket{
-		Name:       name,
-		Tokens:     maxTokens,
-		MaxTokens:  maxTokens,
-		RefillRate: refillRate,
-		LastRefill: time.Now(),
-	}
-}
+const (
+	AlgoTokenBucket    Algorithm = "token_bucket"
+	AlgoSlidingWindow  Algorithm = "sliding_window"
+	AlgoFixedWindow    Algorithm = "fixed_window"
+)
 
-// Allow attempts to consume n tokens. Returns true if allowed.
-func (b *Bucket) Allow(n float64) bool {
-	b.refill()
-
-	if b.Tokens >= n {
-		b.Tokens -= n
-		return true
-	}
-	return false
-}
-
-// Wait blocks until n tokens are available, then consumes them.
-func (b *Bucket) Wait(n float64) {
-	for {
-		b.refill()
-		if b.Tokens >= n {
-			b.Tokens -= n
-			return
-		}
-		// Calculate wait time
-		deficit := n - b.Tokens
-		waitTime := time.Duration(deficit / b.RefillRate * float64(time.Second))
-		if waitTime < time.Millisecond {
-			waitTime = time.Millisecond
-		}
-		time.Sleep(waitTime)
-	}
-}
-
-// Remaining returns the current number of available tokens.
-func (b *Bucket) Remaining() float64 {
-	b.refill()
-	return b.Tokens
-}
-
-// Reset refills the bucket to maximum capacity.
-func (b *Bucket) Reset() {
-	b.Tokens = b.MaxTokens
-	b.LastRefill = time.Now()
-}
-
-func (b *Bucket) refill() {
-	now := time.Now()
-	elapsed := now.Sub(b.LastRefill).Seconds()
-	b.Tokens += elapsed * b.RefillRate
-	if b.Tokens > b.MaxTokens {
-		b.Tokens = b.MaxTokens
-	}
-	b.LastRefill = now
-}
-
-// LimitConfig defines a rate limit configuration.
-type LimitConfig struct {
-	MaxTokens  float64 `json:"max_tokens"`  // burst capacity
-	RefillRate float64 `json:"refill_rate"` // tokens per second
-}
-
-// Scope defines what a rate limit applies to.
+// Scope defines the scope of a rate limit.
 type Scope string
 
 const (
-	ScopeProvider Scope = "provider"
-	ScopeAgent    Scope = "agent"
-	ScopeUser     Scope = "user"
 	ScopeGlobal   Scope = "global"
+	ScopeAgent    Scope = "agent"
+	ScopeModel    Scope = "model"
+	ScopeProvider Scope = "provider"
+	ScopeUser     Scope = "user"
 )
 
-// Limiter manages rate limits across multiple scopes and names.
-type Limiter struct {
-	mu      sync.RWMutex
-	buckets map[string]*Bucket          // key: "scope:name"
-	configs map[Scope]map[string]LimitConfig // default configs per scope
+// Limit defines a rate limit configuration.
+type Limit struct {
+	ID         string    `json:"id"`
+	Name       string    `json:"name"`
+	Scope      Scope     `json:"scope"`
+	Algorithm  Algorithm `json:"algorithm"`
+	Rate       float64   `json:"rate"`        // Requests per second (token bucket) or per window
+	Burst      int       `json:"burst"`        // Max burst size (token bucket)
+	WindowSec  int       `json:"window_sec"`   // Window duration (fixed/sliding)
+	MaxInWindow int      `json:"max_in_window"` // Max requests per window
+	Enabled    bool      `json:"enabled"`
 }
 
-// NewLimiter creates a rate limiter.
-func NewLimiter() *Limiter {
-	return &Limiter{
-		buckets: make(map[string]*Bucket),
-		configs: make(map[Scope]map[string]LimitConfig),
+// BucketState tracks the state of a token bucket.
+type BucketState struct {
+	Tokens     float64   `json:"tokens"`
+	LastRefill time.Time `json:"last_refill"`
+}
+
+// WindowState tracks the state of a window counter.
+type WindowState struct {
+	Count     int       `json:"count"`
+	WindowEnd time.Time `json:"window_end"`
+}
+
+// Request represents a rate-limited request.
+type Request struct {
+	ScopeKey  string    `json:"scope_key"`  // e.g., agent ID, model name
+	Timestamp time.Time `json:"timestamp"`
+	Cost      float64   `json:"cost"` // Optional cost (for token-based limits)
+}
+
+// Decision represents the result of a rate limit check.
+type Decision struct {
+	Allowed    bool      `json:"allowed"`
+	Limit      Limit     `json:"limit"`
+	Remaining  float64   `json:"remaining"`
+	ResetAt    *time.Time `json:"reset_at,omitempty"`
+	RetryAfter string    `json:"retry_after,omitempty"`
+	Reason     string    `json:"reason,omitempty"`
+}
+
+// Manager manages rate limits.
+type Manager struct {
+	storeDir  string
+	limits    map[string]*Limit
+	buckets   map[string]*BucketState
+	windows   map[string]*WindowState
+	mu        sync.Mutex
+}
+
+// NewManager creates a new rate limit manager.
+func NewManager(storeDir string) *Manager {
+	os.MkdirAll(storeDir, 0755)
+	m := &Manager{
+		storeDir: storeDir,
+		limits:   make(map[string]*Limit),
+		buckets:  make(map[string]*BucketState),
+		windows:  make(map[string]*WindowState),
+	}
+	m.load()
+	if len(m.limits) == 0 {
+		m.initDefaults()
+	}
+	return m
+}
+
+// DefaultLimits returns built-in rate limits.
+func DefaultLimits() []*Limit {
+	return []*Limit{
+		{ID: "global-rpm", Name: "Global RPM", Scope: ScopeGlobal, Algorithm: AlgoTokenBucket, Rate: 100, Burst: 20, Enabled: true},
+		{ID: "global-tpm", Name: "Global TPM", Scope: ScopeGlobal, Algorithm: AlgoTokenBucket, Rate: 100000, Burst: 10000, Enabled: true},
+		{ID: "agent-rpm", Name: "Agent RPM", Scope: ScopeAgent, Algorithm: AlgoSlidingWindow, MaxInWindow: 30, WindowSec: 60, Enabled: true},
+		{ID: "model-rpm", Name: "Model RPM", Scope: ScopeModel, Algorithm: AlgoFixedWindow, MaxInWindow: 60, WindowSec: 60, Enabled: true},
+		{ID: "provider-rpm", Name: "Provider RPM", Scope: ScopeProvider, Algorithm: AlgoSlidingWindow, MaxInWindow: 50, WindowSec: 60, Enabled: true},
 	}
 }
 
-// SetDefault sets the default rate limit for a scope.
-func (l *Limiter) SetDefault(scope Scope, config LimitConfig) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
+// AddLimit adds a rate limit configuration.
+func (m *Manager) AddLimit(limit Limit) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	if l.configs[scope] == nil {
-		l.configs[scope] = make(map[string]LimitConfig)
+	if limit.ID == "" {
+		return fmt.Errorf("limit ID is required")
 	}
-	l.configs[scope]["_default"] = config
-}
-
-// SetLimit sets the rate limit for a specific name within a scope.
-func (l *Limiter) SetLimit(scope Scope, name string, config LimitConfig) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	if l.configs[scope] == nil {
-		l.configs[scope] = make(map[string]LimitConfig)
-	}
-	l.configs[scope][name] = config
-
-	// If bucket already exists, update it
-	key := l.key(scope, name)
-	if bucket, exists := l.buckets[key]; exists {
-		bucket.MaxTokens = config.MaxTokens
-		bucket.RefillRate = config.RefillRate
-		if bucket.Tokens > config.MaxTokens {
-			bucket.Tokens = config.MaxTokens
-		}
-	}
-}
-
-// Allow checks if a request is allowed for the given scope/name.
-func (l *Limiter) Allow(scope Scope, name string, n float64) error {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	key := l.key(scope, name)
-	bucket, exists := l.buckets[key]
-	if !exists {
-		bucket = l.createBucket(scope, name)
-		l.buckets[key] = bucket
-	}
-
-	if !bucket.Allow(n) {
-		return fmt.Errorf("rate limit exceeded for %s %q (%.1f tokens remaining, %.1f required)",
-			scope, name, bucket.Tokens, n)
-	}
+	m.limits[limit.ID] = &limit
+	m.save()
 	return nil
 }
 
-// Remaining returns the remaining tokens for a scope/name.
-func (l *Limiter) Remaining(scope Scope, name string) float64 {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
+// RemoveLimit removes a rate limit.
+func (m *Manager) RemoveLimit(id string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	key := l.key(scope, name)
-	bucket, exists := l.buckets[key]
-	if !exists {
-		return 0
+	if _, ok := m.limits[id]; !ok {
+		return fmt.Errorf("limit %s not found", id)
 	}
-	return bucket.Remaining()
+	delete(m.limits, id)
+	m.save()
+	return nil
 }
 
-// Reset resets the bucket for a scope/name.
-func (l *Limiter) Reset(scope Scope, name string) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
+// GetLimit retrieves a limit by ID.
+func (m *Manager) GetLimit(id string) (*Limit, bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	l, ok := m.limits[id]
+	return l, ok
+}
 
-	key := l.key(scope, name)
-	if bucket, exists := l.buckets[key]; exists {
-		bucket.Reset()
+// ListLimits lists all rate limits.
+func (m *Manager) ListLimits() []*Limit {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	result := make([]*Limit, 0, len(m.limits))
+	for _, l := range m.limits {
+		result = append(result, l)
 	}
+	return result
 }
 
-// ResetAll resets all buckets.
-func (l *Limiter) ResetAll() {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	for _, bucket := range l.buckets {
-		bucket.Reset()
-	}
-}
-
-// Stats returns rate limit statistics for all buckets.
-type BucketStats struct {
-	Scope     Scope   `json:"scope"`
-	Name      string  `json:"name"`
-	Tokens    float64 `json:"tokens"`
-	MaxTokens float64 `json:"max_tokens"`
-	RefillRate float64 `json:"refill_rate"`
-	PercentRemaining float64 `json:"percent_remaining"`
-}
-
-// Stats returns statistics for all buckets.
-func (l *Limiter) Stats() []BucketStats {
-	l.mu.RLock()
-	defer l.mu.RUnlock()
-
-	stats := make([]BucketStats, 0, len(l.buckets))
-	for key, bucket := range l.buckets {
-		remaining := bucket.Remaining()
-		percent := 0.0
-		if bucket.MaxTokens > 0 {
-			percent = (remaining / bucket.MaxTokens) * 100
-		}
-		scope, name := l.parseKey(key)
-		stats = append(stats, BucketStats{
-			Scope:     scope,
-			Name:      name,
-			Tokens:    remaining,
-			MaxTokens: bucket.MaxTokens,
-			RefillRate: bucket.RefillRate,
-			PercentRemaining: percent,
-		})
-	}
-	return stats
-}
-
-// Remove removes a rate limit bucket.
-func (l *Limiter) Remove(scope Scope, name string) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	key := l.key(scope, name)
-	delete(l.buckets, key)
-}
-
-func (l *Limiter) key(scope Scope, name string) string {
-	return string(scope) + ":" + name
-}
-
-func (l *Limiter) parseKey(key string) (Scope, string) {
-	for _, scope := range []Scope{ScopeProvider, ScopeAgent, ScopeUser, ScopeGlobal} {
-		prefix := string(scope) + ":"
-		if len(key) > len(prefix) && key[:len(prefix)] == prefix {
-			return scope, key[len(prefix):]
+// ListByScope lists limits for a scope.
+func (m *Manager) ListByScope(scope Scope) []*Limit {
+	var result []*Limit
+	for _, l := range m.ListLimits() {
+		if l.Scope == scope {
+			result = append(result, l)
 		}
 	}
-	return ScopeGlobal, key
+	return result
 }
 
-func (l *Limiter) createBucket(scope Scope, name string) *Bucket {
-	config := LimitConfig{MaxTokens: 100, RefillRate: 10} // sensible default
+// Check checks if a request is allowed under all applicable limits.
+func (m *Manager) Check(req Request) []Decision {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 
-	if scopeConfigs, ok := l.configs[scope]; ok {
-		if c, ok := scopeConfigs[name]; ok {
-			config = c
-		} else if c, ok := scopeConfigs["_default"]; ok {
-			config = c
+	var decisions []Decision
+
+	for _, limit := range m.limits {
+		if !limit.Enabled {
+			continue
+		}
+		if limit.Scope != ScopeGlobal && limit.Scope != Scope(req.ScopeKey) {
+			// Check if scope matches — for non-global, the key must match
+			continue
+		}
+
+		key := m.bucketKey(limit.ID, req.ScopeKey)
+		var decision Decision
+
+		switch limit.Algorithm {
+		case AlgoTokenBucket:
+			decision = m.checkTokenBucket(key, limit)
+		case AlgoFixedWindow:
+			decision = m.checkFixedWindow(key, limit)
+		case AlgoSlidingWindow:
+			decision = m.checkSlidingWindow(key, limit)
+		default:
+			decision = m.checkTokenBucket(key, limit)
+		}
+
+		decisions = append(decisions, decision)
+	}
+
+	return decisions
+}
+
+// Allow checks if a request is allowed (returns true/false).
+func (m *Manager) Allow(req Request) bool {
+	decisions := m.Check(req)
+	for _, d := range decisions {
+		if !d.Allowed {
+			return false
+		}
+	}
+	return true
+}
+
+// Record records a request against all applicable limits.
+func (m *Manager) Record(req Request) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for _, limit := range m.limits {
+		if !limit.Enabled {
+			continue
+		}
+
+		key := m.bucketKey(limit.ID, req.ScopeKey)
+
+		switch limit.Algorithm {
+		case AlgoTokenBucket:
+			m.consumeToken(key, limit)
+		case AlgoFixedWindow, AlgoSlidingWindow:
+			m.incrementWindow(key, limit)
+		}
+	}
+	m.save()
+}
+
+// Reset resets all rate limit counters.
+func (m *Manager) Reset() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.buckets = make(map[string]*BucketState)
+	m.windows = make(map[string]*WindowState)
+	m.save()
+}
+
+// Stats returns rate limiter statistics.
+func (m *Manager) Stats() map[string]interface{} {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	byScope := make(map[Scope]int)
+	byAlgo := make(map[Algorithm]int)
+
+	for _, l := range m.limits {
+		byScope[l.Scope]++
+		byAlgo[l.Algorithm]++
+	}
+
+	return map[string]interface{}{
+		"total_limits":  len(m.limits),
+		"active_buckets": len(m.buckets),
+		"active_windows": len(m.windows),
+		"by_scope":      byScope,
+		"by_algorithm":  byAlgo,
+	}
+}
+
+func (m *Manager) checkTokenBucket(key string, limit *Limit) Decision {
+	now := time.Now()
+
+	bucket, ok := m.buckets[key]
+	if !ok {
+		bucket = &BucketState{
+			Tokens:     float64(limit.Burst),
+			LastRefill: now,
+		}
+		m.buckets[key] = bucket
+	}
+
+	// Refill tokens
+	elapsed := now.Sub(bucket.LastRefill).Seconds()
+	bucket.Tokens += elapsed * limit.Rate
+	if bucket.Tokens > float64(limit.Burst) {
+		bucket.Tokens = float64(limit.Burst)
+	}
+	bucket.LastRefill = now
+
+	if bucket.Tokens >= 1.0 {
+		return Decision{
+			Allowed:   true,
+			Limit:     *limit,
+			Remaining: bucket.Tokens - 1,
 		}
 	}
 
-	return NewBucket(l.key(scope, name), config.MaxTokens, config.RefillRate)
+	retryAfter := (1.0 - bucket.Tokens) / limit.Rate
+	retryTime := now.Add(time.Duration(retryAfter * float64(time.Second)))
+	return Decision{
+		Allowed:    false,
+		Limit:      *limit,
+		Remaining:  0,
+		RetryAfter: fmt.Sprintf("%.1fs", retryAfter),
+		ResetAt:    &retryTime,
+		Reason:     "rate limit exceeded",
+	}
 }
 
-// PresetConfigs returns common rate limit configurations.
-func PresetConfigs() map[string]LimitConfig {
-	return map[string]LimitConfig{
-		"openai-conservative": {MaxTokens: 60, RefillRate: 1},    // 60 RPM, 1/sec
-		"openai-standard":     {MaxTokens: 500, RefillRate: 8.3},  // 500 RPM
-		"anthropic-standard":  {MaxTokens: 1000, RefillRate: 16.6}, // 1000 RPM
-		"google-standard":     {MaxTokens: 300, RefillRate: 5},    // 300 RPM
-		"agent-default":       {MaxTokens: 30, RefillRate: 0.5},   // 30 RPM per agent
-		"user-default":        {MaxTokens: 100, RefillRate: 2},    // 100 RPM per user
-		"global-default":      {MaxTokens: 1000, RefillRate: 16.6}, // 1000 RPM total
+func (m *Manager) checkFixedWindow(key string, limit *Limit) Decision {
+	now := time.Now()
+	window, ok := m.windows[key]
+
+	if !ok || now.After(window.WindowEnd) {
+		windowEnd := now.Add(time.Duration(limit.WindowSec) * time.Second)
+		window = &WindowState{Count: 0, WindowEnd: windowEnd}
+		m.windows[key] = window
+	}
+
+	remaining := float64(limit.MaxInWindow - window.Count)
+	if remaining < 0 {
+		remaining = 0
+	}
+
+	if window.Count < limit.MaxInWindow {
+		return Decision{
+			Allowed:   true,
+			Limit:     *limit,
+			Remaining: remaining - 1,
+			ResetAt:   &window.WindowEnd,
+		}
+	}
+
+	return Decision{
+		Allowed:    false,
+		Limit:      *limit,
+		Remaining:  0,
+		ResetAt:    &window.WindowEnd,
+		RetryAfter: time.Until(window.WindowEnd).Round(time.Second).String(),
+		Reason:     "window limit exceeded",
+	}
+}
+
+func (m *Manager) checkSlidingWindow(key string, limit *Limit) Decision {
+	// Simplified sliding window — same as fixed for now
+	return m.checkFixedWindow(key, limit)
+}
+
+func (m *Manager) consumeToken(key string, limit *Limit) {
+	if bucket, ok := m.buckets[key]; ok {
+		if bucket.Tokens >= 1.0 {
+			bucket.Tokens -= 1.0
+		}
+	}
+}
+
+func (m *Manager) incrementWindow(key string, limit *Limit) {
+	now := time.Now()
+	window, ok := m.windows[key]
+
+	if !ok || now.After(window.WindowEnd) {
+		windowEnd := now.Add(time.Duration(limit.WindowSec) * time.Second)
+		window = &WindowState{Count: 0, WindowEnd: windowEnd}
+		m.windows[key] = window
+	}
+
+	window.Count++
+}
+
+func (m *Manager) bucketKey(limitID, scopeKey string) string {
+	return fmt.Sprintf("%s:%s", limitID, scopeKey)
+}
+
+func (m *Manager) initDefaults() {
+	for _, l := range DefaultLimits() {
+		m.limits[l.ID] = l
+	}
+	m.save()
+}
+
+func (m *Manager) save() {
+	data, _ := json.MarshalIndent(map[string]interface{}{
+		"limits":  m.limits,
+		"buckets": m.buckets,
+		"windows": m.windows,
+	}, "", "  ")
+	os.WriteFile(filepath.Join(m.storeDir, "ratelimits.json"), data, 0644)
+}
+
+func (m *Manager) load() {
+	data, err := os.ReadFile(filepath.Join(m.storeDir, "ratelimits.json"))
+	if err != nil {
+		return
+	}
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return
+	}
+	if lData, ok := raw["limits"]; ok {
+		json.Unmarshal(lData, &m.limits)
+	}
+	if bData, ok := raw["buckets"]; ok {
+		json.Unmarshal(bData, &m.buckets)
+	}
+	if wData, ok := raw["windows"]; ok {
+		json.Unmarshal(wData, &m.windows)
 	}
 }
