@@ -52,6 +52,7 @@ make build
 | `forge doctor` | **Auto-repair** — environment diagnostics + self-fix |
 | `forge learn` | Interactive tutorial system (5 lessons) |
 | `forge mcp2` | MCP 2.0 server with governance middleware |
+| `forge cost live` | Live cost tracking |
 
 ## 7-Layer Architecture
 
@@ -131,6 +132,10 @@ One command. Four agents. Unified. That's the pitch.
 | No standard agent protocol | ACP — open, not proprietary |
 | Dev environments are manual | `forge env` — Dockerfile → running |
 | File transfer between agents | `forge transfer` — WireGuard P2P |
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for supported versions, vulnerability reporting, and Go runtime tracking.
 
 ## License
 
