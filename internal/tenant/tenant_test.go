@@ -7,7 +7,7 @@ import (
 
 func TestCreate(t *testing.T) {
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := NewStore(NewTenantManager(dir))
 
 	tenant, err := store.Create("acme-corp", "pro")
 	if err != nil {
@@ -16,8 +16,8 @@ func TestCreate(t *testing.T) {
 	if tenant.Name != "acme-corp" {
 		t.Errorf("expected acme-corp, got %s", tenant.Name)
 	}
-	if tenant.Plan != "pro" {
-		t.Errorf("expected pro, got %s", tenant.Plan)
+	if tenant.Plan.Tier != "pro" {
+		t.Errorf("expected pro, got %s", tenant.Plan.Tier)
 	}
 	if tenant.Status != "active" {
 		t.Errorf("expected active, got %s", tenant.Status)
@@ -26,7 +26,7 @@ func TestCreate(t *testing.T) {
 
 func TestGet(t *testing.T) {
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := NewStore(NewTenantManager(dir))
 
 	created, _ := store.Create("test", "free")
 	found, err := store.Get(created.ID)
@@ -40,7 +40,7 @@ func TestGet(t *testing.T) {
 
 func TestGetNotFound(t *testing.T) {
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := NewStore(NewTenantManager(dir))
 
 	_, err := store.Get("nonexistent")
 	if err == nil {
@@ -50,7 +50,7 @@ func TestGetNotFound(t *testing.T) {
 
 func TestList(t *testing.T) {
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := NewStore(NewTenantManager(dir))
 
 	store.Create("tenant-1", "free")
 	store.Create("tenant-2", "pro")
@@ -67,24 +67,24 @@ func TestList(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := NewStore(NewTenantManager(dir))
 
 	created, _ := store.Create("test", "free")
 	updated, err := store.Update(created.ID, func(t *Tenant) {
-		t.Plan = "pro"
+		t.Plan = findPlan("pro")
 		t.Quota = PlanDefaults("pro")
 	})
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)
 	}
-	if updated.Plan != "pro" {
-		t.Errorf("expected pro, got %s", updated.Plan)
+	if updated.Plan.Tier != "pro" {
+		t.Errorf("expected pro, got %s", updated.Plan.Tier)
 	}
 }
 
 func TestSuspendActivate(t *testing.T) {
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := NewStore(NewTenantManager(dir))
 
 	created, _ := store.Create("test", "free")
 
@@ -107,7 +107,7 @@ func TestSuspendActivate(t *testing.T) {
 
 func TestDelete(t *testing.T) {
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := NewStore(NewTenantManager(dir))
 
 	created, _ := store.Create("test", "free")
 	if err := store.Delete(created.ID); err != nil {
@@ -122,29 +122,29 @@ func TestDelete(t *testing.T) {
 
 func TestPlanDefaults(t *testing.T) {
 	free := PlanDefaults("free")
-	if free.MaxAgents != 3 {
-		t.Errorf("expected 3 agents for free, got %d", free.MaxAgents)
+	if free.Agents != 3 {
+		t.Errorf("expected 3 agents for free, got %d", free.Agents)
 	}
 
 	pro := PlanDefaults("pro")
-	if pro.MaxAgents != 20 {
-		t.Errorf("expected 20 agents for pro, got %d", pro.MaxAgents)
+	if pro.Agents != 20 {
+		t.Errorf("expected 20 agents for pro, got %d", pro.Agents)
 	}
 
 	ent := PlanDefaults("enterprise")
-	if ent.MaxAgents != -1 {
-		t.Errorf("expected unlimited agents for enterprise, got %d", ent.MaxAgents)
+	if ent.Agents != -1 {
+		t.Errorf("expected unlimited agents for enterprise, got %d", ent.Agents)
 	}
 
 	unknown := PlanDefaults("unknown")
-	if unknown.MaxAgents != 3 {
-		t.Errorf("expected free defaults for unknown plan, got %d", unknown.MaxAgents)
+	if unknown.Agents != 3 {
+		t.Errorf("expected free defaults for unknown plan, got %d", unknown.Agents)
 	}
 }
 
 func TestAddMember(t *testing.T) {
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := NewStore(NewTenantManager(dir))
 
 	tenant, _ := store.Create("test", "pro")
 	member, err := store.AddMember(tenant.ID, "user-1", RoleAdmin)
@@ -161,7 +161,7 @@ func TestAddMember(t *testing.T) {
 
 func TestListMembers(t *testing.T) {
 	dir := t.TempDir()
-	store := NewStore(dir)
+	store := NewStore(NewTenantManager(dir))
 
 	tenant, _ := store.Create("test", "pro")
 	store.AddMember(tenant.ID, "user-1", RoleOwner)
@@ -203,7 +203,7 @@ func TestCheckQuota(t *testing.T) {
 	tenant := &Tenant{
 		ID:     "test",
 		Status: "active",
-		Quota:  Quota{MaxAgents: 5, MaxSessions: 10, MaxCostUSD: 50},
+		Quota:  Quota{Agents: 5, Sessions: 10, CostPerDay: 50},
 	}
 
 	// Within quota
@@ -237,7 +237,7 @@ func TestCheckQuotaUnlimited(t *testing.T) {
 	tenant := &Tenant{
 		ID:     "test",
 		Status: "active",
-		Quota:  Quota{MaxAgents: -1, MaxSessions: -1, MaxCostUSD: -1},
+		Quota:  Quota{Agents: -1, Sessions: -1, CostPerDay: -1},
 	}
 
 	if err := CheckQuota(tenant, 1000, 1000, 1000); err != nil {
@@ -249,8 +249,8 @@ func TestFormatTenant(t *testing.T) {
 	tenant := &Tenant{
 		ID:     "tenant-1",
 		Name:   "acme",
-		Plan:   "pro",
-		Quota:  Quota{MaxAgents: 20, MaxSessions: 100, MaxCostUSD: 100},
+		Plan: findPlan("pro"),
+		Quota:  Quota{Agents: 20, Sessions: 100, CostPerDay: 100},
 		Status: "active",
 	}
 

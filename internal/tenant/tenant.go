@@ -86,6 +86,7 @@ type Usage struct {
 // TenantManager manages tenants.
 type TenantManager struct {
 	tenants  map[string]*Tenant
+	members  map[string][]*Member // tenant ID -> members
 	storeDir string
 	mu       sync.RWMutex
 }
@@ -94,6 +95,7 @@ type TenantManager struct {
 func NewTenantManager(storeDir string) *TenantManager {
 	tm := &TenantManager{
 		tenants:  make(map[string]*Tenant),
+		members:  make(map[string][]*Member),
 		storeDir: storeDir,
 	}
 
@@ -108,7 +110,7 @@ func BuiltinPlans() []Plan {
 	return []Plan{
 		{
 			ID: "free", Name: "Free", Tier: "free",
-			MaxAgents: 2, MaxModels: 3, MaxSessions: 100, MaxStorage: 100,
+			MaxAgents: 3, MaxModels: 3, MaxSessions: 100, MaxStorage: 100,
 			MonthlyCost: 0,
 			Features: []string{"basic_agents", "community_models", "local_execution"},
 		},
@@ -468,12 +470,17 @@ func (s *Store) Update(id string, fn func(*Tenant)) (*Tenant, error) {
 	return t, nil
 }
 
-// Delete deletes a tenant.
+// Delete soft-deletes a tenant.
 func (s *Store) Delete(id string) error {
 	s.tm.mu.Lock()
 	defer s.tm.mu.Unlock()
 
-	delete(s.tm.tenants, id)
+	t, ok := s.tm.tenants[id]
+	if !ok {
+		return fmt.Errorf("tenant %s not found", id)
+	}
+	t.Status = "deleted"
+	t.UpdatedAt = time.Now().UTC()
 	s.tm.save()
 	return nil
 }
@@ -492,18 +499,27 @@ func (s *Store) Activate(id string) (*Tenant, error) {
 
 // AddMember adds a member to a tenant.
 func (s *Store) AddMember(tenantID, userID string, role Role) (*Member, error) {
-	return &Member{
+	s.tm.mu.Lock()
+	defer s.tm.mu.Unlock()
+
+	m := &Member{
 		ID:       fmt.Sprintf("member-%d", time.Now().UnixNano()),
 		TenantID: tenantID,
 		UserID:   userID,
 		Role:     role,
 		JoinedAt: time.Now().UTC(),
-	}, nil
+	}
+	s.tm.members[tenantID] = append(s.tm.members[tenantID], m)
+	s.tm.save()
+	return m, nil
 }
 
 // ListMembers lists members of a tenant.
 func (s *Store) ListMembers(tenantID string) ([]*Member, error) {
-	return []*Member{}, nil
+	s.tm.mu.RLock()
+	defer s.tm.mu.RUnlock()
+
+	return s.tm.members[tenantID], nil
 }
 
 // PlanDefaults returns default quota for a plan.
@@ -514,16 +530,37 @@ func PlanDefaults(planID string) Quota {
 
 // CheckQuota checks if a tenant's current usage is within quota.
 func CheckQuota(t *Tenant, agents, sessions int, costUSD float64) error {
-	if t.Quota.Agents > 0 && agents > t.Quota.Agents {
+	if t.Status != "active" {
+		return fmt.Errorf("tenant is %s, not active", t.Status)
+	}
+	if t.Quota.Agents > 0 && agents >= t.Quota.Agents {
 		return fmt.Errorf("agent quota exceeded (%d/%d)", agents, t.Quota.Agents)
 	}
-	if t.Quota.Sessions > 0 && sessions > t.Quota.Sessions {
+	if t.Quota.Sessions > 0 && sessions >= t.Quota.Sessions {
 		return fmt.Errorf("session quota exceeded")
 	}
-	if t.Quota.CostPerDay > 0 && costUSD > t.Quota.CostPerDay {
+	if t.Quota.CostPerDay > 0 && costUSD >= t.Quota.CostPerDay {
 		return fmt.Errorf("cost quota exceeded")
 	}
 	return nil
+}
+
+// CanPerform checks if a role can perform an action.
+func CanPerform(role Role, action string) bool {
+	rolePerms := map[Role]map[string]bool{
+		RoleOwner:  {"*": true},
+		RoleAdmin:  {"read": true, "write": true, "execute": true, "manage": true, "create": true},
+		RoleMember: {"read": true, "write": true, "execute": true, "create": true},
+		RoleViewer: {"read": true},
+	}
+	perms, ok := rolePerms[role]
+	if !ok {
+		return false
+	}
+	if perms["*"] {
+		return true
+	}
+	return perms[action]
 }
 
 func (tm *TenantManager) save() {
