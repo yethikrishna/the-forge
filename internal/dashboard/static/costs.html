@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo"><span class="logo-icon">⚒</span><span class="logo-text">The Forge</span></div>
+        <a href="/" class="nav-link">Dashboard</a>
+        <a href="/agents" class="nav-link">Agents</a>
+        <a href="/costs" class="nav-link active">Costs</a>
+        <a href="/traces" class="nav-link">Traces</a>
+    </nav>
+    <main class="content">
+        <header class="header"><h1>Costs</h1></header>
+        <section class="metrics-grid">
+            <div class="metric-card"><div class="metric-label">Total Cost</div><div class="metric-value">${{printf "%.2f" .Cost.TotalCost}}</div></div>
+            <div class="metric-card"><div class="metric-label">Total Tokens</div><div class="metric-value">{{.Cost.TotalTokens}}</div></div>
+            <div class="metric-card"><div class="metric-label">Budget Used</div><div class="metric-value">${{printf "%.2f" .Cost.BudgetUsed}} / ${{printf "%.2f" .Cost.BudgetTotal}}</div></div>
+            <div class="metric-card"><div class="metric-label">Budget Remaining</div><div class="metric-value">${{printf "%.2f" (sub .Cost.BudgetTotal .Cost.BudgetUsed)}}</div></div>
+        </section>
+        <section>
+            <h2>Daily Costs (7 days)</h2>
+            <div class="chart-container">
+                <div class="bar-chart">
+                {{range .Cost.DailyCosts}}
+                    <div class="bar-group">
+                        <div class="bar" style="height: {{printf "%.0f" (mul (div .Cost 5.0) 100.0)}}%"></div>
+                        <div class="bar-label">{{.Date}}</div>
+                        <div class="bar-value">${{printf "%.2f" .Cost}}</div>
+                    </div>
+                {{end}}
+                </div>
+            </div>
+        </section>
+        <section>
+            <h2>Cost by Model</h2>
+            <table class="data-table">
+                <thead><tr><th>Model</th><th>Cost</th><th>Tokens</th><th>Requests</th></tr></thead>
+                <tbody>
+                {{range .Cost.ByModel}}
+                <tr><td>{{.Model}}</td><td>${{printf "%.2f" .Cost}}</td><td>{{.Tokens}}</td><td>{{.Requests}}</td></tr>
+                {{end}}
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h2>Cost by Agent</h2>
+            <table class="data-table">
+                <thead><tr><th>Agent</th><th>Cost</th><th>Tokens</th><th>Sessions</th></tr></thead>
+                <tbody>
+                {{range .Cost.ByAgent}}
+                <tr><td>{{.AgentName}}</td><td>${{printf "%.2f" .Cost}}</td><td>{{.Tokens}}</td><td>{{.Sessions}}</td></tr>
+                {{end}}
+                </tbody>
+            </table>
+        </section>
+    </main>
+    <script src="/static/app.js"></script>
+</body>
+</html>

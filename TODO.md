@@ -208,7 +208,7 @@ All 18 utility packages implemented and tested.
 - [x] **Forgefile v2** — TOML multi-agent workflow syntax (GitHub Actions for AI agents)
 - [ ] **Web Dashboard Real-Time** — WebSocket agent monitoring, cost charts, trace viewer
 - [x] **Scheduled Memory Review (\"Dreaming\")** — `forge memory review` auto-extracts patterns from past sessions between runs (à la Claude Code with Claude 2026)
-- [ ] **Rubric-Based Output Grading** — extend `forge test` with rubric scoring; below-threshold triggers re-runs (à la Claude Outcomes)
+- [x] **Rubric-Based Output Grading** — extend `forge test` with rubric scoring; below-threshold triggers re-runs (à la Claude Outcomes)
 
 ### P2 — Next Quarter
 - [ ] **Enterprise Auth (RBAC + SSO)** — OIDC/SAML for `forge serve`
@@ -247,8 +247,8 @@ All 18 utility packages implemented and tested.
 ### Trust Infrastructure
 - [ ] Transparent mode (`--transparent`) — show model selection, token count, cost, tools, file access in real-time
 - [x] Agent trust scores — composite 0-100 from feedback, undo rate, test results, security findings
-- [ ] Action preview before destructive operations — show plan, user approves/modifies/rejects
-- [ ] Per-session permission scoping — `--scope=read-only`, `--scope=src-only`, `--scope=sandbox`, `--scope=full`
+- [x] Action preview before destructive operations — show plan, user approves/modifies/rejects
+- [x] Per-session permission scoping — `--scope=read-only`, `--scope=src-only`, `--scope=sandbox`, `--scope=full`
 
 ### Revenue & Sustainability
 - [ ] Forge Pro tier design — cloud sync, priority routing, advanced analytics, team features ($20/mo)

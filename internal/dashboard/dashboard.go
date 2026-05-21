@@ -1,273 +1,497 @@
-// Package dashboard provides a web dashboard for The Forge.
-// Every forge needs a window to see the flames.
+// Package dashboard provides an embedded web dashboard for Forge.
+// The smith's view — watch every hammer strike in real time.
 package dashboard
 
 import (
-	"context"
+	"embed"
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"io/fs"
+	"log"
 	"net/http"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 )
 
-// AgentStatus represents the status of an agent.
-type AgentStatus struct {
-	Name      string    `json:"name"`
-	Type      string    `json:"type"`
-	URL       string    `json:"url"`
-	Status    string    `json:"status"` // "running", "idle", "error", "stopped"
-	Requests  int64     `json:"requests"`
-	LastActive time.Time `json:"last_active"`
-	Uptime    string    `json:"uptime"`
-	Model     string    `json:"model"`
-}
+//go:embed static/*
+var staticFS embed.FS
 
-// SystemStats holds system-level statistics.
-type SystemStats struct {
-	Version      string  `json:"version"`
-	Uptime       string  `json:"uptime"`
-	AgentsActive int     `json:"agents_active"`
-	AgentsTotal  int     `json:"agents_total"`
-	Requests     int64   `json:"requests_total"`
-	TokensUsed   int64   `json:"tokens_used"`
-	CostUSD      float64 `json:"cost_usd"`
-	GoRoutines   int     `json:"goroutines"`
-	MemoryMB     float64 `json:"memory_mb"`
-}
-
-// Dashboard is the web dashboard server.
-type Dashboard struct {
-	port      int
-	stats     SystemStats
-	agents    []AgentStatus
-	startTime time.Time
+// DashboardServer serves the real-time web dashboard.
+type DashboardServer struct {
+	addr      string
+	hub       *WebSocketHub
+	store     Store
+	templates *template.Template
 	mu        sync.RWMutex
-	requests  int64
+	running   bool
 	server    *http.Server
 }
 
-// New creates a new dashboard server.
-func New(port int) *Dashboard {
-	return &Dashboard{
-		port:      port,
-		startTime: time.Now(),
-		stats: SystemStats{
-			Version: "0.4.0",
+// Store provides data for the dashboard.
+type Store interface {
+	GetAgentStatuses() ([]AgentStatus, error)
+	GetRecentSessions(limit int) ([]SessionInfo, error)
+	GetCostSummary(period string) (*CostSummary, error)
+	GetTraceSummary() (*TraceSummary, error)
+	GetMetrics() (*DashboardMetrics, error)
+}
+
+// AgentStatus represents a running agent's current state.
+type AgentStatus struct {
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Role        string            `json:"role"`
+	Model       string            `json:"model"`
+	Status      string            `json:"status"` // running, idle, error, completed
+	StartedAt   time.Time         `json:"started_at"`
+	TokensUsed  int64             `json:"tokens_used"`
+	Cost        float64           `json:"cost"`
+	Progress    float64           `json:"progress"` // 0-1
+	CurrentTask string            `json:"current_task"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
+}
+
+// SessionInfo represents a completed or running session.
+type SessionInfo struct {
+	ID           string    `json:"id"`
+	AgentID      string    `json:"agent_id"`
+	AgentName    string    `json:"agent_name"`
+	Model        string    `json:"model"`
+	Status       string    `json:"status"`
+	StartedAt    time.Time `json:"started_at"`
+	FinishedAt   *time.Time `json:"finished_at,omitempty"`
+	Duration     string    `json:"duration"`
+	TokensIn     int64     `json:"tokens_in"`
+	TokensOut    int64     `json:"tokens_out"`
+	Cost         float64   `json:"cost"`
+	OutputPreview string   `json:"output_preview,omitempty"`
+}
+
+// CostSummary represents cost data for a period.
+type CostSummary struct {
+	Period       string           `json:"period"`
+	TotalCost    float64          `json:"total_cost"`
+	TotalTokens  int64            `json:"total_tokens"`
+	ByModel      []ModelCost      `json:"by_model"`
+	ByAgent      []AgentCost      `json:"by_agent"`
+	DailyCosts   []DailyCost      `json:"daily_costs"`
+	BudgetUsed   float64          `json:"budget_used"`
+	BudgetTotal  float64          `json:"budget_total"`
+}
+
+// ModelCost is cost breakdown by model.
+type ModelCost struct {
+	Model     string  `json:"model"`
+	Cost      float64 `json:"cost"`
+	Tokens    int64   `json:"tokens"`
+	Requests  int     `json:"requests"`
+}
+
+// AgentCost is cost breakdown by agent.
+type AgentCost struct {
+	AgentID   string  `json:"agent_id"`
+	AgentName string  `json:"agent_name"`
+	Cost      float64 `json:"cost"`
+	Tokens    int64   `json:"tokens"`
+	Sessions  int     `json:"sessions"`
+}
+
+// DailyCost is cost per day.
+type DailyCost struct {
+	Date     string  `json:"date"`
+	Cost     float64 `json:"cost"`
+	Tokens   int64   `json:"tokens"`
+	Sessions int     `json:"sessions"`
+}
+
+// TraceSummary represents trace data.
+type TraceSummary struct {
+	TotalTraces   int            `json:"total_traces"`
+	AvgDuration   float64        `json:"avg_duration_ms"`
+	ErrorRate     float64        `json:"error_rate"`
+	ByOperation   []OpTrace      `json:"by_operation"`
+	RecentTraces  []TraceEntry   `json:"recent_traces"`
+}
+
+// OpTrace is trace data grouped by operation.
+type OpTrace struct {
+	Operation  string  `json:"operation"`
+	Count      int     `json:"count"`
+	AvgMs      float64 `json:"avg_ms"`
+	ErrorRate  float64 `json:"error_rate"`
+	P50Ms      float64 `json:"p50_ms"`
+	P99Ms      float64 `json:"p99_ms"`
+}
+
+// TraceEntry is a single trace.
+type TraceEntry struct {
+	ID         string            `json:"id"`
+	Operation  string            `json:"operation"`
+	DurationMs float64           `json:"duration_ms"`
+	Status     string            `json:"status"`
+	Timestamp  time.Time         `json:"timestamp"`
+	Attributes map[string]string `json:"attributes,omitempty"`
+}
+
+// DashboardMetrics are real-time dashboard metrics.
+type DashboardMetrics struct {
+	ActiveAgents    int              `json:"active_agents"`
+	RunningSessions int              `json:"running_sessions"`
+	TodayCost       float64          `json:"today_cost"`
+	TodayTokens     int64            `json:"today_tokens"`
+	TotalSessions   int              `json:"total_sessions"`
+	RecentEvents    []DashboardEvent `json:"recent_events"`
+	Uptime          string           `json:"uptime"`
+}
+
+// DashboardEvent is a real-time event pushed to the dashboard.
+type DashboardEvent struct {
+	Type      string    `json:"type"` // agent_start, agent_stop, cost_update, error, trace
+	AgentID   string    `json:"agent_id,omitempty"`
+	Message   string    `json:"message"`
+	Timestamp time.Time `json:"timestamp"`
+	Data      interface{} `json:"data,omitempty"`
+}
+
+// MemoryStore is an in-memory implementation of Store.
+type MemoryStore struct {
+	agents   []AgentStatus
+	sessions []SessionInfo
+	cost     CostSummary
+	traces   TraceSummary
+	metrics  DashboardMetrics
+	mu       sync.RWMutex
+}
+
+// NewMemoryStore creates an in-memory store with sample data.
+func NewMemoryStore() *MemoryStore {
+	now := time.Now().UTC()
+	return &MemoryStore{
+		agents: []AgentStatus{
+			{ID: "agent-1", Name: "coder", Role: "coder", Model: "gpt-4.1", Status: "running", StartedAt: now.Add(-15 * time.Minute), TokensUsed: 12500, Cost: 0.45, Progress: 0.7, CurrentTask: "Implementing auth module"},
+			{ID: "agent-2", Name: "reviewer", Role: "reviewer", Model: "claude-sonnet-4", Status: "idle", StartedAt: now.Add(-30 * time.Minute), TokensUsed: 8200, Cost: 0.32, Progress: 1.0, CurrentTask: ""},
+			{ID: "agent-3", Name: "tester", Role: "tester", Model: "gpt-4.1-mini", Status: "running", StartedAt: now.Add(-5 * time.Minute), TokensUsed: 3100, Cost: 0.08, Progress: 0.3, CurrentTask: "Running integration tests"},
+		},
+		sessions: []SessionInfo{
+			{ID: "s-1", AgentID: "agent-1", AgentName: "coder", Model: "gpt-4.1", Status: "running", StartedAt: now.Add(-15 * time.Minute), Duration: "15m", TokensIn: 5000, TokensOut: 7500, Cost: 0.45, OutputPreview: "package auth\n\nimport ("},
+			{ID: "s-2", AgentID: "agent-2", AgentName: "reviewer", Model: "claude-sonnet-4", Status: "completed", StartedAt: now.Add(-30 * time.Minute), Duration: "12m", TokensIn: 3200, TokensOut: 5000, Cost: 0.32, OutputPreview: "Review: 3 issues found..."},
+		},
+		cost: CostSummary{
+			Period:      "today",
+			TotalCost:   2.45,
+			TotalTokens: 87500,
+			ByModel: []ModelCost{
+				{Model: "gpt-4.1", Cost: 1.20, Tokens: 45000, Requests: 12},
+				{Model: "claude-sonnet-4", Cost: 0.95, Tokens: 32000, Requests: 8},
+				{Model: "gpt-4.1-mini", Cost: 0.30, Tokens: 10500, Requests: 5},
+			},
+			ByAgent: []AgentCost{
+				{AgentID: "agent-1", AgentName: "coder", Cost: 1.20, Tokens: 45000, Sessions: 5},
+				{AgentID: "agent-2", AgentName: "reviewer", Cost: 0.95, Tokens: 32000, Sessions: 3},
+			},
+			DailyCosts: []DailyCost{
+				{Date: now.Add(-6 * 24 * time.Hour).Format("2006-01-02"), Cost: 3.10, Tokens: 112000, Sessions: 15},
+				{Date: now.Add(-5 * 24 * time.Hour).Format("2006-01-02"), Cost: 2.80, Tokens: 98000, Sessions: 12},
+				{Date: now.Add(-4 * 24 * time.Hour).Format("2006-01-02"), Cost: 4.20, Tokens: 145000, Sessions: 18},
+				{Date: now.Add(-3 * 24 * time.Hour).Format("2006-01-02"), Cost: 1.90, Tokens: 67000, Sessions: 9},
+				{Date: now.Add(-2 * 24 * time.Hour).Format("2006-01-02"), Cost: 3.50, Tokens: 120000, Sessions: 14},
+				{Date: now.Add(-1 * 24 * time.Hour).Format("2006-01-02"), Cost: 2.10, Tokens: 75000, Sessions: 11},
+				{Date: now.Format("2006-01-02"), Cost: 2.45, Tokens: 87500, Sessions: 7},
+			},
+			BudgetUsed:  20.05,
+			BudgetTotal: 50.00,
+		},
+		traces: TraceSummary{
+			TotalTraces: 156,
+			AvgDuration: 320,
+			ErrorRate:    0.05,
+			ByOperation: []OpTrace{
+				{Operation: "agent.run", Count: 45, AvgMs: 2500, ErrorRate: 0.04, P50Ms: 2200, P99Ms: 8500},
+				{Operation: "model.complete", Count: 89, AvgMs: 1200, ErrorRate: 0.03, P50Ms: 950, P99Ms: 4200},
+				{Operation: "tool.execute", Count: 22, AvgMs: 450, ErrorRate: 0.09, P50Ms: 320, P99Ms: 1800},
+			},
+			RecentTraces: []TraceEntry{
+				{ID: "t-1", Operation: "agent.run", DurationMs: 3200, Status: "ok", Timestamp: now.Add(-2 * time.Minute), Attributes: map[string]string{"agent": "coder"}},
+				{ID: "t-2", Operation: "model.complete", DurationMs: 1500, Status: "ok", Timestamp: now.Add(-1 * time.Minute), Attributes: map[string]string{"model": "gpt-4.1"}},
+				{ID: "t-3", Operation: "tool.execute", DurationMs: 800, Status: "error", Timestamp: now.Add(-30 * time.Second), Attributes: map[string]string{"tool": "search"}},
+			},
+		},
+		metrics: DashboardMetrics{
+			ActiveAgents:    2,
+			RunningSessions: 2,
+			TodayCost:       2.45,
+			TodayTokens:     87500,
+			TotalSessions:   86,
+			Uptime:          "3d 14h 22m",
+			RecentEvents: []DashboardEvent{
+				{Type: "agent_start", AgentID: "agent-1", Message: "coder started", Timestamp: now.Add(-15 * time.Minute)},
+				{Type: "cost_update", Message: "Daily cost: $2.45", Timestamp: now.Add(-5 * time.Minute)},
+				{Type: "error", AgentID: "agent-3", Message: "search tool timeout", Timestamp: now.Add(-1 * time.Minute)},
+			},
 		},
 	}
 }
 
+func (m *MemoryStore) GetAgentStatuses() ([]AgentStatus, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.agents, nil
+}
+
+func (m *MemoryStore) GetRecentSessions(limit int) ([]SessionInfo, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	if limit > len(m.sessions) {
+		return m.sessions, nil
+	}
+	return m.sessions[:limit], nil
+}
+
+func (m *MemoryStore) GetCostSummary(period string) (*CostSummary, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return &m.cost, nil
+}
+
+func (m *MemoryStore) GetTraceSummary() (*TraceSummary, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return &m.traces, nil
+}
+
+func (m *MemoryStore) GetMetrics() (*DashboardMetrics, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return &m.metrics, nil
+}
+
+// UpdateAgent updates an agent status in the memory store.
+func (m *MemoryStore) UpdateAgent(status AgentStatus) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for i, a := range m.agents {
+		if a.ID == status.ID {
+			m.agents[i] = status
+			return
+		}
+	}
+	m.agents = append(m.agents, status)
+}
+
+// PushEvent pushes a real-time event.
+func (m *MemoryStore) PushEvent(event DashboardEvent) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.metrics.RecentEvents = append([]DashboardEvent{event}, m.metrics.RecentEvents...)
+	if len(m.metrics.RecentEvents) > 50 {
+		m.metrics.RecentEvents = m.metrics.RecentEvents[:50]
+	}
+}
+
+// NewDashboardServer creates a new dashboard server.
+func NewDashboardServer(addr string, store Store) *DashboardServer {
+	templates := template.Must(template.New("").Funcs(template.FuncMap{
+		"sub": func(a, b float64) float64 { return a - b },
+		"mul": func(a, b float64) float64 { return a * b },
+		"div": func(a, b float64) float64 { return a / b },
+	}).ParseFS(staticFS, "static/*.html"))
+
+	return &DashboardServer{
+		addr:      addr,
+		store:     store,
+		hub:       NewWebSocketHub(),
+		templates: templates,
+	}
+}
+
 // Start starts the dashboard server.
-func (d *Dashboard) Start(ctx context.Context) error {
+func (ds *DashboardServer) Start() error {
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+
+	if ds.running {
+		return fmt.Errorf("dashboard already running")
+	}
+
 	mux := http.NewServeMux()
 
-	// API endpoints
-	mux.HandleFunc("/api/stats", d.handleStats)
-	mux.HandleFunc("/api/agents", d.handleAgents)
-	mux.HandleFunc("/api/health", d.handleHealth)
-	mux.HandleFunc("/api/events", d.handleEvents)
+	// Static files
+	sub, _ := fs.Sub(staticFS, "static")
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(sub))))
 
-	// Dashboard UI
-	mux.HandleFunc("/", d.handleDashboard)
+	// Pages
+	mux.HandleFunc("/", ds.handleIndex)
+	mux.HandleFunc("/agents", ds.handleAgents)
+	mux.HandleFunc("/costs", ds.handleCosts)
+	mux.HandleFunc("/traces", ds.handleTraces)
 
-	d.server = &http.Server{
-		Addr:    fmt.Sprintf(":%d", d.port),
+	// API
+	mux.HandleFunc("/api/agents", ds.handleAPIAgents)
+	mux.HandleFunc("/api/sessions", ds.handleAPISessions)
+	mux.HandleFunc("/api/costs", ds.handleAPICosts)
+	mux.HandleFunc("/api/traces", ds.handleAPITraces)
+	mux.HandleFunc("/api/metrics", ds.handleAPIMetrics)
+
+	// WebSocket
+	mux.HandleFunc("/ws", ds.handleWebSocket)
+
+	ds.server = &http.Server{
+		Addr:    ds.addr,
 		Handler: mux,
 	}
 
+	go ds.hub.Run()
+	ds.running = true
+
 	go func() {
-		select {
-		case <-ctx.Done():
-			d.server.Shutdown(context.Background())
+		log.Printf("Forge Dashboard: http://%s", ds.addr)
+		if err := ds.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("Dashboard error: %v", err)
 		}
 	}()
 
-	fmt.Printf("Forge: Dashboard on http://localhost:%d\n", d.port)
-	return d.server.ListenAndServe()
+	return nil
 }
 
-// StartWithSignal starts the dashboard with signal handling.
-func (d *Dashboard) StartWithSignal() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+// Stop stops the dashboard server.
+func (ds *DashboardServer) Stop() error {
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
 
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-
-	go func() {
-		<-sigChan
-		d.server.Shutdown(context.Background())
-		cancel()
-	}()
-
-	return d.Start(ctx)
-}
-
-// UpdateAgent updates an agent's status.
-func (d *Dashboard) UpdateAgent(name string, status AgentStatus) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	for i, a := range d.agents {
-		if a.Name == name {
-			d.agents[i] = status
-			return
-		}
-	}
-	d.agents = append(d.agents, status)
-}
-
-// IncrementRequests increments the request counter.
-func (d *Dashboard) IncrementRequests() {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	d.requests++
-}
-
-func (d *Dashboard) handleStats(w http.ResponseWriter, r *http.Request) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-
-	d.stats.Uptime = time.Since(d.startTime).Round(time.Second).String()
-	d.stats.Requests = d.requests
-	d.stats.AgentsTotal = len(d.agents)
-	d.stats.AgentsActive = 0
-	for _, a := range d.agents {
-		if a.Status == "running" {
-			d.stats.AgentsActive++
-		}
+	if !ds.running {
+		return nil
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(d.stats)
+	ds.running = false
+	return ds.server.Close()
 }
 
-func (d *Dashboard) handleAgents(w http.ResponseWriter, r *http.Request) {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(d.agents)
+// BroadcastEvent sends a real-time event to all connected clients.
+func (ds *DashboardServer) BroadcastEvent(event DashboardEvent) {
+	data, _ := json.Marshal(event)
+	ds.hub.Broadcast(data)
 }
 
-func (d *Dashboard) handleHealth(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Fprintf(w, `{"status":"healthy","uptime":"%s"}`, time.Since(d.startTime).Round(time.Second))
+// IsRunning returns whether the dashboard is running.
+func (ds *DashboardServer) IsRunning() bool {
+	ds.mu.RLock()
+	defer ds.mu.RUnlock()
+	return ds.running
 }
 
-func (d *Dashboard) handleEvents(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
+// ---- Page Handlers ----
 
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		http.Error(w, "streaming not supported", http.StatusInternalServerError)
+func (ds *DashboardServer) handleIndex(w http.ResponseWriter, r *http.Request) {
+	metrics, _ := ds.store.GetMetrics()
+	agents, _ := ds.store.GetAgentStatuses()
+
+	data := map[string]interface{}{
+		"Metrics": metrics,
+		"Agents":  agents,
+		"Title":   "Forge Dashboard",
+	}
+
+	ds.templates.ExecuteTemplate(w, "index.html", data)
+}
+
+func (ds *DashboardServer) handleAgents(w http.ResponseWriter, r *http.Request) {
+	agents, _ := ds.store.GetAgentStatuses()
+	sessions, _ := ds.store.GetRecentSessions(20)
+
+	data := map[string]interface{}{
+		"Agents":   agents,
+		"Sessions": sessions,
+		"Title":    "Agents — Forge Dashboard",
+	}
+
+	ds.templates.ExecuteTemplate(w, "agents.html", data)
+}
+
+func (ds *DashboardServer) handleCosts(w http.ResponseWriter, r *http.Request) {
+	period := r.URL.Query().Get("period")
+	if period == "" {
+		period = "today"
+	}
+	cost, _ := ds.store.GetCostSummary(period)
+
+	data := map[string]interface{}{
+		"Cost":  cost,
+		"Title": "Costs — Forge Dashboard",
+	}
+
+	ds.templates.ExecuteTemplate(w, "costs.html", data)
+}
+
+func (ds *DashboardServer) handleTraces(w http.ResponseWriter, r *http.Request) {
+	traces, _ := ds.store.GetTraceSummary()
+
+	data := map[string]interface{}{
+		"Traces": traces,
+		"Title":  "Traces — Forge Dashboard",
+	}
+
+	ds.templates.ExecuteTemplate(w, "traces.html", data)
+}
+
+// ---- API Handlers ----
+
+func (ds *DashboardServer) handleAPIAgents(w http.ResponseWriter, r *http.Request) {
+	agents, err := ds.store.GetAgentStatuses()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(agents)
+}
 
-	for i := 0; i < 5; i++ {
-		select {
-		case <-r.Context().Done():
-			return
-		default:
-			fmt.Fprintf(w, "data: {\"type\":\"heartbeat\",\"ts\":%d}\n\n", time.Now().Unix())
-			flusher.Flush()
-			time.Sleep(2 * time.Second)
-		}
+func (ds *DashboardServer) handleAPISessions(w http.ResponseWriter, r *http.Request) {
+	sessions, err := ds.store.GetRecentSessions(50)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
 	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sessions)
 }
 
-func (d *Dashboard) handleDashboard(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(w, dashboardHTML)
+func (ds *DashboardServer) handleAPICosts(w http.ResponseWriter, r *http.Request) {
+	period := r.URL.Query().Get("period")
+	if period == "" {
+		period = "today"
+	}
+	cost, err := ds.store.GetCostSummary(period)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(cost)
 }
 
-const dashboardHTML = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Forge — Dashboard</title>
-<style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0a; color: #e0e0e0; min-height: 100vh; }
-header { padding: 20px 32px; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-bottom: 2px solid #e94560; display: flex; align-items: center; justify-content: space-between; }
-h1 { font-size: 1.5em; font-weight: 600; }
-.sword { color: #e94560; font-size: 1.3em; }
-.version { color: #888; font-size: 0.85em; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding: 24px 32px; }
-.stat-card { background: #16213e; border-radius: 12px; padding: 20px; border: 1px solid #0f3460; transition: transform 0.2s; }
-.stat-card:hover { transform: translateY(-2px); }
-.stat-value { font-size: 2em; font-weight: 700; color: #e94560; }
-.stat-label { font-size: 0.85em; color: #888; margin-top: 4px; }
-.agents { padding: 0 32px 32px; }
-.agents h2 { margin-bottom: 16px; color: #00d2ff; font-size: 1.2em; }
-.agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
-.agent-card { background: #16213e; border-radius: 8px; padding: 16px; border: 1px solid #0f3460; }
-.agent-name { font-weight: 600; font-size: 1.1em; margin-bottom: 4px; }
-.agent-status { font-size: 0.85em; }
-.status-running { color: #4ade80; }
-.status-idle { color: #facc15; }
-.status-error { color: #f87171; }
-.status-stopped { color: #888; }
-.agent-meta { font-size: 0.8em; color: #666; margin-top: 8px; }
-.footer { padding: 24px 32px; text-align: center; color: #444; font-size: 0.85em; border-top: 1px solid #1a1a2e; }
-</style>
-</head>
-<body>
-<header>
-  <h1><span class="sword">⚔️</span> The Forge</h1>
-  <span class="version" id="version">v0.4.0</span>
-</header>
-<div class="stats" id="stats">
-  <div class="stat-card"><div class="stat-value" id="agents-active">0</div><div class="stat-label">Active Agents</div></div>
-  <div class="stat-card"><div class="stat-value" id="requests">0</div><div class="stat-label">Total Requests</div></div>
-  <div class="stat-card"><div class="stat-value" id="tokens">0</div><div class="stat-label">Tokens Used</div></div>
-  <div class="stat-card"><div class="stat-value" id="cost">$0.00</div><div class="stat-label">Total Cost</div></div>
-  <div class="stat-card"><div class="stat-value" id="uptime">0s</div><div class="stat-label">Uptime</div></div>
-</div>
-<div class="agents">
-  <h2>Agents</h2>
-  <div class="agent-grid" id="agent-grid">Loading...</div>
-</div>
-<div class="footer">The wielder and the sword are one.</div>
-<script>
-async function refresh() {
-  try {
-    const r = await fetch('/api/stats');
-    const d = await r.json();
-    document.getElementById('agents-active').textContent = d.agents_active;
-    document.getElementById('requests').textContent = d.requests_total;
-    document.getElementById('tokens').textContent = d.tokens_used.toLocaleString();
-    document.getElementById('cost').textContent = '$' + d.cost_usd.toFixed(2);
-    document.getElementById('uptime').textContent = d.uptime;
-    document.getElementById('version').textContent = 'v' + d.version;
-  } catch(e) {}
-
-  try {
-    const r = await fetch('/api/agents');
-    const agents = await r.json();
-    const grid = document.getElementById('agent-grid');
-    if (agents.length === 0) {
-      grid.innerHTML = '<div style="color:#666">No agents running. Start one with <code>forge serve</code></div>';
-    } else {
-      grid.innerHTML = agents.map(a =>
-        '<div class="agent-card">' +
-        '<div class="agent-name">' + a.name + '</div>' +
-        '<div class="agent-status status-' + a.status + '">' + a.status + '</div>' +
-        '<div class="agent-meta">' + a.type + ' · ' + a.model + '</div>' +
-        '</div>'
-      ).join('');
-    }
-  } catch(e) {}
+func (ds *DashboardServer) handleAPITraces(w http.ResponseWriter, r *http.Request) {
+	traces, err := ds.store.GetTraceSummary()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(traces)
 }
-refresh();
-setInterval(refresh, 3000);
-</script>
-</body>
-</html>`
+
+func (ds *DashboardServer) handleAPIMetrics(w http.ResponseWriter, r *http.Request) {
+	metrics, err := ds.store.GetMetrics()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(metrics)
+}
+
+// ---- WebSocket ----
+
+func (ds *DashboardServer) handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	ServeWebSocket(ds.hub, w, r)
+}

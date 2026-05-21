@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo"><span class="logo-icon">⚒</span><span class="logo-text">The Forge</span></div>
+        <a href="/" class="nav-link">Dashboard</a>
+        <a href="/agents" class="nav-link">Agents</a>
+        <a href="/costs" class="nav-link">Costs</a>
+        <a href="/traces" class="nav-link active">Traces</a>
+    </nav>
+    <main class="content">
+        <header class="header"><h1>Traces</h1></header>
+        <section class="metrics-grid">
+            <div class="metric-card"><div class="metric-label">Total Traces</div><div class="metric-value">{{.Traces.TotalTraces}}</div></div>
+            <div class="metric-card"><div class="metric-label">Avg Duration</div><div class="metric-value">{{printf "%.0f" .Traces.AvgDuration}}ms</div></div>
+            <div class="metric-card"><div class="metric-label">Error Rate</div><div class="metric-value">{{printf "%.1f" (mul .Traces.ErrorRate 100.0)}}%</div></div>
+        </section>
+        <section>
+            <h2>By Operation</h2>
+            <table class="data-table">
+                <thead><tr><th>Operation</th><th>Count</th><th>Avg (ms)</th><th>P50 (ms)</th><th>P99 (ms)</th><th>Error Rate</th></tr></thead>
+                <tbody>
+                {{range .Traces.ByOperation}}
+                <tr><td>{{.Operation}}</td><td>{{.Count}}</td><td>{{printf "%.0f" .AvgMs}}</td><td>{{printf "%.0f" .P50Ms}}</td><td>{{printf "%.0f" .P99Ms}}</td><td>{{printf "%.1f" (mul .ErrorRate 100.0)}}%</td></tr>
+                {{end}}
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h2>Recent Traces</h2>
+            <table class="data-table">
+                <thead><tr><th>ID</th><th>Operation</th><th>Duration</th><th>Status</th><th>Time</th></tr></thead>
+                <tbody>
+                {{range .Traces.RecentTraces}}
+                <tr class="status-{{.Status}}">
+                    <td>{{.ID}}</td><td>{{.Operation}}</td><td>{{printf "%.0f" .DurationMs}}ms</td>
+                    <td><span class="agent-status status-{{.Status}}">{{.Status}}</span></td>
+                    <td>{{.Timestamp.Format "15:04:05"}}</td>
+                </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </section>
+    </main>
+    <script src="/static/app.js"></script>
+</body>
+</html>

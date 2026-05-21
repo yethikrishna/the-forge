@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">⚒</span>
+            <span class="logo-text">The Forge</span>
+        </div>
+        <a href="/" class="nav-link active">Dashboard</a>
+        <a href="/agents" class="nav-link">Agents</a>
+        <a href="/costs" class="nav-link">Costs</a>
+        <a href="/traces" class="nav-link">Traces</a>
+    </nav>
+    <main class="content">
+        <header class="header">
+            <h1>Forge Dashboard</h1>
+            <div class="header-actions">
+                <span id="ws-status" class="ws-indicator disconnected">●</span>
+                <span class="header-time" id="clock"></span>
+            </div>
+        </header>
+
+        <section class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-label">Active Agents</div>
+                <div class="metric-value" id="active-agents">{{.Metrics.ActiveAgents}}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Running Sessions</div>
+                <div class="metric-value" id="running-sessions">{{.Metrics.RunningSessions}}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Today's Cost</div>
+                <div class="metric-value" id="today-cost">${{printf "%.2f" .Metrics.TodayCost}}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Today's Tokens</div>
+                <div class="metric-value" id="today-tokens">{{.Metrics.TodayTokens}}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Total Sessions</div>
+                <div class="metric-value" id="total-sessions">{{.Metrics.TotalSessions}}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Uptime</div>
+                <div class="metric-value" id="uptime">{{.Metrics.Uptime}}</div>
+            </div>
+        </section>
+
+        <section class="agents-section">
+            <h2>Agents</h2>
+            <div class="agents-grid" id="agents-grid">
+                {{range .Agents}}
+                <div class="agent-card {{.Status}}">
+                    <div class="agent-header">
+                        <span class="agent-name">{{.Name}}</span>
+                        <span class="agent-status status-{{.Status}}">{{.Status}}</span>
+                    </div>
+                    <div class="agent-details">
+                        <div class="agent-detail"><span>Role:</span> {{.Role}}</div>
+                        <div class="agent-detail"><span>Model:</span> {{.Model}}</div>
+                        <div class="agent-detail"><span>Tokens:</span> {{.TokensUsed}}</div>
+                        <div class="agent-detail"><span>Cost:</span> ${{printf "%.2f" .Cost}}</div>
+                        {{if .CurrentTask}}<div class="agent-detail"><span>Task:</span> {{.CurrentTask}}</div>{{end}}
+                    </div>
+                    <div class="agent-progress">
+                        <div class="progress-bar" style="width: {{printf "%.0f" .Progress}}%"></div>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </section>
+
+        <section class="events-section">
+            <h2>Live Events</h2>
+            <div class="events-list" id="events-list">
+                {{range .Metrics.RecentEvents}}
+                <div class="event-item event-{{.Type}}">
+                    <span class="event-time">{{.Timestamp.Format "15:04:05"}}</span>
+                    <span class="event-type">{{.Type}}</span>
+                    <span class="event-message">{{.Message}}</span>
+                </div>
+                {{end}}
+            </div>
+        </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/forge/sword/internal/dashboard"
 	"github.com/forge/sword/internal/pretty"
@@ -17,6 +18,9 @@ func dashboardCmd() *cobra.Command {
 		Long: `Start a web dashboard for monitoring agents,
 requests, costs, and system status in real time.
 
+Real-time WebSocket agent monitoring, cost charts, and trace viewer.
+Embedded in the Go binary — zero external dependencies.
+
 Examples:
   forge dashboard
   forge dashboard --port 9090`,
@@ -25,25 +29,16 @@ Examples:
 			fmt.Printf("   URL: http://localhost:%d\n", port)
 			fmt.Println()
 
-			d := dashboard.New(port)
+			store := dashboard.NewMemoryStore()
+			addr := fmt.Sprintf(":%d", port)
+			srv := dashboard.NewDashboardServer(addr, store)
 
-			// Add some sample agents for display
-			d.UpdateAgent("claude", dashboard.AgentStatus{
-				Name:   "Claude",
-				Type:   "anthropic",
-				URL:    "http://localhost:3284",
-				Status: "idle",
-				Model:  "claude-sonnet-4-20250514",
-			})
-			d.UpdateAgent("codex", dashboard.AgentStatus{
-				Name:   "Codex",
-				Type:   "openai",
-				URL:    "http://localhost:3285",
-				Status: "idle",
-				Model:  "gpt-4.1",
-			})
+			if err := srv.Start(); err != nil {
+				return err
+			}
 
-			return d.StartWithSignal()
+			// Block until interrupted
+			select {}
 		},
 	}
 
@@ -51,3 +46,6 @@ Examples:
 
 	return cmd
 }
+
+// startTime tracks dashboard uptime.
+var startTime = time.Now()

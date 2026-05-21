@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{.Title}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="sidebar">
+        <div class="logo"><span class="logo-icon">⚒</span><span class="logo-text">The Forge</span></div>
+        <a href="/" class="nav-link">Dashboard</a>
+        <a href="/agents" class="nav-link active">Agents</a>
+        <a href="/costs" class="nav-link">Costs</a>
+        <a href="/traces" class="nav-link">Traces</a>
+    </nav>
+    <main class="content">
+        <header class="header"><h1>Agents</h1></header>
+        <section>
+            <h2>Agent Status</h2>
+            <table class="data-table">
+                <thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Model</th><th>Status</th><th>Tokens</th><th>Cost</th><th>Progress</th></tr></thead>
+                <tbody>
+                {{range .Agents}}
+                <tr class="status-{{.Status}}">
+                    <td>{{.ID}}</td><td>{{.Name}}</td><td>{{.Role}}</td><td>{{.Model}}</td>
+                    <td><span class="agent-status status-{{.Status}}">{{.Status}}</span></td>
+                    <td>{{.TokensUsed}}</td><td>${{printf "%.2f" .Cost}}</td>
+                    <td><div class="progress-bar-mini" style="width:{{printf "%.0f" .Progress}}%"></div>{{printf "%.0f" .Progress}}%</td>
+                </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h2>Recent Sessions</h2>
+            <table class="data-table">
+                <thead><tr><th>Session</th><th>Agent</th><th>Model</th><th>Status</th><th>Duration</th><th>Tokens</th><th>Cost</th></tr></thead>
+                <tbody>
+                {{range .Sessions}}
+                <tr>
+                    <td>{{.ID}}</td><td>{{.AgentName}}</td><td>{{.Model}}</td>
+                    <td><span class="agent-status status-{{.Status}}">{{.Status}}</span></td>
+                    <td>{{.Duration}}</td><td>{{.TokensIn}}/{{.TokensOut}}</td><td>${{printf "%.2f" .Cost}}</td>
+                </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </section>
+    </main>
+    <script src="/static/app.js"></script>
+</body>
+</html>
