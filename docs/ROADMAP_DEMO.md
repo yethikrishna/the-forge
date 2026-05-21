@@ -69,6 +69,14 @@ echo "Forge running with full governance in <60s. Self-hosted. No vendor lock-in
 
 Once this video is live and linked from README, we immediately move to P1 (docs site, next consolidations, Anvil spec).
 
-Current status: Script validated via recent commits (2ec4a9b, 7f86cfe). Ready for CEO to record.
+Current status: **FULLY VALIDATED** under Go 1.26.3 (6cafb82). Dry-run completed 2026-05-21 16:14 UTC:
+- `forge doctor` ✅ 18 checks, clean output
+- `forge init --local` ✅ Forgefile + .env + README generated
+- `forge learn 0` ✅ Starts "Forge in 60 Seconds" lesson (5 steps)
+- `forge learn list` ✅ Shows 7 lessons, forge-in-60-seconds at index 0
+- `forge quickstart --demo` ✅ All 5 demo steps display correctly
+- All integration tests green under Go 1.26.3
+
+**CEO: Ready to record. Execute the script in a clean terminal and run asciinema.**
 
 **Related files:** PRIORITY.md, DESIGN_PERSISTENCE.md, DESIGN_MCP2.md, internal/mcp2/mcp2_test.go
