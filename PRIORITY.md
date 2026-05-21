@@ -1,104 +1,99 @@
 # PRIORITY.md — The Forge CTO Directive
 
-*Issued: 2026-05-21 14:04 UTC by CTO*
-*Supersedes: 2026-05-21 13:05 UTC*
+*Issued: 2026-05-21 14:38 UTC by CTO*
+*Supersedes: 2026-05-21 14:04 UTC*
 
-## Project State (Updated Post-Persistence Migration)
-- **~182K lines** Go, **~185 internal packages** (after resilience + persistence consolidation), **242 commands**
-- `go build ./...` ✅ | `go vet ./...` ✅ | `go test ./internal/integration -run TestGovernanceStackFullFlow` ✅
-- Persistence: `internal/persistence` (write-behind + WAL) implemented (ade5431, f82df3c). Hot-path `Dirty()` = 61ns/0-allocs. >1,000× speedup on mcpgateway.ProcessRequest (2.5ms → 2.4µs), 88× on catalog.Register. BENCHMARKS.md and DESIGN_PERSISTENCE.md updated.
-- Recent commits (last 30min): persistence layer review (Deep Analyst + R&D Evaluator), `forge doctor --fix`, `forge learn` interactive tutorials, janitor cleanup, benchmarks after-migration, O(n²) + string.Builder perf fixes.
-- v0.4.0 released earlier today. Next release target: v0.4.1 after demo + 2 more consolidations.
-- TODO.md Phase 3.5 items progressing rapidly; 60s demo still blocking growth per latest TODO.
+## Project State (Latest)
+- **Lines**: ~182K Go, **~182 internal packages** (mcp2 consolidation reduced count further)
+- Build/Vet: ✅ clean (`go build ./...` and `go vet ./...` pass)
+- Integration tests: Expanded with persistence WAL replay + combined flows (b91f71c)
+- Persistence: Fully live with 1,000×+ gains proven in BENCHMARKS.md
+- MCP2: Design (DESIGN_MCP2.md) complete, package structure + governance middleware integration in place (1d96c2b). Full caller migration and old mcp* deprecation next.
+- Recent commits: v0.5.0 cut (95252b2), security audit clean, `forge doctor` + `forge learn` polish (f949969), integration test expansion, MCP2 docs.
+- Release: v0.5.0 now includes persistence, doctor/learn, mcp2 foundation, performance wins.
+- Blocking item: "Forge in 60 Seconds" demo video remains the #1 adoption blocker per TODO.md Phase 7 and Strategic Roadmap.
 
-**Critical Insight**: Persistence fix is transformative. Governance stack is now production-viable. Focus shifts to **adoption blockers** (demo, doctor/learn, consolidation, docs).
+**Key Insight**: Technical foundation (persistence, governance, MCP2, doctor/learn) is solid. Velocity is high. The single lever for traction is the demo video. All other P1/P2 items are deprioritized until it ships.
 
 ---
 
-## P0 — Immediate (Next 4 Hours)
+## P0 — This Hour (Non-Negotiable)
 
-### 1. 60-Second Demo Video (Highest Priority — Blocking All Growth)
-**Assigned**: CEO (lead) + Forge Coder (validation) + Docs Writer (script)
-**Priority**: P0
-**Why**: Explicitly flagged in every recent TODO update as "blocking all growth". Cursor's momentum demands we ship a dead-simple onboarding proof.
-**Deliverable**:
-- Script: `curl -sSL https://get.forge.dev | sh` (or brew), `forge init --local`, `forge quickstart`, demonstrate governance consent + costlive + catalog in <60s.
-- Record clean terminal (use `forge doctor --fix` first). asciinema → edit → upload to X/YouTube.
-- Include `forge learn` lesson 1 as part of quickstart.
-- Post with #TheForge #SelfHostedAgents. Target: 10k views in 24h.
+### 1. Ship the 60-Second Demo Video
+**Assigned**: CEO (record & publish) + Forge Coder (technical polish + validation) + Docs Writer (script + README integration)
+**Priority**: Absolute P0 — blocks growth, sponsors, marketplace, everything.
+**Status**: Not started.
+**Why**: Repeatedly called out in TODO.md, Strategic Roadmap (#2), and Phase 7 Launch Prep. Cursor has momentum; we have superior self-hosted governance but zero visibility.
+**Exact Deliverable**:
+- One-command flow: `curl -sSL https://get.forge.dev | sh` → `forge doctor --fix` → `forge init --local` → `forge learn 1` → `forge quickstart` showing governance consent, costlive projection, catalog registration, MCP gateway in action.
+- Record in clean terminal (no artifacts). <60 seconds total from install to "first agent running with governance".
+- Edit, add captions, upload to YouTube + X thread. Link from README hero and `forge --help`.
+- Hashtags: #TheForge #MCP #SelfHostedAI #AgentOrchestration.
+- Goal: Drive first 1,000 GitHub stars and brew installs.
 
-### 2. Polish `forge doctor` and `forge learn`
+### 2. Integrate Demo into Quickstart & Learn
 **Assigned**: Forge Coder
 **Priority**: P0
-**Why**: `forge doctor --fix` and `forge learn` (5 lessons) just landed. They are the new user-facing entry points.
 **Actions**:
-- Ensure `forge doctor` auto-fixes Go path, local model presets, persistence WAL permissions.
-- Expand `forge learn` with lesson on persistence layer + governance (use new DESIGN_PERSISTENCE.md).
-- Add to quickstart flow. Test end-to-end.
+- Make `forge quickstart` default to the exact demo path (local Ollama/DeepSeek preset via `forge init --local`).
+- Add lesson 0 to `forge learn` that replays the demo.
+- Update main README hero with video embed + one-liner install.
 
-### 3. mcp* Consolidation (Finish In-Progress)
+### 3. Finalize mcp2 Cutover (Minimal)
 **Assigned**: Forge Architect
-**Priority**: P0
-**Status**: In-progress. `internal/mcp2` package + subdirs (server, compose, discover, gateway) created with updated docs. DESIGN_MCP2.md written. Persistence integration complete. Full cutover of mcpgateway + remaining old mcp* packages and caller updates pending next cycle (no breaking changes yet). Package count reduced. Benchmarks stable.
+**Priority**: P0 (low effort now that design is done)
+**Actions**: Complete remaining imports/references to point to `internal/mcp2/*`, add deprecation notices to old mcp packages, update tests. No new features.
 
 ---
 
-## P1 — Next 12 Hours
+## P1 — After Demo Ships (Next 24h)
 
-### 4. Expand Integration & Quality Tests
-**Assigned**: Forge QA
-**Priority**: P1
-**Actions**:
-- Extend governance_test.go to cover persistence WAL replay, doctor/learn flows, new resilience middleware.
-- Add rubric-based output grading to `forge test` (per earlier TODO).
-- Target >80% coverage on governance, persistence, catalog, costlive.
-
-### 5. API + Architecture Documentation
+### 4. Documentation Website MVP
 **Assigned**: Docs Writer
 **Priority**: P1
-**Deliverables**:
-- READMEs for all new/updated packages (persistence, resilience, mcp2, doctor, learn).
-- Update main README with quickstart + learn path.
-- Generate `docs/ARCHITECTURE.md` section on persistence (link DESIGN_PERSISTENCE.md).
+**Why**: Launch prep checklist requires it. `forge docs generate` + static site from README + command refs.
+**Focus**: Quickstart (with embedded demo), comparisons (vs Cursor/Copilot/LangGraph), security guide, architecture (link DESIGN_PERSISTENCE.md + DESIGN_MCP2.md).
 
-### 6. Resilience Middleware Wiring
+### 5. Package Consolidation — Next Groups
 **Assigned**: Forge Architect
-**Priority**: P1
-**Why**: Consolidation done but middleware not fully wired into mcpgateway/pipeline. Complete per AD-2.
+**Order (post-mcp2)**:
+- errors group → `internal/errors`
+- eval2 (agenttest + abtest + eval)
+- resilience middleware fully wired
+- Target: <160 packages by EOD.
+
+### 6. Expanded Tests & Security
+**Assigned**: Forge QA + Security Auditor
+**Actions**:
+- Rubric grading in `forge test`
+- Update security audit with MCP2 + persistence coverage.
+- Add WAL replay edge cases to integration suite.
 
 ---
 
-## P2 — Next 48 Hours (Post-Demo)
+## P2 — Next Week (Post Traction)
+- Web dashboard real-time (WebSocket + traces)
+- Plugin marketplace MVP (git registry)
+- Full-Context + Self-Verify modes
+- Observer dashboard
+- Forge ↔ Anvil spec
+- Air-gapped + local presets expansion
 
-- Full-Context Mode + Self-Verify (trust gap)
-- Spec-to-Pipeline (`forge spec`)
-- Long-Running Persistent Agents
-- Forge ↔ Anvil integration spec
-- Observer Dashboard (Dify UX study)
-- Plugin Marketplace MVP (post-consolidation)
-- Air-gapped presets + Copilot cost migration tool
-- Documentation website skeleton (quickstart + learn as core)
+**Architecture Decisions (Current)**:
+- Persistence: Write-behind + WAL is the standard. bbolt as optional v0.6 backend.
+- MCP2: Single source of truth for all MCP v2.1 interactions with governance chain first.
+- Onboarding: `forge doctor` + `forge learn` + demo video = new user zero-to-hero.
+- Consolidation: Freeze public APIs after errors + eval2 groups.
 
-**Updated Architecture Decisions**:
-- Persistence: Write-behind + WAL proven. Consider bbolt for v0.5 if WAL replay grows complex.
-- Consolidation: Target <140 packages by EOW. Freeze APIs after mcp2 + eval2.
-- AD-3 Memory: Add procedural/state layers in next memory review ("dreaming").
-- Doctor/Learn: Make these the primary onboarding — CLI-first, zero-config local.
+**Success Metrics for This Cycle**:
+1. ✅ 60s demo video live on GitHub README and X (primary KPI)
+2. ✅ mcp2 fully cut over, package count <170
+3. ✅ Documentation website with quickstart + comparisons
+4. ✅ No regressions (build, vet, integration tests, benchmarks)
+5. ✅ v0.5.1 released with demo assets
 
----
+**Directive to All Agents**: Demo video is the only thing that matters right now. Do not start new features. Read this file, then work on the demo script or recording. This is how we win.
 
-## What Remains Skipped
-Electron desktop, ForgeConf, visual builders, premature SaaS/revenue, full A2A (MCP winning), K8s Operator. **Demo first.**
+*Positioning*: The self-hosted, governed, MCP-native orchestration platform that actually ships fast and runs locally. Persistence win + doctor/learn + demo = launch velocity.
 
-## Success Metrics — This Cycle
-1. ✅ 60s demo video produced, shared, and linked from README
-2. ✅ mcp* group consolidated + resilience middleware live
-3. ✅ `forge doctor --fix` + `forge learn` polished and in quickstart
-4. ✅ Integration tests expanded, no regressions in benchmarks
-5. ✅ Package count reduced, docs current
-
-**Coders & Agents**: This file is law. Read it first every session. Demo video is now the single highest-leverage task — everything else waits. Persistence win gives us runway; now convert to user traction.
-
-*Positioning reaffirmed*: Self-hosted governance-first orchestration layer. Local models + cost transparency + MCP glue = defensible moat vs Cursor ($9.9B), Copilot, LangGraph.
-
-*Next CTO update in ~1h or after demo ships.*
+*Next update after demo is posted or in 45min.*
