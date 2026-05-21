@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/forge/sword/internal/tune"
+	"github.com/forge/sword/internal/optimize/tune"
 	"github.com/spf13/cobra"
 )
 

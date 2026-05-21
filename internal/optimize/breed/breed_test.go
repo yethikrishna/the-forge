@@ -3,7 +3,7 @@ package breed_test
 import (
 	"testing"
 
-	"github.com/forge/sword/internal/breed"
+	"github.com/forge/sword/internal/optimize/breed"
 )
 
 func TestInitialize(t *testing.T) {

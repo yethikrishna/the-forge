@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/forge/sword/internal/breed"
+	"github.com/forge/sword/internal/optimize/breed"
 	"github.com/spf13/cobra"
 )
 
