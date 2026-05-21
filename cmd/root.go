@@ -151,6 +151,8 @@ The wielder and the sword are one.`,
 		personaCmd,
 		hierarchyCmd,
 		pqCmd,
+		canaryCmd,
+		depgraphCmd,
 	)
 	return root.ExecuteContext(ctx)
 }

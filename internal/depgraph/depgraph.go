@@ -201,7 +201,7 @@ func (g *Graph) Dependencies(id string) []string {
 
 	visited := make(map[string]bool)
 	var result []string
-	g.walkDeps(id, visited, &result, g.inEdges)
+	g.walkDeps(id, visited, &result, g.inEdges, false)
 	return result
 }
 
@@ -212,15 +212,15 @@ func (g *Graph) Dependents(id string) []string {
 
 	visited := make(map[string]bool)
 	var result []string
-	g.walkDeps(id, visited, &result, g.outEdges)
+	g.walkDeps(id, visited, &result, g.outEdges, true)
 	return result
 }
 
-func (g *Graph) walkDeps(id string, visited map[string]bool, result *[]string, adj map[string][]*Edge) {
+func (g *Graph) walkDeps(id string, visited map[string]bool, result *[]string, adj map[string][]*Edge, useTo bool) {
 	edges := adj[id]
 	for _, e := range edges {
-		next := e.To
-		if adj == g.outEdges {
+		var next string
+		if useTo {
 			next = e.To
 		} else {
 			next = e.From
@@ -230,7 +230,7 @@ func (g *Graph) walkDeps(id string, visited map[string]bool, result *[]string, a
 		}
 		visited[next] = true
 		*result = append(*result, next)
-		g.walkDeps(next, visited, result, adj)
+		g.walkDeps(next, visited, result, adj, useTo)
 	}
 }
 
