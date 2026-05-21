@@ -258,7 +258,7 @@ All 18 utility packages implemented and tested.
 
 ### 1% Improvements
 - [ ] Sub-100ms command startup — lazy module init, benchmark in CI
-- [ ] Zero-config auto-detection — API keys from env, project type from files, git remote → workspace
+- [x] Zero-config auto-detection — API keys from env, project type from files, git remote → workspace
 - [ ] Predictive prefetching — pre-load context before user needs it
 - [ ] Offline mode (`--offline`) — local models only, cached indexes, no telemetry
 - [ ] Session tags & organization — tag sessions, filter, auto-tag, saved searches
