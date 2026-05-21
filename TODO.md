@@ -240,12 +240,12 @@ All 18 utility packages implemented and tested.
 ## Phase 4.5: The Glue — Coherent Experience (From Brainstorm #6)
 
 ### CLI Consistency
-- [ ] Unified command grammar audit — `forge <noun> <verb>` everywhere
+- [x] Unified command grammar audit — `forge <noun> <verb>` everywhere
 - [x] `forge overview` — single summary pane (agents, cost, sessions, alerts, quick actions)
 - [x] `forge find` — global search across memory, sessions, pipelines, templates, codebase
 
 ### Trust Infrastructure
-- [ ] Transparent mode (`--transparent`) — show model selection, token count, cost, tools, file access in real-time
+- [x] Transparent mode (`--transparent`) — show model selection, token count, cost, tools, file access in real-time
 - [x] Agent trust scores — composite 0-100 from feedback, undo rate, test results, security findings
 - [x] Action preview before destructive operations — show plan, user approves/modifies/rejects
 - [x] Per-session permission scoping — `--scope=read-only`, `--scope=src-only`, `--scope=sandbox`, `--scope=full`
