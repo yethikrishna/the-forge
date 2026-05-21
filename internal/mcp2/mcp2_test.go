@@ -3,6 +3,7 @@ package mcp2_test
 import (
 	"testing"
 
+	"github.com/forge/sword/internal/mcpgateway"
 	"github.com/forge/sword/internal/mcp2/compose"
 	"github.com/forge/sword/internal/mcp2/discover"
 	"github.com/forge/sword/internal/mcp2/server"
@@ -137,5 +138,68 @@ func TestMCPDiscoverFormatResult(t *testing.T) {
 	formatted := discover.FormatResult(r)
 	if formatted == "" {
 		t.Error("FormatResult should not be empty")
+	}
+}
+
+// TestMCPGovernanceWiring verifies the full integration: mcp2/server ↔ mcpgateway.
+// This is the AD-1 architecture decision: governance as middleware chain in mcp2.
+func TestMCPGovernanceWiring(t *testing.T) {
+	dir := t.TempDir()
+
+	// Create a governed MCP gateway.
+	gw, err := mcpgateway.NewGateway(dir, mcpgateway.GatewayConfig{
+		Auth:      mcpgateway.AuthConfig{Method: mcpgateway.AuthToken, Tokens: []string{"valid-token"}},
+		RateLimit: mcpgateway.RateLimitConfig{RequestsPerMinute: 100},
+		Enabled:   true,
+	})
+	if err != nil {
+		t.Fatalf("NewGateway: %v", err)
+	}
+	defer gw.Close()
+
+	// Create an MCP server and wire governance middleware.
+	srv := server.NewServer("governed-forge", "1.0.0")
+	srv.SetGovernance(func(req server.JSONRPCRequest, clientID, token string) server.GovernanceDecision {
+		gwResp := gw.ProcessRequest(mcpgateway.GatewayRequest{
+			ClientID: clientID,
+			Token:    token,
+			Method:   req.Method,
+		})
+		return server.GovernanceDecision{
+			Allowed:   gwResp.Allowed,
+			Reason:    gwResp.Reason,
+			RequestID: gwResp.RequestID,
+		}
+	})
+
+	// Valid token — should be allowed.
+	resp := srv.HandleWithClient(server.JSONRPCRequest{
+		JSONRPC: "2.0", Method: "tools/list", ID: 1,
+	}, "client-1", "valid-token")
+	if resp.Error != nil {
+		t.Errorf("valid token should be allowed: %v", resp.Error)
+	}
+
+	// Invalid token — should be denied by governance chain.
+	resp2 := srv.HandleWithClient(server.JSONRPCRequest{
+		JSONRPC: "2.0", Method: "tools/call", ID: 2,
+	}, "attacker", "wrong-token")
+	if resp2.Error == nil {
+		t.Fatal("invalid token should be denied")
+	}
+
+	// Verify audit trail captured both requests.
+	audit := gw.GetAudit("", "", 0)
+	if len(audit) != 2 {
+		t.Errorf("expected 2 audit entries, got %d", len(audit))
+	}
+
+	// Stats should reflect 1 allowed, 1 denied.
+	stats := gw.Stats()
+	if stats.AllowedRequests != 1 {
+		t.Errorf("expected 1 allowed, got %d", stats.AllowedRequests)
+	}
+	if stats.DeniedRequests != 1 {
+		t.Errorf("expected 1 denied, got %d", stats.DeniedRequests)
 	}
 }

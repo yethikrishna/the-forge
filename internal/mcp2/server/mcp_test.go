@@ -301,3 +301,140 @@ func TestRPCErrorCodes(t *testing.T) {
 		}
 	}
 }
+
+// ─── Governance middleware tests ────────────────────────────────────────────
+
+func TestSetGovernance_AllowsRequest(t *testing.T) {
+	srv := NewServer("test", "1.0.0")
+
+	callCount := 0
+	srv.SetGovernance(func(req JSONRPCRequest, clientID, token string) GovernanceDecision {
+		callCount++
+		return GovernanceDecision{Allowed: true, RequestID: "req-001"}
+	})
+
+	resp := srv.HandleWithClient(JSONRPCRequest{
+		JSONRPC: "2.0", Method: "tools/list", ID: 1,
+	}, "client-1", "token-abc")
+
+	if resp.Error != nil {
+		t.Fatalf("expected allowed request, got error: %v", resp.Error)
+	}
+	if callCount != 1 {
+		t.Errorf("expected governance called once, called %d times", callCount)
+	}
+}
+
+func TestSetGovernance_DeniesRequest(t *testing.T) {
+	srv := NewServer("test", "1.0.0")
+
+	srv.SetGovernance(func(req JSONRPCRequest, clientID, token string) GovernanceDecision {
+		if token != "valid-token" {
+			return GovernanceDecision{
+				Allowed:   false,
+				Reason:    "auth_failed",
+				RequestID: "req-deny-001",
+			}
+		}
+		return GovernanceDecision{Allowed: true}
+	})
+
+	// Valid token — should pass.
+	resp := srv.HandleWithClient(JSONRPCRequest{
+		JSONRPC: "2.0", Method: "tools/list", ID: 1,
+	}, "client-1", "valid-token")
+	if resp.Error != nil {
+		t.Errorf("valid token should be allowed, got: %v", resp.Error)
+	}
+
+	// Invalid token — should be denied.
+	resp2 := srv.HandleWithClient(JSONRPCRequest{
+		JSONRPC: "2.0", Method: "tools/list", ID: 2,
+	}, "attacker", "wrong-token")
+	if resp2.Error == nil {
+		t.Fatal("expected governance denial, got no error")
+	}
+	if resp2.Error.Code != ErrorInternal {
+		t.Errorf("expected internal error code, got %d", resp2.Error.Code)
+	}
+	if !contains(resp2.Error.Message, "governance denied") {
+		t.Errorf("expected 'governance denied' in message, got: %s", resp2.Error.Message)
+	}
+}
+
+func TestSetGovernance_ClientIDPassed(t *testing.T) {
+	srv := NewServer("test", "1.0.0")
+
+	var gotClientID, gotToken, gotMethod string
+	srv.SetGovernance(func(req JSONRPCRequest, clientID, token string) GovernanceDecision {
+		gotClientID = clientID
+		gotToken = token
+		gotMethod = req.Method
+		return GovernanceDecision{Allowed: true}
+	})
+
+	srv.HandleWithClient(JSONRPCRequest{
+		JSONRPC: "2.0", Method: "tools/call", ID: 1,
+	}, "my-client", "my-token")
+
+	if gotClientID != "my-client" {
+		t.Errorf("expected clientID=my-client, got %s", gotClientID)
+	}
+	if gotToken != "my-token" {
+		t.Errorf("expected token=my-token, got %s", gotToken)
+	}
+	if gotMethod != "tools/call" {
+		t.Errorf("expected method=tools/call, got %s", gotMethod)
+	}
+}
+
+func TestHandle_NoGovernance(t *testing.T) {
+	// Handle() with no governance set must still work (backward compat).
+	srv := NewServer("test", "1.0.0")
+	resp := srv.Handle(JSONRPCRequest{
+		JSONRPC: "2.0", Method: "ping", ID: 1,
+	})
+	if resp.Error != nil {
+		t.Fatalf("Handle without governance should work: %v", resp.Error)
+	}
+}
+
+func TestSetGovernance_RemoveMiddleware(t *testing.T) {
+	srv := NewServer("test", "1.0.0")
+
+	// Set governance that denies everything.
+	srv.SetGovernance(func(req JSONRPCRequest, clientID, token string) GovernanceDecision {
+		return GovernanceDecision{Allowed: false, Reason: "blocked"}
+	})
+
+	// Should be denied.
+	resp := srv.HandleWithClient(JSONRPCRequest{
+		JSONRPC: "2.0", Method: "ping", ID: 1,
+	}, "", "")
+	if resp.Error == nil {
+		t.Fatal("expected denial")
+	}
+
+	// Remove governance.
+	srv.SetGovernance(nil)
+
+	// Should now pass.
+	resp2 := srv.HandleWithClient(JSONRPCRequest{
+		JSONRPC: "2.0", Method: "ping", ID: 1,
+	}, "", "")
+	if resp2.Error != nil {
+		t.Fatalf("after removing governance, request should pass: %v", resp2.Error)
+	}
+}
+
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
+		func() bool {
+			for i := 0; i <= len(s)-len(substr); i++ {
+				if s[i:i+len(substr)] == substr {
+					return true
+				}
+			}
+			return false
+		}())
+}

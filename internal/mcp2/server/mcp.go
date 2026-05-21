@@ -16,6 +16,29 @@ import (
 // Version is the MCP protocol version.
 const Version = "2024-11-05"
 
+// GovernanceDecision is the result of a governance check on an MCP request.
+type GovernanceDecision struct {
+	Allowed   bool   // Whether the request should be processed.
+	Reason    string // Human-readable reason (e.g. "rate_limited", "auth_failed").
+	RequestID string // Governance-assigned request ID for audit correlation.
+}
+
+// GovernanceMiddleware is an optional hook called before each Handle() invocation.
+// If it returns Allowed=false, Handle() returns an error response with the reason
+// and the request is not processed. This is the integration point for mcpgateway.
+//
+// Example wiring (in your cmd layer):
+//
+//	gw, _ := mcpgateway.NewGateway(dir, config)
+//	srv.SetGovernance(func(req JSONRPCRequest, clientID, token string) GovernanceDecision {
+//		res := gw.ProcessRequest(mcpgateway.GatewayRequest{
+//			ClientID: clientID, Token: token,
+//			Method: req.Method,
+//		})
+//		return GovernanceDecision{Allowed: res.Allowed, Reason: res.Reason, RequestID: res.RequestID}
+//	})
+type GovernanceMiddleware func(req JSONRPCRequest, clientID, token string) GovernanceDecision
+
 // JSONRPCRequest represents a JSON-RPC 2.0 request.
 type JSONRPCRequest struct {
 	JSONRPC string          `json:"jsonrpc"`
@@ -112,6 +135,7 @@ type Server struct {
 	prompts      []Prompt
 	handlers     map[string]Handler
 	toolHandlers map[string]func(map[string]interface{}) (ToolResult, error)
+	governance   GovernanceMiddleware // optional; nil = no governance check
 }
 
 // NewServer creates an MCP server.
@@ -133,6 +157,15 @@ func NewServer(name, version string) *Server {
 	return s
 }
 
+// SetGovernance installs a GovernanceMiddleware on this server.
+// When set, every Handle() call first passes through the middleware.
+// If the middleware returns Allowed=false, an error response is returned
+// immediately without invoking the underlying handler.
+// Pass nil to remove governance checking.
+func (s *Server) SetGovernance(gm GovernanceMiddleware) {
+	s.governance = gm
+}
+
 // RegisterTool registers a tool with its handler.
 func (s *Server) RegisterTool(tool Tool, handler func(map[string]interface{}) (ToolResult, error)) {
 	s.tools = append(s.tools, tool)
@@ -150,7 +183,32 @@ func (s *Server) RegisterPrompt(prompt Prompt) {
 }
 
 // Handle processes a JSON-RPC request.
+// Handle processes a JSON-RPC request without client context.
+// Governance middleware (if set) is invoked with empty clientID and token.
+// Use HandleWithClient for full governance support.
 func (s *Server) Handle(req JSONRPCRequest) JSONRPCResponse {
+	return s.HandleWithClient(req, "", "")
+}
+
+// HandleWithClient processes a JSON-RPC request with governance context.
+// clientID and token are passed to the GovernanceMiddleware (if set) so the
+// governance chain can apply auth, rate-limiting, and audit logging.
+func (s *Server) HandleWithClient(req JSONRPCRequest, clientID, token string) JSONRPCResponse {
+	// Run governance middleware first (AD-1: governance as middleware chain).
+	if s.governance != nil {
+		dec := s.governance(req, clientID, token)
+		if !dec.Allowed {
+			return JSONRPCResponse{
+				JSONRPC: "2.0",
+				ID:      req.ID,
+				Error: &RPCError{
+					Code:    ErrorInternal,
+					Message: fmt.Sprintf("governance denied: %s [req=%s]", dec.Reason, dec.RequestID),
+				},
+			}
+		}
+	}
+
 	handler, ok := s.handlers[req.Method]
 	if !ok {
 		return JSONRPCResponse{
