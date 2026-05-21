@@ -763,3 +763,56 @@ Consensus shift: **plain Docker containers are insufficient** for untrusted agen
 
 - **Futurum Agent Control Plane Framework** (April 3): Five-layer governance reference model for production AI agents. [Source](https://futurumgroup.com/press-release/futurum-agent-control-plane-framework-a-reference-model-for-production-ai-agents/)
 - **Microsoft AAIF push**: Open agentic AI ecosystem with new Linux releases and governance tools. [Source](https://www.hpcwire.com/aiwire/2026/05/18/microsoft-backs-open-agentic-ai-ecosystem-with-new-linux-releases-governance-tools-and-aaif-push/)
+
+---
+
+## Research Update — 2026-05-21 05:47 UTC
+
+### 1. Google I/O 2026 — Major Agent Announcements (May 20–21)
+
+- **Gemini 3.5 Flash**: First model family built for "frontier intelligence with action." Strongest agentic and coding model yet from Google. Already available in Gemini Enterprise Agent Platform. [Source](https://www.linkedin.com/pulse/googles-top-ai-announcements-from-io-2026-google-0h1me)
+- **Gemini Spark**: Always-on 24/7 personal AI agent. Runs in background, monitors digital life (Gmail integration), delivers synthesized updates. Google's push into proactive personal agents. [Source](https://techcrunch.com/2026/05/19/how-to-use-googles-new-ai-agents-to-go-beyond-your-standard-searches/)
+- **Antigravity 2.0** (major platform upgrade):
+  - Desktop app for running multiple agents simultaneously
+  - Antigravity CLI for terminal-based agent development
+  - Antigravity SDK for full programmatic control and custom deployment
+  - Managed agents via Gemini API (one-call provisioning with remote sandbox)
+  - Built-in security: sandboxes, credential masking, Git policies
+  [Source](https://developers.googleblog.com/all-the-news-from-the-google-io-2026-developer-keynote/)
+- **Agentic Search**: Google Search becoming an "action layer" — users create/manage AI agents that run continuously in background. Information agents rolling out summer 2026 to AI Pro/Ultra subscribers. [Source](https://blog.google/products-and-platforms/products/search/search-io-2026/)
+
+### 2. Multi-Agent Framework Updates (May 2026 Snapshot)
+
+- **LangGraph**: Dominant production standard. v0.4 (Q1 2026) added state persistence, human-in-the-loop checkpoints, time-travel debugging, graph visualization. Leads benchmarks: 88% overall task success, 76% medium complexity, 62% complex. [Source](https://medium.com/@atnoforgenai/10-ai-agent-frameworks-you-should-know-in-2026-langgraph-crewai-autogen-more-2e0be4055556) [Source](https://pooya.blog/blog/crewai-vs-langgraph-autogen-comparison-2026/)
+- **CrewAI**: Enterprise tier launched March 2026 with observability, scheduling, multi-agent coordination. ~18% token overhead in benchmarks. Best for rapid prototyping. [Source](https://medium.com/@atnoforgenai/10-ai-agent-frameworks-you-should-know-in-2026-langgraph-crewai-autogen-more-2e0be4055556)
+- **AutoGen 2.0 / AG2**: Async-first architecture, v2 API as default, event-driven design, improved conversation loops and termination handling. Strong in Azure environments. [Source](https://medium.com/@atnoforgenai/10-ai-agent-frameworks-you-should-know-in-2026-langgraph-crewai-autogen-more-2e0be4055556)
+- **Smolagents** (Hugging Face): v1.25.0 released mid-May 2026. Core logic ~1,000 lines. Code-first agents that generate/execute Python. Outstanding local LLM support. [Source](https://github.com/huggingface/smolagents)
+
+### 3. Coding Agent Updates (Devin, Goose, Aider)
+
+- **Devin** (Cognition): Most active proprietary releases this month:
+  - May 17: UI overhaul (collapsible sessions, archive all, PR actions, auto-review toggle, enterprise features, MCP marketplace with Tavily)
+  - May 13: Native Android emulator support for autonomous Android dev
+  - Auto-Triage feature for monitoring bugs/alerts/incidents
+  - $20/mo Core tier + usage-based ACUs. ~67% PR merge rate.
+  [Source](https://docs.devin.ai/release-notes/2026) [Source](https://cognition.ai/blog)
+- **Goose** (Block): Steady open-source momentum. 70+ MCP extensions available. 60%+ of Block engineers use it. Donated to Linux Foundation's Agentic AI Foundation (late 2025). [Source](https://www.youtube.com/watch?v=yAx8-_IYdWI)
+- **Aider**: Steady updates. Now supports GPT-5, Claude 4.x/4.5/4.6, Gemini 2.5/3, DeepSeek Reasoner. "Architect mode" (reasoning + code model pairing) recommended for complex tasks. [Source](https://www.augmentcode.com/tools/8-top-ai-coding-assistants-and-their-best-use-cases)
+
+### 4. Agent Sandboxing — 2026 Technical Deep-Dive
+
+**Firecracker microVMs** are the industry standard for production agent code execution:
+- ~50K lines of Rust, ~125–150ms boot time
+- Hardware-enforced isolation — even guest kernel compromise can't reach host
+- Adopted by E2B, Vercel Sandbox, Fly.io Sprites, Perplexity
+[Source](https://addozhang.medium.com/ai-agent-code-execution-sandboxes-isolation-from-containers-to-microvms-e80848effea5) [Source](https://www.firecrawl.dev/blog/ai-agent-sandbox)
+
+**gVisor** as middle ground:
+- User-space kernel intercepting syscalls. ~100ms startup.
+- Used by Google Cloud Run, Modal, GKE Agent Sandbox
+- Some syscall compatibility gaps vs microVMs
+[Source](https://blaxel.ai/blog/sandbox-management-for-ai-coding-agents)
+
+**Platform choices**: Anthropic uses gVisor/bubblewrap mix. Vercel and most agent frameworks standardize on Firecracker. E2B, Northflank, Blaxel offer managed Firecracker sandboxes. [Source](https://michaellivs.com/blog/sandboxing-ai-agents-2026/)
+
+**Emerging**: ZeroBoot claims sub-millisecond sandbox startup. Microsoft LiteBox (library-OS experiment). Snapshot/restore optimizations for faster sandbox reuse.
