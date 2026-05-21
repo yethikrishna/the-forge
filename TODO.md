@@ -1,5 +1,44 @@
 # TODO.md — The Forge Development Tracker
 
+## Phase 10: Architecture Coherence Sprint (2026-05-21)
+
+### Architecture Docs ✅
+- [x] `docs/architecture/OVERVIEW.md` — Full stack diagram, package map, data flow, design principles
+- [x] `docs/architecture/LAYER-INTEGRATION.md` — How Forge → OpenClaw → Suna layers connect, bridge pattern, zero-seam contract
+- [x] `docs/architecture/API-SURFACE.md` — REST API hierarchy, external tool integration patterns
+- [x] `docs/architecture/FEEDBACK-LOOP.md` — Signal sources → correlation → learning → improvement pipeline
+- [x] `docs/architecture/COST-ARCHITECTURE.md` — 4-level budget model (request → agent → division → org), immutable ledger
+- [x] `docs/architecture/COMPLIANCE-ARCHITECTURE.md` — 4-layer compliance stack (responsibility → audit → policy → legal gates)
+- [x] `docs/architecture/FORGE-VS-SUNA.md` — Forge vs Suna positioning: Suna = machine, Forge = company
+- [x] `docs/architecture/FORGE-ANVIL-SYNERGY.md` — Forge deploys Anvil, manages Anvil org, Anvil uses Forge for AI
+
+### End-to-End Pipeline Wiring (P0)
+- [ ] **Org bootstrap flow** — `forge org init` creates real division structure, agents, channels, cost tracking
+- [ ] **Quality gate pipeline** — code → review → quality score → block if < threshold → update trust → record in genealogy
+- [ ] **60-second demo** — record end-to-end org creation + task execution + quality gate + deploy
+
+### Product Connectivity (P1)
+- [ ] **Dashboard real data** — wire WebSocket to cost tracker, agent status, quality scores, division health
+- [ ] **Cost budget enforcement** — guard cost_cap triggers model downgrade, division cap redistribution
+- [ ] **Memory compounding** — auto-store outcomes, onboarding reads org memory, dream processes accumulation
+
+### Production Readiness (P2)
+- [ ] **Compliance enforcement** — policy engine blocks violations, consent gate fires on data changes
+- [ ] **Feedback loop live** — correlator → trust update, stuck escalation, quality tightening, memory storage
+- [ ] **CLI grammar audit** — `forge <noun> <verb>` consistency across all 172 commands, remove duplicates
+
+### Growth (P3)
+- [ ] **Documentation website** — command reference, quickstart, comparisons, architecture guide
+- [ ] **Plugin marketplace MVP** — git-based registry, publish/install/version
+
+### Architecture Review Findings
+- No stubs detected — all packages have real implementations
+- Gaps are in pipeline wiring, not individual package implementation
+- 205K lines, 199 packages, 172 commands, 186 test files
+- Build/Vet/Tests: Clean
+
+---
+
 ## Phase 0: Internal Utility Packages ✅
 All 18 utility packages implemented and tested.
 

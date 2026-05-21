@@ -1,251 +1,128 @@
-# The Forge — Phased Development & Release Strategy
+# The Forge — Competitive Strategy
 
-> Melt every Coder repo. Forge a single sword. Wield the entire arsenal.
+> Execution is commoditized. Organization is the moat.
 
----
+## The Landscape (May 2026)
 
-## Overview
-
-**Goal:** Build the definitive unified AI agent orchestration platform by absorbing the entire Coder open-source arsenal into a single binary. Achieve 10K+ GitHub stars within 12 months of public launch.
-
-**Core thesis:** Developers are drowning in AI agent tools — each with its own CLI, API, config, and mental model. The Forge unifies them. One binary. One config. Every agent. Every model. Every protocol.
-
-**Competitive landscape:** No one owns the "unified AI agent orchestration" space yet. Individual tools (Claude Code, Codex, Aider) are winning their niches. The Forge wins by being the **front door to all of them**.
-
----
-
-## Phase 0: The Meltdown (Now → 4 weeks)
-
-*Absorb everything. Code first, polish later.*
-
-### Milestones
-- [ ] Clone and analyze all 50+ meaningful Coder repos
-- [ ] Classify each repo: **absorb** (melt into forge), **reference** (learn patterns), **skip** (forks/mirrors/docs)
-- [ ] Melt the Titans first:
-  - `coder/coder` → workspace orchestration, agent management, template system
-  - `coder/code-server` → embedded web IDE
-  - `coder/agentapi` → subprocess agent management (core of `forge serve`)
-  - `coder/mux` → parallel agent desktop
-  - `coder/blink` → self-hosted bot platform
-- [ ] Melt the Arsenal:
-  - `ghostty-web` → web terminal
-  - `wush` → WireGuard file transfer
-  - `aibridge` → AI request interception/routing
-  - `envbuilder` → Dockerfile dev environments
-  - `boundary` → process isolation
-  - `httpjail` → request filtering
-  - `acp-go-sdk` → ACP protocol
-  - `anyclaude` → multi-LLM routing
-  - `aisdk-go` → AI SDK streaming
-  - `agent-tty` → terminal automation
-- [ ] Melt the Utilities:
-  - `quartz`, `slog`, `retry`, `hat`, `cli`, `serpent`, `redjet`, `pretty`, `clistat`, `exectrace`, `wsep`, `flog`, `guts`, `bigdur`, `timer`, `observability`
-- [ ] Target: **50K+ lines of Go**, 30+ internal packages, 25+ commands
-
-### Deliverable
-- `v3.0.0-alpha` — Internal build. Everything melted, not everything wired.
-
-### How to Work
-- Clone repo → read README + main package → extract core logic → wrap as internal package → wire to CLI command
-- Each absorbed repo becomes an `internal/` package with clean API boundary
-- Don't rewrite — absorb and adapt. Preserve original logic, wrap in Forge's CLI/UI layer
-- Track progress in `MELTLOG.md`
-
----
-
-## Phase 1: The Forge Awakens (Weeks 5–8)
-
-*Wire everything. Make it work end-to-end.*
-
-### Milestones
-- [ ] Every command works end-to-end (no stubs)
-- [ ] `forge serve` — full agent API server with web UI
-- [ ] `forge orchestrate` — multi-agent parallel execution
-- [ ] `forge chat` — interactive terminal chat with any model
-- [ ] `forge jail` — process + network isolation for agent runs
-- [ ] `forge env` — spin up dev environments from Dockerfiles
-- [ ] `forge session` — persistent conversations with fork/resume
-- [ ] `forge index` — RAG codebase indexing + search
-- [ ] `forge mux` — parallel agent desktop (tmux-based)
-- [ ] `forge blink` — self-hosted Slack/GitHub/Discord/Telegram bot
-- [ ] `forge acp` — Agent Client Protocol bridge
-- [ ] `forge commit` — AI-powered commits
-- [ ] Integration test suite — every command tested against real APIs
-- [ ] Target: **75K+ lines**, 35+ commands, all functional
-
-### Deliverable
-- `v3.0.0-beta.1` — First build that actually does everything the README claims.
-
-### User Feedback Strategy
-- **Dogfood internally** — use The Forge to build The Forge
-- **5 private beta testers** — hand-picked from Coder community, AI engineer Twitter
-- **Feedback channels:** private Discord channel + GitHub Issues (invite-only)
-- **Weekly feedback reviews** — triage into: fix now / v3.1 / wontfix
-
----
-
-## Phase 2: The Open Beta (Weeks 9–14)
-
-*Ship it to the world. Listen fast. Iterate faster.*
-
-### Milestones
-- [ ] `v3.0.0-beta.2` — Public beta announcement
-- [ ] Documentation site (Mintlify/Docusaurus) with:
-  - Quick start (5 minutes to running)
-  - Every command with examples
-  - Architecture diagrams
-  - Comparison: Forge vs individual tools
-- [ ] GitHub Release with pre-built binaries (linux/darwin, amd64/arm64)
-- [ ] `brew install forge`, `curl | bash` installer
-- [ ] Plugin system working — community can write `forge plugin install <name>`
-- [ ] Web dashboard MVP — session management, cost tracking, agent status
-- [ ] Target: **100K+ lines**, 40+ commands
-
-### Deliverable
-- `v3.0.0-rc.1` — Release candidate. Feature-complete, stabilization only.
-
-### User Feedback Strategy
-- **GitHub Discussions** — Q&A + ideas + show-and-tell
-- **Public Discord server** — real-time help, feature requests
-- **`forge feedback` command** — one-command bug report / feature request that opens a GitHub issue with system info
-- **Telemetry (opt-in)** — anonymous usage data to find pain points
-- **Bi-weekly changelog** — published on GitHub + blog, showing what changed based on feedback
-- **Feedback loop:**
-  1. User reports issue → triaged within 24h
-  2. Bug fixes → released within 48h (patch releases)
-  3. Feature requests → voted on in GitHub Discussions, top 3 per cycle get built
-  4. Controversial decisions → RFC documents for community input
-
-### Community Building
-- **Launch blog post:** "The Forge: Melt Every AI Tool Into One Sword"
-- **Hacker News launch** — coordinate for max impact
-- **Reddit:** r/programming, r/golang, r/LocalLLaMA, r/ChatGPTCoding, r/codingagent
-- **Twitter/X thread** — visual architecture diagram + demo video
-- **YouTube demo video** — 5-minute "zero to running agents" walkthrough
-- **"Forgemasters" program** — top contributors get merge access + swag
-- **Weekly "Forge Friday"** — community showcase of what people built with The Forge
-
----
-
-## Phase 3: The Public Release (Weeks 15–20)
-
-*Stability. Performance. Trust.*
-
-### Milestones
-- [ ] `v3.0.0` — General Availability
-- [ ] Zero critical bugs open
-- [ ] Performance benchmarks published (vs running agents individually)
-- [ ] Security audit completed (important for `forge jail` + `forge env`)
-- [ ] Full documentation + API reference
-- [ ] Docker image: `docker run ghcr.io/yethikrishna/forge`
-- [ ] Kubernetes Helm chart for `forge serve`
-- [ ] VS Code extension — use Forge from inside VS Code
-- [ ] Neovim plugin — use Forge from inside Neovim
-- [ ] Target: **120K+ lines**, 40+ commands, production-ready
-
-### Deliverable
-- `v3.0.0` — Stable release. The real deal.
-
-### User Feedback Strategy
-- **Semantic versioning** — strict semver, clear migration guides
-- **LTS policy** — v3.0.x gets bugfixes for 6 months
-- **RFC process** — major changes go through public RFC before implementation
-- **Monthly community call** — live demo + Q&A + roadmap
-- **Bug bounty program** — security issues rewarded
-
-### Promotion Strategy
-- **Conference talks** — GopherCon, KubeCon, AI engineer meetups
-- **Podcast tour** — Changelog, Go Time, Latent Space, Swyx's interviews
-- **Comparison pages** — "Forge vs Claude Code vs Codex vs Aider" (honest, detailed)
-- **Case studies** — "How Company X uses Forge to manage 50 AI agents"
-- **Integrations marketplace** — community-built plugins, templates, agents
-- **GitHub Sponsors** — fund ongoing development
-- **"30 Days of Forge"** — daily tweet/thread showing a new capability
-
----
-
-## Phase 4: The Kingdom (Months 6–12)
-
-*Ecosystem. Platform. Movement.*
-
-### Milestones
-- [ ] `v4.0.0` — Distributed forge (multi-node agent mesh)
-- [ ] Forge Cloud (optional hosted version — SaaS)
-- [ ] Forge Registry — community agent + plugin marketplace
-- [ ] Forge SDK — build your own commands and agents
-- [ ] Forgefile v2 — declarative agent pipelines (like GitHub Actions for AI)
-- [ ] Enterprise features — RBAC, audit logs, SSO
-- [ ] 10K+ GitHub stars
-- [ ] 500+ Discord members
-- [ ] 50+ community plugins
-
-### Community Building
-- **ForgeConf** — annual virtual conference
-- **Hackathons** — quarterly "Forge Hack" events
-- **Ambassador program** — community leaders in each ecosystem (Go, AI, DevOps)
-- **University program** — free Forge Cloud for students
-- **Open source grants** — fund contributors working on key features
-
----
-
-## Version Strategy
-
-| Version | Codename | Timeline | Focus |
-|---------|----------|----------|-------|
-| v3.0.0-alpha | Meltdown | Weeks 1–4 | Absorb all repos |
-| v3.0.0-beta.1 | Awakening | Weeks 5–8 | Wire everything, internal beta |
-| v3.0.0-beta.2 | Open Forge | Weeks 9–12 | Public beta, community building |
-| v3.0.0-rc.1 | Tempering | Weeks 13–14 | Stabilization |
-| v3.0.0 | The Sword | Week 15 | GA release |
-| v3.1.0 | Sharpening | Week 20 | Community feedback, polish |
-| v3.2.0 | Enchantments | Week 26 | Plugin system v2, integrations |
-| v4.0.0 | The Kingdom | Week 40 | Distributed, cloud, ecosystem |
-
----
-
-## Metrics for Success
-
-| Metric | v3.0 Beta | v3.0 GA | v4.0 | 12 Months |
-|--------|-----------|---------|------|-----------|
-| GitHub Stars | 500 | 2K | 5K | 10K+ |
-| Discord Members | 100 | 500 | 1K | 2K+ |
-| Community Plugins | 5 | 20 | 50 | 100+ |
-| Monthly Active Users | 200 | 1K | 5K | 20K+ |
-| Contributors | 5 | 20 | 50 | 100+ |
-| Blog/Substack Subs | 500 | 2K | 5K | 10K+ |
-
----
-
-## Narrative Arc (for marketing)
-
-**Act 1 — The Meltdown:** "Every AI tool is a fragment. We're melting them down." (mystery, building anticipation)
-
-**Act 2 — The Forge Awakens:** "One binary. Every agent. Every model. One sword." (power, capability)
-
-**Act 3 — The Sword:** "The wielder and the sword are one." (mastery, control, trust)
-
-**Act 4 — The Kingdom:** "Every developer. Every agent. One platform." (community, ecosystem, scale)
-
----
-
-## Anti-Patterns to Avoid
-
-1. **Premature launch** — don't ship until `forge serve` + `forge chat` + `forge orchestrate` work flawlessly
-2. **Feature creep** — every new repo gets absorbed, but not every feature gets exposed. Hide complexity.
-3. **Ignoring Windows** — WSL counts, but native Windows support matters for adoption
-4. **Docs debt** — docs are not optional. If it's not documented, it doesn't exist.
-5. **Breaking changes without migration** — semver or death
-6. **Vendor lock-in** — Forge must work with local models, not just cloud APIs
-7. **Silent failures** — every error must be actionable. "Something went wrong" is never acceptable.
-
----
-
-## The One Command That Sells It
-
-```bash
-forge serve -- claude codex aider goose
+```
+                    ORGANIZATION LAYER
+                    (nobody is here)
+                    ▲
+                    │
+     ┌──────────────┼──────────────┐
+     │              │              │
+     │         FORGE IS           │
+     │         HERE               │
+     │              │              │
+     ├──────────────┼──────────────┤
+     │              │              │
+EXPERIENCE    EXECUTION      FRAMEWORKS
+  LAYER         LAYER          LAYER
+     │              │              │
+  Suna         OpenClaw       LangGraph
+  Dify         Claude Code    CrewAI
+  Twin.so      Cursor         AutoGen
+  Warp Oz      Aider          LangChain
+  Copilot      Codex          Semantic Kernel
 ```
 
-One command. Four agents. Unified. That's the pitch.
+## Competitor Analysis
 
-Everything else is making that real.
+### 1. Suna (19.8K stars, standalone)
+**What they have**: Best open-source agent UX. Sandbox, marketplace, mobile app, 60+ skills, 3000+ integrations.
+**What they lack**: Organizational structure. Agents run independently. No quality gates, no cost management, no compliance, no org memory.
+**Forge's answer**: We USE Suna's experience layer. We don't compete with it. Our org layer wraps their execution.
+
+### 2. OpenClaw (our runtime, standalone)
+**What it has**: Battle-tested agent runtime. CLI, cron, sessions, browser, channels, skills, nodes. Runs our 25-agent org today.
+**What it lacks**: No organizational intelligence. No divisions, no quality gates, no budgets, no compliance. Requires a human to manage the org.
+**Forge's answer**: We USE OpenClaw as our execution substrate. Forge Engine IS OpenClaw, rebranded.
+
+### 3. LangGraph (126K stars)
+**What they have**: Production-grade graph-based agent orchestration. Per-node timeouts, DeltaChannel, massive community.
+**What they lack**: Python-only. No organizational structure. No cost management. No compliance. No persistent memory beyond session. Framework, not product.
+**Forge's answer**: Go binary, not Python library. Org structure, not graph structure. Product, not framework.
+
+### 4. CrewAI (45K+ stars)
+**What they have**: Role-based agent teams. "Crew" concept similar to our divisions.
+**What they lack**: Python-only. No persistent memory. No cost management. No quality gates. No real-time monitoring. Framework, not product.
+**Forge's answer**: Persistent memory. Real cost tracking. Quality enforcement. Binary, not import.
+
+### 5. AutoGen (Microsoft, GA)
+**What they have**: Microsoft backing. Event-driven architecture. Enterprise credibility.
+**What they lack**: Azure-dependent. No org structure. No cost optimization. No governance layer.
+**Forge's answer**: Cloud-agnostic. Self-hosted. Org-first. Governance built-in.
+
+### 6. Cursor ($9.9B valuation, $500M ARR)
+**What they have**: The dominant AI coding IDE. Multi-repo reasoning. Automations.
+**What they lack**: Closed source. Single IDE. No multi-agent coordination. No cost transparency. No governance.
+**Forge's answer**: Open source. Any IDE via LSP/ACP. Multi-agent org. Full cost transparency. Governance first.
+
+### 7. GitHub Copilot (20M users)
+**What they have**: Largest user base. IDE integration. GitHub native.
+**What they lack**: Usage-based billing (coming June 2026, creates price sensitivity). No multi-agent. No self-hosted. No organizational structure.
+**Forge's answer**: Cost transparency. Self-hosted. Local models. Org structure. Cost migration tool.
+
+### 8. Dify (massive traction)
+**What they have**: Low-code agent builder. Great UX. Visual workflows.
+**What they lack**: No org structure. No compliance. No cost management. Visual-only, limited CLI.
+**Forge's answer**: CLI-first. Compliance built-in. Cost tracking. Org structure. Study their UX for our observer dashboard.
+
+## The Moat
+
+Execution (running agents) is commoditized. Experience (pretty dashboards) is commoditized. Nobody has built the organization layer.
+
+Forge's defensible moat:
+
+1. **Org structure as product** — Divisions, roles, handoffs, quality gates. No competitor has this.
+2. **Institutional memory** — Knowledge that compounds across sessions, agents, and time. No competitor has this.
+3. **Cost governance** — Per-agent budgets, division caps, org optimization, immutable ledger. No competitor has this.
+4. **Compliance infrastructure** — Legal gates, audit trails, responsibility chains, consent management. No competitor has this.
+5. **Feedback loops** — Production signals → org learning → better decisions. No competitor has this.
+6. **Trust infrastructure** — Cryptographic proof, trust scores, consent gates. No competitor has this.
+7. **Self-organization** — Org restructures itself based on workload. No competitor has this.
+
+Each of these alone is valuable. Together, they create a compound moat that's very hard to replicate.
+
+## Positioning Statement
+
+**For solo founders and small teams who want to build and run an AI-powered company, Forge is the organizational operating system that makes agents work together like a real company — with quality gates, cost governance, institutional memory, and compliance built-in.**
+
+Unlike agent frameworks (LangGraph, CrewAI) that require you to build orchestration yourself, and unlike agent tools (Cursor, Copilot) that run individual agents without coordination, Forge gives you a complete AI organization out of the box.
+
+## Category Creation
+
+Forge isn't competing in "agent orchestration" or "AI coding tools." It's creating a new category: **AI Organization Infrastructure**.
+
+The类比:
+- Docker → Container Runtime
+- Kubernetes → Container Orchestration
+- **Forge → AI Organization Infrastructure**
+
+Just as Kubernetes didn't compete with Docker (it used Docker), Forge doesn't compete with Suna or OpenClaw (it uses them both). Forge adds the layer above: organizational intelligence.
+
+## Go-to-Market Strategy
+
+### Wedge: Solo Founder
+"Start a company with one command." `forge org init` → full AI org running in 60 seconds.
+
+### Expansion: Small Teams
+"Your team just got 50 AI employees." Add humans to the org alongside agents.
+
+### Enterprise: Governance
+"The only AI platform with compliance built-in." Audit trails, cost governance, legal gates.
+
+### Platform: Ecosystem
+"Run your entire business on Forge." Marketplace, Agent-as-a-Service, Forge Cloud.
+
+## Competitive Watchlist
+
+| Competitor | Threat Level | Counter-Strategy |
+|-----------|-------------|-----------------|
+| Cursor | HIGH (distribution) | Self-hosted, governance, no lock-in |
+| Copilot | HIGH (distribution) | Cost transparency, local models, org structure |
+| LangGraph | MEDIUM (community) | Product > framework, Go > Python, org > graph |
+| AutoGen | MEDIUM (enterprise) | Cloud-agnostic, self-hosted, governance |
+| CrewAI | LOW (convergence risk) | They may add org features — we're years ahead |
+| Dify | LOW (different market) | Study UX, don't compete on visual builders |
+| Warp Oz | LOW (new entrant) | Monitor, no cloud dependency counter |
