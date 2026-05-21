@@ -444,3 +444,33 @@ All 18 utility packages implemented and tested.
 | Downloads | 200 | 1,000 |
 | Contributors | 3 | 10 |
 | Community Plugins | - | 5 |
+
+## Consolidation Progress (Updated from Brainstorm #11)
+- [x] rbac + sso + identity → internal/auth
+- [x] costoptimizer → internal/cost/optimizer
+- [x] bigdur + timer → internal/duration
+- [x] snapshot + undo + graceful + shutdown → internal/safety
+- [x] clistat + resource + monitor → internal/system
+- [x] filelock + worktree → internal/gitutil
+- [x] dream + breed + tune → internal/optimize
+- [x] feedback + empath + achievement → internal/experience
+- [x] errcode + errteach + errorexplain → internal/errors
+- [x] flog → internal/slog
+- [ ] circuit + ratelimit + runaway + anomaly + outage → internal/resilience (in progress)
+- [ ] agenttest + abtest + eval → internal/eval2 (in progress)
+- [ ] debate → internal/consensus
+- [ ] mcp + mcpcompose + mcpdiscover → internal/mcp2 (in progress)
+- [ ] hat + cli → internal/cli
+- [ ] prompt + prompttest → internal/promptregistry (restructuring)
+- [ ] archaeologist → internal/lineage
+- [ ] forgeci + cicd → internal/cicd
+- [ ] rubric → internal/quality
+- [ ] selfheal → internal/resilience
+- [ ] scanhooks → internal/sandbox
+
+## New Packages Observed
+- [x] internal/agentpool — pre-warmed agent connection pool
+- [x] internal/tokentracker — real-time per-request token accounting
+- [x] internal/rollback — multi-step operation rollback
+- [x] internal/promptregistry — centralized prompt store with versioning
+- [x] internal/eval2 — next-gen agent evaluation with custom scoring

@@ -9,7 +9,7 @@ import (
 
 	"github.com/forge/sword/internal/pretty"
 	"github.com/forge/sword/internal/prompt"
-	"github.com/forge/sword/internal/prompttest"
+	"github.com/forge/sword/internal/prompt/prompttest"
 	"github.com/forge/sword/internal/tokencost"
 	"github.com/spf13/cobra"
 )

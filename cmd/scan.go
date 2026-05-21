@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/forge/sword/internal/scanhooks"
+	"github.com/forge/sword/internal/sandbox/scanhooks"
 	"github.com/spf13/cobra"
 )
 

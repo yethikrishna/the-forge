@@ -2719,3 +2719,97 @@ The Forge unifies them. [2/8]
 ---
 
 *"10 brainstorms, 200 ideas, 130K lines. The brainstorm phase is complete. The next phase has one job: get Forge into the hands of developers and listen. Ship. Listen. Repeat."*
+
+---
+
+## 2026-05-21 01:45 UTC — Brainstorm Session #11 (Consolidation Progress + Micro-Refinements)
+
+*Project state: ~134K Go lines, 145 internal packages (down from 172 — consolidation working). 10 prior sessions produced ~200+ ideas. Session #10 declared the brainstorm phase complete.*
+
+*This session is intentionally brief. The brainstorm well is tapped. This update covers: (1) acknowledging consolidation progress, (2) a handful of micro-refinements visible from the new packages, (3) a final call to shift entirely to execution.*
+
+---
+
+### A. Consolidation Progress Acknowledgment
+
+The merge plan from session #9 is executing. Confirmed merges:
+- ✅ `rbac` + `sso` + `identity` → `internal/auth` (sub-packages)
+- ✅ `costoptimizer` → `internal/cost/optimizer`
+- ✅ `bigdur` + `timer` → `internal/duration`
+- ✅ `snapshot` + `undo` + `graceful` + `shutdown` → `internal/safety`
+- ✅ `clistat` + `resource` + `monitor` → `internal/system`
+- ✅ `filelock` + `worktree` → `internal/gitutil`
+- ✅ `dream` + `breed` + `tune` → `internal/optimize`
+- ✅ `feedback` + `empath` + `achievement` → `internal/experience`
+- ✅ `errcode` + `errteach` + `errorexplain` → `internal/errors`
+- ✅ `flog` → `internal/slog` (gone, absorbed)
+
+Remaining from session #9 plan:
+- `circuit` + `ratelimit` + `runaway` + `anomaly` + `outage` → `internal/resilience` (partially done)
+- `agenttest` + `abtest` + `eval` → needs completion (eval2 exists suggesting in progress)
+- `debate` → `internal/consensus`
+- `mcp` + `mcpcompose` + `mcpdiscover` → `internal/mcp2` (in progress)
+- `hat` + `cli` → `internal/cli`
+- `prompt` + `prompttest` → `internal/prompt` (promptregistry suggests restructure)
+
+---
+
+### B. Micro-Refinements from New Packages
+
+**B1. `internal/agentpool` — Agent Connection Pooling**
+- Pool of pre-warmed agent connections ready for immediate dispatch
+- Reduces cold-start latency for `forge orchestrate` parallel runs
+- Configurable pool size, idle timeout, health checks
+- **Why it matters:** Agent startup is 2-5 seconds. Pre-warmed pools cut that to <100ms.
+
+**B2. `internal/tokentracker` — Real-Time Token Accounting**
+- Tracks token usage per-request (not just per-session)
+- Enables: real-time cost ticker in chat, per-request cost attribution, accurate billing
+- Pairs with `internal/tokencost` for price calculation
+- **Why it matters:** "How much did THAT specific request cost?" is the question every user asks.
+
+**B3. `internal/rollback` — Multi-Step Rollback**
+- Beyond `forge undo` (single action) → `forge rollback` (entire operation chain)
+- Undo a pipeline run, undo a multi-file refactoring, undo a debug session
+- Uses `internal/safety` snapshot infrastructure
+- **Why it matters:** Agents that make 20 file changes need 1-command rollback, not 20 undos.
+
+**B4. `internal/promptregistry` — Centralized Prompt Store**
+- All prompts registered, versioned, and searchable in one place
+- Replaces scattered `.forge/prompts/` with a proper registry
+- Enables: prompt marketplace, prompt analytics, prompt A/B testing
+- **Why it matters:** Prompt management was ad-hoc. A registry makes it first-class.
+
+**B5. `internal/eval2` — Next-Gen Agent Evaluation**
+- Evolved from `internal/eval` with richer assertion model
+- Supports: custom scoring functions, multi-model comparison matrices, regression detection
+- Generates HTML reports for CI integration
+- **Why it matters:** Agent quality needs to be measured, not assumed.
+
+---
+
+### C. The Execution Imperative
+
+11 sessions. ~200 ideas. 134K lines. The brainstorm has done its job.
+
+**What the brainstorm accomplished:**
+- Defined every major feature area (orchestration, security, cost, memory, pipeline, protocols)
+- Identified the consolidation strategy (172 → 145 → target 80)
+- Produced the launch plan (session #10)
+- Explored revenue models, moats, and growth strategies
+
+**What the brainstorm cannot do:**
+- Write the README that converts visitors to users
+- Record the demo that goes viral
+- Respond to the HN comment that sparks a community
+- Ship the binaries that someone actually downloads
+
+**The next 10 sessions should not be brainstorms.** They should be:
+1. Consolidation PRs (continue the merge plan)
+2. Documentation PRs (README, command reference, guides)
+3. Launch preparation (binaries, blog posts, demo)
+4. Community building (Discord, "Awesome Forge", issue templates)
+
+---
+
+*"Stop brainstorming. Start shipping. The best idea is the one that reaches a user."*
