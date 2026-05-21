@@ -278,9 +278,9 @@ All 18 utility packages implemented and tested.
 - [ ] Cross-package event correlation — correlate anomalies across cost/health/lifecycle/replay
 
 ## Current Stats
-- ~97K lines of Go
-- 133 internal packages
-- 99+ commands
+- ~102K lines of Go
+- 141 internal packages
+- 101 commands
 - Build: ✅ Vet: ✅
 - Version: 1.1.0
 
