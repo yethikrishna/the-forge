@@ -94,8 +94,19 @@ func (pr *ParallelRunner) Run(ctx context.Context, config ParallelConfig) (*Para
 	}()
 
 	var results []AgentResult
-	for r := range resultCh {
-		results = append(results, r)
+	done := make(chan struct{})
+	go func() {
+		for r := range resultCh {
+			results = append(results, r)
+		}
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// All agents completed
+	case <-ctx.Done():
+		return nil, fmt.Errorf("mux: %w", ctx.Err())
 	}
 
 	totalTime := time.Since(start)

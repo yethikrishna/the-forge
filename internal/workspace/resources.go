@@ -81,7 +81,10 @@ func (rt *ResourceTracker) Record(envName string, snap ResourceSnapshot) {
 		m = &ResourceMetrics{EnvName: envName}
 		rt.metrics[envName] = m
 	}
-	snap.Timestamp = time.Now()
+	// Use provided timestamp or fallback to now.
+	if snap.Timestamp.IsZero() {
+		snap.Timestamp = time.Now()
+	}
 	m.Current = snap
 	m.UpdatedAt = time.Now()
 
@@ -243,16 +246,21 @@ func parseMemMB(s string) int64 {
 // parseBytesMB parses byte strings like "1.2kB", "3.4MB".
 func parseBytesMB(s string) int64 {
 	s = strings.TrimSpace(s)
-	multipliers := map[string]float64{
-		"B":  1.0 / (1024 * 1024),
-		"kB": 1.0 / 1024,
-		"MB": 1.0,
-		"GB": 1024.0,
+	// Try longer suffixes first to avoid "MB" matching "B"
+	type suffixMult struct {
+		suffix string
+		mult   float64
 	}
-	for suffix, mult := range multipliers {
-		if strings.HasSuffix(s, suffix) {
-			v, _ := strconv.ParseFloat(strings.TrimSuffix(s, suffix), 64)
-			return int64(v * mult)
+	multipliers := []suffixMult{
+		{"GB", 1024.0},
+		{"MB", 1.0},
+		{"kB", 1.0 / 1024},
+		{"B", 1.0 / (1024 * 1024)},
+	}
+	for _, sm := range multipliers {
+		if strings.HasSuffix(s, sm.suffix) {
+			v, _ := strconv.ParseFloat(strings.TrimSuffix(s, sm.suffix), 64)
+			return int64(v * sm.mult)
 		}
 	}
 	v, _ := strconv.ParseInt(s, 10, 64)

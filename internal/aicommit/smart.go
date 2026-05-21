@@ -293,13 +293,20 @@ func inferScope(files []FileChange) string {
 	}
 
 	candidate := parts[0] // e.g., "internal", "cmd", "docs"
+	candidatePrefix := candidate + "/"
 	if candidate == "internal" && len(parts) >= 3 {
 		candidate = parts[1] // e.g., "workspace", "sandbox"
+		candidatePrefix = "internal/" + candidate + "/"
+	}
+
+	// Single-file edge case: don't infer scope from just cmd/ or top-level
+	if len(files) == 1 && (candidate == "cmd" || len(parts) <= 2) {
+		return ""
 	}
 
 	// Verify all files share this prefix
 	for _, f := range files {
-		if !strings.HasPrefix(f.Path, candidate) && candidate != "internal" {
+		if !strings.HasPrefix(f.Path, candidatePrefix) {
 			return ""
 		}
 	}

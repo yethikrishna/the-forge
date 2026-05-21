@@ -64,7 +64,7 @@ func TestResourceTrackerOverLimit(t *testing.T) {
 	rt := NewResourceTracker()
 	rt.SetLimits("env-1", ResourceLimits{CPUCores: 2, MemoryMB: 4096})
 
-	rt.Record("env-1", ResourceSnapshot{CPUPct: 150, MemoryMB: 3000})
+	rt.Record("env-1", ResourceSnapshot{CPUPct: 250, MemoryMB: 3000})
 
 	over, details := rt.IsOverLimit("env-1")
 	if !over {
