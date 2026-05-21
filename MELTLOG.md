@@ -388,3 +388,20 @@
 - 136+ commands
 - 186 test files
 - Build: ✅ Vet: ✅
+
+### Session 2026-05-21 01:53 UTC — Subagent Dev Sprint (continued)
+
+### Packages built
+- `internal/pluginsdk` — Plugin SDK with Plugin interface, Hook/Tool/Middleware lifecycle, Registry, in-memory Store/Logger/Metrics
+- `internal/handoff` — Agent handoff protocol (context/artifact/confidence transfer)
+
+### Fixes
+- Fixed pipetranslate pattern matching: require all keywords, most-specific wins, deployment-awareness
+- Fixed livedebug test race condition: unique session IDs with millisecond delay
+- Cleaned up root.go duplicate command registrations
+
+### Stats
+- **Lines of Go:** ~120K
+- **Internal packages:** 155
+- **Commands:** 128+
+- **Build:** ✅ **Vet:** ✅ **Tests:** ✅
