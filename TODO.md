@@ -303,7 +303,7 @@ All 18 utility packages implemented and tested.
 
 ### Strategic Moats
 - [x] Shared agent memory (opt-in) — cross-team learning, privacy-preserving pattern sharing
-- [ ] Agent quality corpus — opt-in data collection for `forge tune`/`forge breed` improvement
+- [x] Agent quality corpus — opt-in data collection for `forge tune`/`forge breed` improvement
 - [ ] `.devcontainer/` for GitHub Codespaces zero-install trial
 - [ ] "Forge in 60 Seconds" demo video — terminal recording, under 60s from install to value
 

@@ -1,279 +1,240 @@
 package qualitycorpus
 
 import (
-	"context"
+	"strings"
 	"testing"
 	"time"
 )
 
 func TestNewCorpus(t *testing.T) {
-	dir := t.TempDir()
-	corpus := NewCorpus(dir)
-	if corpus == nil {
-		t.Fatal("expected non-nil corpus")
+	c := NewCorpus("", true)
+	if c == nil {
+		t.Fatal("expected corpus")
 	}
 }
 
-func TestAddAndGetChallenge(t *testing.T) {
-	dir := t.TempDir()
-	corpus := NewCorpus(dir)
-
-	ch := &Challenge{
-		Title:       "Hello World",
-		Description: "Write a hello world program",
-		Category:    CatCodeGeneration,
-		Difficulty:  DifficultyTrivial,
-		Input:       "Write a hello world in Go",
-		Expected:    "Hello, World!",
-	}
-
-	if err := corpus.AddChallenge(ch); err != nil {
-		t.Fatalf("AddChallenge failed: %v", err)
-	}
-
-	if ch.ID == "" {
-		t.Error("expected ID to be generated")
-	}
-
-	retrieved, ok := corpus.GetChallenge(ch.ID)
-	if !ok {
-		t.Fatal("challenge not found")
-	}
-	if retrieved.Title != "Hello World" {
-		t.Errorf("expected title Hello World, got %s", retrieved.Title)
+func TestNotOptedIn(t *testing.T) {
+	c := NewCorpus("", false)
+	_, err := c.Record(Outcome{AgentID: "a1", TaskType: "code"})
+	if err == nil {
+		t.Error("should reject when not opted in")
 	}
 }
 
-func TestListChallenges(t *testing.T) {
-	dir := t.TempDir()
-	corpus := NewCorpus(dir)
-
-	corpus.AddChallenge(&Challenge{Title: "Easy Task", Category: CatCodeGeneration, Difficulty: DifficultyEasy})
-	corpus.AddChallenge(&Challenge{Title: "Hard Task", Category: CatSecurity, Difficulty: DifficultyHard})
-	corpus.AddChallenge(&Challenge{Title: "Medium Task", Category: CatCodeGeneration, Difficulty: DifficultyMedium})
-
-	// List all
-	all := corpus.ListChallenges(nil)
-	if len(all) != 3 {
-		t.Errorf("expected 3 challenges, got %d", len(all))
+func TestIsOptedIn(t *testing.T) {
+	c := NewCorpus("", true)
+	if !c.IsOptedIn() {
+		t.Error("should be opted in")
 	}
+}
 
-	// Filter by category
-	codeGen := corpus.ListChallenges(func(ch *Challenge) bool {
-		return ch.Category == CatCodeGeneration
+func TestSetOptIn(t *testing.T) {
+	c := NewCorpus("", false)
+	c.SetOptIn(true)
+	if !c.IsOptedIn() {
+		t.Error("should be opted in after set")
+	}
+}
+
+func TestRecord(t *testing.T) {
+	c := NewCorpus("", true)
+	out, err := c.Record(Outcome{
+		AgentID:      "agent-1",
+		TaskType:     "code_gen",
+		Model:        "gpt-4",
+		Success:      true,
+		QualityScore: 0.9,
+		Duration:     5 * time.Second,
+		TokensUsed:   1000,
+		Cost:         0.05,
 	})
-	if len(codeGen) != 2 {
-		t.Errorf("expected 2 code-gen challenges, got %d", len(codeGen))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.ID == "" {
+		t.Error("expected ID")
+	}
+	if !out.Anonymized {
+		t.Error("should be anonymized")
+	}
+	if out.AgentID == "agent-1" {
+		t.Error("agent ID should be anonymized")
 	}
 }
 
-func TestSubmitAndGrade(t *testing.T) {
-	dir := t.TempDir()
-	corpus := NewCorpus(dir)
-
-	ch := &Challenge{
-		Title:      "Bug Fix",
-		Category:   CatDebugging,
-		Difficulty:  DifficultyMedium,
-		Input:       "Fix the bug in this function",
-		Expected:    "fixed",
-		Scoring: &ScoringRubric{
-			MaxScore:        100,
-			Correctness:     0.4,
-			Efficiency:      0.2,
-			Style:           0.1,
-			Security:        0.1,
-			Completeness:    0.2,
-			PenaltyPerHint:  5,
-			PenaltyPerRetry: 2,
-		},
-	}
-
-	corpus.AddChallenge(ch)
-
-	sub := &Submission{
-		ChallengeID: ch.ID,
-		AgentID:     "test-agent",
-		AgentModel:  "gpt-4",
-		Output:      "The bug has been fixed",
-		Duration:    5 * time.Second,
-		CostUSD:     0.05,
-		HintsUsed:   0,
-		Retries:     0,
-	}
-
-	if err := corpus.Submit(context.Background(), sub); err != nil {
-		t.Fatalf("Submit failed: %v", err)
-	}
-
-	if sub.Score <= 0 {
-		t.Errorf("expected positive score, got %f", sub.Score)
-	}
-	if !sub.Passed {
-		t.Error("expected submission to pass (output contains 'fixed')")
-	}
-	if len(sub.Grades) == 0 {
-		t.Error("expected grades to be populated")
-	}
-}
-
-func TestSubmitWithPenalties(t *testing.T) {
-	dir := t.TempDir()
-	corpus := NewCorpus(dir)
-
-	ch := &Challenge{
-		Title:    "Penalized Task",
-		Category: CatCodeGeneration,
-		Expected: "hello",
-		Scoring: &ScoringRubric{
-			MaxScore:        100,
-			Correctness:     0.5,
-			Efficiency:      0.2,
-			Style:           0.1,
-			Security:        0.1,
-			Completeness:    0.1,
-			PenaltyPerHint:  10,
-			PenaltyPerRetry: 5,
-		},
-	}
-	corpus.AddChallenge(ch)
-
-	// Submit with penalties
-	subWithPenalties := &Submission{
-		ChallengeID: ch.ID,
-		AgentID:     "penalized-agent",
-		Output:      "hello",
-		Duration:    time.Second,
-		HintsUsed:   2,
-		Retries:     3,
-	}
-	corpus.Submit(context.Background(), subWithPenalties)
-
-	// Submit without penalties
-	subClean := &Submission{
-		ChallengeID: ch.ID,
-		AgentID:     "clean-agent",
-		Output:      "hello",
-		Duration:    time.Second,
-		HintsUsed:   0,
-		Retries:     0,
-	}
-	corpus.Submit(context.Background(), subClean)
-
-	if subWithPenalties.Score >= subClean.Score {
-		t.Errorf("penalized score (%f) should be less than clean score (%f)", subWithPenalties.Score, subClean.Score)
-	}
-}
-
-func TestLeaderboard(t *testing.T) {
-	dir := t.TempDir()
-	corpus := NewCorpus(dir)
-
-	ch := &Challenge{Title: "Test", Category: CatCodeGeneration, Expected: "ok"}
-	corpus.AddChallenge(ch)
-
-	// Agent A: good performance
-	corpus.Submit(context.Background(), &Submission{
-		ChallengeID: ch.ID, AgentID: "agent-a", AgentModel: "gpt-4",
-		Output: "ok", Score: 90, MaxScore: 100, Passed: true, Duration: 2 * time.Second,
+func TestRecordStripsFeedback(t *testing.T) {
+	c := NewCorpus("", true)
+	out, _ := c.Record(Outcome{
+		AgentID:  "a1",
+		Feedback: "sensitive user feedback",
 	})
-
-	// Agent B: poor performance
-	corpus.Submit(context.Background(), &Submission{
-		ChallengeID: ch.ID, AgentID: "agent-b", AgentModel: "gpt-3.5",
-		Output: "not ok", Score: 30, MaxScore: 100, Passed: false, Duration: 10 * time.Second,
-	})
-
-	lb := corpus.Leaderboard()
-	if len(lb) != 2 {
-		t.Fatalf("expected 2 entries, got %d", len(lb))
-	}
-
-	if lb[0].Rank != 1 {
-		t.Errorf("expected rank 1, got %d", lb[0].Rank)
-	}
-	if lb[0].AgentID != "agent-a" {
-		t.Errorf("expected agent-a at rank 1, got %s", lb[0].AgentID)
+	if out.Feedback != "" {
+		t.Error("feedback should be stripped")
 	}
 }
 
-func TestSimpleGrading(t *testing.T) {
-	dir := t.TempDir()
-	corpus := NewCorpus(dir)
-
-	// Challenge without rubric — simple pass/fail
-	ch := &Challenge{Title: "Simple", Category: CatCodeGeneration, Expected: "hello world"}
-	corpus.AddChallenge(ch)
-
-	sub := &Submission{
-		ChallengeID: ch.ID,
-		AgentID:     "test",
-		Output:      "This prints hello world as output",
-	}
-	corpus.Submit(context.Background(), sub)
-
-	if !sub.Passed {
-		t.Error("expected pass for matching output")
-	}
-	if sub.Score != 100 {
-		t.Errorf("expected score 100 for simple pass, got %f", sub.Score)
+func TestCount(t *testing.T) {
+	c := NewCorpus("", true)
+	c.Record(Outcome{AgentID: "a1"})
+	c.Record(Outcome{AgentID: "a2"})
+	if c.Count() != 2 {
+		t.Errorf("expected 2, got %d", c.Count())
 	}
 }
 
-func TestCorpusStats(t *testing.T) {
-	dir := t.TempDir()
-	corpus := NewCorpus(dir)
-
-	corpus.AddChallenge(&Challenge{Title: "Ch1", Category: CatCodeGeneration, Expected: "x"})
-	corpus.AddChallenge(&Challenge{Title: "Ch2", Category: CatSecurity, Expected: "y"})
-
-	stats := corpus.Stats()
-	if stats["challenges"] != 2 {
-		t.Errorf("expected 2 challenges, got %v", stats["challenges"])
+func TestMetricsEmpty(t *testing.T) {
+	c := NewCorpus("", true)
+	metrics := c.Metrics()
+	if len(metrics) != 0 {
+		t.Error("empty corpus should have no metrics")
 	}
 }
 
-func TestCorpusLoadAndPersist(t *testing.T) {
-	dir := t.TempDir()
+func TestMetrics(t *testing.T) {
+	c := NewCorpus("", true)
+	c.Record(Outcome{AgentID: "a1", Model: "gpt-4", Success: true, QualityScore: 0.9, Duration: 10 * time.Second, TokensUsed: 500, Cost: 0.02})
+	c.Record(Outcome{AgentID: "a2", Model: "gpt-4", Success: false, QualityScore: 0.5, Duration: 20 * time.Second, TokensUsed: 1500, Cost: 0.08})
 
-	// Create and populate corpus
-	corpus1 := NewCorpus(dir)
-	ch := &Challenge{Title: "Persist Test", Category: CatTesting, Difficulty: DifficultyEasy, Expected: "pass"}
-	corpus1.AddChallenge(ch)
-
-	// Load into a new corpus
-	corpus2 := NewCorpus(dir)
-	if err := corpus2.Load(); err != nil {
-		t.Fatalf("Load failed: %v", err)
+	metrics := c.Metrics()
+	if len(metrics) < 4 {
+		t.Fatalf("expected 4+ metrics, got %d", len(metrics))
 	}
 
-	retrieved, ok := corpus2.GetChallenge(ch.ID)
-	if !ok {
-		t.Fatal("challenge not found after load")
-	}
-	if retrieved.Title != "Persist Test" {
-		t.Errorf("expected title Persist Test, got %s", retrieved.Title)
-	}
-}
-
-func TestDifficultyValues(t *testing.T) {
-	difficulties := []Difficulty{DifficultyTrivial, DifficultyEasy, DifficultyMedium, DifficultyHard, DifficultyExpert, DifficultyImpossible}
-	expected := []string{"trivial", "easy", "medium", "hard", "expert", "impossible"}
-
-	for i, d := range difficulties {
-		if string(d) != expected[i] {
-			t.Errorf("expected %s, got %s", expected[i], d)
+	// Check success rate = 0.5
+	for _, m := range metrics {
+		if m.Name == "success_rate" && m.Value != 0.5 {
+			t.Errorf("success rate should be 0.5, got %.2f", m.Value)
 		}
 	}
 }
 
-func TestCategoryValues(t *testing.T) {
-	categories := []Category{CatCodeGeneration, CatCodeReview, CatDebugging, CatRefactoring, CatTesting, CatSecurity}
-	expected := []string{"code-generation", "code-review", "debugging", "refactoring", "testing", "security"}
+func TestMetricsByModel(t *testing.T) {
+	c := NewCorpus("", true)
+	c.Record(Outcome{Model: "gpt-4", Success: true})
+	c.Record(Outcome{Model: "gpt-4", Success: false})
+	c.Record(Outcome{Model: "claude", Success: true})
 
-	for i, c := range categories {
-		if string(c) != expected[i] {
-			t.Errorf("expected %s, got %s", expected[i], c)
+	byModel := c.MetricsByModel()
+	if len(byModel) != 2 {
+		t.Fatalf("expected 2 models, got %d", len(byModel))
+	}
+	if byModel["gpt-4"].Value != 0.5 {
+		t.Error("gpt-4 success rate should be 0.5")
+	}
+	if byModel["claude"].Value != 1.0 {
+		t.Error("claude success rate should be 1.0")
+	}
+}
+
+func TestMetricsByTaskType(t *testing.T) {
+	c := NewCorpus("", true)
+	c.Record(Outcome{TaskType: "code_gen", Success: true})
+	c.Record(Outcome{TaskType: "code_gen", Success: true})
+	c.Record(Outcome{TaskType: "review", Success: false})
+
+	byType := c.MetricsByTaskType()
+	if len(byType) != 2 {
+		t.Fatalf("expected 2 types, got %d", len(byType))
+	}
+	if byType["code_gen"].Value != 1.0 {
+		t.Error("code_gen should be 1.0")
+	}
+	if byType["review"].Value != 0.0 {
+		t.Error("review should be 0.0")
+	}
+}
+
+func TestRecent(t *testing.T) {
+	c := NewCorpus("", true)
+	for i := 0; i < 10; i++ {
+		c.Record(Outcome{AgentID: "a1"})
+	}
+
+	recent := c.Recent(3)
+	if len(recent) != 3 {
+		t.Errorf("expected 3, got %d", len(recent))
+	}
+}
+
+func TestRecentMoreThanAvailable(t *testing.T) {
+	c := NewCorpus("", true)
+	c.Record(Outcome{AgentID: "a1"})
+
+	recent := c.Recent(10)
+	if len(recent) != 1 {
+		t.Errorf("expected 1, got %d", len(recent))
+	}
+}
+
+func TestClear(t *testing.T) {
+	c := NewCorpus("", true)
+	c.Record(Outcome{AgentID: "a1"})
+	c.Clear()
+	if c.Count() != 0 {
+		t.Error("should be empty after clear")
+	}
+}
+
+func TestExport(t *testing.T) {
+	c := NewCorpus("", true)
+	c.Record(Outcome{AgentID: "a1", TaskType: "test"})
+
+	data, err := c.Export()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "test") {
+		t.Error("should contain task type")
+	}
+}
+
+func TestFormatMetric(t *testing.T) {
+	m := Metric{Name: "success_rate", Value: 0.85, Count: 100, Period: "all"}
+	s := FormatMetric(m)
+	if !strings.Contains(s, "0.85") {
+		t.Error("should show value")
+	}
+	if !strings.Contains(s, "100") {
+		t.Error("should show count")
+	}
+}
+
+func TestPersistence(t *testing.T) {
+	dir := t.TempDir()
+	c1 := NewCorpus(dir, true)
+	c1.Record(Outcome{AgentID: "a1", TaskType: "persist-test"})
+
+	c2 := NewCorpus(dir, true)
+	if c2.Count() != 1 {
+		t.Fatalf("should persist, got %d", c2.Count())
+	}
+}
+
+func TestTrimLargeCorpus(t *testing.T) {
+	c := NewCorpus("", true)
+	for i := 0; i < 10001; i++ {
+		c.Record(Outcome{AgentID: "a1"})
+	}
+	if c.Count() > 10000 {
+		t.Error("should trim to 10000")
+	}
+}
+
+func TestAnonymize(t *testing.T) {
+	tests := []struct {
+		input string
+		short bool
+	}{
+		{"agent-12345", false},
+		{"ab", true},
+	}
+	for _, tt := range tests {
+		result := anonymize(tt.input)
+		if tt.short && result != "****" {
+			t.Errorf("short input should be masked: %q", result)
+		}
+		if !tt.short && !strings.HasPrefix(result, tt.input[:2]) {
+			t.Error("should preserve first 2 chars")
 		}
 	}
 }
