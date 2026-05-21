@@ -1,298 +1,395 @@
-package navigate_test
+package navigate
 
 import (
-	"os"
-	"path/filepath"
+	"fmt"
+	"context"
 	"testing"
-
-	"github.com/forge/sword/internal/navigate"
 )
 
-func createTestDir(t *testing.T, files map[string]string) string {
-	t.Helper()
+func TestNewIndex(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	if idx == nil {
+		t.Fatal("NewIndex should return an index")
+	}
+}
+
+func TestAddSymbol(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+
+	err := idx.AddSymbol(Symbol{
+		Name:    "HandleRequest",
+		Kind:    SymbolFunction,
+		Package: "http",
+		File:    "handler.go",
+		Line:    42,
+	})
+	if err != nil {
+		t.Fatalf("AddSymbol error: %v", err)
+	}
+
+	stats := idx.Stats()
+	if stats.SymbolCount != 1 {
+		t.Errorf("SymbolCount = %d, want 1", stats.SymbolCount)
+	}
+}
+
+func TestAddSymbolDuplicate(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	sym := Symbol{Name: "Foo", Kind: SymbolFunction, Package: "pkg", File: "f.go", Line: 1}
+	idx.AddSymbol(sym)
+
+	// Same ID should error
+	err := idx.AddSymbol(sym)
+	if err == nil {
+		t.Error("Adding duplicate symbol should error")
+	}
+}
+
+func TestLookup(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "HandleRequest", Kind: SymbolFunction, Package: "http", File: "h.go", Line: 10})
+	idx.AddSymbol(Symbol{Name: "HandleRequest", Kind: SymbolMethod, Package: "server", File: "s.go", Line: 20})
+
+	syms := idx.Lookup("HandleRequest")
+	if len(syms) != 2 {
+		t.Errorf("Lookup = %d symbols, want 2", len(syms))
+	}
+}
+
+func TestLookupInPackage(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "Run", Kind: SymbolFunction, Package: "cmd", File: "main.go", Line: 10})
+	idx.AddSymbol(Symbol{Name: "Run", Kind: SymbolFunction, Package: "test", File: "test.go", Line: 5})
+
+	syms := idx.LookupInPackage("Run", "cmd")
+	if len(syms) != 1 {
+		t.Errorf("LookupInPackage = %d, want 1", len(syms))
+	}
+	if syms[0].Package != "cmd" {
+		t.Errorf("Package = %q, want %q", syms[0].Package, "cmd")
+	}
+}
+
+func TestDefinition(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "Serve", Kind: SymbolFunction, Package: "http", File: "server.go", Line: 15})
+
+	syms := idx.Lookup("Serve")
+	if len(syms) == 0 {
+		t.Fatal("No symbols found")
+	}
+
+	sym, err := idx.Definition(syms[0].ID)
+	if err != nil {
+		t.Fatalf("Definition error: %v", err)
+	}
+	if sym.Name != "Serve" {
+		t.Errorf("Name = %q, want %q", sym.Name, "Serve")
+	}
+}
+
+func TestDefinitionNotFound(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	_, err := idx.Definition("nonexistent")
+	if err == nil {
+		t.Error("Should error for nonexistent symbol")
+	}
+}
+
+func TestAddReference(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "Serve", Kind: SymbolFunction, Package: "http", File: "s.go", Line: 10})
+
+	syms := idx.Lookup("Serve")
+	err := idx.AddReference(Reference{
+		SymbolID: syms[0].ID,
+		File:     "main.go",
+		Line:     30,
+		Kind:     "call",
+		Context:  "http.Serve()",
+	})
+	if err != nil {
+		t.Fatalf("AddReference error: %v", err)
+	}
+
+	refs := idx.References(syms[0].ID)
+	if len(refs) != 1 {
+		t.Errorf("References = %d, want 1", len(refs))
+	}
+}
+
+func TestCallGraph(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+
+	idx.AddSymbol(Symbol{Name: "main", Kind: SymbolFunction, Package: "cmd", File: "main.go", Line: 1, Callees: []string{"serve-id"}})
+	idx.AddSymbol(Symbol{Name: "Serve", Kind: SymbolFunction, Package: "http", File: "server.go", Line: 10, ID: "serve-id"})
+
+	callers := idx.Callers("serve-id")
+	if len(callers) != 1 {
+		t.Errorf("Callers = %d, want 1", len(callers))
+	}
+
+	callees := idx.Callees(idx.Lookup("main")[0].ID)
+	if len(callees) != 1 {
+		t.Errorf("Callees = %d, want 1", len(callees))
+	}
+}
+
+func TestFindCallPath(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+
+	idx.AddSymbol(Symbol{Name: "A", Kind: SymbolFunction, Package: "p", File: "a.go", Line: 1, ID: "a", Callees: []string{"b"}})
+	idx.AddSymbol(Symbol{Name: "B", Kind: SymbolFunction, Package: "p", File: "b.go", Line: 1, ID: "b", Callees: []string{"c"}})
+	idx.AddSymbol(Symbol{Name: "C", Kind: SymbolFunction, Package: "p", File: "c.go", Line: 1, ID: "c"})
+
+	path := idx.FindCallPath("a", "c")
+	if path == nil {
+		t.Fatal("Should find call path A → B → C")
+	}
+	if path.Depth != 2 {
+		t.Errorf("Depth = %d, want 2", path.Depth)
+	}
+	if len(path.Path) != 3 {
+		t.Errorf("Path length = %d, want 3", len(path.Path))
+	}
+}
+
+func TestFindCallPathNotFound(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "A", Kind: SymbolFunction, Package: "p", File: "a.go", Line: 1, ID: "a"})
+	idx.AddSymbol(Symbol{Name: "B", Kind: SymbolFunction, Package: "p", File: "b.go", Line: 1, ID: "b"})
+
+	path := idx.FindCallPath("a", "b")
+	if path != nil {
+		t.Error("Should not find path between unconnected nodes")
+	}
+}
+
+func TestFindCallPathSelf(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "A", Kind: SymbolFunction, Package: "p", File: "a.go", Line: 1, ID: "a"})
+
+	path := idx.FindCallPath("a", "a")
+	if path == nil {
+		t.Fatal("Self-path should work")
+	}
+	if path.Depth != 0 {
+		t.Errorf("Self-path depth = %d, want 0", path.Depth)
+	}
+}
+
+func TestSearchExact(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "HandleRequest", Kind: SymbolFunction, Package: "http", File: "h.go", Line: 10})
+	idx.AddSymbol(Symbol{Name: "HandleResponse", Kind: SymbolFunction, Package: "http", File: "h.go", Line: 20})
+
+	result := idx.Search("HandleRequest", 10)
+	if len(result.Matches) == 0 {
+		t.Fatal("Search should find matches")
+	}
+	if result.Matches[0].Symbol.Name != "HandleRequest" {
+		t.Errorf("First match = %q, want %q", result.Matches[0].Symbol.Name, "HandleRequest")
+	}
+	if result.Matches[0].Relevance != 1.0 {
+		t.Errorf("Exact match relevance = %.2f, want 1.0", result.Matches[0].Relevance)
+	}
+}
+
+func TestSearchSubstring(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "HandleRequest", Kind: SymbolFunction, Package: "http", File: "h.go", Line: 10})
+	idx.AddSymbol(Symbol{Name: "HandleResponse", Kind: SymbolFunction, Package: "http", File: "h.go", Line: 20})
+	idx.AddSymbol(Symbol{Name: "ProcessData", Kind: SymbolFunction, Package: "data", File: "d.go", Line: 5})
+
+	result := idx.Search("Handle", 10)
+	if result.Total < 2 {
+		t.Errorf("Should find at least 2 'Handle' symbols, got %d", result.Total)
+	}
+}
+
+func TestSearchPackageQualified(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "Println", Kind: SymbolFunction, Package: "fmt", File: "print.go", Line: 10})
+	idx.AddSymbol(Symbol{Name: "Println", Kind: SymbolFunction, Package: "log", File: "log.go", Line: 5})
+
+	result := idx.Search("fmt.Println", 10)
+	if len(result.Matches) == 0 {
+		t.Fatal("Package-qualified search should find matches")
+	}
+	if result.Matches[0].Symbol.Package != "fmt" {
+		t.Errorf("Package = %q, want %q", result.Matches[0].Symbol.Package, "fmt")
+	}
+}
+
+func TestSearchLimit(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	for i := 0; i < 20; i++ {
+		idx.AddSymbol(Symbol{
+			Name:    fmt.Sprintf("Handler%d", i),
+			Kind:    SymbolFunction,
+			Package: "http",
+			File:    "h.go",
+			Line:    i + 1,
+		})
+	}
+
+	result := idx.Search("Handler", 5)
+	if len(result.Matches) > 5 {
+		t.Errorf("Should limit to 5 matches, got %d", len(result.Matches))
+	}
+	if !result.Truncated {
+		t.Error("Should be truncated with limit 5")
+	}
+}
+
+func TestSymbolsByFile(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "A", Kind: SymbolFunction, Package: "p", File: "a.go", Line: 1})
+	idx.AddSymbol(Symbol{Name: "B", Kind: SymbolFunction, Package: "p", File: "a.go", Line: 5})
+	idx.AddSymbol(Symbol{Name: "C", Kind: SymbolFunction, Package: "p", File: "b.go", Line: 1})
+
+	syms := idx.SymbolsByFile("a.go")
+	if len(syms) != 2 {
+		t.Errorf("SymbolsByFile = %d, want 2", len(syms))
+	}
+}
+
+func TestSymbolsByKind(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "A", Kind: SymbolFunction, Package: "p", File: "f.go", Line: 1})
+	idx.AddSymbol(Symbol{Name: "MyType", Kind: SymbolType, Package: "p", File: "f.go", Line: 5})
+	idx.AddSymbol(Symbol{Name: "B", Kind: SymbolFunction, Package: "p", File: "f.go", Line: 10})
+
+	fns := idx.SymbolsByKind(SymbolFunction)
+	if len(fns) != 2 {
+		t.Errorf("Functions = %d, want 2", len(fns))
+	}
+}
+
+func TestRemoveFile(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "A", Kind: SymbolFunction, Package: "p", File: "a.go", Line: 1})
+	idx.AddSymbol(Symbol{Name: "B", Kind: SymbolFunction, Package: "p", File: "b.go", Line: 1})
+
+	idx.RemoveFile("a.go")
+
+	if len(idx.SymbolsByFile("a.go")) != 0 {
+		t.Error("File symbols should be removed")
+	}
+	if idx.Stats().SymbolCount != 1 {
+		t.Errorf("SymbolCount = %d, want 1", idx.Stats().SymbolCount)
+	}
+}
+
+func TestSaveAndLoad(t *testing.T) {
 	dir := t.TempDir()
-	for name, content := range files {
-	 fullPath := filepath.Join(dir, name)
-	 os.MkdirAll(filepath.Dir(fullPath), 0755)
-	 os.WriteFile(fullPath, []byte(content), 0644)
+	idx := NewIndex(dir)
+
+	idx.AddSymbol(Symbol{Name: "Serve", Kind: SymbolFunction, Package: "http", File: "s.go", Line: 10})
+	idx.AddEdge("serve-id", "listen-id")
+
+	if err := idx.Save(); err != nil {
+		t.Fatalf("Save error: %v", err)
 	}
-	return dir
+
+	idx2 := NewIndex(dir)
+	if err := idx2.Load(); err != nil {
+		t.Fatalf("Load error: %v", err)
+	}
+
+	if idx2.Stats().SymbolCount != 1 {
+		t.Errorf("Loaded SymbolCount = %d, want 1", idx2.Stats().SymbolCount)
+	}
 }
 
-func TestIndexGoFile(t *testing.T) {
-	dir := createTestDir(t, map[string]string{
-		"main.go": `package main
-
-import "fmt"
-
-func Hello() {
-	fmt.Println("hello")
+func TestNavigator(t *testing.T) {
+	nav := NewNavigator(t.TempDir())
+	if nav == nil {
+		t.Fatal("NewNavigator should return a navigator")
+	}
 }
 
-func add(a, b int) int {
-	return a + b
-}
+func TestNavigatorGoToDefinition(t *testing.T) {
+	nav := NewNavigator(t.TempDir())
+	nav.Index().AddSymbol(Symbol{Name: "Serve", Kind: SymbolFunction, Package: "http", File: "s.go", Line: 10})
 
-type Server struct {
-	Port int
-	Host string
-}
-
-type Handler interface {
-	Serve() error
-}
-
-const MaxRetries = 3
-
-var defaultPort = 8080
-`,
-	})
-
-	nav := navigate.NewNavigator(dir)
-	idx, err := nav.IndexDir()
+	result, err := nav.GoToDefinition(context.Background(), "Serve")
 	if err != nil {
-		t.Fatalf("IndexDir failed: %v", err)
+		t.Fatalf("GoToDefinition error: %v", err)
 	}
-
-	if len(idx.Symbols) == 0 {
-		t.Error("expected symbols to be indexed")
-	}
-
-	// Check for function
-	defs := nav.FindDefinition("Hello")
-	if len(defs) == 0 {
-		t.Error("expected to find Hello function")
-	}
-	if defs[0].Kind != navigate.KindFunction {
-		t.Errorf("expected function, got %s", defs[0].Kind)
-	}
-	if !defs[0].Exports {
-		t.Error("expected Hello to be exported")
-	}
-
-	// Check for unexported function
-	defs = nav.FindDefinition("add")
-	if len(defs) == 0 {
-		t.Error("expected to find add function")
-	}
-	if defs[0].Exports {
-		t.Error("expected add to be unexported")
-	}
-
-	// Check for struct
-	defs = nav.FindDefinition("Server")
-	if len(defs) == 0 {
-		t.Error("expected to find Server struct")
-	}
-	if defs[0].Kind != navigate.KindStruct {
-		t.Errorf("expected struct, got %s", defs[0].Kind)
-	}
-
-	// Check for interface
-	defs = nav.FindDefinition("Handler")
-	if len(defs) == 0 {
-		t.Error("expected to find Handler interface")
-	}
-	if defs[0].Kind != navigate.KindInterface {
-		t.Errorf("expected interface, got %s", defs[0].Kind)
-	}
-
-	// Check for const
-	defs = nav.FindDefinition("MaxRetries")
-	if len(defs) == 0 {
-		t.Error("expected to find MaxRetries const")
-	}
-
-	// Check for var
-	defs = nav.FindDefinition("defaultPort")
-	if len(defs) == 0 {
-		t.Error("expected to find defaultPort var")
+	if len(result.Matches) == 0 {
+		t.Error("Should find definition")
 	}
 }
 
-func TestIndexPythonFile(t *testing.T) {
-	dir := createTestDir(t, map[string]string{
-		"app.py": `from flask import Flask
+func TestNavigatorFindReferences(t *testing.T) {
+	nav := NewNavigator(t.TempDir())
+	nav.Index().AddSymbol(Symbol{Name: "Serve", Kind: SymbolFunction, Package: "http", File: "s.go", Line: 10})
 
-app = Flask(__name__)
+	syms := nav.Index().Lookup("Serve")
+	nav.Index().AddReference(Reference{SymbolID: syms[0].ID, File: "main.go", Line: 30, Kind: "call"})
 
-def hello():
-    return "hello"
-
-class User:
-    def __init__(self, name):
-        self.name = name
-`,
-	})
-
-	nav := navigate.NewNavigator(dir)
-	idx, err := nav.IndexDir()
+	result, err := nav.FindReferences(context.Background(), "Serve")
 	if err != nil {
-		t.Fatalf("IndexDir failed: %v", err)
+		t.Fatalf("FindReferences error: %v", err)
 	}
-
-	if len(idx.Symbols) == 0 {
-		t.Error("expected symbols to be indexed")
-	}
-
-	defs := nav.FindDefinition("hello")
-	if len(defs) == 0 {
-		t.Error("expected to find hello function")
-	}
-
-	defs = nav.FindDefinition("User")
-	if len(defs) == 0 {
-		t.Error("expected to find User class")
+	if result.Total < 1 {
+		t.Error("Should find at least 1 reference")
 	}
 }
 
-func TestNavigateQuery(t *testing.T) {
-	dir := createTestDir(t, map[string]string{
-		"pkg/handler.go": `package pkg
+func TestNavigatorTraceCallChain(t *testing.T) {
+	nav := NewNavigator(t.TempDir())
+	nav.Index().AddSymbol(Symbol{Name: "main", Kind: SymbolFunction, Package: "cmd", File: "main.go", Line: 1, Callees: []string{"serve-id"}})
+	nav.Index().AddSymbol(Symbol{Name: "Serve", Kind: SymbolFunction, Package: "http", File: "s.go", Line: 10, ID: "serve-id"})
 
-func HandleRequest() {}
-func handleInternal() {}
-type Handler struct{}
-`,
-	})
-
-	nav := navigate.NewNavigator(dir)
-	nav.IndexDir()
-
-	// Query by kind
-	results := nav.Navigate(navigate.NavigateQuery{Kind: navigate.KindFunction})
-	if len(results) < 2 {
-		t.Errorf("expected at least 2 functions, got %d", len(results))
+	path, err := nav.TraceCallChain(context.Background(), "main", "Serve")
+	if err != nil {
+		t.Fatalf("TraceCallChain error: %v", err)
 	}
-
-	// Query exported only
-	results = nav.Navigate(navigate.NavigateQuery{Exported: true})
-	for _, r := range results {
-		if !r.Exports {
-			t.Errorf("expected only exported symbols, got %s", r.Name)
-		}
-	}
-
-	// Query by file
-	results = nav.Navigate(navigate.NavigateQuery{File: "handler"})
-	if len(results) == 0 {
-		t.Error("expected results for handler file")
+	if path == nil {
+		t.Fatal("Should find call path")
 	}
 }
 
-func TestOutline(t *testing.T) {
-	dir := createTestDir(t, map[string]string{
-		"main.go": `package main
+func TestExportMarkdown(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "Serve", Kind: SymbolFunction, Package: "http", File: "s.go", Line: 10})
+	idx.AddSymbol(Symbol{Name: "Handler", Kind: SymbolInterface, Package: "http", File: "s.go", Line: 20})
 
-func Alpha() {}
-func beta() {}
-type Gamma struct{}
-`,
-	})
-
-	nav := navigate.NewNavigator(dir)
-	nav.IndexDir()
-
-	outline := nav.Outline("main.go")
-	if outline == "" {
-		t.Error("expected non-empty outline")
+	md := idx.ExportMarkdown()
+	if md == "" {
+		t.Error("ExportMarkdown should not be empty")
 	}
-	if !contains(outline, "Alpha") {
-		t.Error("expected Alpha in outline")
+	if !contains(md, "Serve") {
+		t.Error("Markdown should contain symbol names")
 	}
 }
 
-func TestSearch(t *testing.T) {
-	dir := createTestDir(t, map[string]string{
-		"a.go": `package main
-func CreateUser() {}
-func DeleteUser() {}
-func createOrder() {}
-`,
-	})
+func TestIndexStats(t *testing.T) {
+	idx := NewIndex(t.TempDir())
+	idx.AddSymbol(Symbol{Name: "A", Kind: SymbolFunction, Package: "p1", File: "a.go", Line: 1})
+	idx.AddSymbol(Symbol{Name: "B", Kind: SymbolType, Package: "p2", File: "b.go", Line: 1})
 
-	nav := navigate.NewNavigator(dir)
-	nav.IndexDir()
-
-	results := nav.Search("User", 10)
-	if len(results) < 2 {
-		t.Errorf("expected at least 2 results for 'User', got %d", len(results))
+	stats := idx.Stats()
+	if stats.SymbolCount != 2 {
+		t.Errorf("SymbolCount = %d, want 2", stats.SymbolCount)
+	}
+	if stats.FileCount != 2 {
+		t.Errorf("FileCount = %d, want 2", stats.FileCount)
+	}
+	if stats.PackageCount != 2 {
+		t.Errorf("PackageCount = %d, want 2", stats.PackageCount)
 	}
 }
 
-func TestStats(t *testing.T) {
-	dir := createTestDir(t, map[string]string{
-		"main.go": `package main
-func Hello() {}
-func world() {}
-type Thing struct{}
-`,
-	})
-
-	nav := navigate.NewNavigator(dir)
-	nav.IndexDir()
-
-	stats := nav.Stats()
-	total, ok := stats["total_symbols"]
-	if !ok {
-		t.Error("expected total_symbols in stats")
-	}
-	if total.(int) < 3 {
-		t.Errorf("expected at least 3 symbols, got %d", total.(int))
-	}
+func contains(s, sub string) bool {
+	return len(s) >= len(sub) && (s == sub || len(s) > 0 && containsStr(s, sub))
 }
 
-func TestSkipDirectories(t *testing.T) {
-	dir := createTestDir(t, map[string]string{
-		"main.go":            "package main\nfunc Main() {}",
-		"vendor/v.go":        "package vendor\nfunc V() {}",
-		".git/config":        `git config`,
-		"node_modules/x.js":  `function x() {}`,
-	})
-
-	nav := navigate.NewNavigator(dir)
-	nav.IndexDir()
-
-	// Should find Main but not V or x
-	results := nav.Search("Main", 10)
-	if len(results) == 0 {
-		t.Error("expected to find Main")
-	}
-
-	results = nav.Search("V", 10)
-	for _, r := range results {
-		if r.File == "vendor/v.go" {
-			t.Error("vendor directory should be skipped")
-		}
-	}
-}
-
-func TestSymbolTree(t *testing.T) {
-	dir := createTestDir(t, map[string]string{
-		"a.go": `package main
-func Alpha() {}
-`,
-		"b/b.go": `package b
-func Beta() {}
-`,
-	})
-
-	nav := navigate.NewNavigator(dir)
-	nav.IndexDir()
-
-	tree := nav.SymbolTree()
-	if len(tree) < 2 {
-		t.Errorf("expected at least 2 files in tree, got %d", len(tree))
-	}
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsStr(s, substr))
-}
-
-func containsStr(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
+func containsStr(s, sub string) bool {
+	for i := 0; i <= len(s)-len(sub); i++ {
+		if s[i:i+len(sub)] == sub {
 			return true
 		}
 	}
