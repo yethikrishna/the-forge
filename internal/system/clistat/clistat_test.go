@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/forge/sword/internal/clistat"
+	"github.com/forge/sword/internal/system/clistat"
 )
 
 func TestCollect(t *testing.T) {
