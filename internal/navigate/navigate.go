@@ -312,7 +312,7 @@ func (n *Navigator) indexPythonFile(path string) {
 
 	for scanner.Scan() {
 		lineNum++
-		line := strings.TrimSpace(line)
+		line := strings.TrimSpace(scanner.Text())
 
 		if m := pyClassRe.FindStringSubmatch(line); m != nil {
 			id := symbolID(relPath, lineNum)
@@ -351,7 +351,7 @@ func (n *Navigator) indexTypeScriptFile(path string) {
 
 	for scanner.Scan() {
 		lineNum++
-		line := strings.TrimSpace(line)
+		line := strings.TrimSpace(scanner.Text())
 
 		if m := tsInterfaceRe.FindStringSubmatch(line); m != nil {
 			id := symbolID(relPath, lineNum)
@@ -400,7 +400,7 @@ func (n *Navigator) indexRustFile(path string) {
 
 	for scanner.Scan() {
 		lineNum++
-		line := strings.TrimSpace(line)
+		line := strings.TrimSpace(scanner.Text())
 
 		if m := rsTraitRe.FindStringSubmatch(line); m != nil {
 			id := symbolID(relPath, lineNum)
