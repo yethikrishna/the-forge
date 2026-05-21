@@ -2,8 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"time"
 
 	"github.com/forge/sword/internal/cost"
+	"github.com/forge/sword/internal/costlive"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
 )
@@ -23,7 +27,10 @@ Examples:
   forge cost
   forge cost --provider anthropic
   forge cost --input 10000 --output 5000
-  forge cost --input 10000 --output 5000 --provider openai`,
+  forge cost --input 10000 --output 5000 --provider openai
+  forge cost live
+  forge cost live --budget 50
+  forge cost live --json`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			catalog := cost.Catalog()
 
@@ -95,5 +102,105 @@ Examples:
 	cmd.Flags().Int64Var(&inputTokens, "input", 0, "Estimate cost for N input tokens")
 	cmd.Flags().Int64Var(&outputTokens, "output", 0, "Estimate cost for N output tokens")
 
+	// Add live subcommand
+	cmd.AddCommand(costLiveCmd())
+
 	return cmd
+}
+
+func costLiveCmd() *cobra.Command {
+	var budget float64
+	var jsonOutput bool
+	var watch bool
+	var interval int
+	var dataDir string
+
+	liveCmd := &cobra.Command{
+		Use:   "live",
+		Short: "Real-time token tracking with projected monthly spend",
+		Long: `Show real-time token usage, burn rate, cost projections, and budget tracking.
+
+Aggregates usage from all agents and models to show:
+  - Today's usage (tokens, calls, cost)
+  - Monthly usage with burn rate (tokens/min, cost/hour)
+  - Projected monthly spend based on current burn rate
+  - Per-model and per-agent cost breakdowns
+  - Budget tracking with progress bar
+
+Examples:
+  forge cost live                    # Show current live stats
+  forge cost live --budget 50        # Set monthly budget to $50
+  forge cost live --json             # Output as JSON
+  forge cost live --watch            # Auto-refresh every 5 seconds
+  forge cost live --watch --interval 10   # Refresh every 10 seconds
+  forge cost live --data /path/to/dir     # Use custom data directory`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if dataDir == "" {
+				home, _ := os.UserHomeDir()
+				dataDir = filepath.Join(home, ".forge", "costlive")
+			}
+
+			lt, err := costlive.NewLiveTracker(dataDir, budget)
+			if err != nil {
+				return fmt.Errorf("init cost live: %w", err)
+			}
+
+			// If budget specified but different from stored, update
+			if budget > 0 {
+				lt.SetBudget(budget)
+			}
+
+			if watch {
+				return runLiveWatch(lt, jsonOutput, interval)
+			}
+
+			return showLiveStats(lt, jsonOutput)
+		},
+	}
+
+	liveCmd.Flags().Float64Var(&budget, "budget", 0, "Monthly budget in USD (0 = no budget)")
+	liveCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
+	liveCmd.Flags().BoolVarP(&watch, "watch", "w", false, "Auto-refresh mode")
+	liveCmd.Flags().IntVarP(&interval, "interval", "i", 5, "Refresh interval in seconds (with --watch)")
+	liveCmd.Flags().StringVar(&dataDir, "data", "", "Data directory (default: ~/.forge/costlive)")
+
+	return liveCmd
+}
+
+func showLiveStats(lt *costlive.LiveTracker, jsonOutput bool) error {
+	stats := lt.Stats()
+
+	if jsonOutput {
+		out, err := costlive.FormatLiveStatsJSON(stats)
+		if err != nil {
+			return err
+		}
+		fmt.Println(out)
+		return nil
+	}
+
+	fmt.Println(costlive.FormatLiveStats(stats))
+	return nil
+}
+
+func runLiveWatch(lt *costlive.LiveTracker, jsonOutput bool, intervalSec int) error {
+	ticker := time.NewTicker(time.Duration(intervalSec) * time.Second)
+	defer ticker.Stop()
+
+	// Show initial stats
+	if err := showLiveStats(lt, jsonOutput); err != nil {
+		return err
+	}
+
+	for range ticker.C {
+		// Clear screen for refresh
+		fmt.Print("\033[H\033[2J")
+		fmt.Printf("  [Refreshed at %s — press Ctrl+C to stop]\n\n", time.Now().Format("15:04:05"))
+
+		if err := showLiveStats(lt, jsonOutput); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
