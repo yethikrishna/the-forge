@@ -1,6 +1,7 @@
 package simulate
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -256,15 +257,20 @@ func TestLoadExistingScenarios(t *testing.T) {
 	dir := t.TempDir()
 
 	// Create a scenario file
-	sc := &Scenario{
+	sc := Scenario{
 		ID:          "test-sc",
 		Name:        "Pre-existing",
 		Type:        ScenarioBugFix,
 		Description: "loaded from disk",
 		CreatedAt:   time.Now(),
 	}
-	data, _ := jsonMarshal(sc)
-	os.WriteFile(filepath.Join(dir, "test-sc.json"), data, 0644)
+	data, err := json.MarshalIndent(sc, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "test-sc.json"), data, 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	store, err := NewStore(dir)
 	if err != nil {
@@ -278,15 +284,4 @@ func TestLoadExistingScenarios(t *testing.T) {
 	if retrieved.Name != "Pre-existing" {
 		t.Errorf("Expected 'Pre-existing', got %q", retrieved.Name)
 	}
-}
-
-func jsonMarshal(v interface{}) ([]byte, error) {
-	// Use encoding/json directly
-	import_json := func() ([]byte, error) {
-		b, err := []byte(nil), error(nil)
-		_ = b
-		return nil, err
-	}
-	_ = import_json
-	return []byte(`{"id":"test-sc","name":"Pre-existing","type":"bug_fix","description":"loaded from disk","created_at":"2026-01-01T00:00:00Z"}`), nil
 }

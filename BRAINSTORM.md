@@ -2178,3 +2178,293 @@ From 200 ideas, these sound cool but should be deprioritized:
 ---
 
 *"200 ideas, 7 sessions, 109K lines. The brainstorm well is deep but not bottomless. Ship what we have. The best idea is the one that ships."*
+
+---
+
+## 2026-05-21 00:42 UTC — Brainstorm Session #9 (Implementation Design)
+
+*Project state: ~119K Go lines, 157 internal packages. Sessions #1–8 produced ~200+ ideas, nearly all implemented. Session #8 defined the definitive top 10 priorities and called for execution over ideation.*
+
+*This session shifts from brainstorming to implementation design. Instead of "what to build," it focuses on "how to build the top 3 priorities well." Specifically: (1) the consolidation plan with concrete merge mappings, (2) the documentation website architecture, (3) the plugin marketplace protocol.*
+
+---
+
+### A. Consolidation Plan — Concrete Merge Mappings
+
+Current: 157 packages. Target: ~85. Here's the exact merge plan:
+
+**Merge Group 1: Error System (4 → 1)**
+```
+internal/errcode       ─┐
+internal/errteach      ─┤→ internal/errors
+internal/errorexplain  ─┤
+internal/errteach      ─┘
+```
+New `internal/errors` exposes: `Code`, `Teach(err)`, `Explain(err)`, `Report(err)`. All existing call sites update imports.
+
+**Merge Group 2: Resilience (6 → 1)**
+```
+internal/circuit    ─┐
+internal/ratelimit  ─┤
+internal/runaway    ─┤→ internal/resilience
+internal/anomaly    ─┤   (sub-packages: circuit/, ratelimit/, detector/, monitor/)
+internal/outage     ─┤
+internal/resilience ─┘
+```
+Existing `internal/resilience` becomes the parent. Others become sub-packages. Public API unchanged via re-exports.
+
+**Merge Group 3: Safety & Recovery (4 → 1)**
+```
+internal/snapshot  ─┐
+internal/undo      ─┤→ internal/safety
+internal/graceful  ─┤   (sub-packages: snapshot/, undo/, signal/, recovery/)
+internal/shutdown  ─┘
+```
+
+**Merge Group 4: Agent Evaluation (3 → 1)**
+```
+internal/agenttest ─┐
+internal/abtest    ─┤→ internal/eval
+internal/eval      ─┘   (sub-packages: testcases/, ab/, benchmark/)
+```
+
+**Merge Group 5: Agent Optimization (3 → 1)**
+```
+internal/dream     ─┐
+internal/breed     ─┤→ internal/optimize
+internal/tune      ─┘   (sub-packages: dream/, breed/, tune/)
+```
+
+**Merge Group 6: MCP (3 → 1)**
+```
+internal/mcp         ─┐
+internal/mcpcompose  ─┤→ internal/mcp
+internal/mcpdiscover ─┘   (sub-packages: compose/, discover/, server/, client/)
+```
+
+**Merge Group 7: Code Provenance (2 → 1)**
+```
+internal/lineage       ─┐→ internal/lineage
+internal/archaeologist ─┘   (absorbed, no sub-package needed)
+```
+
+**Merge Group 8: Deliberation (2 → 1)**
+```
+internal/debate    ─┐→ internal/consensus
+internal/consensus ─┘   (sub-packages: debate/, vote/, strategies/)
+```
+
+**Merge Group 9: Time Utilities (2 → 1)**
+```
+internal/bigdur ─┐→ internal/duration
+internal/timer  ─┘
+```
+
+**Merge Group 10: Logging (2 → 1)**
+```
+internal/flog ─┐→ internal/slog
+internal/slog ─┘   (flog functions absorbed into slog)
+```
+
+**Merge Group 11: System Monitoring (3 → 1)**
+```
+internal/clistat ─┐
+internal/resource─┤→ internal/system
+internal/monitor ─┘   (sub-packages: stats/, resource/, monitor/)
+```
+
+**Merge Group 12: User Experience (3 → 1)**
+```
+internal/feedback   ─┐
+internal/empath     ─┤→ internal/experience
+internal/achievement─┘   (sub-packages: feedback/, empath/, milestones/)
+```
+
+**Merge Group 13: Git Utilities (2 → 1)**
+```
+internal/filelock ─┐→ internal/gitutil
+internal/worktree ─┘   (sub-packages: lock/, worktree/)
+```
+
+**Merge Group 14: Cost (2 → 1)**
+```
+internal/cost         ─┐→ internal/cost
+internal/costoptimizer─┘   (absorbed into cost, no sub-package)
+```
+
+**Merge Group 15: Auth & Identity (3 → 1)**
+```
+internal/rbac      ─┐
+internal/sso       ─┤→ internal/auth
+internal/identity  ─┘   (sub-packages: rbac/, sso/, identity/)
+```
+
+**Merge Group 16: CI/CD (2 → 1)**
+```
+internal/forgeci ─┐→ internal/cicd
+internal/cicd    ─┘
+```
+
+**Merge Group 17: Quality (2 → 1)**
+```
+internal/quality ─┐→ internal/quality
+internal/rubric  ─┘   (absorbed)
+```
+
+**Packages to Delete (subsumed, no merge target needed):**
+- `internal/selfheal` → merge into `internal/resilience`
+- `internal/scanhooks` → merge into `internal/sandbox`
+- `internal/chaos` → merge into `internal/testing` or keep as standalone (controversial)
+
+**Consolidation math: 157 - (4+6+4+3+3+3+2+2+2+2+3+3+2+2+3+2+2+2+1+1) = 157 - ~52 merges = ~105 remaining after merges, then delete ~5 completely subsumed = ~100 packages. Still more than the 80 target. Second pass needed on small utilities: hat, pretty, cli, serpent could merge into `internal/cli`.**
+
+**Implementation order:** Start with Group 1 (errors) — it touches the most call sites and has the clearest benefit. Then Group 2 (resilience) as the second highest-impact merge.
+
+---
+
+### B. Documentation Website Architecture
+
+**Tech stack:** Mintlify (best for developer docs, search built-in, beautiful defaults) or Docusaurus if Mintlify pricing is a concern.
+
+**Site structure:**
+```
+docs/
+├── index.mdx                    # Landing: "One binary. Every agent."
+├── quickstart.mdx               # 5-minute getting started
+├── installation.mdx             # All install methods
+├── commands/                    # Auto-generated from Cobra
+│   ├── forge-serve.mdx
+│   ├── forge-chat.mdx
+│   ├── forge-pipeline.mdx
+│   └── ... (one per command)
+├── guides/
+│   ├── first-agent.mdx          # Your first agent
+│   ├── multi-agent.mdx          # Multi-agent orchestration
+│   ├── pipelines.mdx            # Building pipelines
+│   ├── cost-management.mdx      # Cost tracking and budgets
+│   ├── security.mdx             # Sandboxing and permissions
+│   ├── custom-agents.mdx        # Building custom agents
+│   └── production.mdx           # Production deployment
+├── architecture/
+│   ├── overview.mdx             # 7-layer architecture
+│   ├── packages.mdx             # Package map
+│   ├── forgefile.mdx            # forge.yaml reference
+│   └── protocols.mdx            # MCP/ACP/A2A support
+├── comparisons/
+│   ├── vs-claude-code.mdx
+│   ├── vs-codex.mdx
+│   ├── vs-cursor.mdx
+│   └── vs-langgraph.mdx
+├── api-reference/
+│   └── serve-api.mdx            # forge serve HTTP API
+└── community/
+    ├── contributing.mdx
+    ├── plugins.mdx
+    └── roadmap.mdx
+```
+
+**Auto-generation pipeline:**
+1. `forge docs generate` reads Cobra command definitions
+2. Extracts: name, description, flags, examples, see-also
+3. Generates `.mdx` files with frontmatter for Mintlify
+4. CI check: `forge docs generate --check` fails if generated files differ from committed
+
+**Key content priorities:**
+1. Quick start (most visited page)
+2. Command reference (auto-generated, always current)
+3. Comparisons (SEO goldmine for "forge vs X" searches)
+4. Security guide (enterprise evaluators read this first)
+
+---
+
+### C. Plugin Marketplace Protocol
+
+**Registry protocol (v1 — git-based, no server needed):**
+
+```
+forge-registry/
+├── index.json                   # Master index
+├── agents/
+│   ├── security-reviewer.json   # Agent manifest
+│   └── go-test-writer.json
+├── plugins/
+│   ├── slack-notify.json
+│   └── prometheus-metrics.json
+└── prompts/
+    └── code-review-sonnet.json
+```
+
+**Agent manifest schema:**
+```json
+{
+  "name": "security-reviewer",
+  "version": "1.2.0",
+  "description": "AI-powered security code review",
+  "author": "yethikrishna",
+  "license": "MIT",
+  "forge_version": ">=1.0.0",
+  "model": "anthropic/claude-sonnet-4",
+  "capabilities": ["code-review", "security-analysis"],
+  "tags": ["security", "review", "owasp"],
+  "downloads": 0,
+  "rating": 0,
+  "source": "https://github.com/user/security-reviewer",
+  "install": "forge plugin install security-reviewer",
+  "verified": false
+}
+```
+
+**CLI commands:**
+```bash
+forge plugin search "security"        # search registry
+forge plugin install security-reviewer # install from registry
+forge plugin publish                   # publish current agent to registry
+forge plugin info security-reviewer    # show manifest + stats
+forge plugin rate security-reviewer 5  # rate 1-5
+forge plugin update                    # update all installed plugins
+```
+
+**Publishing flow:**
+1. Developer creates agent directory with `agent.yaml`
+2. `forge plugin publish` validates manifest, runs tests
+3. PR to `forge-registry` repo (human review for v1, automated later)
+4. Merged → available via `forge plugin install`
+5. Verified badge after security review
+
+**Rating & discovery:**
+- Downloads tracked in manifest (incremented on install)
+- Ratings stored in separate `ratings/` directory (one file per agent)
+- `forge plugin search` supports: text, tags, capabilities, sort by downloads/rating
+- Trending: agents with most installs in last 7 days
+
+---
+
+### D. The Second 100K Lines — What Goes There
+
+109K → 200K lines. What fills the gap?
+
+- **30K lines:** Web dashboard (React/TypeScript, real-time WebSocket UI)
+- **15K lines:** Documentation website content
+- **10K lines:** Integration tests (every command, every code path)
+- **10K lines:** Plugin marketplace backend (registry, publishing, search)
+- **8K lines:** Forge Cloud sync protocol (auth, state sync, conflict resolution)
+- **5K lines:** Migration and consolidation (cleaner APIs, better abstractions)
+- **3K lines:** Performance benchmarks and profiling infrastructure
+- **-19K lines:** Consolidation removals (deleted packages, merged code)
+
+Net: 109K + ~81K new - ~19K removed ≈ 171K lines. Close to the 200K target with organic growth.
+
+---
+
+### E. Session #9 Concrete TODOs
+
+1. **Create `docs/` directory structure** for documentation website. ~50 lines of empty mdx files.
+2. **Build `forge docs generate` command** — extract Cobra help → Markdown. ~300 lines.
+3. **Create `forge-registry` repo skeleton** — index.json, manifest schema, README. ~200 lines.
+4. **Consolidation pass: error packages** — `internal/errors` with sub-exports. ~500 lines merged, ~300 deleted.
+5. **Consolidation pass: resilience packages** — merge circuit/ratelimit/runaway/anomaly/outage. ~800 lines merged, ~400 deleted.
+6. **Documentation: quickstart guide** — the most important single page. ~200 lines.
+
+---
+
+*"Session #9 isn't about ideas — it's about blueprints. The next phase of Forge is measured in commits, not brainstorms."*

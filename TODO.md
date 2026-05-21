@@ -206,12 +206,12 @@ All 18 utility packages implemented and tested.
 - [x] **Human-in-the-Loop** — `forge approve` + pause/resume + escalation (29% trust gap)
 - [x] **Security Scanning Hooks** — pre/post agent run hooks integrated with `forge jail`
 - [x] **Forgefile v2** — TOML multi-agent workflow syntax (GitHub Actions for AI agents)
-- [ ] **Web Dashboard Real-Time** — WebSocket agent monitoring, cost charts, trace viewer
+- [x] **Web Dashboard Real-Time** — WebSocket agent monitoring, cost charts, trace viewer
 - [x] **Scheduled Memory Review (\"Dreaming\")** — `forge memory review` auto-extracts patterns from past sessions between runs (à la Claude Code with Claude 2026)
 - [x] **Rubric-Based Output Grading** — extend `forge test` with rubric scoring; below-threshold triggers re-runs (à la Claude Outcomes)
 
 ### P2 — Next Quarter
-- [ ] **Enterprise Auth (RBAC + SSO)** — OIDC/SAML for `forge serve`
+- [x] **Enterprise Auth (RBAC + SSO)** — OIDC/SAML for `forge serve`
 - [ ] **Plugin Marketplace** — registry + versioning + ratings + WASM plugins
 - [ ] **A2A Protocol** — Google Agent-to-Agent for inter-framework communication
 
@@ -355,3 +355,44 @@ All 18 utility packages implemented and tested.
 - [ ] Month 6-9: Marketplace (30% of agent/plugin sales)
 - [ ] Month 9-12: Enterprise (per-seat annual license)
 - [ ] Month 12+: Platform (Agent-as-a-Service hosting fees)
+
+## Phase 6: Implementation Design (From Brainstorm #9)
+
+### Consolidation Execution Plan
+- [ ] Group 1: Merge errcode + errteach + errorexplain + errteach → `internal/errors`
+- [ ] Group 2: Merge circuit + ratelimit + runaway + anomaly + outage → `internal/resilience` (sub-packages)
+- [ ] Group 3: Merge snapshot + undo + graceful + shutdown → `internal/safety` (sub-packages)
+- [ ] Group 4: Merge agenttest + abtest + eval → `internal/eval` (sub-packages)
+- [ ] Group 5: Merge dream + breed + tune → `internal/optimize` (sub-packages)
+- [ ] Group 6: Merge mcp + mcpcompose + mcpdiscover → `internal/mcp` (sub-packages)
+- [ ] Group 7: Merge archaeologist → `internal/lineage`
+- [ ] Group 8: Merge debate → `internal/consensus` (sub-packages)
+- [ ] Group 9: Merge bigdur + timer → `internal/duration`
+- [ ] Group 10: Merge flog → `internal/slog`
+- [ ] Group 11: Merge clistat + resource + monitor → `internal/system`
+- [ ] Group 12: Merge feedback + empath + achievement → `internal/experience`
+- [ ] Group 13: Merge filelock + worktree → `internal/gitutil`
+- [ ] Group 14: Merge costoptimizer → `internal/cost`
+- [ ] Group 15: Merge rbac + sso + identity → `internal/auth` (sub-packages)
+- [ ] Group 16: Merge forgeci + cicd → `internal/cicd`
+- [ ] Group 17: Merge rubric → `internal/quality`
+- [ ] Merge selfheal → `internal/resilience`
+- [ ] Merge scanhooks → `internal/sandbox`
+- [ ] Start with Group 1 (errors), then Group 2 (resilience) — highest impact first
+
+### Documentation Website
+- [ ] Create `docs/` directory structure (quickstart, commands/, guides/, architecture/, comparisons/, api-reference/, community/)
+- [ ] Build `forge docs generate` — Cobra help → .mdx files with frontmatter
+- [ ] Write quickstart guide (most visited page)
+- [ ] Write comparison pages (vs Claude Code, vs Codex, vs Cursor, vs LangGraph)
+- [ ] Write security guide (enterprise evaluators)
+- [ ] Write forge.yaml reference (architecture/forgefile.mdx)
+- [ ] CI check: `forge docs generate --check` fails if docs are stale
+
+### Plugin Marketplace
+- [ ] Create `forge-registry` repo skeleton (index.json, manifest schema, README)
+- [ ] Define agent manifest JSON schema (name, version, capabilities, forge_version, model)
+- [ ] Implement `forge plugin search` — text/tag/capability search
+- [ ] Implement `forge plugin publish` — validate + PR to registry
+- [ ] Implement `forge plugin rate` — 1-5 rating storage
+- [ ] Implement trending (most installs in last 7 days)
