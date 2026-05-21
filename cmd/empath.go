@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/forge/sword/internal/empath"
+	"github.com/forge/sword/internal/experience/empath"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
 )

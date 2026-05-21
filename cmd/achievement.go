@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/forge/sword/internal/achievement"
+	"github.com/forge/sword/internal/experience/achievement"
 	"github.com/spf13/cobra"
 )
 

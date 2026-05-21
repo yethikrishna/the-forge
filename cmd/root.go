@@ -155,7 +155,7 @@ The wielder and the sword are one.`,
 		depgraphCmd,
 		rollbackCmd,
 		tokensCmd,
-		promptCmd(),
+		promptRegCmd,
 	)
 	return root.ExecuteContext(ctx)
 }
