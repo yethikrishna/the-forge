@@ -188,7 +188,7 @@ func TestRunSimulation(t *testing.T) {
 	if report.ScenarioCount != 2 {
 		t.Errorf("Expected 2 scenarios, got %d", report.ScenarioCount)
 	}
-	if report.TrialCount != 4 { // 2 scenarios × 2 agents × 1 model? No: 2 scenarios × 2 agents × 2 models = 8
+	if report.TrialCount != 8 { // 2 scenarios × 2 agents × 2 models = 8
 		t.Errorf("Expected 8 trials, got %d", report.TrialCount)
 	}
 	if report.Summary.BestPerformer == "" {

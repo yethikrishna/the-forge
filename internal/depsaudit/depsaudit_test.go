@@ -60,6 +60,17 @@ func createNPMProject(t *testing.T) string {
 		t.Fatal(err)
 	}
 
+	// Also create a package-lock.json so the detector finds it
+	lockJSON := `{
+  "name": "test-project",
+  "lockfileVersion": 3,
+  "dependencies": {}
+}
+`
+	if err := os.WriteFile(filepath.Join(dir, "package-lock.json"), []byte(lockJSON), 0644); err != nil {
+		t.Fatal(err)
+	}
+
 	return dir
 }
 

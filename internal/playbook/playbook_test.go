@@ -1,8 +1,10 @@
 package playbook
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -272,13 +274,13 @@ func TestExportMarkdown(t *testing.T) {
 	if md == "" {
 		t.Error("Expected non-empty markdown")
 	}
-	if !contains(md, "# Playbook: Test Playbook") {
+	if !strings.Contains(md, "# Playbook: Test Playbook") {
 		t.Error("Expected title in markdown")
 	}
-	if !contains(md, "Variables") {
+	if !strings.Contains(md, "Variables") {
 		t.Error("Expected variables section")
 	}
-	if !contains(md, "Steps") {
+	if !strings.Contains(md, "Steps") {
 		t.Error("Expected steps section")
 	}
 }
@@ -297,10 +299,10 @@ func TestExportYAML(t *testing.T) {
 	if yaml == "" {
 		t.Error("Expected non-empty YAML")
 	}
-	if !contains(yaml, "name:") {
+	if !strings.Contains(yaml, "name:") {
 		t.Error("Expected name field in YAML")
 	}
-	if !contains(yaml, "steps:") {
+	if !strings.Contains(yaml, "steps:") {
 		t.Error("Expected steps field in YAML")
 	}
 }
@@ -309,15 +311,20 @@ func TestLoadExistingPlaybooks(t *testing.T) {
 	dir := t.TempDir()
 
 	// Create a playbook file manually
-	pb := &Playbook{
+	pb := Playbook{
 		ID:          "test-pb",
 		Name:        "Pre-existing",
 		Description: "Loaded from disk",
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	}
-	data, _ := marshalJSON(pb)
-	os.WriteFile(filepath.Join(dir, "test-pb.json"), data, 0644)
+	data, err := json.MarshalIndent(pb, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "test-pb.json"), data, 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	// Load
 	store, err := NewStore(dir)
@@ -334,25 +341,3 @@ func TestLoadExistingPlaybooks(t *testing.T) {
 	}
 }
 
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsStr(s, substr))
-}
-
-func containsStr(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}
-
-func marshalJSON(v interface{}) ([]byte, error) {
-	import_json_pkg := func() ([]byte, error) {
-		b, err := (&struct{ V interface{}}{V: v}).V, error(nil)
-		_ = b
-		return nil, err
-	}
-	_ = import_json_pkg
-	return nil, nil
-}
