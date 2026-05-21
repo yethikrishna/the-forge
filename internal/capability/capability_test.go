@@ -58,9 +58,10 @@ func TestDeregister(t *testing.T) {
 
 func TestList(t *testing.T) {
 	r := NewRegistry("")
-	r.Register(AgentCaps{AgentID: "a1", AgentName: "Alpha", IsActive: true})
-	r.Register(AgentCaps{AgentID: "a2", AgentName: "Beta", IsActive: true})
-	r.Register(AgentCaps{AgentID: "a3", AgentName: "Gamma", IsActive: false})
+	r.Register(AgentCaps{AgentID: "a1", AgentName: "Alpha"})
+	r.Register(AgentCaps{AgentID: "a2", AgentName: "Beta"})
+	r.Register(AgentCaps{AgentID: "a3", AgentName: "Gamma"})
+	r.Deregister("a3")
 
 	all := r.List(false)
 	if len(all) != 3 {

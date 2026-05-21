@@ -151,21 +151,20 @@ func (iso *Isolator) RunWithTimeout(command string, args []string, config Config
 		return nil, err
 	}
 
-	// Wait for completion or timeout
-	done := make(chan error, 1)
-	go func() {
-		proc.mu.Lock()
-		cmd := proc.cmd
-		proc.mu.Unlock()
-		done <- cmd.Wait()
-	}()
-
-	select {
-	case <-done:
-		return proc, nil
-	case <-ctx.Done():
-		proc.Kill()
-		return proc, fmt.Errorf("boundary: timeout after %v", timeout)
+	// Wait for the process goroutine started by Run to finish.
+	// Poll Running() since Run already owns cmd.Wait().
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			if !proc.Running() {
+				return proc, nil
+			}
+		case <-ctx.Done():
+			proc.Kill()
+			return proc, fmt.Errorf("boundary: timeout after %v", timeout)
+		}
 	}
 }
 
