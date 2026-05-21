@@ -194,6 +194,7 @@ The wielder and the sword are one.`,
 		selftestCmd,
 		genealogyCmdFn(),
 		consentCmdFn(),
+		governCmdFn(),
 	)
 	return root.ExecuteContext(ctx)
 }
