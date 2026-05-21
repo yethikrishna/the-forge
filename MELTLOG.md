@@ -152,3 +152,38 @@
 - 99 cmd files (+3: traces, mcp-compose, local)
 - Build: ✅ Vet: ✅ All tests: ✅
 - Version: 1.1.0
+
+### Session 2026-05-20 23:00 UTC — Subagent Dev Sprint
+
+**Packages built:**
+- `internal/output` — Unified output formatting (json/quiet/verbose)
+- `internal/errteach` — Error messages that teach (35+ codes, fix suggestions)
+- `internal/forgeci` — Agent-native CI system
+- `internal/progressive` — Level 0→5 progression ladder (28 milestones)
+- `internal/notify` — Notification system (Slack/Discord/webhook/email/file)
+- `internal/sbom` — Software Bill of Materials (SPDX/CycloneDX)
+- `internal/metrics` — Prometheus-compatible metrics
+- `internal/gitserve` — Git hook integration for agents
+- `internal/migrate` — Agent model migration with A/B comparison
+- `internal/consensus` — Agent consensus engine (5 strategies)
+- `internal/registry` — Plugin/agent/template registry with ratings
+- `internal/dependency` — Dependency graph engine with DOT output
+- `internal/sandbox` — Sandboxed execution environments
+- `internal/selfheal` — Self-healing engine (9 failure types, 7 actions)
+- `internal/ratelimit` — Distributed rate limiting (3 algorithms)
+- `internal/knowledge` — Persistent knowledge base with search
+- `internal/workflow` — DAG-based workflow engine
+- `internal/auditlog` — Tamper-proof audit logging with hash chains
+
+**Commands added:**
+- forge ci, forge errors, forge notify, forge level, forge sbom
+- forge gitserve, forge migrate, forge consensus
+
+**Milestone:** Crossed 100K lines of Go (104K), 142 packages, 103 commands
+
+**Bug patterns fixed:**
+- Mutex deadlocks (calling locked methods from locked methods)
+- float64 storage via atomic.Int64 → mutex-protected float64
+- Slice bounds panic on short strings in ID generation
+- Duplicate function names (truncate, NodeType)
+- Missing imports (net/http) in other session's code
