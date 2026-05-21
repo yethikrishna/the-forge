@@ -331,3 +331,31 @@
 ### Stats
 - Internal packages: ~167 → ~142
 - Build and vet: clean
+
+## Session 2026-05-21 01:53 UTC — Subagent Dev Sprint
+
+### Packages built
+- `internal/clonebehavior` — Record human task execution and generate agent configurations (recorder, analyzer, generator, pattern extraction)
+- `internal/correlator` — Cross-subsystem event correlation engine with 5 built-in rules (cost-retry-loop, agent-stuck-resource, provider-outage-cascade, memory-pressure-leak, queue-backup-failures)
+- `internal/cli/htest.go` — HTTP API testing helpers merged from `internal/hat` (RequestBuilder, TestResponse, assertions)
+
+### Commands added
+- `forge clone-behavior` — Record/analyze/generate agent configs from human task recordings (record, command, read, write, edit, decision, search, pause, resume, stop, analyze, generate, list, show)
+- `forge correlate` — Cross-subsystem event correlation (incidents, ingest, stats, rules, resolve, show, recent)
+
+### Consolidation
+- Merged `internal/hat` → `internal/cli` (htest.go with renamed types to avoid conflicts)
+- Removed duplicate command registrations in root.go (quantumCmd, correlateCmd, translatePipelineCmd were listed twice)
+
+### Fixes
+- Fixed pipetranslate pattern matching: all keywords must match, most-specific match wins, deployment-awareness prevents partial template matches
+- Fixed pipetranslate keyword extraction: split on hyphens in template names
+- Cleaned up root.go duplicate entries and removed second `pluginCmd` registration
+- Added `cloneBehaviorCmd` to root command list
+
+### Stats
+- **Lines of Go:** ~137K
+- **Internal packages:** 149 (added: clonebehavior, correlator; removed: hat)
+- **Commands:** 125+ (added: clone-behavior, correlate)
+- **Build:** ✅ **Vet:** ✅ **Tests:** ✅
+- **Version:** 1.1.0

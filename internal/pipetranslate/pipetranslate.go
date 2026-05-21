@@ -125,21 +125,54 @@ func (t *Translator) ToNaturalLanguage(pipeline *Pipeline) string {
 }
 
 // matchPattern tries to match the description against known workflow patterns.
+// It requires ALL keywords from a template name to appear in the description.
+// If multiple templates match, the one with the most specific match (most keywords) wins.
 func (t *Translator) matchPattern(desc string) *Pipeline {
 	lower := strings.ToLower(desc)
 
+	var bestMatch *Pipeline
+	bestScore := 0
+
 	for pattern, template := range t.templates {
-		for _, keyword := range extractKeywords(pattern) {
-			if strings.Contains(lower, keyword) {
-				// Clone and customize
-				p := clonePipeline(template)
-				p.Description = desc
-				return p
+		keywords := extractKeywords(pattern)
+		if len(keywords) == 0 {
+			continue
+		}
+
+		// All keywords must be present for a match
+		allMatch := true
+		for _, keyword := range keywords {
+			if !strings.Contains(lower, keyword) {
+				allMatch = false
+				break
 			}
+		}
+
+		if allMatch && len(keywords) > bestScore {
+			bestScore = len(keywords)
+			p := clonePipeline(template)
+			p.Description = desc
+			bestMatch = p
 		}
 	}
 
-	return nil
+	// Only use template match if the description seems focused on that pattern
+	// If the description mentions deploy/implementation/etc, don't use a partial template
+	if bestMatch != nil {
+		templateHasDeploy := false
+		for _, s := range bestMatch.Steps {
+			if strings.Contains(strings.ToLower(s.Name), "deploy") {
+				templateHasDeploy = true
+			}
+		}
+		descWantsDeploy := containsAny(lower, []string{"deploy", "ship", "release"})
+		if descWantsDeploy && !templateHasDeploy {
+			// Description wants deployment but template doesn't have it — don't use template
+			return nil
+		}
+	}
+
+	return bestMatch
 }
 
 // generateFromDescription creates a pipeline from a free-form description.
@@ -435,7 +468,9 @@ func pipelineToYAML(p *Pipeline) string {
 }
 
 func extractKeywords(pattern string) []string {
-	words := strings.Fields(strings.ToLower(pattern))
+	// Split on spaces and hyphens
+	normalized := strings.ReplaceAll(strings.ToLower(pattern), "-", " ")
+	words := strings.Fields(normalized)
 	var keywords []string
 	for _, w := range words {
 		if len(w) > 3 {
