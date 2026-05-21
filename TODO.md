@@ -215,51 +215,60 @@ All 18 utility packages implemented and tested.
 - [ ] **Plugin Marketplace** — registry + versioning + ratings + WASM plugins
 - [x] **A2A Protocol** — Google Agent-to-Agent for inter-framework communication
 
-### P0 — This Week (Run 4, 2026-05-21)
-- [ ] **MCP Governance Gateway** — `forge mcp gateway` with auth + rate limiting + audit logging + schema validation (MCP is the standard; governed MCP is the differentiator)
+### P0 — This Week (Run 5, 2026-05-21 06:03 UTC)
+- [ ] **MCP v2.1 Governance Gateway** — `forge mcp gateway` with auth + rate limiting + audit logging + schema validation + v2.1 compatibility (Cursor/Copilot/Claude all on v2.1)
+- [ ] **Event-Driven Agent Triggers** — `forge watch --agent <pipeline>` spawns agents on file changes, PR events, webhooks (Cursor Automations parity)
+- [ ] **Usage-Based Cost Transparency** — `forge cost live` real-time token tracking with projected monthly spend (Copilot usage billing creates opening)
 - [ ] **Cross-Tool Bridge MVP** — `forge bridge cursor` and `forge bridge copilot` (be the glue between tools, not a replacement)
 - [ ] **60-Second Demo Video** — brew install → forge quickstart → agents running (blocking all growth)
 
-### P1 — Next 2 Weeks (Run 4)
+### P1 — Next 2 Weeks (Run 5)
+- [ ] **Full-Context Mode** — `forge run --full-context` sends entire repo to 1M-token models (GPT-5.5, Opus 4.7), auto-toggles RAG vs full-context by repo size
+- [ ] **Self-Verify Agent Mode** — `forge run --self-verify` auto-runs tests + security scan + code review after each agent action (tightly integrate test/review/jail)
+- [ ] **AutoGen Bridge** — `forge bridge autogen` for interop with Microsoft's GA framework (enterprise buyers will ask)
 - [ ] **Spec-to-Pipeline** — `forge spec` command: natural language spec → agent pipeline → execution with approval checkpoints (Gartner #1 trend)
 - [ ] **Long-Running Agent Mode** — `forge run --persistent` with crash recovery, state persistence, progress dashboard (days-long autonomous runs)
-- [ ] **Enterprise Demo Mode** — `forge demo --enterprise` showing governance, compliance, audit trail, trust scores in 2 minutes
+- [ ] **Enterprise Demo Mode** — `forge demo --enterprise` showing governance, compliance, audit trail, cost transparency in 2 minutes
 
-### P2 — Next Month (Run 4)
+### P2 — Next Month (Run 5)
 - [ ] **Plugin Marketplace MVP** — git-based registry, publish/install/version (ecosystem play)
-- [ ] **Observer Dashboard** — read-only web view for managers/leads: status, cost, compliance, trust scores (opens non-developer buyer)
+- [ ] **Observer Dashboard** — read-only web view for managers/leads: status, cost, compliance, trust scores. Study Dify's UX patterns
 - [ ] **Air-Gapped Mode** — `forge init --airgap` with local model presets + pre-indexed codebase (enterprise security differentiator)
-- [ ] **Local Model Presets Expansion** — one-command presets for Cohere Command A+, DeepSeek V3, Qwen3 (hardware-agnostic)
+- [ ] **Copilot Cost Migration Tool** — `forge cost import --copilot` ingests Copilot usage data, shows savings with Forge + local models
+- [ ] **Local Model Presets Expansion** — one-command presets for GPT-5.5, Opus 4.7, Command A+, DeepSeek V3, Qwen3
 
-### P3 — Next Quarter (Run 4)
+### P3 — Next Quarter (Run 5)
 - [ ] **Forge Studio (Visual Builder)** — drag-and-drop pipeline builder (post-CLI-solid, for non-developer expansion)
-- [ ] **A2A Bridge (basic)** — inter-framework communication via Google A2A protocol (despite anti-roadmap, adoption accelerating)
+- [ ] **A2A Bridge (basic)** — inter-framework communication via Google A2A protocol
 - [ ] **Agent-as-a-Service** — `forge serve --public` with usage billing, API keys, rate limiting (revenue play)
+- [ ] **LangGraph Parity Features** — per-node timeouts, graceful shutdown, efficient streaming (match production standard)
 
-### Competitive Watchlist (Updated 05:37 UTC, Run 4)
-- **Google Antigravity 2.0** — desktop agent orchestrator with sub-agents, parallel workflows. Counter: local-first, multi-provider, self-hosted
-- **Warp Oz** — cloud agent orchestration GA, async cloud agents, enterprise features. Counter: no cloud lock-in
-- **Microsoft Agent Framework 1.0** — Azure-native, enterprise. Counter: Go binary, no Azure dependency
-- **Twin.so** — no-code browser agents, 150K+ community-built agents, explosive growth. Counter: governance, developer-power-user focus
-- **opencode** — fast-growing agentic coding agent on GitHub. Monitor
-- **Cohere Command A+** — Apache 2.0 enterprise model. Add to local presets
-- **LangGraph** — production standard for stateful graph workflows. Build bridge compatibility
-- **CrewAI** — 44K stars, simplest multi-agent Python framework. Reference for UX
-- **Google Antigravity 2.0** — desktop agent orchestrator, sub-agents, parallel workflows. Counter: local-first, multi-provider, self-hosted
-- **Warp Oz** — cloud agent orchestration, GA, enterprise features. Counter: no cloud lock-in
-- **Microsoft Agent Framework 1.0** — Azure-native, enterprise. Counter: Go binary, no Azure dependency
-- **opencode** — fast-growing agentic coding agent on GitHub. Monitor
+### Competitive Watchlist (Updated 06:03 UTC, Run 5)
+- **Cursor** — $500M ARR, $9.9B valuation, Automations (event-driven agents), multi-repo reasoning. Counter: self-hosted, governance, no lock-in
+- **Warp Oz** — GA, cross-harness persistent memory, cloud sandboxes, "Vercel for agents." Counter: no cloud dependency
+- **GitHub Copilot** — Agent HQ (multi-agent), usage-based billing June 2026, 20M users. Counter: cost transparency, local models
+- **LangGraph v1.2** — 126K stars, per-node timeouts, DeltaChannel, production standard. Counter: Go performance, single binary
+- **AutoGen 1.0 GA** — Microsoft-backed, event-driven, enterprise. Counter: no Azure dependency, Go native
+- **Dify** — massive GitHub traction, low-code agent builder. Study UX for observer dashboard
+- **Twin.so** — 150K+ no-code browser agents. Governance differentiator
+- **Google Antigravity 2.0** — desktop orchestrator, sub-agents. Counter: local-first, multi-provider
+- **opencode** — fast-growing agentic coding agent. Monitor
 - **Cohere Command A+** — Apache 2.0 enterprise model. Add to local presets
 
-### Market Signals (Updated 05:37 UTC, Run 4)
-- Gartner (May 20): 65% of eng teams will treat IDEs as optional by 2027
-- Optimizely: 42% QoQ ARR growth in agent orchestration — market monetizing fast
-- MCP: 110M+ monthly downloads, donated to Linux Foundation — permanent standard
-- Anthropic: 2026 is the shift from pair-programming to managing teams of AI engineers
+### Market Signals (Updated 06:03 UTC, Run 5)
+- Cursor: $500M ARR, $9.9B valuation — the bar for "successful AI dev tool"
+- Copilot: usage-based billing starting June 2026 — cost transparency opening
+- AutoGen 1.0 GA — Microsoft all-in on agent orchestration
+- LangGraph v1.2 — production hardening standard (126K stars)
+- MCP v2.1 — standard hardening, governance layer is the opportunity
+- 85-95% dev adoption — question is "which platform?" not "whether to adopt"
+- AI generates 46-61% of code — governance and verification are existential
+- 78% of Fortune 500 have AI-assisted dev in production
+- GPT-5.5 & Claude Opus 4.7 — 1M token contexts, full-repo understanding
+- Gartner: 65% of eng teams will treat IDEs as optional by 2027
 - Deloitte: Companies with ≥40% AI projects in production to double in 6 months
-- Only 29% developer trust in AI output — governance and transparency are the wedge
-- Gartner #1 trend: AI-Native Development Platforms (intent-driven development)
-- 84% of devs use AI tools; 59% use 3+; enterprises consolidating to single platforms
+- Only 29% developer trust in AI output — governance is the wedge
+- **POSITIONING PIVOT**: Own the self-hosted, governance-first orchestration lane. Don't compete with Cursor/Copilot on IDE/cloud.
 
 ## Phase 4: Polish & Release
 - [ ] CI/CD pipeline (GitHub Actions)
