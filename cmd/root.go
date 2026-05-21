@@ -197,6 +197,11 @@ The wielder and the sword are one.`,
 		governCmdFn(),
 		catalogCmdFn(),
 		learnCmdFn(),
+
+		// Organization & Civilization (gap 1-56)
+		orgCmd(),
+		divisionCmd(),
+		civCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
