@@ -455,3 +455,22 @@
 - **Internal packages:** 160
 - **Commands:** 148
 - **Build:** ✅ **Vet:** ✅ **Tests:** ✅ (all new packages pass; 3 pre-existing failures in boundary/capability/navigate)
+
+## 2026-05-21 — Feature Sprint
+
+**New Features:**
+- `forge patch` — intelligent patch generation, validation, application, reversion, and diffing. Supports add/delete/modify/move operations with SHA256-based conflict detection.
+- `forge stress` — agent load/stress testing with configurable patterns (ramp-up, sustained, spike, wave). Simulates concurrent sessions with latency modeling, error rates, and cost tracking.
+- `forge guard` — real-time safety guardrails for agent actions. Supports block, allow, sanitize, rate_limit, cost_cap, require, and scope rules with priority-based evaluation and allow-override logic.
+
+**Fixes:**
+- Fixed 15+ pre-existing vet errors across test files: errors_test, eval2_test, mcp2_test, optimize_test, resilience_test, simulate_test
+- Fixed forgegraph deterministic IDs (replaced UnixMilli with sequential counter)
+- Fixed snapshot package to match snap_cmd.go API (Store with ListByCategory, Compare, Stats)
+- Fixed replay format string (%d → %s for string arg)
+- Fixed depsaudit duplicate field (Version)
+
+**Project State:**
+- ~152K lines of Go, 160+ packages, 140+ commands
+- Build and vet clean across entire project
+- All new package tests passing

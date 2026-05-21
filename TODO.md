@@ -460,3 +460,14 @@ All 18 utility packages implemented and tested.
 - [x] internal/rollback — multi-step operation rollback
 - [x] internal/promptregistry — centralized prompt store with versioning
 - [x] internal/eval2 — next-gen agent evaluation with custom scoring
+
+## Session 2026-05-21 — Feature Sprint
+- [x] forge patch — intelligent patch generation, validation, apply, revert, diff
+- [x] forge stress — agent load/stress testing (ramp-up, sustained, spike, wave)
+- [x] forge guard — real-time safety guardrails (block, allow, sanitize, rate_limit, cost_cap, scope)
+- [x] Fixed 15+ pre-existing vet errors across test files (errors, eval2, mcp2, optimize, resilience, simulate)
+- [x] Fixed forgegraph deterministic IDs (replaced UnixMilli with counter)
+- [x] Fixed snapshot package to match snap_cmd API
+- [ ] Continue: comprehensive tests for all new packages
+- [ ] Continue: security hardening (input validation, sanitization)
+- [ ] Continue: docs site

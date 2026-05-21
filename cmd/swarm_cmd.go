@@ -46,19 +46,19 @@ var swarmCreateCmd = &cobra.Command{
 
 		if jsonOutput, _ := cmd.Flags().GetBool("json"); jsonOutput {
 			data, _ := json.MarshalIndent(map[string]interface{}{
-				"id":      s.ID(),
-				"name":    name,
-				"strategy": cfg.Strategy,
+				"id":        s.ID(),
+				"name":      name,
+				"strategy":  cfg.Strategy,
 				"max_agents": cfg.MaxAgents,
-				"budget": cfg.CostBudget,
+				"budget":    cfg.CostBudget,
 			}, "", "  ")
 			fmt.Println(string(data))
 		} else {
 			fmt.Printf("Created swarm: %s\n", s.ID())
-			fmt.Printf("  Name:     %s\n", name)
-			fmt.Printf("  Strategy: %s\n", cfg.Strategy)
+			fmt.Printf("  Name:       %s\n", name)
+			fmt.Printf("  Strategy:   %s\n", cfg.Strategy)
 			fmt.Printf("  Max Agents: %d\n", cfg.MaxAgents)
-			fmt.Printf("  Budget:   $%.2f\n", cfg.CostBudget)
+			fmt.Printf("  Budget:     $%.2f\n", cfg.CostBudget)
 		}
 		return nil
 	},
@@ -171,5 +171,4 @@ func init() {
 	swarmCmd.AddCommand(swarmAddTaskCmd)
 	swarmCmd.AddCommand(swarmListCmd)
 	swarmCmd.AddCommand(swarmStatsCmd)
-
 }
