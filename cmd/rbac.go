@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/forge/sword/internal/rbac"
+	"github.com/forge/sword/internal/auth/rbac"
 	"github.com/spf13/cobra"
 )
 

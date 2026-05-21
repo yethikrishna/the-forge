@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/forge/sword/internal/sso"
+	"github.com/forge/sword/internal/auth/sso"
 	"github.com/spf13/cobra"
 )
 

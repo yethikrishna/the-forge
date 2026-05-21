@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/forge/sword/internal/bridge"
-	"github.com/forge/sword/internal/identity"
+	"github.com/forge/sword/internal/auth/identity"
 	"github.com/spf13/cobra"
 )
 
