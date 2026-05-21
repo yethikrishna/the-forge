@@ -538,3 +538,29 @@
 - **Internal packages:** 173
 - **Commands:** 154
 - **Build:** ✅ **Vet:** ✅ **Tests:** ✅
+
+### Session 4 — 2026-05-21 03:16 UTC
+
+#### Features Shipped
+- `forge navigate` — semantic code navigation (symbol lookup, references, call graph tracing, BFS path finding)
+- `forge transform` — automated code transformations (10 transform types, dry-run, rollback, find/replace)
+- `forge workflow` — declarative multi-step agent workflows (DAG execution, dependencies, conditions, parallel)
+- `forge scope` — dependency scope analysis (blast radius, affected tests, downstream packages)
+- `forge covenant` — agent behavioral contracts (obligations, violation tracking, enforcement)
+- `forge swarm` — distributed agent swarm coordination (5 aggregation strategies, priority queues, consensus)
+- `forge ingest` — multi-source data ingestion pipeline
+- `forge synthesis` — multi-agent output synthesis (vote, merge, cascade, ensemble, best)
+
+#### Fixes
+- Fixed 11+ test files with API mismatches (resilience, eval2, mcp2, optimize, experience, system, navigate, transform, workflow)
+- Fixed duplicate migrate/scope commands in cmd/
+- Fixed root.go duplicate command registrations
+- Removed broken cmd/migrate.go (replaced by cmd/migrate_cmd.go)
+- Fixed synthesis Score → Confidence field mapping
+- All tests passing: swarm (18), navigate (22), transform (17), workflow (16), ingest, synthesis
+
+#### Stats
+- **Lines of Go:** ~164K
+- **Internal packages:** 217
+- **Commands:** 161
+- **Build:** ✅ **Vet:** ✅ **Tests:** ✅
