@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/forge/sword/internal/errorexplain"
+	"github.com/forge/sword/internal/errors/explain"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
 )
@@ -45,7 +45,7 @@ Examples:
 				return fmt.Errorf("provide an error message or pipe via stdin (forge explain -)")
 			}
 
-			explainer := errorexplain.NewExplainer()
+			explainer := explain.NewExplainer()
 			ex := explainer.Explain(input)
 
 			if asJSON {
@@ -101,15 +101,15 @@ Examples:
 	return cmd
 }
 
-func sevColor(s errorexplain.Severity, text string) string {
+func sevColor(s explain.Severity, text string) string {
 	switch s {
-	case errorexplain.SevCritical:
+	case explain.SevCritical:
 		return pretty.Sprint(pretty.RedF, text)
-	case errorexplain.SevHigh:
+	case explain.SevHigh:
 		return pretty.Sprint(pretty.RedF, text)
-	case errorexplain.SevMedium:
+	case explain.SevMedium:
 		return pretty.Sprint(pretty.YellowF, text)
-	case errorexplain.SevLow:
+	case explain.SevLow:
 		return pretty.Sprint(pretty.CyanF, text)
 	default:
 		return text

@@ -396,3 +396,51 @@ All 18 utility packages implemented and tested.
 - [ ] Implement `forge plugin publish` — validate + PR to registry
 - [ ] Implement `forge plugin rate` — 1-5 rating storage
 - [ ] Implement trending (most installs in last 7 days)
+
+## Phase 7: Launch Preparation (From Brainstorm #10)
+
+### Pre-Launch Checklist
+- [ ] README rewrite — hero section, animated demo, comparison table, badges
+- [ ] CONTRIBUTING.md — contribution guide with "good first issue" labels
+- [ ] SECURITY.md — vulnerability reporting policy
+- [ ] GitHub issue templates — bug report, feature request
+- [ ] PR template — conventional commits, test requirements
+- [ ] Clean up TODO/FIXME/HACK comments across codebase
+- [ ] Verify `go test ./...` and `go vet ./...` pass clean
+- [ ] Pre-built binaries for linux/darwin, amd64/arm64
+
+### Launch Day Sequence
+- [ ] Publish GitHub Release v1.0.0 with binaries
+- [ ] Blog post #1: "50 Open Source Projects Melted Into One Sword"
+- [ ] Hacker News submission (Tuesday 8AM PT)
+- [ ] Reddit: r/programming, r/golang, r/LocalLLaMA, r/ChatGPTCoding
+- [ ] Twitter/X thread with architecture diagram + demo GIF
+- [ ] Go community: Go Forum, Gophers Slack #showcase
+- [ ] AI communities: r/codingagent, relevant Discord servers
+
+### Week 1
+- [ ] Respond to every comment within 1 hour (HN, Reddit, GitHub, Twitter)
+- [ ] Blog post #2 (Day 3): "Why I Built The Forge"
+- [ ] Label "good first issue" on easy bugs
+- [ ] Blog post #3 (Day 7): "One Week of The Forge"
+
+### Month 1
+- [ ] Weekly releases with CHANGELOG.md
+- [ ] "Forge Friday" community showcase (weekly)
+- [ ] Comparison pages for SEO (vs Claude Code, Codex, Cursor, LangGraph)
+- [ ] Conference talk submissions (GopherCon, KubeCon, AI Engineer Summit)
+
+### Demo & Content
+- [ ] Write and practice the 60-second demo script
+- [ ] Record terminal demo (asciinema or screen record)
+- [ ] Draft all 3 blog posts before launch
+- [ ] Draft HN submission text (title + description)
+- [ ] Draft Twitter/X thread (8-tweet structure)
+
+### Launch Targets
+| Metric | Week 1 Target | Month 1 Target |
+|--------|--------------|----------------|
+| GitHub Stars | 500 | 2,000 |
+| Downloads | 200 | 1,000 |
+| Contributors | 3 | 10 |
+| Community Plugins | - | 5 |

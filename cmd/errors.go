@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/forge/sword/internal/errcode"
+	ecatalog "github.com/forge/sword/internal/errors/catalog"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
 )
@@ -29,77 +29,77 @@ Examples:
   forge errors --export-md errors.md`,
 		Args: cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			catalog := errcode.NewCatalog()
+			cat := ecatalog.NewCatalog()
 
 			// Export modes
 			if exportJSON != "" {
-				return catalog.ExportJSON(exportJSON)
+				return cat.ExportJSON(exportJSON)
 			}
 			if exportMarkdown != "" {
-				return catalog.ExportMarkdown(exportMarkdown)
+				return cat.ExportMarkdown(exportMarkdown)
 			}
 
 			// Specific code lookup
 			if len(args) > 0 {
-				code, ok := catalog.Lookup(args[0])
+				c, ok := cat.Lookup(args[0])
 				if !ok {
 					// Try numeric lookup
 					var num int
 					fmt.Sscanf(args[0], "%d", &num)
 					if num > 0 {
-						code, ok = catalog.Get(num)
+						c, ok = cat.Get(num)
 					}
 				}
 				if !ok {
 					return fmt.Errorf("error code %q not found", args[0])
 				}
 
-				fmt.Println(pretty.HeaderLine(fmt.Sprintf("%s: %s", code.ID, code.Title)))
+				fmt.Println(pretty.HeaderLine(fmt.Sprintf("%s: %s", c.ID, c.Title)))
 				fmt.Println()
-				fmt.Printf("  Category:    %s\n", code.Category)
-				fmt.Printf("  Severity:    %s\n", code.Severity)
-				fmt.Printf("  Description: %s\n", code.Description)
-				fmt.Printf("  Fix:         %s\n", code.Fix)
-				if code.DocsURL != "" {
-					fmt.Printf("  Docs:        %s\n", code.DocsURL)
+				fmt.Printf("  Category:    %s\n", c.Category)
+				fmt.Printf("  Severity:    %s\n", c.Severity)
+				fmt.Printf("  Description: %s\n", c.Description)
+				fmt.Printf("  Fix:         %s\n", c.Fix)
+				if c.DocsURL != "" {
+					fmt.Printf("  Docs:        %s\n", c.DocsURL)
 				}
 				return nil
 			}
 
 			// List by category or all
-			var codes []errcode.Code
+			var codes []ecatalog.Code
 			if category != "" {
-				codes = catalog.ListByCategory(errcode.Category(category))
+				codes = cat.ListByCategory(ecatalog.Category(category))
 				if len(codes) == 0 {
-					return fmt.Errorf("unknown category %q. Available: %s", category, strings.Join(stringSlice(catalog.Categories()), ", "))
+					return fmt.Errorf("unknown category %q. Available: %s", category, strings.Join(ecatalogToSlice(cat.Categories()), ", "))
 				}
 			} else {
-				codes = catalog.ListAll()
+				codes = cat.ListAll()
 			}
 
 			fmt.Println(pretty.HeaderLine("Forge Error Codes"))
 			fmt.Println()
 
 			currentCat := ""
-			for _, code := range codes {
-				if string(code.Category) != currentCat {
-					currentCat = string(code.Category)
+			for _, c := range codes {
+				if string(c.Category) != currentCat {
+					currentCat = string(c.Category)
 					fmt.Printf("\n  %s\n", pretty.Sprint(pretty.Info, strings.Title(currentCat)))
 				}
 
 				var sevIcon string
-				switch code.Severity {
-				case errcode.SevCritical:
+				switch c.Severity {
+				case ecatalog.SevCritical:
 					sevIcon = pretty.Sprint(pretty.Warning, "●")
-				case errcode.SevError:
+				case ecatalog.SevError:
 					sevIcon = pretty.Sprint(pretty.Warning, "◆")
-				case errcode.SevWarning:
+				case ecatalog.SevWarning:
 					sevIcon = pretty.Sprint(pretty.DimF, "◇")
-				case errcode.SevInfo:
+				case ecatalog.SevInfo:
 					sevIcon = pretty.Sprint(pretty.DimF, "○")
 				}
 
-				fmt.Printf("    %s %-12s %-10s %s\n", sevIcon, code.ID, code.Severity, code.Title)
+				fmt.Printf("    %s %-12s %-10s %s\n", sevIcon, c.ID, c.Severity, c.Title)
 			}
 
 			fmt.Println()
@@ -116,7 +116,7 @@ Examples:
 	return cmd
 }
 
-func stringSlice[T ~string](s []T) []string {
+func ecatalogToSlice(s []ecatalog.Category) []string {
 	result := make([]string, len(s))
 	for i, v := range s {
 		result[i] = string(v)

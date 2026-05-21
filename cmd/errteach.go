@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/forge/sword/internal/errteach"
+	"github.com/forge/sword/internal/errors/teach"
 	"github.com/spf13/cobra"
 )
 
@@ -30,8 +30,8 @@ Errors that teach, not just complain.`,
 	return cmd
 }
 
-func getErrRegistry() *errteach.Registry {
-	return errteach.NewRegistry()
+func getErrRegistry() *teach.Registry {
+	return teach.NewRegistry()
 }
 
 func errteachListCmd() *cobra.Command {
@@ -44,9 +44,9 @@ func errteachListCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			registry := getErrRegistry()
 
-			var errors []*errteach.TeachError
+			var errors []*teach.TeachError
 			if category != "" {
-				errors = registry.ListByCategory(errteach.Category(category))
+				errors = registry.ListByCategory(teach.Category(category))
 			} else {
 				errors = registry.List()
 			}
@@ -154,14 +154,14 @@ func errteachStatsCmd() *cobra.Command {
 			fmt.Printf("Total error codes: %v\n\n", stats["total"])
 
 			fmt.Println("By Category:")
-			if cats, ok := stats["categories"].(map[errteach.Category]int); ok {
+			if cats, ok := stats["categories"].(map[teach.Category]int); ok {
 				for cat, count := range cats {
 					fmt.Printf("  %-12s %d\n", cat, count)
 				}
 			}
 
 			fmt.Println("\nBy Severity:")
-			if sevs, ok := stats["severities"].(map[errteach.Severity]int); ok {
+			if sevs, ok := stats["severities"].(map[teach.Severity]int); ok {
 				for sev, count := range sevs {
 					fmt.Printf("  %-12s %d\n", sev, count)
 				}
@@ -172,15 +172,15 @@ func errteachStatsCmd() *cobra.Command {
 	return cmd
 }
 
-func severityIcon(sev errteach.Severity) string {
+func severityIcon(sev teach.Severity) string {
 	switch sev {
-	case errteach.SevHint:
+	case teach.SevHint:
 		return "💡"
-	case errteach.SevWarning:
+	case teach.SevWarning:
 		return "⚠️"
-	case errteach.SevError:
+	case teach.SevError:
 		return "❌"
-	case errteach.SevCritical:
+	case teach.SevCritical:
 		return "🚨"
 	default:
 		return "❓"
