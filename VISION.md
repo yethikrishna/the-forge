@@ -318,6 +318,65 @@ Who's responsible when an AI agent violates GDPR? When it uses copyrighted code?
 ### 25. The Scaling Ceiling Gap
 Add 10 agents, get 10× the output, right? Wrong. You get 10× the coordination overhead, 10× the conflicts, 10× the chaos. In real companies: management layers, communication protocols, standard operating procedures. Agent teams hit a ceiling at ~3-5 agents and can't scale past it. Forge closes this: the organizational structure scales. Divisions have heads. Communication has protocols. Work has processes. Add 100 agents, get 100× the output.
 
+## Gaps 26-52 — From Every Perspective
+
+The first 25 gaps are structural and operational. These are the gaps you only see when you look from a specific person's seat:
+
+### The Solo Founder's Gaps
+- **26. The "what do I even do first?" gap** — AI can do anything, which means it does nothing. No product sense, no prioritization intuition. Infinite TODOs, no sense of which one matters.
+- **27. The "am I building the right thing?" gap** — agents code fast in the wrong direction. No customer validation loop. Speed without direction is chaos faster.
+- **28. The "lonely founder" gap** — founders need someone to argue with, challenge assumptions. AI says yes to everything. No pushback = no better ideas.
+
+### The Team's Gaps
+- **29. The "who owns what?" gap** — multiple humans + agents, unclear accountability. Things fall through cracks between humans and agents.
+- **30. The "human handoff" gap** — when a human leaves and another takes over, the AI doesn't adjust. It works as if the first human is still there.
+- **31. The "when to involve humans" gap** — agents don't know when to escalate vs just do it. Either cc humans on everything (noise) or decide alone (dangerous).
+
+### The Customer's Gaps
+- **32. The "who am I talking to?" gap** — is this a human or AI? Customers feel differently about AI mistakes vs human mistakes. Transparency matters.
+- **33. The "consistency" gap** — different agents give different answers. Same question twice, two different answers. No single source of truth in the org.
+
+### The Investor's Gaps
+- **34. The "traction metrics" gap** — agents can build but can't sell. No pipeline, no ARR, no investor-ready metrics. Building is 10%, selling is 90%.
+- **35. The "narrative" gap** — investors buy stories, not code. Agents can't craft a compelling narrative about why this company matters.
+
+### The Security Auditor's Gaps
+- **36. The "blast radius" gap** — one compromised agent accesses everything. No least privilege between agents. No compartmentalization.
+- **37. The "supply chain" gap** — agents install packages, call APIs, download code. No vetting, no SBOM, no vulnerability scanning.
+- **38. The "exfiltration" gap** — a maliciously prompted agent can silently exfiltrate data through outputs. No DLP for agent communications.
+
+### The Legal Gaps
+- **39. The "contractual commitment" gap** — agents can't sign contracts or make binding commitments, but might imply them in communications.
+- **40. The "IP contamination" gap** — agents might produce code that violates licenses or copy from copyrighted sources. No IP hygiene.
+- **41. The "evidence" gap** — if something goes wrong, can you prove what happened? Agent decisions must be legally defensible, not just technically traceable.
+
+### The Financial Gaps
+- **42. The "unit economics" gap** — agents spend $100 in API costs to save $10 in engineering time. No ROI awareness per action.
+- **43. The "revenue" gap** — agents can cut costs but can't generate revenue. No sales agent that closes deals. No pricing optimization.
+- **44. The "financial reporting" gap** — no P&L, no cash flow projection, no runway calculation. The org is financially blind.
+
+### The Psychological Gaps
+- **45. The "learned helplessness" gap** — humans stop thinking because "AI will handle it." Critical thinking atrophies. Human becomes a button-clicker.
+- **46. The "trust calibration" gap** — humans either trust AI too much or too little. No calibrated trust that adjusts based on the AI's actual track record.
+- **47. The "agency" gap** — humans feel powerless when they don't understand what the org is doing. Reasoning must be accessible, not just actions.
+
+### The Operational Gaps
+- **48. The "incident response" gap** — something breaks at 3am, who responds? The org needs on-call rotation, severity classification, escalation.
+- **49. The "infrastructure dependency" gap** — server goes down, entire org goes down. No distributed resilience. No graceful degradation.
+- **50. The "org versioning" gap** — agents get updated, prompts change, models swap out. Org behavior shifts without anyone noticing. No change management for the org itself.
+
+### The Design Gaps
+- **51. The "taste" gap** — agents can implement designs but can't create them. No aesthetic judgment. Design by committee of agents = design by nobody.
+- **52. The "user empathy" gap** — agents don't use their own products. They don't feel friction. No dogfooding means no UX intuition.
+
+### The Competitive Gaps
+- **53. The "moat identification" gap** — agents build features but can't identify what's defensible vs commoditized. No strategic competitive thinking.
+- **54. The "market timing" gap** — agents don't know when to ship fast (first mover) vs wait (market not ready). No market sense.
+
+### The Societal Gaps
+- **55. The "displacement awareness" gap** — if AI org replaces a 50-person company, the product needs a stance on what happens to those people.
+- **56. The "power concentration" gap** — one person + AI = one company. Empowering for the individual but concentrates economic power. Product needs awareness of its own impact.
+
 ## The Technology Stack
 
 Forge is built by melting in three open-source foundations:
