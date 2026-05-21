@@ -265,9 +265,9 @@ All 18 utility packages implemented and tested.
 
 ### Deep Multi-Agent Patterns
 - [x] Agent handoff protocol — standardized context/artifact/confidence transfer between agents
-- [ ] Agent consensus engine — run N agents, majority/weighted/unanimous/adversarial vote
+- [x] Agent consensus engine — run N agents, majority/weighted/unanimous/adversarial vote
 - [x] Hierarchical agent trees — parent → child → grandchild delegation with cost rollup
-- [ ] Persistent agent personas — named personas with style preferences, memory, trust score
+- [x] Persistent agent personas — named personas with style preferences, memory, trust score
 
 ### The Impossible-Until-Now
 - [ ] `forge simulate` — test agents on historical data (bug reports, reviews, cost patterns)
@@ -299,7 +299,7 @@ All 18 utility packages implemented and tested.
 - [ ] `forge navigate` — semantic code navigation using index + LLM intent understanding
 - [ ] `forge playbooks` — auto-generate playbooks from solved agent sessions
 - [ ] `forge debug --live` — real-time collaborative debugging with agent watching terminal
-- [ ] `forge deps audit` — agent-powered dependency analysis (CVEs, licenses, alternatives)
+- [x] `forge deps audit` — agent-powered dependency analysis (CVEs, licenses, alternatives)
 
 ### Strategic Moats
 - [ ] Shared agent memory (opt-in) — cross-team learning, privacy-preserving pattern sharing

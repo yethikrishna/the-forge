@@ -405,3 +405,22 @@
 - **Internal packages:** 155
 - **Commands:** 128+
 - **Build:** ✅ **Vet:** ✅ **Tests:** ✅
+
+### Session 2026-05-21 02:10 UTC — Build Fix Marathon + New Features
+
+### Major fixes
+- Fixed 6 broken cmd files that referenced wrong package APIs (consensus, persona, navigate, depsaudit, tokens, hierarchy)
+- Removed 3 duplicate cmd files (depsaudit.go vs deps_audit_cmd.go, tokens.go vs tokens_cmd.go, navigate.go vs navigate_cmd.go, handoff_tree.go vs handoff.go)
+- Fixed navigate package: `line := strings.TrimSpace(line)` → `scanner.Text()` (3 occurrences)
+- Fixed hierarchy package: added missing Store type, Tree.Root(), RootID matching
+- Fixed hierarchy test: float64 comparison with tolerance for 0.1+0.05
+- Fixed root.go: duplicate command registrations, missing treeCmd, handoffCmd style mismatch
+- Added printJSON helper for cmd package
+
+### New packages
+- `internal/experiment` — A/B experiment framework with multi-variant testing, statistical significance (Z-test), confidence intervals, early stopping
+- `internal/pluginsdk` — Plugin SDK with Plugin interface, Hook/Tool/Middleware lifecycle, Registry, Store/Logger/Metrics
+- `cmd/experiment_cmd.go` — `forge experiment create/add-variant/start/record/analyze/decide/list/show/complete/pause/resume/export`
+
+### Stats
+- **Build:** ✅ **Vet:** ✅ **Tests:** ✅ (except pre-existing navigate TestSkipDirectories)
