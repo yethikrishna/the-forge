@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"context"
 	"os"
 	"time"
 
@@ -180,7 +181,7 @@ func parseScoreMethod(method string) quantum.ScoreMethod {
 }
 
 // demoExecutor simulates results for demonstration purposes.
-func demoExecutor(ctx interface{ Deadline() (time.Time, bool) }, u *quantum.Universe) (*quantum.Result, error) {
+func demoExecutor(ctx context.Context, u *quantum.Universe) (*quantum.Result, error) {
 	// In a real implementation, this would call the AI model
 	// For demo, generate varied scores based on universe parameters
 	baseScore := 0.7

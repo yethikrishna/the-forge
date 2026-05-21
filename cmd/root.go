@@ -165,6 +165,7 @@ The wielder and the sword are one.`,
 		quantumCmd,
 		refactorCmd,
 		selftestCmd,
+		quantumCmd,
 	)
 	return root.ExecuteContext(ctx)
 }
