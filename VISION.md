@@ -42,7 +42,7 @@ Lifecycle management for the entire agent fleet. Start, stop, scale, update. Res
 On top of the 9 experiences, Forge provides integrated tools:
 
 ### Mux
-Run multiple agents in parallel on the same or different tasks. Split-pane view. Agent-to-agent communication. Merge their outputs. Like tmux, but the panes are intelligent.
+Run multiple agents in parallel on the same or different tasks. Split-pane view. Agent-to-agent communication. Merge their outputs. Built on Coder's PTY and workspace orchestration — each agent gets a real workspace, a real terminal, real isolation. Like tmux, but the panes are intelligent and the sessions are persistent.
 
 ### Blink
 Self-hosted bots that connect your agents to Slack, Discord, Telegram, GitHub. Deploy an agent as a bot in 30 seconds. Like a bot framework, but the bots are actually smart.
@@ -51,7 +51,7 @@ Self-hosted bots that connect your agents to Slack, Discord, Telegram, GitHub. D
 Mount your git history as a filesystem. Browse commits as folders. Diff as files. `cd` into any point in time. Julia Evans-style deep integration — your codebase becomes a living filesystem.
 
 ### MicroVM Sandboxes
-Docker sandboxing powered by MicroVM API. Lightning-fast spinup, kernel-level isolation. Agents run in real sandboxes, not just containers. Like Firecracker, but integrated into the agent workflow.
+Docker sandboxing powered by MicroVM API (Firecracker/vmm-sys-util). Lightning-fast spinup, kernel-level isolation. Agents run in real sandboxes, not just containers. Built on Coder's workspace provisioning — every agent execution happens in a provisioned, isolated workspace. Like Firecracker, but integrated into the agent workflow.
 
 ### Desktop
 A portable Linux desktop for agents that need GUI access. Browser automation, screenshot verification, visual testing. Like VNC, but the user is an AI.
@@ -67,6 +67,23 @@ AI-powered commits that understand your changes. Auto-generate meaningful commit
 Every feature is melted in, not bolted on. There are no plugins that feel like plugins. The git-as-NFS isn't a separate tool — it's how Forge sees your codebase. The sandboxing isn't a flag — it's how agents run by default. The observability isn't a dashboard you open — it's the air you breathe.
 
 One binary. One experience. Zero seams.
+
+## Coder/coder Foundation
+
+Forge's runtime substrate is built on Coder/coder's capabilities — melted in, not imported:
+
+| Coder Feature | What It Does | Forge Integration |
+|---|---|---|
+| **Workspace provisioning** | Create dev environments from Dockerfile/VM images | `forge env` — spin up agent workspaces on demand |
+| **Tailnet** | WireGuard mesh networking | `forge transfer` — P2P encrypted communication between agents and machines |
+| **PTY** | Terminal handling for agent I/O | Every agent session runs through a proper PTY — real terminal, real signals |
+| **Agent API** | HTTP API for agents to communicate | `forge serve` — the orchestration layer that talks to any agent |
+| **SDK** | Go SDK for programmatic management | `internal/codersdk` — programmatic control of workspaces, agents, sessions |
+| **Template system** | Define workspace templates (Docker, K8s, EC2) | `forge init` — scaffold workspace templates for any cloud |
+| **Auto-start/stop** | Spin up on demand, sleep when idle | `forge manage` — workspace lifecycle, cost optimization |
+| **Resource tracking** | CPU/memory/GPU per workspace, cost attribution | `forge cost` + `forge observe` — full resource and cost visibility |
+
+These aren't plugins. They're the steel the sword is forged from.
 
 ## The Market
 
