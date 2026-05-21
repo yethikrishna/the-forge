@@ -718,3 +718,48 @@ Consensus shift: **plain Docker containers are insufficient** for untrusted agen
 - OpenAI SDK's model lock-in is its biggest limitation
 - Cognition (Devin) acquiring Windsurf signals consolidation in autonomous dev tools
 - 2026 dubbed "the year of agent orchestration" across industry analysts
+
+---
+
+## Research Update — 2026-05-21 05:02 UTC
+
+### 1. Coding Agent Tools — Major May 2026 Developments
+
+- **Claude Code** dominates as leading agentic coding tool. Key May updates:
+  - **Code with Claude 2026** conference (May 6, SF): Announced Managed Agents, Proactive Workflows, Capability Curve. Partners: GitHub, Vercel, Datadog. [Source](https://www.infoq.com/news/2026/05/code-with-claude/)
+  - **Usage limits doubled** (May 6): Enabled by SpaceX compute partnership. Peak-hour restrictions removed for Pro/Max. [Source](https://www.anthropic.com/news/higher-limits-spacex)
+  - New features: Agent view (`claude agents`), `/goal` command, fast mode defaulting to Opus 4.7, Rewind menu, plugin support from .zip/URLs. [Source](https://code.claude.com/docs/en/whats-new)
+  - Reportedly writes ~4% of all public GitHub commits. [Source](https://medium.com/@chaos.architect25/the-best-ai-coding-tools-of-may-2026-cf2db2804a0f)
+
+- **Cursor 3 "Glass"** released: Dedicated Agents Window for parallel subagents, skills, browser control. Recent updates include Jira integration (May 19), Composer 2.5, Cursor Automations improvements. [Source](https://cursor.com/)
+
+- **OpenAI Codex** now available on mobile (ChatGPT iOS/Android, May 14). Official `codex-plugin-cc` adds `/codex:review` and `/codex:rescue` commands inside Claude Code — signaling cross-tool integration. [Source](https://techcrunch.com/2026/05/14/openai-says-codex-is-coming-to-your-phone/)
+
+- **Stack formation trend**: Tools converging into layered workflows — Cursor (orchestration/IDE) → Claude Code (deep execution) → Codex (review/parallel). 84% of devs now use AI coding tools daily. [Source](https://thenewstack.io/ai-coding-tool-stack/) [Source](https://blog.stackademic.com/84-of-developers-use-ai-coding-tools-in-april-2026-only-29-trust-what-they-ship-d0cb7ec9320a)
+
+### 2. Agent Protocols — A2A v1.0 Milestone
+
+- **A2A Protocol v1.0** (announced April 9, 2026): First stable specification. Key additions:
+  - Multi-protocol support
+  - Enterprise-grade multi-tenancy
+  - **Signed Agent Cards** for cryptographic identity verification
+  - Web-aligned architecture for high-scale reliability
+  - **150+ organizations** now supporting the standard
+  - Active enterprise production deployments across Google, Microsoft, AWS
+  - LangGraph and CrewAI agents can now discover capabilities and coordinate cross-org without sharing internal memory
+  [Source](https://www.linuxfoundation.org/press/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year) [Source](https://www.prnewswire.com/news-releases/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year-302737641.html)
+
+- **MCP**: 97M+ downloads reported. Continues as dominant agent-to-tool standard. [Source](https://www.digitalapplied.com/blog/ai-agent-protocol-ecosystem-map-2026-mcp-a2a-acp-ucp)
+
+### 3. Platform Orchestration — May 2026 Releases
+
+- **Microsoft Copilot Agent Mode** (Agent 365): Now default for M365 Copilot users. Autonomous multi-step actions in Word/Excel/PowerPoint. Powered by "Work IQ" context layer. [Source](https://www.msn.com/en-us/news/insight/title/gm-0762EADB64)
+- **OpenAI GPT-5.5 Instant** (May 5): Replaced GPT-5.3 Instant. 52.5% fewer hallucinations, 37.3% fewer factual errors, deeper memory layer across chats/files/services. [Source](https://www.msn.com/en-us/news/insight/title/gm-0762EADB64)
+- **Anthropic**: Claude now natively integrated into M365 (Word, Excel, PowerPoint, soon Outlook). Claude Platform on AWS with Google Workspace connectors and governed real-time access. Legal industry specialized toolkit launched. [Source](https://www.msn.com/en-us/news/insight/title/gm-0762EADB64)
+- **Microsoft Agent Framework v1.0** (April 2026 GA): Production-ready for .NET and Python. A2A protocol support, Azure AI Foundry integration. [Source](https://visualstudiomagazine.com/articles/2026/04/06/microsoft-ships-production-ready-agent-framework-1-0-for-net-and-python.aspx)
+- **340% YoY adoption surge** in agentic AI. Only 23% of orgs have mature oversight frameworks. [Source](https://www.msn.com/en-us/news/insight/title/gm-0762EADB64)
+
+### 4. Governance & Frameworks
+
+- **Futurum Agent Control Plane Framework** (April 3): Five-layer governance reference model for production AI agents. [Source](https://futurumgroup.com/press-release/futurum-agent-control-plane-framework-a-reference-model-for-production-ai-agents/)
+- **Microsoft AAIF push**: Open agentic AI ecosystem with new Linux releases and governance tools. [Source](https://www.hpcwire.com/aiwire/2026/05/18/microsoft-backs-open-agentic-ai-ecosystem-with-new-linux-releases-governance-tools-and-aaif-push/)
