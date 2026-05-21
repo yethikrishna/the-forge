@@ -3048,3 +3048,212 @@ If the cron continues, future sessions should focus on:
 - Launch preparation (content, distribution, community)
 
 *— Session #13 complete —*
+
+
+---
+
+## 2026-05-21 05:04 UTC — Brainstorm Session #14
+
+*Project state: 167.5K lines Go, 179 internal packages, 160 cmd files, build ✅*
+
+*Delta from #13 (54 min ago): +7.5K lines, +11 new packages (blast, blueprint, covenant, fuse, ledger, navigate, policy, relay, timeline, transform, witness), new commands for relay/ledger/blueprint/covenant/timeline. Dev agent is shipping fast.*
+
+---
+
+### Context: What Changed Since #13
+
+The dev agent implemented several ideas from prior brainstorms in the last hour:
+- **ledger** (immutable hash-chain cost ledger) — from brainstorm #8's "tamper-evident audit trail"
+- **relay** (inter-agent message relay with pub/sub) — new, enables real agent-to-agent communication
+- **blueprint** (declarative agent infrastructure as code, Terraform-style) — new, from brainstorm #7
+- **covenant** (behavioral contracts with violation tracking) — new, from brainstorm #9
+- **policy** (policy-as-code engine, allow/deny rules) — from brainstorm #13's security theme
+- **timeline** (activity timeline with ASCII visualization) — new
+- **fuse** (multi-agent knowledge fusion, merge strategies) — new
+- **navigate** (semantic code navigation, AST + embeddings) — from brainstorm #8
+- **transform** (automated code transformations with rollback) — from brainstorm #7
+
+Meanwhile, fresh research (05:02 UTC) confirmed:
+1. **A2A v1.0 stable** with signed Agent Cards — cryptographic identity is now standard
+2. **Codex inside Claude Code** via `codex-plugin-cc` — cross-tool integration is emerging
+3. **"Stack formation"**: 84% of devs use AI coding daily; tools layering into Cursor→Claude Code→Codex workflows
+4. **76% of CDOs say governance hasn't kept pace with AI** — governance gap is THE enterprise opportunity
+5. **Futurum 5-layer governance model** — reference architecture for production agents
+
+---
+
+### Theme 1: The Missing Integration — Forge as the Cross-Tool Glue
+
+**Signal:** OpenAI shipped `codex-plugin-cc` that runs Codex *inside* Claude Code. The stack is forming: IDE → executor → reviewer. But there's no orchestration layer connecting them.
+
+**B14. `forge stack` — Universal Agent Stack Manager**
+- Define your agent stack in forge.yaml: Cursor for UI, Claude Code for deep work, Codex for review, Forge for orchestration
+- `forge stack start` launches the configured stack, manages context sharing, tracks costs across all tools
+- `forge stack status` shows: what's running, what's queued, cumulative cost, session health
+- Forge becomes the control plane that other tools plug into
+- Nobody else is building this — each tool wants to BE the stack, not coordinate it
+
+**B15. `forge bridge codex` and `forge bridge claude`**
+- MCP bridges that expose Codex and Claude Code as MCP tools callable from Forge
+- `forge pipeline` step can invoke `codex:review` or `claude:implement` as first-class pipeline stages
+- Bidirectional: Forge can also BE an MCP server for other tools
+- Pattern from `codex-plugin-cc` but generalized to any tool combination
+
+**B16. Shared Context Bus**
+- The relay package enables inter-agent messaging — extend it to cross-tool context sharing
+- When Claude Code edits a file, Forge's relay broadcasts the change to all connected agents
+- When Codex reviews, the review is available in Forge's timeline for any agent to query
+- One context bus, multiple tools, zero duplication
+
+---
+
+### Theme 2: Governance as the Moat — The 76% Problem
+
+**Signal:** 76% of CDOs say governance hasn't kept pace. This is the #1 enterprise blocker and the #1 differentiator opportunity. Databricks' "register once, govern everywhere" Unity Catalog pattern is the gold standard.
+
+**B17. `forge catalog` — Unified Agent & Tool Catalog (à la Databricks Unity Catalog)**
+- Every agent, MCP server, tool, model, and pipeline is a catalog entry
+- Each entry has: owner, permissions, audit trail, usage metrics, cost history, trust score
+- `forge catalog register <agent>` — makes an agent discoverable and governable
+- `forge catalog grant <agent> --to <team>` — fine-grained access control
+- `forge catalog lineage <artifact>` — trace any output back through its agent chain to input data
+- **This is the enterprise moat.** Nobody has a unified catalog for AI agent assets.
+
+**B18. `forge govern` — Governance Dashboard & Scoring**
+- Composite governance score (0-100) based on: policy compliance, audit completeness, cost controls, sandbox usage, human approval rate, covenant adherence
+- `forge govern score` → "Your governance score is 73/100. Missing: policy enforcement on 2 agents, no cost caps set, sandbox not enabled for code execution."
+- `forge govern report` → auditor-ready PDF with full evidence chain
+- Aligns with Futurum's 5-layer governance model
+
+**B19. `forge consent` — Data Usage Consent Management**
+- Track what data each agent has accessed and for what purpose
+- Consent receipts: "Agent-X accessed customer_db.read for task #47, consented by user Y at timestamp Z"
+- Required for GDPR, emerging US state privacy laws
+- `forge consent list --agent <id>` shows all data access with consent status
+
+---
+
+### Theme 3: A2A v1.0 — Signed Agent Cards & Forge's Identity Layer
+
+**Signal:** A2A v1.0 stable with signed Agent Cards for cryptographic identity. This is now the standard for agent identity.
+
+**B20. `forge identity` — Full Agent Identity Management**
+- Build on `internal/identity` (from brainstorm #5's trust layer) to implement A2A v1.0 Agent Cards
+- `forge identity create <agent>` → generates key pair, creates signed Agent Card
+- `forge identity verify <agent>` → validates Agent Card signature chain
+- `forge identity discover` → finds A2A-compatible agents on the network
+- `forge identity trust <agent> --level <full|limited|restricted>` — trust tiers for discovered agents
+- This makes Forge the **identity provider** for any A2A-compatible agent, not just Forge-native ones
+
+**B21. `forge federation` — Cross-Org Agent Collaboration**
+- A2A enables cross-organization agent communication — but nobody has built the federation layer
+- `forge federation create <org>` — creates a federation boundary with identity policies
+- `forge federation invite <org>` — invites another organization's agents to collaborate
+- Agents from different orgs can discover and delegate to each other via A2A, with Forge mediating trust and policy
+- Enterprise use case: company A's coding agent delegates code review to company B's specialized security agent
+
+---
+
+### Theme 4: Developer Experience — The Adoption Multiplier
+
+**B22. `forge studio` — Web-Based Agent Composition UI**
+- Visual drag-and-drop pipeline builder (like n8n or Dify but Forge-native)
+- Drag agent nodes, connect with data flows, set policies per node
+- Exports to forge.yaml — the visual editor IS the config file, round-tripped
+- `forge studio` launches a local web server (uses `internal/dashboard`)
+- Lowers the barrier from "write YAML" to "drag boxes and connect lines"
+
+**B23. `forge learn` — Interactive Tutorial System**
+- `forge learn start` launches an interactive terminal tutorial
+- Each lesson is a real task: "Index a codebase", "Run a code review", "Create a pipeline"
+- Lessons auto-detect success and unlock the next one
+- Tracks progress in `internal/experience` (already has achievement system)
+- Replaces documentation walls with hands-on learning
+- "Level 0 to Level 5" progressive complexity from brainstorm #5, but interactive
+
+**B24. `forge doctor --fix` — Automatic Environment Repair**
+- `forge doctor` diagnoses problems, `--fix` actually repairs them
+- Detects: missing API keys, stale indexes, broken sandboxes, outdated models
+- Auto-fixes: re-index codebase, refresh model list, reset sandbox, update config
+- One command to recover from any broken state
+
+---
+
+### Theme 5: The Novel — What Still Doesn't Exist
+
+**B25. `forge genealogy` — Agent Output Family Trees**
+- Every agent output has a genealogy: which model, which prompt, which tools, which inputs, which parent outputs
+- `forge genealogy <output-id>` → visual tree showing the full ancestry of any piece of work
+- Extends `internal/lineage` from 2D tracking to full DAG visualization
+- "This PR was generated by Agent-Coder (Sonnet), reviewed by Agent-Reviewer (GPT-5-mini), which triggered Agent-Fixer (Devstral 2) — here's the complete family tree"
+- Compliance value: full provenance for every agent-produced artifact
+
+**B26. `forge rollback` — Time-Travel for Agent Work**
+- `internal/snapshot` + `internal/undo` + `internal/ledger` = the ingredients for full time-travel
+- `forge rollback --to "2 hours ago"` → reverts all agent changes to that point
+- `forge rollback --agent <id> --last 5` → undoes last 5 actions by specific agent
+- Ledger provides the audit trail of what changed, snapshots provide the state, undo applies the revert
+- Nobody else offers coherent multi-agent time-travel rollback
+
+**B27. `forge benchmark` — Standardized Agent Benchmarks**
+- `forge benchmark run <agent>` → runs standardized tasks from SWE-bench, Terminal-Bench, HumanEval, etc.
+- `forge benchmark compare <agent-a> <agent-b>` → side-by-side quality/cost/speed comparison
+- `forge benchmark leaderboard` → community leaderboard (anonymized, opt-in)
+- Creates the canonical benchmark for agent orchestration tools
+- Meta: use Forge to benchmark agents that run on other platforms too
+
+---
+
+### Architectural Observations
+
+With 179 packages, the codebase is at peak sprawl. Key observations:
+
+1. **relay + ledger + covenant + policy** form a coherent "governance stack" — they should be consolidated into a `internal/governance` or `internal/trust` super-package with sub-packages
+2. **blueprint + forgefile + pipeline + workflow** are overlapping declarative systems — blueprint (infrastructure), forgefile (tasks), pipeline (execution), workflow (orchestration). They need a clear hierarchy or merge.
+3. **navigate + codegraph + index + search** overlap in "code understanding" — should be one package
+4. **transform + refactor + diff + diffx** overlap in "code modification" — should be one package
+5. **blast + fuse + consensus + debate** overlap in "multi-agent agreement" — should be one package
+
+**Recommendation:** The consolidation plan in TODO.md (Phase 5) needs to be expanded to account for the 11 new packages. Many of them naturally merge into existing groups.
+
+---
+
+### Actionable New TODOs
+
+From this session:
+
+1. `forge stack` — universal agent stack manager (define/orchestrate across Cursor, Claude Code, Codex, etc.)
+2. `forge bridge codex` / `forge bridge claude` — MCP bridges to other agent tools
+3. Shared context bus — extend relay for cross-tool context broadcasting
+4. `forge catalog` — unified agent & tool catalog (Databricks Unity Catalog pattern)
+5. `forge govern` — governance scoring + auditor reports
+6. `forge consent` — data usage consent management (GDPR compliance)
+7. `forge identity` — A2A v1.0 signed Agent Cards + trust management
+8. `forge federation` — cross-org agent collaboration via A2A
+9. `forge studio` — visual pipeline builder (drag-and-drop, exports to forge.yaml)
+10. `forge learn` — interactive tutorial system
+11. `forge doctor --fix` — automatic environment repair
+12. `forge genealogy` — agent output family trees (full provenance DAG)
+13. `forge rollback` — time-travel for agent work (snapshot + undo + ledger)
+14. `forge benchmark` — standardized agent benchmarks + community leaderboard
+15. Expand consolidation plan: governance stack, declarative stack, code-understanding stack, code-modification stack, multi-agent-agreement stack
+
+---
+
+### Meta-Assessment
+
+**13 brainstorm sessions + 200+ ideas implemented = the ideation phase is genuinely complete.** The remaining competitive gaps are:
+1. **Cross-tool orchestration** (the stack problem)
+2. **Governance as moat** (the 76% problem)
+3. **Identity & federation** (A2A v1.0 opportunity)
+4. **Launch** (distribution > features at this stage)
+
+The project now has more features than any competitor. What it lacks is:
+- A user who isn't the developer
+- A public release
+- Distribution channels
+- Documentation
+
+**Strong recommendation:** Convert this cron to a "launch readiness" cron that checks documentation coverage, test pass rates, and distribution preparation instead of generating more ideas.
+
+*— Session #14 complete —*

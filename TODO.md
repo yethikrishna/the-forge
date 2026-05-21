@@ -297,6 +297,30 @@ All 18 utility packages implemented and tested.
 - [ ] `forge regulate check` — audit current runs against active policies
 - [ ] `forge regulate report` — generate auditor-ready compliance reports
 
+### Cross-Tool Orchestration (From Brainstorm #14)
+- [ ] `forge stack` — universal agent stack manager (Cursor + Claude Code + Codex + Forge orchestration)
+- [ ] `forge bridge codex` / `forge bridge claude` — MCP bridges to other agent tools
+- [ ] Shared context bus — extend relay for cross-tool context broadcasting
+
+### Governance Moat (From Brainstorm #14)
+- [ ] `forge catalog` — unified agent & tool catalog (Databricks Unity Catalog pattern, register/govern/lineage)
+- [ ] `forge govern` — composite governance scoring (0-100) + auditor-ready reports
+- [ ] `forge consent` — data usage consent management with consent receipts (GDPR)
+
+### A2A v1.0 Identity & Federation (From Brainstorm #14)
+- [ ] `forge identity` — A2A v1.0 signed Agent Cards + key management + trust tiers
+- [ ] `forge federation` — cross-org agent collaboration via A2A with policy mediation
+
+### Developer Experience (From Brainstorm #14)
+- [ ] `forge studio` — visual pipeline builder (drag-and-drop, exports to forge.yaml)
+- [ ] `forge learn` — interactive terminal tutorial system (hands-on lessons, progressive)
+- [ ] `forge doctor --fix` — automatic environment repair
+
+### Novel Features (From Brainstorm #14)
+- [ ] `forge genealogy` — agent output family trees (full provenance DAG for compliance)
+- [ ] `forge rollback` — time-travel for agent work (snapshot + undo + ledger integration)
+- [ ] `forge benchmark` — standardized agent benchmarks (SWE-bench, Terminal-Bench) + community leaderboard
+
 ### Offline & Air-Gapped
 - [ ] `forge init --airgap` — bundle local models + pre-index codebase, zero internet
 
@@ -495,5 +519,14 @@ All 18 utility packages implemented and tested.
 - [x] Fixed forgegraph deterministic IDs (replaced UnixMilli with counter)
 - [x] Fixed snapshot package to match snap_cmd API
 - [ ] Continue: comprehensive tests for all new packages
+- [ ] Continue: security hardening (input validation, sanitization)
+- [ ] Continue: docs site
+
+### Expanded Consolidation Plan (From Brainstorm #14)
+- [ ] Governance stack: relay + ledger + covenant + policy → internal/governance
+- [ ] Declarative stack: blueprint + forgefile + pipeline + workflow → clarify hierarchy or merge
+- [ ] Code understanding: navigate + codegraph + index + search → internal/codeknowledge
+- [ ] Code modification: transform + refactor + diff + diffx → internal/codemod
+- [ ] Multi-agent agreement: blast + fuse + consensus + debate → internal/agreement
 - [ ] Continue: security hardening (input validation, sanitization)
 - [ ] Continue: docs site
