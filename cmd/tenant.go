@@ -26,9 +26,7 @@ Examples:
   forge tenant list
   forge tenant get <id>
   forge tenant suspend <id>
-  forge tenant activate <id>
-  forge tenant member add <tenant-id> <user-id> --role admin
-  forge tenant member list <tenant-id>`,
+  forge tenant activate <id>`,
 	}
 
 	createCmd := &cobra.Command{
@@ -36,29 +34,26 @@ Examples:
 		Short: "Create a new tenant",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := getTenantStore(tenantDir)
+			tm := getTenantManager(tenantDir)
 			plan, _ := cmd.Flags().GetString("plan")
 
-			t, err := store.Create(args[0], plan)
+			t, err := tm.CreateTenant(args[0], args[0], plan, "")
 			if err != nil {
 				return err
 			}
 
-			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Tenant created: %s (%s) [%s]", t.Name, t.ID, t.Plan)))
+			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Tenant created: %s (%s) [%s]", t.Name, t.ID, t.Plan.Tier)))
 			return nil
 		},
 	}
-	createCmd.Flags().String("plan", "free", "Plan (free, pro, enterprise)")
+	createCmd.Flags().String("plan", "free", "Plan (free, starter, pro, enterprise)")
 
 	listCmd := &cobra.Command{
 		Use:   "list",
 		Short: "List all tenants",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := getTenantStore(tenantDir)
-			tenants, err := store.List()
-			if err != nil {
-				return err
-			}
+			tm := getTenantManager(tenantDir)
+			tenants := tm.ListTenants()
 
 			if len(tenants) == 0 {
 				fmt.Println(pretty.InfoLine("No tenants found"))
@@ -69,14 +64,14 @@ Examples:
 			fmt.Fprintln(w, "NAME\tID\tPLAN\tSTATUS\tAGENTS\tCOST LIMIT")
 			for _, t := range tenants {
 				agents := "∞"
-				if t.Quota.MaxAgents > 0 {
-					agents = fmt.Sprintf("%d", t.Quota.MaxAgents)
+				if t.Quota.Agents > 0 {
+					agents = fmt.Sprintf("%d", t.Quota.Agents)
 				}
 				cost := "∞"
-				if t.Quota.MaxCostUSD > 0 {
-					cost = fmt.Sprintf("$%.2f", t.Quota.MaxCostUSD)
+				if t.Quota.CostPerDay > 0 {
+					cost = fmt.Sprintf("$%.2f/d", t.Quota.CostPerDay)
 				}
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", t.Name, t.ID, t.Plan, t.Status, agents, cost)
+				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n", t.Name, t.ID, t.Plan.Tier, t.Status, agents, cost)
 			}
 			w.Flush()
 			return nil
@@ -88,8 +83,8 @@ Examples:
 		Short: "Get tenant details",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := getTenantStore(tenantDir)
-			t, err := store.Get(args[0])
+			tm := getTenantManager(tenantDir)
+			t, err := tm.GetTenant(args[0])
 			if err != nil {
 				return err
 			}
@@ -112,28 +107,31 @@ Examples:
 		Short: "Update tenant configuration",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := getTenantStore(tenantDir)
+			tm := getTenantManager(tenantDir)
 			plan, _ := cmd.Flags().GetString("plan")
 			name, _ := cmd.Flags().GetString("name")
 
-			t, err := store.Update(args[0], func(t *tenant.Tenant) {
-				if name != "" {
-					t.Name = name
+			updates := make(map[string]interface{})
+			if name != "" {
+				updates["name"] = name
+			}
+			if plan != "" {
+				if err := tm.ChangePlan(args[0], plan); err != nil {
+					return err
 				}
-				if plan != "" {
-					t.Plan = plan
-					t.Quota = tenant.PlanDefaults(plan)
-				}
-			})
-			if err != nil {
-				return err
 			}
 
-			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Tenant %s updated", t.Name)))
+			if len(updates) > 0 {
+				if err := tm.UpdateTenant(args[0], updates); err != nil {
+					return err
+				}
+			}
+
+			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Tenant %s updated", args[0])))
 			return nil
 		},
 	}
-	updateCmd.Flags().String("plan", "", "Change plan (free, pro, enterprise)")
+	updateCmd.Flags().String("plan", "", "Change plan (free, starter, pro, enterprise)")
 	updateCmd.Flags().String("name", "", "Change tenant name")
 
 	deleteCmd := &cobra.Command{
@@ -141,7 +139,8 @@ Examples:
 		Short: "Delete a tenant",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := getTenantStore(tenantDir)
+			tm := getTenantManager(tenantDir)
+			store := tenant.NewStore(tm)
 			if err := store.Delete(args[0]); err != nil {
 				return err
 			}
@@ -155,9 +154,8 @@ Examples:
 		Short: "Suspend a tenant",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := getTenantStore(tenantDir)
-			_, err := store.Suspend(args[0])
-			if err != nil {
+			tm := getTenantManager(tenantDir)
+			if err := tm.SuspendTenant(args[0]); err != nil {
 				return err
 			}
 			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Tenant %s suspended", args[0])))
@@ -170,9 +168,8 @@ Examples:
 		Short: "Activate a tenant",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := getTenantStore(tenantDir)
-			_, err := store.Activate(args[0])
-			if err != nil {
+			tm := getTenantManager(tenantDir)
+			if err := tm.ActivateTenant(args[0]); err != nil {
 				return err
 			}
 			fmt.Println(pretty.SuccessLine(fmt.Sprintf("Tenant %s activated", args[0])))
@@ -191,7 +188,8 @@ Examples:
 		Short: "Add a member to a tenant",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := getTenantStore(tenantDir)
+			tm := getTenantManager(tenantDir)
+			store := tenant.NewStore(tm)
 			role, _ := cmd.Flags().GetString("role")
 
 			m, err := store.AddMember(args[0], args[1], tenant.Role(role))
@@ -210,7 +208,8 @@ Examples:
 		Short: "List tenant members",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			store := getTenantStore(tenantDir)
+			tm := getTenantManager(tenantDir)
+			store := tenant.NewStore(tm)
 			members, err := store.ListMembers(args[0])
 			if err != nil {
 				return err
@@ -239,10 +238,11 @@ Examples:
 	return cmd
 }
 
-func getTenantStore(flagDir string) *tenant.Store {
-	if flagDir != "" {
-		return tenant.NewStore(flagDir)
+func getTenantManager(flagDir string) *tenant.TenantManager {
+	dir := flagDir
+	if dir == "" {
+		wd, _ := os.Getwd()
+		dir = filepath.Join(wd, ".forge", "tenants")
 	}
-	wd, _ := os.Getwd()
-	return tenant.NewStore(filepath.Join(wd, ".forge", "tenants"))
+	return tenant.NewTenantManager(dir)
 }
