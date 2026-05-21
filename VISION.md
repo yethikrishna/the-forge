@@ -492,8 +492,8 @@ The user never sees the seams. They install Forge, they use Forge, they run a co
 
 Suna has 19.8K stars and built the machine but not the company. OpenClaw runs our 25-agent org but requires a human to manage it. LangChain, CrewAI, AutoGen — frameworks for building agents, not running companies.
 
-Forge takes what both got right (execution + experience) and adds the missing layer: **organization**. The result isn't three tools — it's one product where the seams are invisible.
+Forge takes what both got right (execution + experience) and adds the missing layers: **organization** and **civilization**. The result isn't three tools — it's one product where the seams are invisible.
 
-The compound advantage isn't one smart agent — it's a coordinated, remembering, learning, self-organizing team that gets smarter over time.
+The compound advantage isn't one smart agent — it's a coordinated, remembering, learning, self-organizing civilization that gets smarter over time and can interact with other civilizations, companies, and humans on its own terms.
 
-Execution (OpenClaw) and experience (Suna) are commoditized. Organization is greenfield. That's the moat. That's the category. That's the future.
+Execution (OpenClaw) and experience (Suna) are commoditized. Organization and civilization are greenfield. That's the moat. That's the category. That's the future.

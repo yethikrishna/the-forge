@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/creack/pty"
+	"github.com/creack/pty/v2"
 )
 
 // SessionState is the state of a PTY session.

@@ -72,6 +72,7 @@ type FileResponse struct {
 type Server struct {
 	config    ServerConfig
 	server    *http.Server
+	addr      string
 	status    ServerStatus
 	mu        sync.RWMutex
 	startTime time.Time
@@ -137,10 +138,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 // Addr returns the server's actual listen address.
 func (s *Server) Addr() string {
-	if s.server == nil || s.server.Listener == nil {
-		return ""
-	}
-	return s.server.Listener.Addr().String()
+	return s.addr
 }
 
 // Stop gracefully shuts down the server.
