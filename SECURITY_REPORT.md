@@ -83,4 +83,4 @@ No active leaks or critical hardcoded production secrets found. Projects follow 
 
 **Next audit:** in 2 days or on significant changes.
 
-**Updated:** 2026-05-21 15:11 UTC - Re-scan confirmed no new issues or changes. Risk remains LOW.
+**Updated:** 2026-05-21 16:36 UTC - Re-scan confirmed no new issues or changes. New SECURITY.md added (strong policy). Risk remains LOW.
