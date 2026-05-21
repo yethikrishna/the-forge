@@ -518,3 +518,46 @@ Google I/O on-demand sessions, codelabs, and additional technical details schedu
 - https://developers.googleblog.com/all-the-news-from-the-google-io-2026-developer-keynote/
 - https://techcrunch.com/2026/05/19/how-to-use-googles-new-ai-agents-to-go-beyond-your-standard-searches/
 - https://www.docker.com/blog/ai-coding-agent-horror-stories-security-risks/
+
+---
+
+## 2026-05-21 (00:20 UTC) — Overnight Sweep
+
+### 1. CommBox — Next-Gen AI Agent (Beta, May 21)
+
+CommBox launched a new AI Agent in beta today:
+- Dynamic, goal-driven customer interactions with autonomous reasoning
+- Independently plans, decides, acts using knowledge + tools + instructions + context
+- Supports three agent types: AI Agent (Beta), AI Chatbot, Chatbot
+- "Abilities" — reusable self-contained components (mini-flows or discrete tools including API actions)
+- Relevant pattern: composable "abilities" as the unit of agent capability — similar to how the-forge could structure agent skills
+
+### 2. Channel Talk — AI CoS Agent (May 28)
+
+Channel Talk announced AI CoS agent (upgrade from beta "ALF Team"):
+- Proactive task handling: setup, data analysis, automated marketing, scheduled reports
+- Effective rollout rescheduled to May 28
+- No history carried over from prior ALF Team
+
+### 3. Google I/O On-Demand Content Now Available
+
+- Sessions, codelabs, and additional technical details released starting May 21
+- Gemini Spark teased for rollout to Google AI Ultra subscribers "next week"
+- Agentic shopping features highlighted in Google Search
+
+### 4. May 2026 .NET Cumulative Security Updates
+
+- Microsoft released May 12 cumulative updates covering .NET Framework elevation-of-privilege fixes (CVE-2026-32177, CVE-2026-35433)
+- Affects Azure AI, DevOps, and agent tooling indirectly
+- Semantic Kernel users should be on 1.39.4+ (CVE-2026-25592/26030 from May 7)
+
+### No Major New Framework/Protocol/Coding Agent Launches
+
+Quiet overnight period. All significant May 20 developments covered in previous 7 sweeps.
+
+### Sources
+
+- https://help.commbox.io/docs/may-2026-release-notes
+- https://docs.channel.io/updates/en/articles/Notice-Channel-Talk-Major-May-Updates-May-21-2026-b3d45997
+- https://mashable.com/article/google-io-2026-agentic-shopping-google-search
+- https://learn.microsoft.com/en-us/dotnet/framework/release-notes/2026/05-12-may-cumulative-update
