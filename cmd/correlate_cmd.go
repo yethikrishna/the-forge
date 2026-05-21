@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/correlator"
@@ -38,7 +37,7 @@ var correlateIngestCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		engine := getCorrelatorEngine()
 		evt := correlator.Event{
-			Source:  args[0],
+			Source:  correlator.Source(args[0]),
 			Message: args[1],
 		}
 		id := engine.Ingest(evt)
@@ -61,7 +60,7 @@ var correlateIncidentsCmd = &cobra.Command{
 		fmt.Printf("Incidents (%d):\n", len(correlations))
 		for _, c := range correlations {
 			fmt.Printf("  %s [%s] %s — %d events, confidence %.0f%%\n",
-				c.ID, c.Severity, c.Pattern, len(c.EventIDs), c.Confidence*100)
+				c.ID, c.Severity, c.Pattern, len(c.Events), c.Confidence*100)
 		}
 		return nil
 	},
@@ -110,8 +109,8 @@ var correlateRecentCmd = &cobra.Command{
 
 		fmt.Printf("Recent Correlations (%d shown of %d):\n", len(correlations)-start, len(correlations))
 		for _, c := range correlations[start:] {
-			fmt.Printf("  [%s] %s — %s (events: %d)\n",
-				c.Severity, c.Pattern, strings.Join(c.AgentIDs, ", "), len(c.EventIDs))
+			fmt.Printf("  [%s] %s — %v (events: %d)\n",
+				c.Severity, c.Pattern, c.Sources, len(c.Events))
 		}
 		return nil
 	},
