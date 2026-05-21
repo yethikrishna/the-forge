@@ -474,3 +474,46 @@
 - ~152K lines of Go, 160+ packages, 140+ commands
 - Build and vet clean across entire project
 - All new package tests passing
+
+### Session 2026-05-21 03:00 UTC — Feature Sprint + Massive Vet Fix Marathon
+
+#### New packages
+- `internal/forgegraph` — Knowledge graph with nodes, edges, BFS traversal, impact analysis, cycle detection, subgraph extraction
+- `internal/dream` — Agent vision/dream system (6 dream types, insight generation, scheduling, budgeting)
+- `internal/replay` — Session replay and time-travel debugging
+- `internal/experiment` — A/B experiment framework with Z-test significance
+- `internal/ritual` — Scheduled agent rituals (4 built-in templates, step-based execution, run tracking)
+- `internal/diffx` — Advanced diff engine (from concurrent agent)
+
+#### New commands
+- `forge graph` — add-node/add-edge/list/show/neighbors/impact/path/cycles/stats
+- `forge vision` — submit/list/show/insights/stats/interrupt
+- `forge replay` — list/show/step/summary/compare/delete
+- `forge experiment` — create/add-variant/start/record/analyze/decide/list/show
+- `forge diffx` (from concurrent agent)
+
+#### Major fixes — ALL vet issues resolved
+- Fixed `internal/errors/errors_test.go`: List→ListAll, Search→Lookup, ByCategory→ListByCategory, extra `}`
+- Fixed `internal/experience/experience_test.go`: UnlockedCount→UnlockedTotal, Signal fields (Message/Score→Rating)
+- Fixed `internal/resilience/resilience_test.go`: Complete rewrite — NewLimiter→NewManager, RecordFailure→circuit API, runaway Config fields
+- Fixed `internal/resilience/circuit/circuit.go`: Added Allow(), RecordSuccess(), RecordFailure() methods
+- Fixed `internal/eval2/eval2_test.go`: Duration→LatencyMS, SuiteResult/Result field alignment, simplified Compare test
+- Fixed `internal/mcp2/mcp2_test.go`: ComposeConfig map→slice, ToolResult string→ContentBlock
+- Fixed `internal/optimize/optimize_test.go`: SessionsAnalyzed→FilesIndexed, FitnessFunc closing paren
+- Fixed `internal/system/system_test.go`: OS→Goroutines
+- Fixed `internal/duration/duration_test.go`: Operator precedence in boolean expression
+- Fixed `internal/safety/safety_test.go`: CreatedAt→Timestamp
+- Fixed `internal/patch/patch.go`: Fprintf with no format directive
+- Fixed `cmd/correlate_cmd.go`: Source type cast, EventIDs→Events, AgentIDs→Sources
+- Fixed `cmd/playbook.go`: Store→Generator, Extract→Generate, Get error→bool
+- Fixed `cmd/simulate.go`: Complete rewrite to match Engine API
+- Fixed `cmd/quality_corpus_cmd.go`: Complete rewrite to match Corpus API
+- Fixed `cmd/guard_cmd.go`: truncate→truncateGuard (name collision)
+- Fixed `cmd/swarm_cmd.go`: rootCmd reference removal
+- Fixed forgegraph ID generation: UnixMilli→counter (eliminates race conditions)
+
+#### Stats
+- **Lines of Go:** ~131K
+- **Internal packages:** 168
+- **Commands:** 153
+- **Build:** ✅ **Vet:** ✅ **Tests:** ✅ (all session packages pass)
