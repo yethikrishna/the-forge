@@ -243,3 +243,49 @@
 - **Commands:** 119
 - **Build:** ✅ **Vet:** ✅ **All Tests:** ✅
 - **Version:** 1.1.0
+
+## Session 2026-05-21 (continued) — Major Feature Sprint
+
+### Packages built this session
+- `internal/persona` — Persistent agent personas with style, trust, system prompts (5 built-in)
+- `internal/sessiontag` — Session tagging, filtering, auto-tagging, saved searches
+- `internal/autoconfig` — Zero-config auto-detection (API keys, project type, git)
+- `internal/hierarchy` — Hierarchical agent trees with cost rollup, visual tree formatting
+- `internal/persistentqueue` — SQLite-backed persistent task queue with priority ordering
+- `internal/canary` — Canary deployments for model changes with auto-rollback
+- `internal/depgraph` — Dependency graph with topological sort, cycle detection, DOT export
+- `internal/dashboard` — Embedded web dashboard with HTML/CSS/JS, REST API, MemoryProvider
+- `internal/rollback` — Operation rollback/undo with state snapshots
+- `internal/tokentracker` — Token usage tracking with budgets, pricing, and alerts
+- `internal/promptregistry` — Reusable prompt templates with versioning, variables, composition
+- `internal/agentpool` — Agent pool management with auto-scaling, health monitoring
+- `internal/snapshot` — Project state snapshots with file checksums and diff
+- `internal/offline` — Offline mode for air-gapped environments
+- `internal/refactor` — Automated code refactoring engine
+
+### Commands added this session
+- `forge stag` — Session tags (create, list, tag, untag, find, auto-tag)
+- `forge persona` — Persona management (create, list, show, prompt, trust, pref, defaults)
+- `forge hierarchy` — Hierarchy trees (create, add-child, show, tree, stats, cancel)
+- `forge pq` — Persistent queue (enqueue, dequeue, list, complete, fail, cancel, stats, purge, reclaim)
+- `forge canary` — Canary deployments (create, start, promote, rollback, evaluate, route, increase, list, record)
+- `forge depgraph` — Dependency graphs (add-node, add-edge, show, sort, cycles, impact, orphans, stats, dot)
+- `forge rollback` — Operation rollback (snapshot, begin, complete, undo, history, stats)
+- `forge tokens` — Token tracking (record, summary, budget, check, top, pricing)
+- `forge prompt-reg` — Prompt registry (register, list, show, render, search, fork, defaults, categories)
+- `forge pool` — Agent pools (create, add, remove, list, show, assign, release, scale-up, scale-down, stats, drain)
+- `forge snap` — Snapshots (create, list, show, diff, delete, stats)
+
+### Key fixes
+- Fixed multiple deadlock bugs (eventbus, hierarchy, agentpool — all same pattern: calling RLock method from Lock holder)
+- Fixed depgraph map comparison (maps can't be compared with ==)
+- Fixed eval2/benchmark package name mismatch
+- Fixed vet warnings (redundant newlines, unused imports)
+- Fixed prompt registry command name collision
+- Fixed rollback persistence (double prefix in filenames)
+
+### Stats
+- **Lines of Go:** ~136.5K
+- **Internal packages:** ~155
+- **Commands:** ~130
+- **Build:** ✅ **Vet:** ✅ **All Tests:** ✅
