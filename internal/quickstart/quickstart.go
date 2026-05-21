@@ -223,10 +223,10 @@ func defaultSteps() []Step {
 		{
 			ID:          "learn-first",
 			Title:       "Start the interactive tutorial",
-			Description: "Walk through lesson 1: your first agent in 5 minutes.",
-			Action:      "Run: forge learn start your-first-agent",
+			Description: "Walk through lesson 0: Forge in 60 Seconds.",
+			Action:      "Run: forge learn 0",
 			Verify:      "Lesson started",
-			Tips:        []string{"Use 'forge learn list' to see all 6 lessons", "Lesson 6 covers governance + persistence"},
+			Tips:        []string{"Use 'forge learn list' to see all 7 lessons", "Lesson 7 covers governance + persistence", "'forge learn 0' is the demo lesson"},
 			NextID:      "governance",
 		},
 		{
@@ -282,9 +282,9 @@ func DemoSteps() []Step {
 		},
 		{
 			ID:          "demo-learn",
-			Title:       "3/5  forge learn 1",
-			Description: "Interactive tutorial — lesson 1",
-			Action:      "forge learn start your-first-agent",
+			Title:       "3/5  forge learn 0",
+			Description: "Interactive demo lesson — Forge in 60 Seconds",
+			Action:      "forge learn 0",
 			Verify:      "started",
 			NextID:      "demo-governance",
 		},

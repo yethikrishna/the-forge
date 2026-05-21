@@ -38,7 +38,7 @@ forge init --local
 
 ### Command 3 — Interactive tutorial (~5s)
 ```bash
-forge learn start your-first-agent
+forge learn 0
 ```
 **Expected output**: Lesson starts, step 1 shown.  
 **Talking point**: "Built-in interactive tutorials. `forge learn list` shows all 7."

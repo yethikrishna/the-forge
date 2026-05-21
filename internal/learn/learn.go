@@ -552,11 +552,11 @@ func (s *Store) seedBuiltinLessons() {
 				},
 				{
 					ID: "step-learn", Title: "Start the interactive tutorial",
-					Instruction: "Jump into lesson 1 to create your first agent.",
-					Command:     "forge learn start your-first-agent",
+					Instruction: "Jump into lesson 1 by number (1-indexed from here) to create your first agent.",
+					Command:     "forge learn 1",
 					VerifyMsg:   "Lesson started",
-					Hint:        "Use 'forge learn list' to see all 6 available lessons.",
-					Explanation: "forge learn is a built-in interactive tutorial system. Lesson 1 walks you through your first agent in 5 steps. Lesson 6 covers the persistence + governance stack you're using right now.",
+					Hint:        "Use 'forge learn list' to see all 7 available lessons. 'forge learn 0' is this lesson!",
+					Explanation: "forge learn is a built-in interactive tutorial system. You can start any lesson by number (0-indexed) or by ID. forge learn 1 starts 'Your First Agent'. forge learn 6 covers the persistence + governance stack.",
 					Order:       3,
 				},
 				{

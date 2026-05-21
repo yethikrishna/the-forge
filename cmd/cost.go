@@ -112,6 +112,7 @@ func costLiveCmd() *cobra.Command {
 	var budget float64
 	var jsonOutput bool
 	var watch bool
+	var once bool
 	var interval int
 	var dataDir string
 
@@ -129,6 +130,7 @@ Aggregates usage from all agents and models to show:
 
 Examples:
   forge cost live                    # Show current live stats
+  forge cost live --once             # Same as above (explicit single-shot)
   forge cost live --budget 50        # Set monthly budget to $50
   forge cost live --json             # Output as JSON
   forge cost live --watch            # Auto-refresh every 5 seconds
@@ -150,7 +152,8 @@ Examples:
 				lt.SetBudget(budget)
 			}
 
-			if watch {
+			// --watch: auto-refresh loop. --once (or default): single snapshot.
+			if watch && !once {
 				return runLiveWatch(lt, jsonOutput, interval)
 			}
 
@@ -161,6 +164,7 @@ Examples:
 	liveCmd.Flags().Float64Var(&budget, "budget", 0, "Monthly budget in USD (0 = no budget)")
 	liveCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON")
 	liveCmd.Flags().BoolVarP(&watch, "watch", "w", false, "Auto-refresh mode")
+	liveCmd.Flags().BoolVar(&once, "once", false, "Show stats once and exit (default behaviour; explicit for scripts)")
 	liveCmd.Flags().IntVarP(&interval, "interval", "i", 5, "Refresh interval in seconds (with --watch)")
 	liveCmd.Flags().StringVar(&dataDir, "data", "", "Data directory (default: ~/.forge/costlive)")
 

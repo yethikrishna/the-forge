@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/tabwriter"
 	"time"
@@ -15,15 +16,21 @@ import (
 
 func learnCmdFn() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "learn",
+		Use:   "learn [lesson-id|number]",
 		Short: "Interactive tutorial system",
 		Long: `Hands-on lessons to learn Forge — step by step, with verification.
 
 Progressive lessons from beginner to advanced. Each lesson has
 concrete steps, commands to run, and explanations of why it matters.
 
+You can start a lesson by ID or by number (0-indexed):
+  forge learn 0            # Start lesson 0 (Forge in 60 Seconds — the demo)
+  forge learn 1            # Start lesson 1 (Your First Agent)
+  forge learn start <id>   # Start by lesson ID
+
 Examples:
   forge learn list
+  forge learn 0
   forge learn start your-first-agent
   forge learn next
   forge learn done
@@ -32,6 +39,39 @@ Examples:
   forge learn progress
   forge learn stats
   forge learn show your-first-agent`,
+		Args: cobra.MaximumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return cmd.Help()
+			}
+			// Numeric shorthand: forge learn 0, forge learn 1, etc.
+			learnDir := ""
+			if v, err := cmd.Flags().GetString("dir"); err == nil {
+				learnDir = v
+			}
+			dir := learnDir
+			if dir == "" {
+				dir = filepath.Join(".forge", "learn")
+			}
+			store, err := learn.NewStore(dir)
+			if err != nil {
+				return err
+			}
+			lessonID, err := resolveLesson(store, args[0])
+			if err != nil {
+				return err
+			}
+			l, p, err := store.StartLesson(lessonID)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("\U0001f4da Started: %s\n", l.Title)
+			fmt.Printf("   Difficulty: %s | Duration: %s | %d steps\n\n", l.Difficulty, l.Duration, len(l.Steps))
+			if p.CurrentStep > 0 && p.CurrentStep <= len(l.Steps) {
+				printStep(l.Steps[p.CurrentStep-1])
+			}
+			return nil
+		},
 	}
 
 	var learnDir string
@@ -154,7 +194,7 @@ Examples:
 
 	// --- start ---
 	startCmd := &cobra.Command{
-		Use:   "start <lesson-id>",
+		Use:   "start <lesson-id|number>",
 		Short: "Start a lesson",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -162,13 +202,16 @@ Examples:
 			if err != nil {
 				return err
 			}
-
-			l, p, err := store.StartLesson(args[0])
+			lessonID, err := resolveLesson(store, args[0])
+			if err != nil {
+				return err
+			}
+			l, p, err := store.StartLesson(lessonID)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("📚 Started: %s\n", l.Title)
+			fmt.Printf("\U0001f4da Started: %s\n", l.Title)
 			fmt.Printf("   Difficulty: %s | Duration: %s | %d steps\n\n", l.Difficulty, l.Duration, len(l.Steps))
 
 			if p.CurrentStep > 0 && p.CurrentStep <= len(l.Steps) {
@@ -537,4 +580,26 @@ func fmtProgress(p *learn.Progress) {
 	if p.CompletedAt != nil {
 		fmt.Printf("  Completed:  %s\n", p.CompletedAt.Format(time.RFC3339))
 	}
+}
+
+// resolveLesson converts a lesson identifier to a lesson ID.
+// It accepts:
+//   - A lesson ID string (e.g. "your-first-agent") — returned as-is if the lesson exists.
+//   - A numeric string index (e.g. "0", "1") — returns the ID of the nth lesson
+//     in the sorted list (0-indexed). Lesson 0 is always the demo lesson
+//     "forge-in-60-seconds" when the built-in lessons are seeded.
+func resolveLesson(store *learn.Store, arg string) (string, error) {
+	// Try numeric index first.
+	if n, err := strconv.Atoi(arg); err == nil {
+		lessons, lerr := store.ListLessons(nil)
+		if lerr != nil {
+			return "", fmt.Errorf("list lessons: %w", lerr)
+		}
+		if n < 0 || n >= len(lessons) {
+			return "", fmt.Errorf("lesson index %d out of range (0–%d); use 'forge learn list' to see all lessons", n, len(lessons)-1)
+		}
+		return lessons[n].ID, nil
+	}
+	// Otherwise treat as literal lesson ID.
+	return arg, nil
 }
