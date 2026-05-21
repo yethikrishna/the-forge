@@ -3,7 +3,7 @@
 // identify code at risk, and surface historical patterns.
 //
 // Every line has a story.
-package archaeologist
+package forensics
 
 import (
 	"encoding/json"

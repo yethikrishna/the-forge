@@ -5,7 +5,7 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/forge/sword/internal/archaeologist"
+	"github.com/forge/sword/internal/lineage/forensics"
 	"github.com/spf13/cobra"
 )
 
@@ -38,8 +38,8 @@ Examples:
 	return cmd
 }
 
-func getArchaeologist() (*archaeologist.Archaeologist, error) {
-	return archaeologist.New("."), nil
+func getArchaeologist() (*forensics.Archaeologist, error) {
+	return forensics.New("."), nil
 }
 
 func archaeologistBlameCmd() *cobra.Command {
@@ -61,7 +61,7 @@ func archaeologistBlameCmd() *cobra.Command {
 			}
 
 			if jsonOutput {
-				fmt.Println(archaeologist.MarshalJSON(entries))
+				fmt.Println(forensics.MarshalJSON(entries))
 				return nil
 			}
 
@@ -70,7 +70,7 @@ func archaeologistBlameCmd() *cobra.Command {
 				return nil
 			}
 
-			fmt.Print(archaeologist.FormatBlame(entries))
+			fmt.Print(forensics.FormatBlame(entries))
 			return nil
 		},
 	}
@@ -99,11 +99,11 @@ func archaeologistLogCmd() *cobra.Command {
 			}
 
 			if jsonOutput {
-				fmt.Println(archaeologist.MarshalJSON(history))
+				fmt.Println(forensics.MarshalJSON(history))
 				return nil
 			}
 
-			fmt.Println(archaeologist.FormatHistory(history))
+			fmt.Println(forensics.FormatHistory(history))
 			fmt.Println()
 
 			if len(history.Commits) > 0 {
@@ -142,7 +142,7 @@ func archaeologistHotspotsCmd() *cobra.Command {
 			}
 
 			if jsonOutput {
-				fmt.Println(archaeologist.MarshalJSON(hotspots))
+				fmt.Println(forensics.MarshalJSON(hotspots))
 				return nil
 			}
 
@@ -185,7 +185,7 @@ func archaeologistDeadCodeCmd() *cobra.Command {
 			}
 
 			if jsonOutput {
-				fmt.Println(archaeologist.MarshalJSON(candidates))
+				fmt.Println(forensics.MarshalJSON(candidates))
 				return nil
 			}
 
@@ -196,7 +196,7 @@ func archaeologistDeadCodeCmd() *cobra.Command {
 
 			fmt.Printf("Found %d potential dead code locations:\n\n", len(candidates))
 			for _, c := range candidates {
-				fmt.Printf("  %s\n", archaeologist.FormatDeadCode(c))
+				fmt.Printf("  %s\n", forensics.FormatDeadCode(c))
 			}
 			return nil
 		},
@@ -231,7 +231,7 @@ func archaeologistWhyCmd() *cobra.Command {
 			}
 
 			if jsonOutput {
-				fmt.Println(archaeologist.MarshalJSON(info))
+				fmt.Println(forensics.MarshalJSON(info))
 				return nil
 			}
 
