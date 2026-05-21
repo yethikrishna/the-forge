@@ -2,7 +2,6 @@ package forgegraph_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/forge/sword/internal/forgegraph"
 )
@@ -59,9 +58,7 @@ func TestRemoveNode(t *testing.T) {
 	g := forgegraph.NewGraph("")
 
 	n1 := g.AddNode(forgegraph.KindAgent, "agent-1", nil)
-	time.Sleep(2 * time.Millisecond)
 	n2 := g.AddNode(forgegraph.KindAgent, "agent-2", nil)
-	time.Sleep(2 * time.Millisecond)
 	_, _ = g.AddEdge(n1.ID, n2.ID, forgegraph.EdgeDependsOn, 1.0, nil)
 
 	err := g.RemoveNode(n1.ID)
@@ -85,7 +82,6 @@ func TestAddEdge(t *testing.T) {
 	g := forgegraph.NewGraph("")
 
 	n1 := g.AddNode(forgegraph.KindAgent, "agent-1", nil)
-	time.Sleep(2 * time.Millisecond)
 	n2 := g.AddNode(forgegraph.KindModel, "gpt-4", nil)
 
 	edge, err := g.AddEdge(n1.ID, n2.ID, forgegraph.EdgeUses, 0.8, map[string]interface{}{"purpose": "chat"})
@@ -107,7 +103,6 @@ func TestRemoveEdge(t *testing.T) {
 	g := forgegraph.NewGraph("")
 
 	n1 := g.AddNode(forgegraph.KindAgent, "a", nil)
-	time.Sleep(2 * time.Millisecond)
 	n2 := g.AddNode(forgegraph.KindAgent, "b", nil)
 
 	edge, _ := g.AddEdge(n1.ID, n2.ID, forgegraph.EdgeDependsOn, 1.0, nil)
@@ -127,9 +122,7 @@ func TestNeighbors(t *testing.T) {
 	g := forgegraph.NewGraph("")
 
 	n1 := g.AddNode(forgegraph.KindAgent, "a", nil)
-	time.Sleep(2 * time.Millisecond)
 	n2 := g.AddNode(forgegraph.KindAgent, "b", nil)
-	time.Sleep(2 * time.Millisecond)
 	n3 := g.AddNode(forgegraph.KindAgent, "c", nil)
 
 	g.AddEdge(n1.ID, n2.ID, forgegraph.EdgeDependsOn, 1.0, nil)
@@ -149,11 +142,8 @@ func TestUpstreamDownstream(t *testing.T) {
 
 	// a -> b -> c -> d
 	a := g.AddNode(forgegraph.KindAgent, "a", nil)
-	time.Sleep(2 * time.Millisecond)
 	b := g.AddNode(forgegraph.KindAgent, "b", nil)
-	time.Sleep(2 * time.Millisecond)
 	c := g.AddNode(forgegraph.KindAgent, "c", nil)
-	time.Sleep(2 * time.Millisecond)
 	d := g.AddNode(forgegraph.KindAgent, "d", nil)
 
 	g.AddEdge(a.ID, b.ID, forgegraph.EdgeDependsOn, 1.0, nil)
@@ -183,9 +173,7 @@ func TestImpactAnalysis(t *testing.T) {
 	g := forgegraph.NewGraph("")
 
 	a := g.AddNode(forgegraph.KindAgent, "agent-a", nil)
-	time.Sleep(2 * time.Millisecond)
 	b := g.AddNode(forgegraph.KindPipeline, "pipeline-b", nil)
-	time.Sleep(2 * time.Millisecond)
 	c := g.AddNode(forgegraph.KindTask, "task-c", nil)
 
 	g.AddEdge(a.ID, b.ID, forgegraph.EdgeTriggers, 0.9, nil)
@@ -207,9 +195,7 @@ func TestFindPath(t *testing.T) {
 	g := forgegraph.NewGraph("")
 
 	a := g.AddNode(forgegraph.KindAgent, "a", nil)
-	time.Sleep(2 * time.Millisecond)
 	b := g.AddNode(forgegraph.KindAgent, "b", nil)
-	time.Sleep(2 * time.Millisecond)
 	c := g.AddNode(forgegraph.KindAgent, "c", nil)
 
 	g.AddEdge(a.ID, b.ID, forgegraph.EdgeRoutesTo, 1.0, nil)
@@ -255,7 +241,6 @@ func TestStats(t *testing.T) {
 	g := forgegraph.NewGraph("")
 
 	n1 := g.AddNode(forgegraph.KindAgent, "a", nil)
-	time.Sleep(2 * time.Millisecond)
 	n2 := g.AddNode(forgegraph.KindPipeline, "p", nil)
 	g.AddEdge(n1.ID, n2.ID, forgegraph.EdgeUses, 1.0, nil)
 
@@ -275,9 +260,7 @@ func TestDetectCycles(t *testing.T) {
 	g := forgegraph.NewGraph("")
 
 	a := g.AddNode(forgegraph.KindAgent, "a", nil)
-	time.Sleep(2 * time.Millisecond)
 	b := g.AddNode(forgegraph.KindAgent, "b", nil)
-	time.Sleep(2 * time.Millisecond)
 	c := g.AddNode(forgegraph.KindAgent, "c", nil)
 
 	g.AddEdge(a.ID, b.ID, forgegraph.EdgeDependsOn, 1.0, nil)
@@ -294,7 +277,6 @@ func TestNoCycles(t *testing.T) {
 	g := forgegraph.NewGraph("")
 
 	a := g.AddNode(forgegraph.KindAgent, "a", nil)
-	time.Sleep(2 * time.Millisecond)
 	b := g.AddNode(forgegraph.KindAgent, "b", nil)
 
 	g.AddEdge(a.ID, b.ID, forgegraph.EdgeDependsOn, 1.0, nil)
@@ -309,11 +291,8 @@ func TestSubgraph(t *testing.T) {
 	g := forgegraph.NewGraph("")
 
 	a := g.AddNode(forgegraph.KindAgent, "a", nil)
-	time.Sleep(2 * time.Millisecond)
 	b := g.AddNode(forgegraph.KindAgent, "b", nil)
-	time.Sleep(2 * time.Millisecond)
 	c := g.AddNode(forgegraph.KindAgent, "c", nil)
-	time.Sleep(2 * time.Millisecond)
 	d := g.AddNode(forgegraph.KindAgent, "d", nil)
 
 	g.AddEdge(a.ID, b.ID, forgegraph.EdgeDependsOn, 1.0, nil)
@@ -335,7 +314,6 @@ func TestAllNodesAllEdges(t *testing.T) {
 	g := forgegraph.NewGraph("")
 
 	n1 := g.AddNode(forgegraph.KindAgent, "a", nil)
-	time.Sleep(2 * time.Millisecond)
 	n2 := g.AddNode(forgegraph.KindModel, "m", nil)
 	g.AddEdge(n1.ID, n2.ID, forgegraph.EdgeUses, 1.0, nil)
 

@@ -127,6 +127,7 @@ func (g *Graph) AddNode(kind NodeKind, name string, props map[string]interface{}
 	}
 
 	g.nodes[node.ID] = node
+	g.nextNodeID++
 	g.byKind[kind] = append(g.byKind[kind], node.ID)
 	g.outEdges[node.ID] = make([]string, 0)
 	g.inEdges[node.ID] = make([]string, 0)
@@ -214,7 +215,7 @@ func (g *Graph) AddEdge(from, to string, kind EdgeKind, weight float64, props ma
 	}
 
 	edge := &Edge{
-		ID:         fmt.Sprintf("e-%d", time.Now().UnixMilli()),
+		ID:         fmt.Sprintf("e-%d", g.nextEdgeID),
 		From:       from,
 		To:         to,
 		Kind:       kind,
@@ -224,6 +225,7 @@ func (g *Graph) AddEdge(from, to string, kind EdgeKind, weight float64, props ma
 	}
 
 	g.edges[edge.ID] = edge
+	g.nextEdgeID++
 	g.outEdges[from] = append(g.outEdges[from], edge.ID)
 	g.inEdges[to] = append(g.inEdges[to], edge.ID)
 	g.save()
