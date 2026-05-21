@@ -149,6 +149,8 @@ The wielder and the sword are one.`,
 		gateCmd,
 		stagCmd,
 		personaCmd,
+		hierarchyCmd,
+		pqCmd,
 	)
 	return root.ExecuteContext(ctx)
 }
