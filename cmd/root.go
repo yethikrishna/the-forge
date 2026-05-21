@@ -134,6 +134,12 @@ The wielder and the sword are one.`,
 		forgefileCmd(),
 		dreamReviewCmd(),
 		rubricCmd(),
+		rbacCmd(),
+		ssoCmd(),
+		navigateCmd,
+		playbookCmd,
+		depsAuditCmd,
+		simulateCmd,
 	)
 	return root.ExecuteContext(ctx)
 }
