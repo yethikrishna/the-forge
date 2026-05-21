@@ -24,10 +24,11 @@ func TestMCPServerRegisterTool(t *testing.T) {
 			"type": "object",
 		},
 	}, func(args map[string]interface{}) (server.ToolResult, error) {
-		return server.ToolResult{Content: []server.ContentBlock{{Type: "text", Text: "ok"}}}, nil
+		return server.ToolResult{
+			Content: []server.ContentBlock{{Type: "text", Text: "ok"}},
+		}, nil
 	})
 
-	// List tools via JSON-RPC
 	resp := srv.Handle(server.JSONRPCRequest{
 		JSONRPC: "2.0",
 		Method:  "tools/list",
@@ -71,8 +72,7 @@ func TestMCPServerBuiltins(t *testing.T) {
 
 func TestMCPComposeGateway(t *testing.T) {
 	gw := compose.NewComposeGateway(compose.ComposeConfig{
-		Servers: map[string]compose.ServerConfig{
-			"test-srv": {
+		Servers: []compose.ServerConfig{
 				Command: "echo",
 				Args:    []string{"hello"},
 			},
@@ -83,7 +83,6 @@ func TestMCPComposeGateway(t *testing.T) {
 	}
 
 	tools := gw.ListTools()
-	// Tools may be empty before ConnectAll, that's fine
 	_ = tools
 }
 
@@ -100,7 +99,7 @@ func TestMCPComposeAddServer(t *testing.T) {
 
 func TestMCPComposeRemoveServer(t *testing.T) {
 	gw := compose.NewComposeGateway(compose.ComposeConfig{
-		Servers: map[string]compose.ServerConfig{
+		Servers: []compose.ServerConfig{
 			"rm-srv": {Command: "test"},
 		},
 	})
@@ -127,7 +126,6 @@ func TestMCPDiscoverFormatServer(t *testing.T) {
 		Name:    "test-server",
 		Address: "localhost:3000",
 		Source:  "config",
-		Status:  discover.StatusHealthy,
 	}
 	formatted := discover.FormatServer(s)
 	if formatted == "" {

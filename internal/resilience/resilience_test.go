@@ -81,7 +81,7 @@ func TestCircuitBreakerStats(t *testing.T) {
 }
 
 func TestRateLimiterIntegration(t *testing.T) {
-	limiter := ratelimit.NewLimiter(ratelimit.Config{
+	limiter := ratelimit.NewManager(ratelimit.Config{
 		Rate:   5,
 		Burst:  5,
 		Scope:  ratelimit.ScopeGlobal,
@@ -100,7 +100,7 @@ func TestRateLimiterIntegration(t *testing.T) {
 }
 
 func TestRateLimiterWait(t *testing.T) {
-	limiter := ratelimit.NewLimiter(ratelimit.Config{
+	limiter := ratelimit.NewManager(ratelimit.Config{
 		Rate:   1000, // high rate for fast test
 		Burst:  1,
 		Scope:  ratelimit.ScopeGlobal,

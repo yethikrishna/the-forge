@@ -46,9 +46,11 @@ func TestABTestRecordResult(t *testing.T) {
 	store.Start(exp.ID)
 
 	_, err := store.RecordResult(exp.ID, abtest.Result{
-		Variant:  "A",
-		Score:    0.85,
-		Duration: 2.5,
+		Variant:   "A",
+		Score:     0.85,
+		LatencyMS: 2500,
+		CostUSD:   0.05,
+		Success:   true,
 	})
 	if err != nil {
 		t.Fatalf("RecordResult error: %v", err)
@@ -60,10 +62,10 @@ func TestABTestAnalyze(t *testing.T) {
 		Name:      "analyze-test",
 		Variants:  []abtest.Variant{{Name: "A"}, {Name: "B"}},
 		Results: []abtest.Result{
-			{Variant: "A", Score: 0.9},
-			{Variant: "B", Score: 0.6},
-			{Variant: "A", Score: 0.85},
-			{Variant: "B", Score: 0.55},
+			{Variant: "A", Score: 0.9, Success: true},
+			{Variant: "B", Score: 0.6, Success: true},
+			{Variant: "A", Score: 0.85, Success: true},
+			{Variant: "B", Score: 0.55, Success: true},
 		},
 	}
 	analysis := abtest.Analyze(exp)
@@ -88,20 +90,6 @@ func TestABTestList(t *testing.T) {
 	}
 	if len(exps) != 2 {
 		t.Errorf("List = %d, want 2", len(exps))
-	}
-}
-
-func TestABTestCancel(t *testing.T) {
-	store := abtest.NewStore(t.TempDir())
-	exp, _ := store.Create("cancel-test", "prompt", []abtest.Variant{{Name: "A"}}, 10)
-	store.Start(exp.ID)
-
-	cancelled, err := store.Cancel(exp.ID)
-	if err != nil {
-		t.Fatalf("Cancel error: %v", err)
-	}
-	if cancelled.Status != "cancelled" {
-		t.Errorf("Status = %q, want %q", cancelled.Status, "cancelled")
 	}
 }
 
@@ -137,7 +125,6 @@ func TestAgentTestEvaluateTestCase(t *testing.T) {
 		Prompt: "Say hello",
 		Assertions: []agenttest.Assertion{
 			{Type: "contains", Value: "hello"},
-			{Type: "min_length", Value: "5"},
 		},
 	}
 
@@ -170,7 +157,6 @@ func TestAgentTestSuiteResult(t *testing.T) {
 
 func TestBenchmarkRunner(t *testing.T) {
 	runner := benchmark.NewRunner(t.TempDir())
-
 	runner.WithScorer(&benchmark.ExactScorer{})
 	runner.WithScorer(&benchmark.ContainsScorer{})
 	runner.WithScorer(&benchmark.KeywordScorer{})

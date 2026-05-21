@@ -40,8 +40,8 @@ func TestDreamSession(t *testing.T) {
 func TestDreamSaveReport(t *testing.T) {
 	store := dream.NewStore(t.TempDir())
 	report := &dream.DreamReport{
-		SessionsAnalyzed: 5,
-		Optimizations:    []dream.Optimization{},
+		FilesIndexed:  5,
+		Optimizations: []dream.Optimization{},
 	}
 	if err := store.SaveReport(report); err != nil {
 		t.Fatalf("SaveReport error: %v", err)
