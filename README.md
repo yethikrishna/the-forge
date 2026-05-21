@@ -20,7 +20,7 @@ make build
 ./forge serve -- claude
 ```
 
-## 28 Commands
+## 30 Commands
 
 | Command | Description |
 |---------|-------------|
@@ -51,6 +51,7 @@ make build
 | `forge help` | Help |
 | `forge doctor` | **Auto-repair** — environment diagnostics + self-fix |
 | `forge learn` | Interactive tutorial system (5 lessons) |
+| `forge mcp2` | MCP 2.0 server with governance middleware |
 
 ## 7-Layer Architecture
 
