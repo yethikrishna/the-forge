@@ -273,7 +273,7 @@ All 18 utility packages implemented and tested.
 - [x] `forge simulate` — test agents on historical data (bug reports, reviews, cost patterns)
 - [ ] `forge translate-pipeline` — natural language → forge.yaml and vice versa
 - [x] `forge refactor` — whole-codebase dependency-aware refactoring with migration plans
-- [ ] `forge clone-behavior` — record human task → create agent that repeats it
+- [x] `forge clone-behavior` — record human task → create agent that repeats it
 - [x] `forge quantum` — parallel universe exploration (N approaches, pick the best)
 - [x] `forge selftest` — agent self-diagnostic and health check
 - [x] Cross-package event correlation — correlate anomalies across cost/health/lifecycle/replay
@@ -302,7 +302,7 @@ All 18 utility packages implemented and tested.
 - [x] `forge deps audit` — agent-powered dependency analysis (CVEs, licenses, alternatives)
 
 ### Strategic Moats
-- [ ] Shared agent memory (opt-in) — cross-team learning, privacy-preserving pattern sharing
+- [x] Shared agent memory (opt-in) — cross-team learning, privacy-preserving pattern sharing
 - [ ] Agent quality corpus — opt-in data collection for `forge tune`/`forge breed` improvement
 - [ ] `.devcontainer/` for GitHub Codespaces zero-install trial
 - [ ] "Forge in 60 Seconds" demo video — terminal recording, under 60s from install to value

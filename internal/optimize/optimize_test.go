@@ -52,9 +52,9 @@ func TestBreedEvolver(t *testing.T) {
 		{Name: "model", Values: []string{"gpt-4", "claude", "llama"}},
 		{Name: "temperature", Values: []string{"0.3", "0.7", "1.0"}},
 	}
-	evolver := breed.NewEvolver(traits, func(g *breed.Genome) float64 {
+	evolver := breed.NewEvolver(traits, breed.FitnessFunc(func(g breed.Genome) float64 {
 		return 0.5
-	}, t.TempDir())
+	}), t.TempDir())
 
 	population := evolver.Initialize()
 	if len(population) == 0 {
@@ -66,9 +66,9 @@ func TestBreedEvolve(t *testing.T) {
 	traits := []breed.Trait{
 		{Name: "model", Values: []string{"a", "b"}},
 	}
-	evolver := breed.NewEvolver(traits, func(g *breed.Genome) float64 {
+	evolver := breed.NewEvolver(traits, breed.FitnessFunc(func(g breed.Genome) float64 {
 		return 0.5
-	}, t.TempDir())
+	}), t.TempDir())
 	evolver.Initialize()
 
 	nextGen := evolver.Evolve()
@@ -104,13 +104,13 @@ func TestBreedBest(t *testing.T) {
 	traits := []breed.Trait{
 		{Name: "model", Values: []string{"a", "b"}},
 	}
-	evolver := breed.NewEvolver(traits, func(g *breed.Genome) float64 {
+	evolver := breed.NewEvolver(traits, breed.FitnessFunc(func(g breed.Genome) float64 {
 		return 0.8
-	}, t.TempDir())
+	}), t.TempDir())
 	evolver.Initialize()
 
 	best := evolver.Best()
-	_ = best // may be nil before recording
+	_ = best
 }
 
 func TestTuneOptimizer(t *testing.T) {

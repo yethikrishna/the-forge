@@ -1,7 +1,7 @@
 package errors_test
 
 import (
-	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/forge/sword/internal/errors/catalog"

@@ -99,12 +99,14 @@ type Graph struct {
 // NewGraph creates a new knowledge graph.
 func NewGraph(storeDir string) *Graph {
 	g := &Graph{
-		nodes:    make(map[string]*Node),
-		edges:    make(map[string]*Edge),
-		byKind:   make(map[NodeKind][]string),
-		outEdges: make(map[string][]string),
-		inEdges:  make(map[string][]string),
-		store:    storeDir,
+		nodes:      make(map[string]*Node),
+		edges:      make(map[string]*Edge),
+		byKind:     make(map[NodeKind][]string),
+		outEdges:   make(map[string][]string),
+		inEdges:    make(map[string][]string),
+		store:      storeDir,
+		nextNodeID: 1,
+		nextEdgeID: 1,
 	}
 	g.load()
 	return g
@@ -116,7 +118,7 @@ func (g *Graph) AddNode(kind NodeKind, name string, props map[string]interface{}
 	defer g.mu.Unlock()
 
 	node := &Node{
-		ID:         fmt.Sprintf("n-%d", time.Now().UnixMilli()),
+		ID:         fmt.Sprintf("n-%d", g.nextNodeID),
 		Kind:       kind,
 		Name:       name,
 		Properties: props,
