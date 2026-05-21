@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/forge/sword/internal/persistence"
 )
 
 // Category represents a governance dimension.
@@ -90,10 +92,11 @@ type ReportConfig struct {
 
 // Store manages governance assessments.
 type Store struct {
-	Dir string
-	mu  sync.RWMutex
+	Dir         string
+	mu          sync.RWMutex
 	assessments map[string]*Assessment
 	findings    map[string]*Finding
+	pstore      *persistence.Store
 }
 
 // NewStore creates or loads a governance store.
@@ -109,7 +112,39 @@ func NewStore(dir string) (*Store, error) {
 	if err := s.load(); err != nil {
 		return s, nil
 	}
+
+	ps, err := persistence.Open(dir)
+	if err != nil {
+		return nil, fmt.Errorf("govern: open persistence store: %w", err)
+	}
+	s.pstore = ps
+	ps.Register("assessments", func() ([]byte, error) {
+		s.mu.RLock()
+		defer s.mu.RUnlock()
+		return json.MarshalIndent(s.assessments, "", "  ")
+	})
+	ps.Register("findings", func() ([]byte, error) {
+		s.mu.RLock()
+		defer s.mu.RUnlock()
+		return json.MarshalIndent(s.findings, "", "  ")
+	})
 	return s, nil
+}
+
+// Close flushes pending writes and stops the background syncer.
+func (s *Store) Close() error {
+	if s.pstore != nil {
+		return s.pstore.Close()
+	}
+	return nil
+}
+
+// Flush forces an immediate write of all dirty keys to disk.
+func (s *Store) Flush() error {
+	if s.pstore != nil {
+		return s.pstore.Flush()
+	}
+	return nil
 }
 
 // ScoreToGrade converts a numeric score to a letter grade.
@@ -223,10 +258,7 @@ func (s *Store) Assess(config ReportConfig, categoryScores map[Category]int, fin
 			s.findings[findings[i].ID] = &findings[i]
 		}
 	}
-
-	if err := s.save(); err != nil {
-		return nil, err
-	}
+	s.markDirty()
 	return assessment, nil
 }
 
@@ -268,10 +300,7 @@ func (s *Store) ResolveFinding(findingID string) (*Finding, error) {
 	now := time.Now().UTC()
 	f.Status = "resolved"
 	f.ResolvedAt = &now
-
-	if err := s.save(); err != nil {
-		return nil, err
-	}
+	s.markDirty()
 	return f, nil
 }
 
@@ -433,20 +462,11 @@ func (s *Store) load() error {
 	return nil
 }
 
-func (s *Store) save() error {
-	assessData, err := json.MarshalIndent(s.assessments, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal assessments: %w", err)
+// markDirty tells the persistence store that both assessments and findings need flushing.
+// Must be called with s.mu held (write lock).
+func (s *Store) markDirty() {
+	if s.pstore != nil {
+		s.pstore.Dirty("assessments")
+		s.pstore.Dirty("findings")
 	}
-	findData, err := json.MarshalIndent(s.findings, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal findings: %w", err)
-	}
-	if err := os.WriteFile(filepath.Join(s.Dir, "assessments.json"), assessData, 0o644); err != nil {
-		return err
-	}
-	if err := os.WriteFile(filepath.Join(s.Dir, "findings.json"), findData, 0o644); err != nil {
-		return err
-	}
-	return nil
 }

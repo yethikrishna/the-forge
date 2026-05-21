@@ -189,6 +189,12 @@ func TestPersistence(t *testing.T) {
 	lt1, _ := NewLiveTracker(dir, 50.0)
 	lt1.Record("a1", "gpt-4.1", 1000, 500, 0.01, "chat")
 
+	// Flush before reload so write-behind cache has written to disk.
+	if err := lt1.Flush(); err != nil {
+		t.Fatalf("Flush: %v", err)
+	}
+	lt1.Close()
+
 	// Create new tracker from same dir
 	lt2, err := NewLiveTracker(dir, 0)
 	if err != nil {

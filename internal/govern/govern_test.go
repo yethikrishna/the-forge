@@ -264,6 +264,12 @@ func TestPersistence(t *testing.T) {
 	}
 	a1, _ := s1.Assess(ReportConfig{Name: "persist-test"}, map[Category]int{CatSecurity: 75}, findings)
 
+	// Flush before reload so write-behind cache has written to disk.
+	if err := s1.Flush(); err != nil {
+		t.Fatalf("Flush: %v", err)
+	}
+	s1.Close()
+
 	// Reload.
 	s2, err := NewStore(dir)
 	if err != nil {

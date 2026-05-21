@@ -458,6 +458,12 @@ func TestGatewayPersistence(t *testing.T) {
 	})
 	gw1.ProcessRequest(GatewayRequest{ClientID: "c1", Method: "tools/list"})
 
+	// Flush before reload so write-behind cache has written to disk.
+	if err := gw1.Flush(); err != nil {
+		t.Fatalf("Flush: %v", err)
+	}
+	gw1.Close()
+
 	// Reload
 	gw2, _ := NewGateway(dir, GatewayConfig{})
 	audit := gw2.GetAudit("", "", 0)

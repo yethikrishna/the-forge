@@ -12,6 +12,8 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/forge/sword/internal/persistence"
 )
 
 // UsageSnapshot is a single point-in-time usage measurement.
@@ -96,6 +98,7 @@ type LiveTracker struct {
 	dir       string
 	snapshots []UsageSnapshot
 	budget    float64 // monthly budget, 0 = no budget
+	pstore    *persistence.Store
 }
 
 // NewLiveTracker creates a new live tracker.
@@ -108,7 +111,39 @@ func NewLiveTracker(dir string, monthlyBudget float64) (*LiveTracker, error) {
 		budget: monthlyBudget,
 	}
 	lt.load()
+
+	ps, err := persistence.Open(dir)
+	if err != nil {
+		return nil, fmt.Errorf("costlive: open persistence store: %w", err)
+	}
+	lt.pstore = ps
+	ps.Register("live", func() ([]byte, error) {
+		lt.mu.RLock()
+		defer lt.mu.RUnlock()
+		return json.MarshalIndent(lt.snapshots, "", "  ")
+	})
+	ps.Register("budget", func() ([]byte, error) {
+		lt.mu.RLock()
+		defer lt.mu.RUnlock()
+		return json.MarshalIndent(map[string]float64{"budget": lt.budget}, "", "  ")
+	})
 	return lt, nil
+}
+
+// Close flushes pending writes and stops the background syncer.
+func (lt *LiveTracker) Close() error {
+	if lt.pstore != nil {
+		return lt.pstore.Close()
+	}
+	return nil
+}
+
+// Flush forces an immediate write of all dirty keys to disk.
+func (lt *LiveTracker) Flush() error {
+	if lt.pstore != nil {
+		return lt.pstore.Flush()
+	}
+	return nil
 }
 
 // Record records a usage event for live tracking.
@@ -125,7 +160,7 @@ func (lt *LiveTracker) Record(agentID, model string, inputTokens, outputTokens i
 		Cost:         cost,
 		Operation:    operation,
 	})
-	lt.save()
+	lt.markDirty()
 }
 
 // Stats computes the current live statistics.
@@ -387,7 +422,7 @@ func (lt *LiveTracker) SetBudget(amount float64) {
 	lt.mu.Lock()
 	defer lt.mu.Unlock()
 	lt.budget = amount
-	lt.save()
+	lt.markDirty()
 }
 
 // GetBudget returns the current budget setting.
@@ -410,12 +445,13 @@ func (lt *LiveTracker) load() {
 	}
 }
 
-func (lt *LiveTracker) save() {
-	data, _ := json.MarshalIndent(lt.snapshots, "", "  ")
-	os.WriteFile(filepath.Join(lt.dir, "live.json"), data, 0644)
-
-	bdata, _ := json.MarshalIndent(map[string]float64{"budget": lt.budget}, "", "  ")
-	os.WriteFile(filepath.Join(lt.dir, "budget.json"), bdata, 0644)
+// markDirty tells the persistence store that both live and budget keys need flushing.
+// Must be called with lt.mu held (write lock).
+func (lt *LiveTracker) markDirty() {
+	if lt.pstore != nil {
+		lt.pstore.Dirty("live")
+		lt.pstore.Dirty("budget")
+	}
 }
 
 func daysInMonth(year, month int) int {

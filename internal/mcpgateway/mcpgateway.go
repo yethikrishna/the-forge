@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/forge/sword/internal/persistence"
 )
 
 // ProtocolVersion is the supported MCP protocol version.
@@ -96,6 +98,7 @@ type Gateway struct {
 	rateLimits map[string]*rateLimitEntry
 	audit      []AuditEntry
 	maxAudit   int
+	pstore     *persistence.Store
 }
 
 // NewGateway creates a new governed MCP gateway.
@@ -111,7 +114,39 @@ func NewGateway(dir string, config GatewayConfig) (*Gateway, error) {
 		maxAudit:   1000,
 	}
 	g.load()
+
+	ps, err := persistence.Open(dir)
+	if err != nil {
+		return nil, fmt.Errorf("mcpgateway: open persistence store: %w", err)
+	}
+	g.pstore = ps
+	ps.Register("audit", func() ([]byte, error) {
+		g.mu.RLock()
+		defer g.mu.RUnlock()
+		return json.MarshalIndent(g.audit, "", "  ")
+	})
+	ps.Register("config", func() ([]byte, error) {
+		g.mu.RLock()
+		defer g.mu.RUnlock()
+		return json.MarshalIndent(g.config, "", "  ")
+	})
 	return g, nil
+}
+
+// Close flushes pending writes and stops the background syncer.
+func (g *Gateway) Close() error {
+	if g.pstore != nil {
+		return g.pstore.Close()
+	}
+	return nil
+}
+
+// Flush forces an immediate write of all dirty keys to disk.
+func (g *Gateway) Flush() error {
+	if g.pstore != nil {
+		return g.pstore.Flush()
+	}
+	return nil
 }
 
 // GatewayRequest is an incoming request through the gateway.
@@ -326,7 +361,7 @@ func (g *Gateway) auditLog(entry AuditEntry) {
 	if len(g.audit) > g.maxAudit {
 		g.audit = g.audit[len(g.audit)-g.maxAudit:]
 	}
-	g.save()
+	g.markDirty()
 }
 
 // GetAudit returns audit log, optionally filtered.
@@ -428,7 +463,7 @@ func (g *Gateway) UpdateConfig(config GatewayConfig) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.config = config
-	g.save()
+	g.markDirty()
 }
 
 // GetConfig returns the current configuration.
@@ -450,7 +485,7 @@ func (g *Gateway) PurgeAudit() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 	g.audit = make([]AuditEntry, 0)
-	g.save()
+	g.markDirty()
 }
 
 func (g *Gateway) load() {
@@ -464,12 +499,13 @@ func (g *Gateway) load() {
 	}
 }
 
-func (g *Gateway) save() {
-	data, _ := json.MarshalIndent(g.audit, "", "  ")
-	os.WriteFile(filepath.Join(g.dir, "audit.json"), data, 0644)
-
-	cdata, _ := json.MarshalIndent(g.config, "", "  ")
-	os.WriteFile(filepath.Join(g.dir, "config.json"), cdata, 0644)
+// markDirty tells the persistence store that audit and config keys need flushing.
+// Must be called with g.mu held (write lock).
+func (g *Gateway) markDirty() {
+	if g.pstore != nil {
+		g.pstore.Dirty("audit")
+		g.pstore.Dirty("config")
+	}
 }
 
 // FormatAuditEntry formats an audit entry for display.
