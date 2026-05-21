@@ -1,7 +1,7 @@
 // Package costoptimizer provides cost optimization for AI agent workloads.
 // Analyzes spending patterns, recommends model switches, caches expensive
 // queries, and enforces budgets. Like a financial advisor for AI costs.
-package costoptimizer
+package optimizer
 
 import (
 	"encoding/json"

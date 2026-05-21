@@ -1,4 +1,4 @@
-package costoptimizer
+package optimizer
 
 import (
 	"strings"
