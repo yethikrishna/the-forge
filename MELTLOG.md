@@ -130,3 +130,25 @@
 - 86 cmd files
 - Version: 1.1.0
 - Build: ✅ Vet: ✅ All tests: ✅
+
+## Session 2026-05-20 23:50 UTC — Phase 4 P0 Features
+
+### Added
+1. **internal/traces** — OpenTelemetry trace viewing and export (Jaeger, Zipkin, OTLP JSON formats)
+2. **internal/mcpcompose** — MCP Tool Composer (compose multiple MCP servers behind one Forge gateway)
+3. **internal/localinit** — Zero-cloud local model presets (Ollama DeepSeek/Qwen/Command A+/Llama/Mixtral + LM Studio)
+4. **cmd/traces.go** — `forge traces` command (list, show, export, stats, delete)
+5. **cmd/traces.go** — `forge mcp-compose` command (serve, list-servers, list-tools, health, init-config)
+6. **cmd/traces.go** — `forge local` command (list presets, init with preset)
+7. **internal/sandbox** — Added Language type, SupportedLanguages, IsAvailable, Config, Executor, Execute method
+
+### Fixed
+- Fixed sandbox package missing types (Language, Config, Executor, Execute) that cmd/exec.go and cmd/status.go depended on
+- Fixed sandbox Config.Network field type to match usage
+
+### Stats
+- Lines: ~97K total Go (+6K)
+- 133 internal packages (+6: traces, mcpcompose, localinit)
+- 99 cmd files (+3: traces, mcp-compose, local)
+- Build: ✅ Vet: ✅ All tests: ✅
+- Version: 1.1.0

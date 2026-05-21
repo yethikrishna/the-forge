@@ -193,9 +193,9 @@ All 18 utility packages implemented and tested.
 *Updated 2026-05-20 23:14 UTC — trend analysis run 3*
 
 ### P0 — This Week
-- [ ] **MCP Tool Composer** — combine multiple MCP servers behind one Forge gateway (in progress, ship it)
-- [ ] **`forge traces` CLI** — OpenTelemetry spans exist; add trace viewer + Jaeger/Zipkin export
-- [ ] **`forge init --local`** — one-command preset: Ollama + DeepSeek/Qwen/Command A+. Zero cloud.
+- [x] **MCP Tool Composer** — combine multiple MCP servers behind one Forge gateway (in progress, ship it)
+- [x] **`forge traces` CLI** — OpenTelemetry spans exist; add trace viewer + Jaeger/Zipkin export
+- [x] **`forge init --local`** — one-command preset: Ollama + DeepSeek/Qwen/Command A+. Zero cloud.
 
 ### P0 — Next 2 Weeks
 - [ ] **Sub-Agent Spawning** — agents spawn sub-agents for parallel tasks (parity with Antigravity 2.0)
