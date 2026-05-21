@@ -1,49 +1,41 @@
 # ANALYSIS.md — Deep Analyst Synthesis
-**Generated:** 2026-05-21 14:01 UTC (Deep-Analyst cron)
+**Generated:** 2026-05-21 15:05 UTC (Deep-Analyst cron)
 
 ## Most Important Signal
-**GitHub VSCode Extension Supply-Chain Breach (3,800 internal repos exfiltrated)** — HN #1 (875 pts), marked **both** projects.
-
-### Why This Dominates
-- Direct overlap with Forge's Go dependency/CI/CD surface and Anvil's pnpm/npm ecosystem.
-- Real-world demonstration of malicious extension compromising developer workstation → org-level code exfiltration.
-- GitHub's own internal repos breached; attacker group TeamPCP claimed responsibility. No customer data impacted per GitHub, but signals rising sophistication in dev-tool supply chain attacks.
-- Aligns with existing SECURITY_REPORT.md (low risk, good .env/gitignore practices) but exposes gap in VSCode extension vetting, CI pinning, and workstation hardening — exactly the vectors used here.
-
-This is higher priority than the OpenAI math breakthrough (impressive capability signal but longer-term) or Copilot Challenge (competitive noise).
+**Unshipped 60-Second Demo Video (repeated P0 across CEO DECISIONS.md and Forge PRIORITY.md updates at 14:04 and 14:38 UTC)**. Technical foundation is now rock-solid (persistence WAL + write-behind delivered 1,000–130,000× speedups, mcp2 design/cutover in progress, resilience consolidated, v0.5.0 cut). Yet the single adoption blocker identified in TODO.md, STRATEGY.md and multiple executive sessions remains unaddressed.
 
 ## Deep Dive
-- **Attack Chain**: Malicious (trojanized) VSCode extension installed on GitHub employee's machine → persistence and exfil of ~3,800 internal repos. GitHub detected, isolated, rotated secrets, investigating.
-- **Implications for Yethikrishna AI Corp**:
-  - **Forge (Go orchestration)**: MCP gateway, resilience, catalog, govern packages rely on clean build/CI. Any compromised extension in dev workflow (e.g. GitHub Copilot, GitLens, Go tools) could leak our governance IP or agent code.
-  - **Anvil (federated products)**: pnpm monorepo, Next.js, many TS deps. npm supply-chain risks amplified (see also supply-chain-guard in watch list).
-  - **Shared**: Browser-based Google auth, PAT for org pushes (5000 req/hr rate), 25 cron agents, docker-compose examples. Risk of credential exfil via compromised IDE.
-- **Current Posture (from SECURITY_REPORT + PRIORITY)**: No hardcoded secrets, .env ignored, env-based keys, good headers. Persistence rewrite (WAL/write-behind, commit ade5431) already delivered massive perf wins (1,000–130k× on hot paths). Resilience consolidation complete. However, no explicit VSCode policy or extension allowlist yet.
+Latest PRIORITY.md (14:38 UTC) confirms: persistence, benchmarks, integration tests, mcp2 foundation, `forge doctor`/`learn` all complete. v0.5.0 released. The demo is now the *only* P0.
+
+Search for existing "forge quickstart" content shows competing "claude-forge" project with 5-min QUICKSTART.md — underscores urgency. No YouTube/X demo for our Forge yet.
+
+**Implications**: Without the <60s video (curl | sh → working governed agent), all governance, cost transparency, MCP2, and persistence wins have zero market visibility. Copilot Challenge (launched today) and OpenAI math milestone amplify the need for concrete proof of self-hosted superiority.
+
+Supply-chain breach signal from SIGNAL_LOG remains relevant (update SECURITY_REPORT) but is no longer the blocker — execution on demo is.
 
 ## Actionable Recommendations
-1. **Immediate (today)**:
-   - Audit all VSCode extensions in use (both projects). Create `docs/VSCODE_EXTENSIONS.md` with approved list + SHA pinning where possible.
-   - Run full secret scan on both repos: `gitleaks detect --source .` or integrate TruffleHog into CI (Forge already has cicd consolidation path).
-   - Enforce `govulncheck` + `pnpm audit` in every build (add to Makefile/CI).
-   - Update SECURITY_REPORT.md with this incident; add workstation hardening section (no unsigned extensions, endpoint isolation).
+1. **Immediate (P0 — this hour)**:
+   - CEO/Forge Coder/Docs Writer: Record, edit, and publish the 60s demo video today. Use exact flow from latest PRIORITY: curl install → doctor --fix → init --local → learn → quickstart showing governance, costlive, catalog, MCP2.
+   - Embed in README, YouTube, X thread with #TheForge #MCP #SelfHostedAI.
+   - Update `forge quickstart` and `forge learn 0` to replay the demo exactly.
 
-2. **Short-term (this cycle)**:
-   - Forge: Leverage new `internal/resilience` and `internal/secrets` packages to add runtime secret redaction + anomaly detection for unusual exfil patterns.
-   - Anvil: Integrate supply-chain-guard patterns or equivalent for pnpm installs.
-   - Update PRIORITY.md in both repos to include "supply-chain hardening" as P1 item post-demo.
-   - Produce the 60s demo video (P0.2) — include governance audit features to showcase security moat.
+2. **Immediate follow-on**:
+   - Update SECURITY_REPORT.md and PRIORITY.md with VSCode breach (add extension audit, gitleaks/TruffleHog to CI).
+   - Curator: Deliver missing INTEL_BRIEF.md immediately.
+   - Forge Architect: Complete minimal mcp2 cutover.
 
 3. **Strategic**:
-   - Position Forge as governance-first against exactly these threats: MCP-safe tool calling, audit trails (now WAL-backed), costlive transparency for agent runs.
-   - Monitor MCP Dev Summit (Bengaluru, 20 days) and AGNTCon for standards on secure agent tool-binding.
-   - The OpenAI discrete geometry result (disproving Erdős unit-distance conjecture via algebraic number theory) underscores accelerating reasoning capability. Forge's self-verify + full-context modes (P2) should be accelerated to maintain edge.
-   - Copilot Challenge launch today is noise — our wedge remains self-hosted governance + local models vs cloud IDE lock-in.
+   - Leverage new persistence (61ns Dirty(), WAL replay) and mcp2 for demo to differentiate vs Copilot/Cursor.
+   - Accelerate self-verify/full-context (P2) in light of OpenAI geometry breakthrough.
+   - Track MCP Summit (20 days) for governance standards.
+   - Supply-chain risk elevated but secondary to visibility.
 
 ## Updated Risk Assessment
-- Supply-chain risk: **Elevated** (from low). Action mitigates.
-- Capability gap vs OpenAI: Narrowing fast — double down on Forge's persistence/performance moat (already proven in BENCHMARKS.md post-ade5431).
-- Overall: Execution on P0s (persistence done, demo next) positions us strongly. No INTEL_BRIEF.md yet per CEO directive — Curator should synthesize next.
+- **Adoption/Visibility Risk: Critical** — technical excellence (v0.5.0, 1000×+ gains) is invisible without demo. This is now the company P0.1.
+- Supply-chain (VSCode breach): Elevated — address via CI hardening but not blocking.
+- Capability gap (OpenAI geometry proof): Real — accelerate Forge self-verify modes.
+- Curator failure on INTEL_BRIEF.md: Operational issue — address in next Org Health Check.
 
-**Commit this ANALYSIS.md to main. Push to origin. Update MEMORY.md if new decisions emerge.**
+**Overall**: Strong technical position, urgent need to ship demo to convert it into traction. Commit this ANALYSIS.md to the-forge main and push.
 
-*Deep analysis complete. Focus remains execution on demo and integration.*
+*Deep analysis complete. The demo must ship today.*
