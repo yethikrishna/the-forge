@@ -289,3 +289,45 @@
 - **Internal packages:** ~155
 - **Commands:** ~130
 - **Build:** ✅ **Vet:** ✅ **All Tests:** ✅
+
+## Session 2025-05-21 — Package Consolidation Wave 2 + New Features
+
+### Package Consolidation (19 groups merged)
+1. `errcode` + `errteach` + `errorexplain` → `internal/errors` (catalog, teach, explain)
+2. `circuit` + `ratelimit` + `runaway` + `anomaly` + `outage` + `selfheal` → `internal/resilience`
+3. `snapshot` + `undo` + `graceful` + `shutdown` → `internal/safety`
+4. `eval` + `agenttest` + `abtest` → `internal/eval2` (benchmark, agenttest, abtest)
+5. `dream` + `breed` + `tune` → `internal/optimize`
+6. `mcp` + `mcpcompose` + `mcpdiscover` → `internal/mcp2` (server, compose, discover)
+7. `archaeologist` → `internal/lineage/forensics`
+8. `debate` → `internal/consensus/debate`
+9. `bigdur` + `timer` → `internal/duration` (bigdur, timer)
+10. `flog` → `internal/slog/flog`
+11. `clistat` + `resource` + `monitor` → `internal/system`
+12. `feedback` + `empath` + `achievement` → `internal/experience`
+13. `filelock` + `worktree` → `internal/gitutil`
+14. `costoptimizer` → `internal/cost/optimizer`
+15. `rbac` + `sso` + `identity` → `internal/auth` (rbac, sso, identity)
+16. `forgeci` → `internal/cicd/forgeci`
+17. `rubric` → `internal/quality/rubric`
+18. `scanhooks` → `internal/sandbox/scanhooks`
+19. `prompttest` → `internal/prompt/prompttest`
+
+### New Features
+- **forge refactor** — dependency-aware refactoring with migration plans, impact analysis, step-by-step execution
+- **forge selftest** — agent self-diagnostic: runtime, memory, goroutines, disk, build, modules, DNS, CGO
+
+### Bug Fixes
+- Fixed `FormatServerInfo` test whitespace alignment in mcp2/server
+- Fixed deadlock in refactor Engine (AnalyzeImpact vs CreatePlan mutex)
+- Fixed `quantum/quantum.go` scored variable shadowing type name
+- Fixed `cmd/quantum_cmd.go` (context import, rootCmd reference)
+- Fixed `cmd/correlate_cmd.go` rootCmd reference
+- Fixed `cmd/stag.go` Tag struct usage
+- Fixed duplicate `splitKV` function in prompt_reg.go
+- Fixed `promptCmd` function vs variable in root.go
+- Removed duplicate `cmd/prompt_cmd.go`
+
+### Stats
+- Internal packages: ~167 → ~142
+- Build and vet: clean
