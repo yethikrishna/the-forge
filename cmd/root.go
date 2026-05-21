@@ -169,7 +169,7 @@ The wielder and the sword are one.`,
 		cloneBehaviorCmd,
 		qualityCorpusCmd,
 		livedebugCmd,
-		livedebugCmd,
+		experimentCmd,
 		refactorCmd,
 		selftestCmd,
 	)

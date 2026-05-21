@@ -20,7 +20,33 @@ var experimentCmd = &cobra.Command{
 var experimentEngine = experiment.NewEngine()
 
 func init() {
-	experimentCmd.AddCommand(experimentCreateCmd) {
+	experimentCmd.AddCommand(experimentCreateCmd)
+	experimentCmd.AddCommand(experimentAddVariantCmd)
+	experimentCmd.AddCommand(experimentStartCmd)
+	experimentCmd.AddCommand(experimentRecordCmd)
+	experimentCmd.AddCommand(experimentAnalyzeCmd)
+	experimentCmd.AddCommand(experimentDecideCmd)
+	experimentCmd.AddCommand(experimentListCmd)
+	experimentCmd.AddCommand(experimentShowCmd)
+	experimentCmd.AddCommand(experimentCompleteCmd)
+	experimentCmd.AddCommand(experimentPauseCmd)
+	experimentCmd.AddCommand(experimentResumeCmd)
+	experimentCmd.AddCommand(experimentExportCmd)
+
+	experimentCreateCmd.Flags().String("description", "", "Experiment description")
+	experimentCreateCmd.Flags().String("metrics", "quality:high:0.7:score,cost:low:0.3:$", "Metrics as name:direction:weight:unit")
+	experimentCreateCmd.Flags().Int("min-samples", 30, "Minimum samples per variant")
+	experimentCreateCmd.Flags().StringSlice("tags", nil, "Tags for the experiment")
+
+	experimentAddVariantCmd.Flags().Bool("control", false, "Mark as control variant")
+	experimentAddVariantCmd.Flags().String("config", "", "Variant config as JSON")
+
+	experimentRecordCmd.Flags().String("metrics", "", "Metric values as name=value,name2=value2")
+
+	experimentExportCmd.Flags().String("output", "", "Output file path")
+}
+
+func parseMetrics(flag string) []experiment.Metric {
 	var metrics []experiment.Metric
 	for _, m := range strings.Split(flag, ",") {
 		parts := strings.Split(strings.TrimSpace(m), ":")
@@ -53,7 +79,6 @@ func init() {
 	return metrics
 }
 
-// experiment create
 var experimentCreateCmd = &cobra.Command{
 	Use:   "create [name]",
 	Short: "Create a new experiment",
@@ -84,7 +109,6 @@ var experimentCreateCmd = &cobra.Command{
 	},
 }
 
-// experiment add-variant
 var experimentAddVariantCmd = &cobra.Command{
 	Use:   "add-variant [experiment-id] [name]",
 	Short: "Add a variant to an experiment",
@@ -113,7 +137,6 @@ var experimentAddVariantCmd = &cobra.Command{
 	},
 }
 
-// experiment start
 var experimentStartCmd = &cobra.Command{
 	Use:   "start [experiment-id]",
 	Short: "Start an experiment",
@@ -127,7 +150,6 @@ var experimentStartCmd = &cobra.Command{
 	},
 }
 
-// experiment record
 var experimentRecordCmd = &cobra.Command{
 	Use:   "record [experiment-id] [variant-id]",
 	Short: "Record an observation for a variant",
@@ -159,7 +181,6 @@ var experimentRecordCmd = &cobra.Command{
 	},
 }
 
-// experiment analyze
 var experimentAnalyzeCmd = &cobra.Command{
 	Use:   "analyze [experiment-id]",
 	Short: "Analyze experiment results",
@@ -186,7 +207,6 @@ var experimentAnalyzeCmd = &cobra.Command{
 	},
 }
 
-// experiment decide
 var experimentDecideCmd = &cobra.Command{
 	Use:   "decide [experiment-id]",
 	Short: "Make a final decision on an experiment",
@@ -206,7 +226,6 @@ var experimentDecideCmd = &cobra.Command{
 	},
 }
 
-// experiment list
 var experimentListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all experiments",
@@ -217,7 +236,7 @@ var experimentListCmd = &cobra.Command{
 			return nil
 		}
 
-		fmt.Printf("%-20s %-30s %-10s %-8s %-8s\n", "ID", "NAME", "STATUS", "VARIANTS", "OBSERVATIONS")
+		fmt.Printf("%-20s %-30s %-10s %-8s %-8s\n", "ID", "NAME", "STATUS", "VARIANTS", "OBS")
 		for _, exp := range experiments {
 			totalObs := 0
 			for _, v := range exp.Variants {
@@ -230,7 +249,6 @@ var experimentListCmd = &cobra.Command{
 	},
 }
 
-// experiment show
 var experimentShowCmd = &cobra.Command{
 	Use:   "show [experiment-id]",
 	Short: "Show experiment details",
@@ -291,7 +309,6 @@ var experimentShowCmd = &cobra.Command{
 	},
 }
 
-// experiment complete
 var experimentCompleteCmd = &cobra.Command{
 	Use:   "complete [experiment-id]",
 	Short: "Mark an experiment as completed",
@@ -305,7 +322,6 @@ var experimentCompleteCmd = &cobra.Command{
 	},
 }
 
-// experiment pause
 var experimentPauseCmd = &cobra.Command{
 	Use:   "pause [experiment-id]",
 	Short: "Pause a running experiment",
@@ -321,7 +337,6 @@ var experimentPauseCmd = &cobra.Command{
 	},
 }
 
-// experiment resume
 var experimentResumeCmd = &cobra.Command{
 	Use:   "resume [experiment-id]",
 	Short: "Resume a paused experiment",
@@ -340,7 +355,6 @@ var experimentResumeCmd = &cobra.Command{
 	},
 }
 
-// experiment export
 var experimentExportCmd = &cobra.Command{
 	Use:   "export [experiment-id]",
 	Short: "Export experiment data as JSON",
@@ -363,31 +377,4 @@ var experimentExportCmd = &cobra.Command{
 		fmt.Println(string(data))
 		return nil
 	},
-}
-
-func init() {
-	experimentCmd.AddCommand(experimentCreateCmd)
-	experimentCmd.AddCommand(experimentAddVariantCmd)
-	experimentCmd.AddCommand(experimentStartCmd)
-	experimentCmd.AddCommand(experimentRecordCmd)
-	experimentCmd.AddCommand(experimentAnalyzeCmd)
-	experimentCmd.AddCommand(experimentDecideCmd)
-	experimentCmd.AddCommand(experimentListCmd)
-	experimentCmd.AddCommand(experimentShowCmd)
-	experimentCmd.AddCommand(experimentCompleteCmd)
-	experimentCmd.AddCommand(experimentPauseCmd)
-	experimentCmd.AddCommand(experimentResumeCmd)
-	experimentCmd.AddCommand(experimentExportCmd)
-
-	experimentCreateCmd.Flags().String("description", "", "Experiment description")
-	experimentCreateCmd.Flags().String("metrics", "quality:high:0.7:score,cost:low:0.3:$", "Metrics as name:direction:weight:unit")
-	experimentCreateCmd.Flags().Int("min-samples", 30, "Minimum samples per variant")
-	experimentCreateCmd.Flags().StringSlice("tags", nil, "Tags for the experiment")
-
-	experimentAddVariantCmd.Flags().Bool("control", false, "Mark as control variant")
-	experimentAddVariantCmd.Flags().String("config", "", "Variant config as JSON")
-
-	experimentRecordCmd.Flags().String("metrics", "", "Metric values as name=value,name2=value2")
-
-	experimentExportCmd.Flags().String("output", "", "Output file path")
 }

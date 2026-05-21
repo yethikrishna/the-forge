@@ -1,10 +1,13 @@
-// Package navigate provides semantic code navigation using codegraph
-// indices and LLM intent understanding. It supports symbol search,
-// definition jumping, reference finding, and call hierarchy traversal.
+// Package navigate provides semantic code navigation using codebase indexing
+// and LLM-intent understanding. Unlike grep or basic search, navigate
+// understands code structure: functions, types, interfaces, imports,
+// call chains, and cross-file relationships.
+//
+// Find anything, understand everything.
 package navigate
 
 import (
-	"context"
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,7 +18,7 @@ import (
 	"time"
 )
 
-// SymbolKind represents the type of a code symbol.
+// SymbolKind classifies a code symbol.
 type SymbolKind string
 
 const (
@@ -24,724 +27,600 @@ const (
 	KindType      SymbolKind = "type"
 	KindInterface SymbolKind = "interface"
 	KindStruct    SymbolKind = "struct"
-	KindVariable  SymbolKind = "variable"
-	KindConstant  SymbolKind = "constant"
+	KindConst     SymbolKind = "const"
+	KindVar       SymbolKind = "var"
 	KindPackage   SymbolKind = "package"
+	KindImport    SymbolKind = "import"
 	KindField     SymbolKind = "field"
 	KindEnum      SymbolKind = "enum"
+	KindTrait     SymbolKind = "trait"
+	KindClass     SymbolKind = "class"
 )
 
-// Symbol represents a code symbol (function, type, variable, etc.).
+// Symbol represents a navigable code symbol.
 type Symbol struct {
 	Name      string     `json:"name"`
 	Kind      SymbolKind `json:"kind"`
-	Package   string     `json:"package,omitempty"`
 	File      string     `json:"file"`
 	Line      int        `json:"line"`
-	Column    int        `json:"column"`
+	EndLine   int        `json:"end_line"`
+	Package   string     `json:"package,omitempty"`
 	Signature string     `json:"signature,omitempty"`
 	Doc       string     `json:"doc,omitempty"`
-	Exported  bool       `json:"exported"`
-	Receiver  string     `json:"receiver,omitempty"` // for methods
+	Receivers []string   `json:"receivers,omitempty"` // Go: method receivers
+	Exports   bool       `json:"exports"`
+	Children  []string   `json:"children,omitempty"` // child symbol IDs
 }
 
-// Reference represents a reference to a symbol.
+// Reference represents a usage/reference of a symbol.
 type Reference struct {
-	SymbolName string `json:"symbol_name"`
-	File       string `json:"file"`
-	Line       int    `json:"line"`
-	Column     int    `json:"column"`
-	Context    string `json:"context,omitempty"` // surrounding line text
-	Kind       string `json:"kind"`              // "definition", "call", "import", "type_use"
+	SymbolID string `json:"symbol_id"`
+	File     string `json:"file"`
+	Line     int    `json:"line"`
+	Kind     string `json:"kind"` // "call", "type-ref", "import", "assign"
 }
 
-// CallEdge represents an edge in the call graph.
+// CallEdge represents a call relationship.
 type CallEdge struct {
-	Caller    Symbol `json:"caller"`
-	Callee    Symbol `json:"callee"`
-	File      string `json:"file"`
-	Line      int    `json:"line"`
-	Indirect  bool   `json:"indirect"` // via interface
+	From string `json:"from"` // caller symbol ID
+	To   string `json:"to"`   // callee symbol ID
+	File string `json:"file"`
+	Line int    `json:"line"`
+}
+
+// Index holds the navigable code index.
+type Index struct {
+	Symbols    map[string]*Symbol    `json:"symbols"`    // ID → Symbol
+	References map[string][]Reference `json:"references"` // symbol ID → references
+	Calls      []CallEdge            `json:"calls"`
+	FileIndex  map[string][]string   `json:"file_index"` // file → symbol IDs
+	RootDir    string                `json:"root_dir"`
+	Language   string                `json:"language"`
+	UpdatedAt  time.Time             `json:"updated_at"`
 }
 
 // Navigator provides semantic code navigation.
 type Navigator struct {
-	mu        sync.RWMutex
-	root      string
-	symbols   map[string][]Symbol    // name -> symbols
-	byFile    map[string][]Symbol    // file -> symbols
-	refs      map[string][]Reference // symbol name -> references
-	callGraph []CallEdge
-	indexTime time.Time
-	languages map[string]bool // detected languages
+	mu      sync.RWMutex
+	index   *Index
+	rootDir string
 }
 
-// New creates a new Navigator for the given project root.
-func New(root string) *Navigator {
+// NewNavigator creates a new code navigator.
+func NewNavigator(rootDir string) *Navigator {
 	return &Navigator{
-		root:      root,
-		symbols:   make(map[string][]Symbol),
-		byFile:    make(map[string][]Symbol),
-		refs:      make(map[string][]Reference),
-		languages: make(map[string]bool),
+		rootDir: rootDir,
+		index: &Index{
+			Symbols:    make(map[string]*Symbol),
+			References: make(map[string][]Reference),
+			Calls:      make([]CallEdge, 0),
+			FileIndex:  make(map[string][]string),
+			RootDir:    rootDir,
+		},
 	}
 }
 
-// Index scans the project and builds the navigation index.
-func (n *Navigator) Index(ctx context.Context) error {
-	start := time.Now()
+// IndexDir indexes all Go files in the directory tree.
+func (n *Navigator) IndexDir() (*Index, error) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
-	// Clear existing index
-	n.symbols = make(map[string][]Symbol)
-	n.byFile = make(map[string][]Symbol)
-	n.refs = make(map[string][]Reference)
-	n.callGraph = nil
-	n.languages = make(map[string]bool)
+	n.index = &Index{
+		Symbols:    make(map[string]*Symbol),
+		References: make(map[string][]Reference),
+		Calls:      make([]CallEdge, 0),
+		FileIndex:  make(map[string][]string),
+		RootDir:    n.rootDir,
+		UpdatedAt:  time.Now(),
+	}
 
-	// Walk the project tree
-	err := filepath.WalkDir(n.root, func(path string, d os.DirEntry, err error) error {
+	err := filepath.WalkDir(n.rootDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
-		if ctx.Err() != nil {
-			return ctx.Err()
-		}
-
-		// Skip hidden and vendor dirs
-		name := d.Name()
 		if d.IsDir() {
-			if strings.HasPrefix(name, ".") || name == "vendor" || name == "node_modules" || name == "__pycache__" {
+			// Skip common non-code directories
+			base := filepath.Base(path)
+			if base == ".git" || base == "vendor" || base == "node_modules" ||
+				base == "__pycache__" || base == ".venv" || base == "dist" ||
+				base == "build" || base == "bin" {
 				return filepath.SkipDir
 			}
 			return nil
 		}
 
-		ext := filepath.Ext(name)
+		ext := filepath.Ext(path)
 		switch ext {
 		case ".go":
-			n.languages["go"] = true
-			return n.indexGoFile(path)
+			n.indexGoFile(path)
 		case ".py":
-			n.languages["python"] = true
-			return n.indexPythonFile(path)
+			n.indexPythonFile(path)
 		case ".ts", ".tsx":
-			n.languages["typescript"] = true
-			return n.indexTSFile(path)
-		case ".js", ".jsx":
-			n.languages["javascript"] = true
-			return n.indexJSFile(path)
+			n.indexTypeScriptFile(path)
 		case ".rs":
-			n.languages["rust"] = true
-			return n.indexRustFile(path)
+			n.indexRustFile(path)
 		}
 		return nil
 	})
 
-	n.indexTime = time.Now()
-	_ = start
-	return err
+	if err != nil {
+		return nil, fmt.Errorf("walking directory: %w", err)
+	}
+
+	return n.index, nil
 }
 
-// indexGoFile indexes symbols from a Go source file.
-func (n *Navigator) indexGoFile(path string) error {
-	data, err := os.ReadFile(path)
+// Go symbol patterns
+var (
+	goFuncRe    = regexp.MustCompile(`^func\s+(?:\([^)]+\)\s+)?(\w+)\s*\(`)
+	goMethodRe  = regexp.MustCompile(`^func\s+\(([^)]+)\)\s+(\w+)\s*\(`)
+	goTypeRe    = regexp.MustCompile(`^type\s+(\w+)\s+(struct|interface)`)
+	goConstRe   = regexp.MustCompile(`^const\s+(\w+)`)
+	goVarRe     = regexp.MustCompile(`^var\s+(\w+)`)
+	goPackageRe = regexp.MustCompile(`^package\s+(\w+)`)
+	goImportRe  = regexp.MustCompile(`"([^"]+)"`)
+)
+
+// Python symbol patterns
+var (
+	pyFuncRe   = regexp.MustCompile(`^def\s+(\w+)\s*\(`)
+	pyClassRe  = regexp.MustCompile(`^class\s+(\w+)`)
+	pyImportRe = regexp.MustCompile(`^(?:from|import)\s+([\w.]+)`)
+)
+
+// TypeScript symbol patterns
+var (
+	tsFuncRe      = regexp.MustCompile(`(?:export\s+)?(?:async\s+)?function\s+(\w+)\s*\(`)
+	tsClassRe     = regexp.MustCompile(`(?:export\s+)?(?:abstract\s+)?class\s+(\w+)`)
+	tsInterfaceRe = regexp.MustCompile(`(?:export\s+)?interface\s+(\w+)`)
+	tsConstRe     = regexp.MustCompile(`(?:export\s+)?const\s+(\w+)`)
+	tsTypeRe      = regexp.MustCompile(`(?:export\s+)?type\s+(\w+)`)
+)
+
+// Rust symbol patterns
+var (
+	rsFuncRe  = regexp.MustCompile(`(?:pub\s+)?(?:async\s+)?fn\s+(\w+)`)
+	rsStructRe = regexp.MustCompile(`(?:pub\s+)?struct\s+(\w+)`)
+	rsEnumRe   = regexp.MustCompile(`(?:pub\s+)?enum\s+(\w+)`)
+	rsTraitRe  = regexp.MustCompile(`(?:pub\s+)?trait\s+(\w+)`)
+	rsImplRe   = regexp.MustCompile(`impl\s+(?:<[^>]+>\s+)?(\w+)`)
+)
+
+func (n *Navigator) indexGoFile(path string) {
+	file, err := os.Open(path)
 	if err != nil {
-		return nil
+		return
 	}
-	content := string(data)
-	relPath, _ := filepath.Rel(n.root, path)
-	pkg := n.extractGoPackage(content)
+	defer file.Close()
 
-	lines := strings.Split(content, "\n")
+	relPath, _ := filepath.Rel(n.rootDir, path)
+	pkgName := ""
+	scanner := bufio.NewScanner(file)
+	lineNum := 0
 
-	// Match function declarations
-	funcRe := regexp.MustCompile(`^func\s+(?:\((\w+)\s+\*?[\w.]+\)\s+)?(\w+)\s*\(([^)]*)\)`)
-	// Match type declarations
-	typeRe := regexp.MustCompile(`^type\s+(\w+)\s+(struct|interface|func\b|.+)`)
-	// Match var/const blocks
-	varRe := regexp.MustCompile(`^(?:var|const)\s+(\w+)\s+`)
+	for scanner.Scan() {
+		lineNum++
+		line := strings.TrimSpace(scanner.Text())
 
-	for i, line := range lines {
-		trimmed := strings.TrimSpace(line)
+		// Package
+		if m := goPackageRe.FindStringSubmatch(line); m != nil {
+			pkgName = m[1]
+			continue
+		}
 
-		if matches := funcRe.FindStringSubmatch(trimmed); matches != nil {
-			receiver := matches[1]
-			name := matches[2]
-			sig := matches[3]
-			kind := KindFunction
-			if receiver != "" {
-				kind = KindMethod
-			}
-			exported := name[0] >= 'A' && name[0] <= 'Z'
+		// Method (must check before func)
+		if m := goMethodRe.FindStringSubmatch(line); m != nil {
+			receiver := strings.TrimSpace(m[1])
+			methodName := m[2]
+			id := symbolID(relPath, lineNum)
+			exports := strings.HasPrefix(methodName, strings.ToUpper(string(methodName[0])))
 
-			sym := Symbol{
-				Name:      name,
-				Kind:      kind,
-				Package:   pkg,
+			n.index.Symbols[id] = &Symbol{
+				Name:      methodName,
+				Kind:      KindMethod,
 				File:      relPath,
-				Line:      i + 1,
-				Column:    strings.Index(trimmed, name) + 1,
-				Signature: "(" + sig + ")",
-				Exported:  exported,
-				Receiver:  receiver,
+				Line:      lineNum,
+				Package:   pkgName,
+				Signature: line,
+				Receivers: []string{receiver},
+				Exports:   exports,
 			}
-			// Get doc comment
-			if i > 0 {
-				for j := i - 1; j >= 0 && j > i-5; j-- {
-					if strings.HasPrefix(strings.TrimSpace(lines[j]), "//") {
-						sym.Doc = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(lines[j]), "//"))
-					} else {
-						break
-					}
-				}
-			}
-
-			n.addSymbol(sym)
-
-			// Find references (calls to this function)
-			if exported {
-				callRe := regexp.MustCompile(`\b` + regexp.QuoteMeta(name) + `\b`)
-				for fi, fcontent := range lines {
-					if fi == i {
-						continue
-					}
-					if callRe.MatchString(fcontent) {
-						n.addReference(Reference{
-							SymbolName: name,
-							File:       relPath,
-							Line:       fi + 1,
-							Column:     callRe.FindStringIndex(fcontent)[0] + 1,
-							Context:    strings.TrimSpace(fcontent),
-							Kind:       "call",
-						})
-					}
-				}
-			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
+			continue
 		}
 
-		if matches := typeRe.FindStringSubmatch(trimmed); matches != nil {
-			name := matches[1]
-			typeKind := matches[2]
-			kind := KindType
-			switch typeKind {
-			case "struct":
-				kind = KindStruct
-			case "interface":
-				kind = KindInterface
-			}
-			exported := name[0] >= 'A' && name[0] <= 'Z'
-			sym := Symbol{
-				Name:     name,
-				Kind:     kind,
-				Package:  pkg,
-				File:     relPath,
-				Line:     i + 1,
-				Column:   strings.Index(trimmed, name) + 1,
-				Exported: exported,
-			}
-			n.addSymbol(sym)
-		}
+		// Function
+		if m := goFuncRe.FindStringSubmatch(line); m != nil {
+			funcName := m[1]
+			id := symbolID(relPath, lineNum)
+			exports := strings.HasPrefix(funcName, strings.ToUpper(string(funcName[0])))
 
-		if matches := varRe.FindStringSubmatch(trimmed); matches != nil {
-			name := matches[1]
-			exported := name[0] >= 'A' && name[0] <= 'Z'
-			sym := Symbol{
-				Name:     name,
-				Kind:     KindVariable,
-				Package:  pkg,
-				File:     relPath,
-				Line:     i + 1,
-				Column:   strings.Index(trimmed, name) + 1,
-				Exported: exported,
-			}
-			n.addSymbol(sym)
-		}
-	}
-	return nil
-}
-
-// indexPythonFile indexes symbols from a Python source file.
-func (n *Navigator) indexPythonFile(path string) error {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil
-	}
-	content := string(data)
-	relPath, _ := filepath.Rel(n.root, path)
-	lines := strings.Split(content, "\n")
-
-	funcRe := regexp.MustCompile(`^def\s+(\w+)\s*\(([^)]*)\)`)
-	classRe := regexp.MustCompile(`^class\s+(\w+)`)
-
-	for i, line := range lines {
-		if matches := funcRe.FindStringSubmatch(line); matches != nil {
-			sym := Symbol{
-				Name:      matches[1],
+			n.index.Symbols[id] = &Symbol{
+				Name:      funcName,
 				Kind:      KindFunction,
 				File:      relPath,
-				Line:      i + 1,
-				Column:    strings.Index(line, matches[1]) + 1,
-				Signature: "(" + matches[2] + ")",
+				Line:      lineNum,
+				Package:   pkgName,
+				Signature: line,
+				Exports:   exports,
 			}
-			n.addSymbol(sym)
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
+			continue
 		}
-		if matches := classRe.FindStringSubmatch(line); matches != nil {
-			sym := Symbol{
-				Name:   matches[1],
-				Kind:   KindType,
-				File:   relPath,
-				Line:   i + 1,
-				Column: strings.Index(line, matches[1]) + 1,
+
+		// Type (struct/interface)
+		if m := goTypeRe.FindStringSubmatch(line); m != nil {
+			typeName := m[1]
+			kind := KindStruct
+			if m[2] == "interface" {
+				kind = KindInterface
 			}
-			n.addSymbol(sym)
+			id := symbolID(relPath, lineNum)
+
+			n.index.Symbols[id] = &Symbol{
+				Name:    typeName,
+				Kind:    kind,
+				File:    relPath,
+				Line:    lineNum,
+				Package: pkgName,
+				Exports: strings.HasPrefix(typeName, strings.ToUpper(string(typeName[0]))),
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
+			continue
+		}
+
+		// Const
+		if m := goConstRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name:    m[1],
+				Kind:    KindConst,
+				File:    relPath,
+				Line:    lineNum,
+				Package: pkgName,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
+			continue
+		}
+
+		// Var
+		if m := goVarRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name:    m[1],
+				Kind:    KindVar,
+				File:    relPath,
+				Line:    lineNum,
+				Package: pkgName,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
 		}
 	}
-	return nil
 }
 
-// indexTSFile indexes symbols from a TypeScript source file.
-func (n *Navigator) indexTSFile(path string) error {
-	data, err := os.ReadFile(path)
+func (n *Navigator) indexPythonFile(path string) {
+	file, err := os.Open(path)
 	if err != nil {
-		return nil
+		return
 	}
-	content := string(data)
-	relPath, _ := filepath.Rel(n.root, path)
-	lines := strings.Split(content, "\n")
+	defer file.Close()
 
-	funcRe := regexp.MustCompile(`(?:export\s+)?(?:async\s+)?function\s+(\w+)`)
-	classRe := regexp.MustCompile(`(?:export\s+)?(?:abstract\s+)?class\s+(\w+)`)
-	ifaceRe := regexp.MustCompile(`(?:export\s+)?interface\s+(\w+)`)
+	relPath, _ := filepath.Rel(n.rootDir, path)
+	pkgName := filepath.Dir(relPath)
+	scanner := bufio.NewScanner(file)
+	lineNum := 0
 
-	for i, line := range lines {
-		if matches := funcRe.FindStringSubmatch(line); matches != nil {
-			n.addSymbol(Symbol{Name: matches[1], Kind: KindFunction, File: relPath, Line: i + 1, Column: strings.Index(line, matches[1]) + 1})
-		}
-		if matches := classRe.FindStringSubmatch(line); matches != nil {
-			n.addSymbol(Symbol{Name: matches[1], Kind: KindStruct, File: relPath, Line: i + 1, Column: strings.Index(line, matches[1]) + 1})
-		}
-		if matches := ifaceRe.FindStringSubmatch(line); matches != nil {
-			n.addSymbol(Symbol{Name: matches[1], Kind: KindInterface, File: relPath, Line: i + 1, Column: strings.Index(line, matches[1]) + 1})
+	for scanner.Scan() {
+		lineNum++
+		line := strings.TrimSpace(line)
+
+		if m := pyClassRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name:    m[1],
+				Kind:    KindClass,
+				File:    relPath,
+				Line:    lineNum,
+				Package: pkgName,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
+		} else if m := pyFuncRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name:    m[1],
+				Kind:    KindFunction,
+				File:    relPath,
+				Line:    lineNum,
+				Package: pkgName,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
 		}
 	}
-	return nil
 }
 
-// indexJSFile indexes symbols from a JavaScript source file.
-func (n *Navigator) indexJSFile(path string) error {
-	data, err := os.ReadFile(path)
+func (n *Navigator) indexTypeScriptFile(path string) {
+	file, err := os.Open(path)
 	if err != nil {
-		return nil
+		return
 	}
-	content := string(data)
-	relPath, _ := filepath.Rel(n.root, path)
-	lines := strings.Split(content, "\n")
+	defer file.Close()
 
-	funcRe := regexp.MustCompile(`(?:export\s+)?(?:async\s+)?function\s+(\w+)`)
-	arrowRe := regexp.MustCompile(`(?:export\s+)?(?:const|let|var)\s+(\w+)\s*=\s*(?:async\s+)?\(`)
+	relPath, _ := filepath.Rel(n.rootDir, path)
+	scanner := bufio.NewScanner(file)
+	lineNum := 0
 
-	for i, line := range lines {
-		if matches := funcRe.FindStringSubmatch(line); matches != nil {
-			n.addSymbol(Symbol{Name: matches[1], Kind: KindFunction, File: relPath, Line: i + 1, Column: strings.Index(line, matches[1]) + 1})
-		}
-		if matches := arrowRe.FindStringSubmatch(line); matches != nil {
-			n.addSymbol(Symbol{Name: matches[1], Kind: KindFunction, File: relPath, Line: i + 1, Column: strings.Index(line, matches[1]) + 1})
+	for scanner.Scan() {
+		lineNum++
+		line := strings.TrimSpace(line)
+
+		if m := tsInterfaceRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name: m[1], Kind: KindInterface, File: relPath, Line: lineNum,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
+		} else if m := tsClassRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name: m[1], Kind: KindClass, File: relPath, Line: lineNum,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
+		} else if m := tsFuncRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name: m[1], Kind: KindFunction, File: relPath, Line: lineNum,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
+		} else if m := tsTypeRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name: m[1], Kind: KindType, File: relPath, Line: lineNum,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
+		} else if m := tsConstRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name: m[1], Kind: KindConst, File: relPath, Line: lineNum,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
 		}
 	}
-	return nil
 }
 
-// indexRustFile indexes symbols from a Rust source file.
-func (n *Navigator) indexRustFile(path string) error {
-	data, err := os.ReadFile(path)
+func (n *Navigator) indexRustFile(path string) {
+	file, err := os.Open(path)
 	if err != nil {
-		return nil
+		return
 	}
-	content := string(data)
-	relPath, _ := filepath.Rel(n.root, path)
-	lines := strings.Split(content, "\n")
+	defer file.Close()
 
-	funcRe := regexp.MustCompile(`(?:pub\s+)?(?:async\s+)?fn\s+(\w+)`)
-	structRe := regexp.MustCompile(`(?:pub\s+)?struct\s+(\w+)`)
-	enumRe := regexp.MustCompile(`(?:pub\s+)?enum\s+(\w+)`)
-	implRe := regexp.MustCompile(`impl\s+(?:<[^>]+>\s+)?(\w+)`)
+	relPath, _ := filepath.Rel(n.rootDir, path)
+	scanner := bufio.NewScanner(file)
+	lineNum := 0
 
-	for i, line := range lines {
-		if matches := funcRe.FindStringSubmatch(line); matches != nil {
-			n.addSymbol(Symbol{Name: matches[1], Kind: KindFunction, File: relPath, Line: i + 1, Column: strings.Index(line, matches[1]) + 1})
-		}
-		if matches := structRe.FindStringSubmatch(line); matches != nil {
-			n.addSymbol(Symbol{Name: matches[1], Kind: KindStruct, File: relPath, Line: i + 1, Column: strings.Index(line, matches[1]) + 1})
-		}
-		if matches := enumRe.FindStringSubmatch(line); matches != nil {
-			n.addSymbol(Symbol{Name: matches[1], Kind: KindEnum, File: relPath, Line: i + 1, Column: strings.Index(line, matches[1]) + 1})
-		}
-		if matches := implRe.FindStringSubmatch(line); matches != nil {
-			// impl blocks tracked as type references
-			_ = matches[1]
+	for scanner.Scan() {
+		lineNum++
+		line := strings.TrimSpace(line)
+
+		if m := rsTraitRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name: m[1], Kind: KindTrait, File: relPath, Line: lineNum,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
+		} else if m := rsStructRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name: m[1], Kind: KindStruct, File: relPath, Line: lineNum,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
+		} else if m := rsEnumRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name: m[1], Kind: KindEnum, File: relPath, Line: lineNum,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
+		} else if m := rsFuncRe.FindStringSubmatch(line); m != nil {
+			id := symbolID(relPath, lineNum)
+			n.index.Symbols[id] = &Symbol{
+				Name: m[1], Kind: KindFunction, File: relPath, Line: lineNum,
+			}
+			n.index.FileIndex[relPath] = append(n.index.FileIndex[relPath], id)
 		}
 	}
-	return nil
 }
 
-func (n *Navigator) addSymbol(sym Symbol) {
-	n.symbols[sym.Name] = append(n.symbols[sym.Name], sym)
-	n.byFile[sym.File] = append(n.byFile[sym.File], sym)
+// Navigate performs a semantic navigation query.
+type NavigateQuery struct {
+	Name     string // symbol name (exact or partial)
+	Kind     SymbolKind
+	File     string // file path filter
+	Package  string // package filter
+	Exported bool   // only exported symbols
+	Limit    int
 }
 
-func (n *Navigator) addReference(ref Reference) {
-	n.refs[ref.SymbolName] = append(n.refs[ref.SymbolName], ref)
-}
-
-// extractGoPackage extracts the package name from Go source.
-func (n *Navigator) extractGoPackage(content string) string {
-	re := regexp.MustCompile(`^package\s+(\w+)`)
-	matches := re.FindStringSubmatch(content)
-	if matches != nil {
-		return matches[1]
-	}
-	return ""
-}
-
-// SearchSymbols searches for symbols matching a query.
-// Supports exact match, prefix match, and fuzzy match.
-func (n *Navigator) SearchSymbols(query string, limit int) []Symbol {
+// Navigate searches the index for matching symbols.
+func (n *Navigator) Navigate(query NavigateQuery) []*Symbol {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	if limit <= 0 {
-		limit = 50
-	}
-
-	var results []Symbol
-	lowerQuery := strings.ToLower(query)
-
-	// Exact match first
-	if syms, ok := n.symbols[query]; ok {
-		results = append(results, syms...)
-	}
-
-	// Prefix match
-	for name, syms := range n.symbols {
-		if name == query {
+	var results []*Symbol
+	for _, sym := range n.index.Symbols {
+		if !matchesQuery(sym, query) {
 			continue
 		}
-		if strings.HasPrefix(strings.ToLower(name), lowerQuery) {
-			results = append(results, syms...)
+		results = append(results, sym)
+		if query.Limit > 0 && len(results) >= query.Limit {
+			break
 		}
 	}
 
-	// Contains match
-	if len(results) < limit {
-		for name, syms := range n.symbols {
-			if strings.Contains(strings.ToLower(name), lowerQuery) && !strings.HasPrefix(strings.ToLower(name), lowerQuery) {
-				results = append(results, syms...)
-			}
-		}
-	}
-
-	// Sort by relevance: exact > prefix > contains, then exported first
 	sort.Slice(results, func(i, j int) bool {
-		ri, rj := results[i], results[j]
-		// Exact name match first
-		if ri.Name == query && rj.Name != query {
-			return true
+		// Prefer exported symbols
+		if results[i].Exports != results[j].Exports {
+			return results[i].Exports
 		}
-		if rj.Name == query && ri.Name != query {
-			return false
+		// Then by kind (types before functions)
+		kindOrder := map[SymbolKind]int{
+			KindInterface: 0, KindStruct: 1, KindType: 2,
+			KindFunction: 3, KindMethod: 4, KindConst: 5, KindVar: 6,
 		}
-		// Exported first
-		if ri.Exported != rj.Exported {
-			return ri.Exported
+		oi, _ := kindOrder[results[i].Kind]
+		oj, _ := kindOrder[results[j].Kind]
+		if oi != oj {
+			return oi < oj
 		}
-		// Then by name
-		return ri.Name < rj.Name
+		return results[i].File < results[j].File
 	})
 
-	if len(results) > limit {
-		results = results[:limit]
+	return results
+}
+
+func matchesQuery(sym *Symbol, q NavigateQuery) bool {
+	if q.Name != "" {
+		lower := strings.ToLower(sym.Name)
+		queryLower := strings.ToLower(q.Name)
+		if lower != queryLower && !strings.Contains(lower, queryLower) {
+			return false
+		}
+	}
+	if q.Kind != "" && sym.Kind != q.Kind {
+		return false
+	}
+	if q.File != "" && !strings.Contains(sym.File, q.File) {
+		return false
+	}
+	if q.Package != "" && sym.Package != q.Package && !strings.Contains(sym.Package, q.Package) {
+		return false
+	}
+	if q.Exported && !sym.Exports {
+		return false
+	}
+	return true
+}
+
+// FindDefinition finds the definition of a symbol by name.
+func (n *Navigator) FindDefinition(name string) []*Symbol {
+	return n.Navigate(NavigateQuery{Name: name, Limit: 10})
+}
+
+// FindInFile returns all symbols in a file.
+func (n *Navigator) FindInFile(file string) []*Symbol {
+	n.mu.RLock()
+	defer n.mu.RUnlock()
+
+	ids, ok := n.index.FileIndex[file]
+	if !ok {
+		return nil
+	}
+
+	results := make([]*Symbol, 0, len(ids))
+	for _, id := range ids {
+		if sym, ok := n.index.Symbols[id]; ok {
+			results = append(results, sym)
+		}
 	}
 	return results
 }
 
-// GotoDefinition finds the definition(s) of a symbol.
-func (n *Navigator) GotoDefinition(name string) []Symbol {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	if syms, ok := n.symbols[name]; ok {
-		// Return only definitions (not references)
-		var defs []Symbol
-		for _, s := range syms {
-			defs = append(defs, s)
-		}
-		return defs
+// Outline returns the symbol outline for a file.
+func (n *Navigator) Outline(file string) string {
+	symbols := n.FindInFile(file)
+	if len(symbols) == 0 {
+		return "No symbols found in " + file
 	}
-	return nil
+
+	var b strings.Builder
+	fmt.Fprintf(&b, "Outline: %s\n", file)
+	fmt.Fprintf(&b, "%s\n", strings.Repeat("─", 60))
+	for _, sym := range symbols {
+		kind := string(sym.Kind)
+		export := ""
+		if sym.Exports {
+			export = " ★"
+		}
+		fmt.Fprintf(&b, "  %4d  %-12s  %s%s\n", sym.Line, kind, sym.Name, export)
+	}
+	return b.String()
 }
 
-// FindReferences finds all references to a symbol.
-func (n *Navigator) FindReferences(name string) []Reference {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	refs := make([]Reference, 0)
-
-	// Include the definition as a reference
-	if syms, ok := n.symbols[name]; ok {
-		for _, s := range syms {
-			refs = append(refs, Reference{
-				SymbolName: name,
-				File:       s.File,
-				Line:       s.Line,
-				Column:     s.Column,
-				Kind:       "definition",
-			})
-		}
-	}
-
-	// Add usage references
-	if r, ok := n.refs[name]; ok {
-		refs = append(refs, r...)
-	}
-
-	return refs
-}
-
-// CallHierarchy returns callers or callees of a function.
-func (n *Navigator) CallHierarchy(name string, direction string) []CallEdge {
+// Callers finds all symbols that call the given symbol.
+func (n *Navigator) Callers(symbolName string) []CallEdge {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
 	var results []CallEdge
-	for _, edge := range n.callGraph {
-		switch direction {
-		case "callers":
-			if edge.Callee.Name == name {
-				results = append(results, edge)
-			}
-		case "callees":
-			if edge.Caller.Name == name {
-				results = append(results, edge)
-			}
-		default: // both
-			if edge.Caller.Name == name || edge.Callee.Name == name {
-				results = append(results, edge)
-			}
+	for _, edge := range n.index.Calls {
+		if caller, ok := n.index.Symbols[edge.To]; ok && caller.Name == symbolName {
+			results = append(results, edge)
 		}
 	}
 	return results
 }
 
-// SymbolsByFile returns all symbols in a given file.
-func (n *Navigator) SymbolsByFile(file string) []Symbol {
+// Stats returns index statistics.
+func (n *Navigator) Stats() map[string]interface{} {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	return n.byFile[file]
+	kindCount := make(map[SymbolKind]int)
+	fileCount := make(map[string]bool)
+	pkgCount := make(map[string]bool)
+	exported := 0
+
+	for _, sym := range n.index.Symbols {
+		kindCount[sym.Kind]++
+		fileCount[sym.File] = true
+		if sym.Package != "" {
+			pkgCount[sym.Package] = true
+		}
+		if sym.Exports {
+			exported++
+		}
+	}
+
+	return map[string]interface{}{
+		"total_symbols":  len(n.index.Symbols),
+		"total_refs":     len(n.index.References),
+		"total_calls":    len(n.index.Calls),
+		"files_indexed":  len(fileCount),
+		"packages":       len(pkgCount),
+		"exported":       exported,
+		"by_kind":        kindCount,
+		"last_indexed":   n.index.UpdatedAt,
+	}
 }
 
-// Outline returns a high-level outline of the project structure.
-func (n *Navigator) Outline() map[string][]Symbol {
+// Search performs a fuzzy search across symbol names and signatures.
+func (n *Navigator) Search(query string, limit int) []*Symbol {
+	if limit <= 0 {
+		limit = 20
+	}
+	return n.Navigate(NavigateQuery{Name: query, Limit: limit})
+}
+
+// SymbolTree returns all symbols organized by file.
+func (n *Navigator) SymbolTree() map[string][]*Symbol {
 	n.mu.RLock()
 	defer n.mu.RUnlock()
 
-	outline := make(map[string][]Symbol)
-	for file, syms := range n.byFile {
-		// Only include exported symbols in outline
-		var exported []Symbol
-		for _, s := range syms {
-			if s.Exported {
-				exported = append(exported, s)
+	tree := make(map[string][]*Symbol)
+	for file, ids := range n.index.FileIndex {
+		symbols := make([]*Symbol, 0, len(ids))
+		for _, id := range ids {
+			if sym, ok := n.index.Symbols[id]; ok {
+				symbols = append(symbols, sym)
 			}
 		}
-		if len(exported) > 0 {
-			outline[file] = exported
-		}
+		sort.Slice(symbols, func(i, j int) bool {
+			return symbols[i].Line < symbols[j].Line
+		})
+		tree[file] = symbols
 	}
-	return outline
+	return tree
 }
 
-// Stats returns navigation index statistics.
-func (n *Navigator) Stats() IndexStats {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-
-	stats := IndexStats{
-		TotalSymbols: 0,
-		TotalRefs:    0,
-		Files:        len(n.byFile),
-		ByKind:       make(map[SymbolKind]int),
-		Languages:    make([]string, 0, len(n.languages)),
-		IndexedAt:    n.indexTime,
-	}
-
-	for _, syms := range n.symbols {
-		stats.TotalSymbols += len(syms)
-		for _, s := range syms {
-			stats.ByKind[s.Kind]++
-		}
-	}
-
-	for _, refs := range n.refs {
-		stats.TotalRefs += len(refs)
-	}
-
-	for lang := range n.languages {
-		stats.Languages = append(stats.Languages, lang)
-	}
-	sort.Strings(stats.Languages)
-
-	return stats
-}
-
-// IndexStats holds statistics about the navigation index.
-type IndexStats struct {
-	TotalSymbols int                    `json:"total_symbols"`
-	TotalRefs    int                    `json:"total_references"`
-	Files        int                    `json:"files_indexed"`
-	ByKind       map[SymbolKind]int     `json:"by_kind"`
-	Languages    []string               `json:"languages"`
-	IndexedAt    time.Time              `json:"indexed_at"`
-}
-
-// NavigateIntent represents a natural language navigation intent.
-type NavigateIntent struct {
-	Intent    string `json:"intent"`     // "definition", "references", "search", "outline", "callers", "callees"
-	Target    string `json:"target"`     // symbol name or query
-	Direction string `json:"direction"`  // for call hierarchy: "callers" or "callees"
-	File      string `json:"file,omitempty"` // optional file context
-}
-
-// ParseIntent parses a natural language query into a navigation intent.
-func ParseIntent(query string) NavigateIntent {
-	lower := strings.ToLower(query)
-
-	// Definition patterns
-	defPatterns := []string{"go to definition", "definition of", "where is", "where's", "find definition", "show definition", "jump to"}
-	for _, p := range defPatterns {
-		if strings.Contains(lower, p) {
-			target := strings.TrimSpace(strings.ReplaceAll(lower, p, ""))
-			target = strings.TrimPrefix(target, "the ")
-			return NavigateIntent{Intent: "definition", Target: target}
-		}
-	}
-
-	// Reference patterns
-	refPatterns := []string{"references to", "usages of", "where is", "who uses", "who calls", "find all references", "find usages"}
-	for _, p := range refPatterns {
-		if strings.Contains(lower, p) {
-			target := strings.TrimSpace(strings.ReplaceAll(lower, p, ""))
-			target = strings.TrimPrefix(target, "the ")
-			return NavigateIntent{Intent: "references", Target: target}
-		}
-	}
-
-	// Call hierarchy patterns
-	if strings.Contains(lower, "callers of") || strings.Contains(lower, "who calls") {
-		target := strings.TrimSpace(strings.ReplaceAll(lower, "callers of", ""))
-		target = strings.TrimSpace(strings.ReplaceAll(target, "who calls", ""))
-		return NavigateIntent{Intent: "callers", Target: target, Direction: "callers"}
-	}
-	if strings.Contains(lower, "callees of") || strings.Contains(lower, "what does") || strings.Contains(lower, "calls from") {
-		target := strings.TrimSpace(strings.ReplaceAll(lower, "callees of", ""))
-		target = strings.TrimSpace(strings.ReplaceAll(target, "what does", ""))
-		target = strings.TrimSuffix(target, "call")
-		target = strings.TrimSpace(strings.ReplaceAll(target, "calls from", ""))
-		return NavigateIntent{Intent: "callees", Target: target, Direction: "callees"}
-	}
-
-	// Outline pattern
-	if strings.Contains(lower, "outline") || strings.Contains(lower, "structure") || strings.Contains(lower, "overview of") {
-		return NavigateIntent{Intent: "outline"}
-	}
-
-	// Default: search
-	return NavigateIntent{Intent: "search", Target: query}
-}
-
-// ExecuteIntent executes a navigation intent and returns formatted results.
-func (n *Navigator) ExecuteIntent(intent NavigateIntent) string {
-	switch intent.Intent {
-	case "definition":
-		syms := n.GotoDefinition(intent.Target)
-		if len(syms) == 0 {
-			return fmt.Sprintf("No definitions found for %q", intent.Target)
-		}
-		var b strings.Builder
-		fmt.Fprintf(&b, "Definitions of %q:\n", intent.Target)
-		for _, s := range syms {
-			fmt.Fprintf(&b, "  %s %s at %s:%d\n", s.Kind, s.Name, s.File, s.Line)
-			if s.Signature != "" {
-				fmt.Fprintf(&b, "    signature: %s%s\n", s.Name, s.Signature)
-			}
-			if s.Doc != "" {
-				fmt.Fprintf(&b, "    doc: %s\n", s.Doc)
-			}
-		}
-		return b.String()
-
-	case "references":
-		refs := n.FindReferences(intent.Target)
-		if len(refs) == 0 {
-			return fmt.Sprintf("No references found for %q", intent.Target)
-		}
-		var b strings.Builder
-		fmt.Fprintf(&b, "References to %q (%d found):\n", intent.Target, len(refs))
-		for _, r := range refs {
-			fmt.Fprintf(&b, "  [%s] %s:%d %s\n", r.Kind, r.File, r.Line, r.Context)
-		}
-		return b.String()
-
-	case "callers", "callees":
-		edges := n.CallHierarchy(intent.Target, intent.Direction)
-		if len(edges) == 0 {
-			return fmt.Sprintf("No call hierarchy found for %q", intent.Target)
-		}
-		var b strings.Builder
-		fmt.Fprintf(&b, "Call hierarchy for %q (%s):\n", intent.Target, intent.Direction)
-		for _, e := range edges {
-			indirect := ""
-			if e.Indirect {
-				indirect = " (indirect)"
-			}
-			fmt.Fprintf(&b, "  %s → %s at %s:%d%s\n", e.Caller.Name, e.Callee.Name, e.File, e.Line, indirect)
-		}
-		return b.String()
-
-	case "outline":
-		outline := n.Outline()
-		var b strings.Builder
-		b.WriteString("Project outline:\n")
-		files := make([]string, 0, len(outline))
-		for f := range outline {
-			files = append(files, f)
-		}
-		sort.Strings(files)
-		for _, f := range files {
-			fmt.Fprintf(&b, "\n%s:\n", f)
-			for _, s := range outline[f] {
-				fmt.Fprintf(&b, "  %s %s", s.Kind, s.Name)
-				if s.Signature != "" {
-					fmt.Fprintf(&b, "%s", s.Signature)
-				}
-				fmt.Fprintln(&b)
-			}
-		}
-		return b.String()
-
-	default: // search
-		syms := n.SearchSymbols(intent.Target, 20)
-		if len(syms) == 0 {
-			return fmt.Sprintf("No symbols matching %q", intent.Target)
-		}
-		var b strings.Builder
-		fmt.Fprintf(&b, "Symbols matching %q (%d found):\n", intent.Target, len(syms))
-		for _, s := range syms {
-			fmt.Fprintf(&b, "  %s %s at %s:%d\n", s.Kind, s.Name, s.File, s.Line)
-		}
-		return b.String()
-	}
+func symbolID(file string, line int) string {
+	return fmt.Sprintf("%s:%d", file, line)
 }
