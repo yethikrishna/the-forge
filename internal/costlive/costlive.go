@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -342,70 +343,70 @@ func (s *LiveStats) TopModels() []ModelBreakdown {
 
 // FormatLiveStats formats live stats for terminal output.
 func FormatLiveStats(s *LiveStats) string {
-	var out string
+	var sb strings.Builder
 
 	// Header
-	out += "╭─────────────────────────────────────────────────╮\n"
-	out += "│           FORGE COST LIVE — Real-Time           │\n"
-	out += "╰─────────────────────────────────────────────────╯\n"
-	out += "\n"
+	sb.WriteString("╭─────────────────────────────────────────────────╮\n")
+	sb.WriteString("│           FORGE COST LIVE — Real-Time           │\n")
+	sb.WriteString("╰─────────────────────────────────────────────────╯\n")
+	sb.WriteString("\n")
 
 	// Today
-	out += fmt.Sprintf("  Today:  %s tokens (%d in + %d out), %d calls, $%.4f\n",
+	fmt.Fprintf(&sb, "  Today:  %s tokens (%d in + %d out), %d calls, $%.4f\n",
 		formatNumber(s.TodayInput+s.TodayOutput), s.TodayInput, s.TodayOutput, s.TodayCalls, s.TodayCost)
 
 	// This Month
-	out += fmt.Sprintf("  Month:  %s tokens (%d in + %d out), %d calls, $%.4f\n",
+	fmt.Fprintf(&sb, "  Month:  %s tokens (%d in + %d out), %d calls, $%.4f\n",
 		formatNumber(s.MonthInput+s.MonthOutput), s.MonthInput, s.MonthOutput, s.MonthCalls, s.MonthCost)
 
 	// Burn Rate
-	out += "\n  ── Burn Rate ──\n"
-	out += fmt.Sprintf("  Tokens/min:  %.0f\n", s.TokensPerMinute)
-	out += fmt.Sprintf("  Cost/hour:   $%.4f\n", s.CostPerHour)
+	sb.WriteString("\n  ── Burn Rate ──\n")
+	fmt.Fprintf(&sb, "  Tokens/min:  %.0f\n", s.TokensPerMinute)
+	fmt.Fprintf(&sb, "  Cost/hour:   $%.4f\n", s.CostPerHour)
 
 	// Projection
-	out += "\n  ── Monthly Projection ──\n"
-	out += fmt.Sprintf("  Projected:   $%.2f (%s tokens)\n", s.ProjectedMonthly, formatNumber(int(s.ProjectedTokens)))
-	out += fmt.Sprintf("  Days left:   %d\n", s.DaysRemaining)
+	sb.WriteString("\n  ── Monthly Projection ──\n")
+	fmt.Fprintf(&sb, "  Projected:   $%.2f (%s tokens)\n", s.ProjectedMonthly, formatNumber(int(s.ProjectedTokens)))
+	fmt.Fprintf(&sb, "  Days left:   %d\n", s.DaysRemaining)
 
 	// Budget
 	if s.BudgetLimit > 0 {
-		out += "\n  ── Budget ──\n"
+		sb.WriteString("\n  ── Budget ──\n")
 		bar := progressBar(s.BudgetPct, 30)
-		out += fmt.Sprintf("  %s %.1f%%\n", bar, s.BudgetPct)
-		out += fmt.Sprintf("  Used: $%.4f / $%.2f (remaining: $%.4f)\n",
+		fmt.Fprintf(&sb, "  %s %.1f%%\n", bar, s.BudgetPct)
+		fmt.Fprintf(&sb, "  Used: $%.4f / $%.2f (remaining: $%.4f)\n",
 			s.BudgetUsed, s.BudgetLimit, s.BudgetRemaining)
 		if s.BudgetPct >= 100 {
-			out += "  ⚠  BUDGET EXCEEDED\n"
+			sb.WriteString("  ⚠  BUDGET EXCEEDED\n")
 		} else if s.BudgetPct >= 80 {
-			out += "  ⚠  Approaching budget limit\n"
+			sb.WriteString("  ⚠  Approaching budget limit\n")
 		}
 	}
 
 	// Per-model breakdown
 	models := s.TopModels()
 	if len(models) > 0 {
-		out += "\n  ── By Model (this month) ──\n"
-		out += fmt.Sprintf("  %-25s %10s %10s %10s\n", "Model", "Tokens", "Calls", "Cost")
-		out += "  " + repeat("─", 58) + "\n"
+		sb.WriteString("\n  ── By Model (this month) ──\n")
+		fmt.Fprintf(&sb, "  %-25s %10s %10s %10s\n", "Model", "Tokens", "Calls", "Cost")
+		fmt.Fprintf(&sb, "  %s\n", repeat("─", 58))
 		for _, m := range models {
-			out += fmt.Sprintf("  %-25s %10s %10d $%8.4f\n",
+			fmt.Fprintf(&sb, "  %-25s %10s %10d $%8.4f\n",
 				truncate(m.Model, 25), formatNumber(m.TotalTokens), m.Calls, m.Cost)
 		}
 	}
 
 	// Top agents
 	if len(s.TopAgents) > 0 {
-		out += "\n  ── Top Agents (this month) ──\n"
-		out += fmt.Sprintf("  %-25s %10s %10s %10s\n", "Agent", "Tokens", "Calls", "Cost")
-		out += "  " + repeat("─", 58) + "\n"
+		sb.WriteString("\n  ── Top Agents (this month) ──\n")
+		fmt.Fprintf(&sb, "  %-25s %10s %10s %10s\n", "Agent", "Tokens", "Calls", "Cost")
+		fmt.Fprintf(&sb, "  %s\n", repeat("─", 58))
 		for _, a := range s.TopAgents {
-			out += fmt.Sprintf("  %-25s %10s %10d $%8.4f\n",
+			fmt.Fprintf(&sb, "  %-25s %10s %10d $%8.4f\n",
 				truncate(a.AgentID, 25), formatNumber(a.TotalTokens), a.Calls, a.Cost)
 		}
 	}
 
-	return out
+	return sb.String()
 }
 
 // FormatLiveStatsJSON formats live stats as JSON.

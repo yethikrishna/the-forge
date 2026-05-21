@@ -187,6 +187,13 @@ func (s *Store) Assess(config ReportConfig, categoryScores map[Category]int, fin
 		weights = DefaultWeights()
 	}
 
+	// Pre-index findings by category to avoid O(n×categories) scan.
+	findingsByCategory := make(map[Category][]int, len(findings))
+	for i := range findings {
+		cat := findings[i].Category
+		findingsByCategory[cat] = append(findingsByCategory[cat], i)
+	}
+
 	// Build scores.
 	var scores []*Score
 	weightedSum := 0.0
@@ -214,20 +221,18 @@ func (s *Store) Assess(config ReportConfig, categoryScores map[Category]int, fin
 			LastAssessed: time.Now().UTC(),
 		}
 
-		// Attach findings for this category.
-		for i := range findings {
-			if findings[i].Category == cat {
-				score.Findings = append(score.Findings, findings[i])
-				if findings[i].ID == "" {
-					findings[i].ID = fmt.Sprintf("GOV-%s-%d", cat, len(s.findings)+i+1)
-				}
-				if findings[i].DetectedAt.IsZero() {
-					findings[i].DetectedAt = time.Now().UTC()
-				}
-				if findings[i].Status == "" {
-					findings[i].Status = "open"
-				}
+		// Attach findings for this category using the pre-built index (O(1) lookup).
+		for _, i := range findingsByCategory[cat] {
+			if findings[i].ID == "" {
+				findings[i].ID = fmt.Sprintf("GOV-%s-%d", cat, len(s.findings)+i+1)
 			}
+			if findings[i].DetectedAt.IsZero() {
+				findings[i].DetectedAt = time.Now().UTC()
+			}
+			if findings[i].Status == "" {
+				findings[i].Status = "open"
+			}
+			score.Findings = append(score.Findings, findings[i])
 		}
 
 		scores = append(scores, score)

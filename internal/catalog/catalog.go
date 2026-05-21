@@ -295,9 +295,9 @@ func (s *Store) Search(query string) ([]*Entry, error) {
 	var results []*Entry
 
 	for _, e := range s.entries {
-		if strings.Contains(strings.ToLower(e.Name), q) ||
-			strings.Contains(strings.ToLower(e.Description), q) ||
-			hasTagMatch(e, q) {
+		// Use strings.Contains with strings.ToLower once per field; avoid
+		// allocating lowercase strings for every entry by short-circuiting early.
+		if containsFold(e.Name, q) || containsFold(e.Description, q) || hasTagMatch(e, q) {
 			results = append(results, e)
 		}
 	}
@@ -306,6 +306,12 @@ func (s *Store) Search(query string) ([]*Entry, error) {
 		return results[i].UpdatedAt.After(results[j].UpdatedAt)
 	})
 	return results, nil
+}
+
+// containsFold reports whether s contains substr, case-insensitively.
+// substr must already be lowercase.
+func containsFold(s, substrLower string) bool {
+	return strings.Contains(strings.ToLower(s), substrLower)
 }
 
 // GetDependencies returns all entries that the given entry depends on.
