@@ -1,48 +1,28 @@
-# The Forge — Signal Log — 2026-05-21 09:46 UTC
+# SIGNAL_LOG.md — the-forge — 2026-05-21 11:06 UTC
 
-## 🔴 High Urgency
+## 🔴 Urgent
 
-### go-agent: Go LLM Agent with MCP Tools
-- **Source:** X/Twitter @androidian60
-- **Link:** https://github.com/smarttechlabs-projects/go-agent
-- **Note:** New Go-based LLM agent with MCP tool integration. Direct competitor/reference for Go agent orchestration. Study architecture for the-forge.
+| Source | Title | Link | Note |
+|--------|-------|------|------|
+| HN (875 pts) | GitHub breach via malicious VSCode extension — 3,800 repos | https://www.bleepingcomputer.com/news/security/github-confirms-breach-of-3-800-repos-via-malicious-vscode-extension/ | Review Forge CI/CD dependency pinning and extension trust policies. |
 
-### claude-in-box — Go Dockerized Agent Dev Env
-- **Source:** GitHub Trending (Go) — 18★
-- **Link:** https://github.com/jiangmuran/claude-in-box
-- **Note:** Multi-session, hook-driven Go container for Claude Code. Hook architecture pattern worth studying for the-forge orchestration.
+## 🟡 Watch
 
-### Hermes Agent Desktop (Tauri + TS + Rust) — 24★
-- **Source:** GitHub Trending (TypeScript)
-- **Link:** https://github.com/Eynzof/hermes-agent-cn-desktop
-- **Note:** Agent desktop ecosystem gaining traction. Track UX and orchestration patterns.
+| Source | Title | Link | Note |
+|--------|-------|------|------|
+| X/Twitter | MCP Dev Summit Bengaluru (Linux Foundation) | https://events.linuxfoundation.org/mcp-dev-summit-bengaluru/ | MCP formal governance — track spec changes for Forge tool-use layer. |
+| X/Twitter | AGNTCon + MCPCon CFP open (Tokyo/Amsterdam, Sept) | — | Industry standardizing on agent protocols. |
+| X/Twitter | awesome-agentic-ai-zh — 145+ repos agent roadmap | https://github.com/WenyuChiou/awesome-agentic-ai-zh | Feature parity reference for agent architecture. |
+| X/Twitter | CometX-Hybrid — browser agent with native MCP + GitHub commits | — | Agent-browser-MCP integration pattern. |
+| GitHub (Go, 19⭐) | claude-in-box — Docker Claude Code env | https://github.com/jiangmuran/claude-in-box | Containerized agent runtime — relevant architecture. |
+| HN (44 pts) | Rmux — programmable terminal multiplexer with SDK | https://github.com/helvesec/rmux | Playwright-style terminal automation — applicable to Forge command execution. |
+| Dev.to | Hermes Agent Challenge ($1K) | https://dev.to/devteam/join-the-hermes-agent-challenge-1000-in-prizes-13cd | Community agent building activity. |
+| X/Twitter | GitHub Copilot Challenge launches today | https://dev.to/challenges/github-2026-05-21 | Competitive landscape — AI-assisted dev tooling. |
 
-## 🟡 Medium Urgency
+## 🟢 Background
 
-### MCP Expanding to Mobile/Edge
-- **Source:** X/Twitter
-- **Link:** https://dev.to/dannwaneri/mcp-just-landed-on-your-phone-what-google-ai-edge-gallery-actually-does-1567
-- **Note:** MCP becoming universal protocol. The-forge must ensure robust MCP support.
-
-### Agent Governance & x402 Payment
-- **Source:** X/Twitter
-- **Note:** Growing discourse on agent identity, authority, and payment rails. Consider governance primitives.
-
-### Rmux — Playwright-style Terminal Multiplexer
-- **Source:** Hacker News (Show HN)
-- **Link:** https://github.com/helvesec/rmux
-- **Note:** SDK-driven terminal automation. Pattern inspiration for CLI agent orchestration.
-
-### Hermes Agent Challenge ($1K) + GitHub Copilot Challenge
-- **Source:** Dev.to
-- **Note:** Strong dev momentum in agent tooling. Community signals for direction.
-
-## 🟢 Monitoring
-
-### awesome-agentic-ai-zh — 145+ resources
-- **Link:** https://github.com/WenyuChiou/awesome-agentic-ai-zh
-- **Note:** Reference material for agent learning paths.
-
----
-
-*Next scan: ~hourly*
+| Source | Title | Link | Note |
+|--------|-------|------|------|
+| GitHub (Go, 3⭐) | xray-balancer — proxy load balancer with failover | https://github.com/mehdirzfx/xray-balancer | Go networking patterns applicable to agent routing. |
+| GitHub (Go, 2⭐) | DEEIX-Chat — enterprise AI workspace | https://github.com/DEEIX-AI/DEEIX-Chat | Model routing + multimodal architecture reference. |
+| GitHub (TS, 45⭐) | hermes-agent-cn-desktop — Tauri+TS+Rust | https://github.com/Eynzof/hermes-agent-cn-desktop | Desktop agent UI architecture. |
