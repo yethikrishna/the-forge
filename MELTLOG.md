@@ -564,3 +564,16 @@
 - **Internal packages:** 217
 - **Commands:** 161
 - **Build:** ✅ **Vet:** ✅ **Tests:** ✅
+
+### Session 4b — 2026-05-21 ~04:00 UTC
+
+#### Features Shipped
+- `forge ledger` — immutable cost & action ledger with hash chain verification, budget enforcement, refunds
+- `forge relay` — inter-agent message relay (pub/sub, direct, broadcast, request/response, dead letters)
+- `forge policy` — policy-as-code engine (allow/deny rules, conditions, resource patterns, audit log)
+- 165+ commands total, 167K+ lines of Go
+
+#### Stats
+- **Lines of Go:** ~167K
+- **Commands:** 166
+- **Build:** ✅ **Vet:** ✅ **Tests:** ✅
