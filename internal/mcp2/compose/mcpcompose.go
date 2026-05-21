@@ -1,6 +1,6 @@
 // Package mcpcompose composes multiple MCP servers behind a single Forge gateway.
 // One mountain, many tunnels — unified access to distributed power.
-package mcpcompose
+package compose
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package mcp
+package server
 
 import (
 	"encoding/json"
@@ -223,7 +223,7 @@ func TestFormatServerInfo(t *testing.T) {
 	if !strings.Contains(output, "forge") {
 		t.Error("expected server name in output")
 	}
-	if !strings.Contains(output, "Tools: 1") {
+	if !strings.Contains(output, "Tools:       1") {
 		t.Error("expected tool count in output")
 	}
 }

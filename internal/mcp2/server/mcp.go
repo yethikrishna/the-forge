@@ -3,7 +3,7 @@
 // that any MCP-compatible client can use.
 //
 // Protocol spec: https://modelcontextprotocol.io
-package mcp
+package server
 
 import (
 	"encoding/json"

@@ -6,7 +6,7 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/forge/sword/internal/mcpdiscover"
+	"github.com/forge/sword/internal/mcp2/discover"
 	"github.com/spf13/cobra"
 )
 
@@ -32,12 +32,12 @@ Examples:
 	cmd.Flags().StringVar(&source, "source", "", "Filter by source (config, network, process)")
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
-		d := mcpdiscover.NewDiscoverer()
+		d := discover.NewDiscoverer()
 		result := d.Discover()
 
 		// Filter by source if specified
 		if source != "" {
-			filtered := make([]*mcpdiscover.DiscoveredServer, 0)
+			filtered := make([]*discover.DiscoveredServer, 0)
 			for _, s := range result.Servers {
 				if s.Source == source {
 					filtered = append(filtered, s)

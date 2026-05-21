@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/forge/sword/internal/mcp"
+	mcpserver "github.com/forge/sword/internal/mcp2/server"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/spf13/cobra"
 )
@@ -39,10 +39,10 @@ Examples:
 			Use:   "serve",
 			Short: "Start the MCP server",
 			RunE: func(cmd *cobra.Command, args []string) error {
-				server := mcp.NewServer("forge", forgeVersion)
-				server.RegisterForgeTools()
-				server.RegisterForgeResources()
-				server.RegisterForgePrompts()
+				srv := mcpserver.NewServer("forge", forgeVersion)
+				srv.RegisterForgeTools()
+				srv.RegisterForgeResources()
+				srv.RegisterForgePrompts()
 
 				fmt.Println(pretty.HeaderLine("Forge MCP Server"))
 				fmt.Printf("  Transport: %s\n", transport)
@@ -68,12 +68,12 @@ Examples:
 				switch transport {
 				case "stdio":
 					fmt.Println("  Listening on stdin/stdout...")
-					if err := server.ServeStdio(ctx); err != nil {
+					if err := srv.ServeStdio(ctx); err != nil {
 						return fmt.Errorf("mcp stdio: %w", err)
 					}
 				case "http":
 					fmt.Printf("  Listening on %s...\n", addr)
-					if err := server.ServeHTTP(addr); err != nil {
+					if err := srv.ServeHTTP(addr); err != nil {
 						return fmt.Errorf("mcp http: %w", err)
 					}
 				default:
@@ -87,17 +87,16 @@ Examples:
 			Use:   "tools",
 			Short: "List available MCP tools",
 			RunE: func(cmd *cobra.Command, args []string) error {
-				server := mcp.NewServer("forge", forgeVersion)
-				server.RegisterForgeTools()
+				srv := mcpserver.NewServer("forge", forgeVersion)
+				srv.RegisterForgeTools()
 
 				fmt.Println(pretty.HeaderLine("MCP Tools"))
-				// Use a test request to list tools
-				req := mcp.JSONRPCRequest{
+				req := mcpserver.JSONRPCRequest{
 					JSONRPC: "2.0",
 					ID:      1,
 					Method:  "tools/list",
 				}
-				resp := server.HandleRequest(context.Background(), req)
+				resp := srv.HandleRequest(context.Background(), req)
 				if resp.Error != nil {
 					return fmt.Errorf("error listing tools: %s", resp.Error.Message)
 				}
@@ -129,16 +128,16 @@ Examples:
 			Use:   "resources",
 			Short: "List available MCP resources",
 			RunE: func(cmd *cobra.Command, args []string) error {
-				server := mcp.NewServer("forge", forgeVersion)
-				server.RegisterForgeResources()
+				srv := mcpserver.NewServer("forge", forgeVersion)
+				srv.RegisterForgeResources()
 
 				fmt.Println(pretty.HeaderLine("MCP Resources"))
-				req := mcp.JSONRPCRequest{
+				req := mcpserver.JSONRPCRequest{
 					JSONRPC: "2.0",
 					ID:      1,
 					Method:  "resources/list",
 				}
-				resp := server.HandleRequest(context.Background(), req)
+				resp := srv.HandleRequest(context.Background(), req)
 				if resp.Error != nil {
 					return fmt.Errorf("error listing resources: %s", resp.Error.Message)
 				}

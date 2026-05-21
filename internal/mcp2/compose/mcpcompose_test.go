@@ -1,4 +1,4 @@
-package mcpcompose
+package compose
 
 import (
 	"context"

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/forge/sword/internal/localinit"
-	"github.com/forge/sword/internal/mcpcompose"
+	"github.com/forge/sword/internal/mcp2/compose"
 	"github.com/forge/sword/internal/traces"
 	"github.com/spf13/cobra"
 )
@@ -196,16 +196,16 @@ func mcpComposeCmd() *cobra.Command {
 		Use:   "serve",
 		Short: "Start the composition gateway",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := mcpcompose.LoadConfig(configFile)
+			config, err := compose.LoadConfig(configFile)
 			if err != nil {
 				// Use default config with addr override
-				config = &mcpcompose.ComposeConfig{
-					Gateway: mcpcompose.GatewayConfig{Addr: gatewayAddr},
+				config = &compose.ComposeConfig{
+					Gateway: compose.GatewayConfig{Addr: gatewayAddr},
 				}
 			}
 			config.Gateway.Addr = gatewayAddr
 
-			gateway := mcpcompose.NewComposeGateway(*config)
+			gateway := compose.NewComposeGateway(*config)
 
 			// Auto-discover from config file
 			for _, server := range config.Servers {
@@ -227,12 +227,12 @@ func mcpComposeCmd() *cobra.Command {
 		Use:   "list-servers",
 		Short: "List upstream MCP servers",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := mcpcompose.LoadConfig(configFile)
+			config, err := compose.LoadConfig(configFile)
 			if err != nil {
 				return fmt.Errorf("load config: %w", err)
 			}
 
-			gateway := mcpcompose.NewComposeGateway(*config)
+			gateway := compose.NewComposeGateway(*config)
 			for _, s := range config.Servers {
 				gateway.AddServer(s)
 			}
@@ -244,7 +244,7 @@ func mcpComposeCmd() *cobra.Command {
 				return nil
 			}
 
-			fmt.Println(mcpcompose.FormatComposeStatus(servers, 0))
+			fmt.Println(compose.FormatComposeStatus(servers, 0))
 			return nil
 		},
 	}
@@ -254,12 +254,12 @@ func mcpComposeCmd() *cobra.Command {
 		Use:   "list-tools",
 		Short: "List all composed tools",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := mcpcompose.LoadConfig(configFile)
+			config, err := compose.LoadConfig(configFile)
 			if err != nil {
 				return fmt.Errorf("load config: %w", err)
 			}
 
-			gateway := mcpcompose.NewComposeGateway(*config)
+			gateway := compose.NewComposeGateway(*config)
 			for _, s := range config.Servers {
 				gateway.AddServer(s)
 			}
@@ -271,7 +271,7 @@ func mcpComposeCmd() *cobra.Command {
 				return nil
 			}
 
-			fmt.Println(mcpcompose.FormatTools(tools))
+			fmt.Println(compose.FormatTools(tools))
 			return nil
 		},
 	}
@@ -281,12 +281,12 @@ func mcpComposeCmd() *cobra.Command {
 		Use:   "health",
 		Short: "Check health of upstream servers",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			config, err := mcpcompose.LoadConfig(configFile)
+			config, err := compose.LoadConfig(configFile)
 			if err != nil {
 				return fmt.Errorf("load config: %w", err)
 			}
 
-			gateway := mcpcompose.NewComposeGateway(*config)
+			gateway := compose.NewComposeGateway(*config)
 			for _, s := range config.Servers {
 				gateway.AddServer(s)
 			}
@@ -314,14 +314,14 @@ func mcpComposeCmd() *cobra.Command {
 		Use:   "init-config",
 		Short: "Create a sample composition config file",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			sample := mcpcompose.ComposeConfig{
-				Servers: []mcpcompose.ServerConfig{
+			sample := compose.ComposeConfig{
+				Servers: []compose.ServerConfig{
 					{Name: "github", Command: "mcp-server-github", Enabled: true, Prefix: "gh", Env: map[string]string{"GITHUB_TOKEN": ""}},
 					{Name: "filesystem", URL: "http://localhost:8080", Enabled: true, Prefix: "fs"},
 					{Name: "postgres", Command: "mcp-server-postgres", Enabled: false, Prefix: "db"},
 				},
-				Gateway: mcpcompose.GatewayConfig{Addr: "localhost:9090"},
-				Middleware: mcpcompose.MiddlewareConfig{
+				Gateway: compose.GatewayConfig{Addr: "localhost:9090"},
+				Middleware: compose.MiddlewareConfig{
 					AuditLogging: true,
 					CostTracking: true,
 					RetryEnabled: true,

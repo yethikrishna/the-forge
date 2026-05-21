@@ -2,7 +2,7 @@
 // and in common configuration locations.
 //
 // Find every server. Connect to anything.
-package mcpdiscover
+package discover
 
 import (
 	"encoding/json"
