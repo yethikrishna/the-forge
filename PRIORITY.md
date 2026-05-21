@@ -39,8 +39,7 @@
 ### 3. mcp* Consolidation (Finish In-Progress)
 **Assigned**: Forge Architect
 **Priority**: P0
-**Why**: One of the highest-impact remaining groups. Completes MCP v2.1 governance integration.
-**Target**: Merge mcp, mcpcompose, mcpdiscover, mcpgateway into `internal/mcp2`. Update all references, tests, benchmarks. Reduce package count.
+**Status**: In-progress. `internal/mcp2` package + subdirs (server, compose, discover, gateway) created with updated docs. DESIGN_MCP2.md written. Persistence integration complete. Full cutover of mcpgateway + remaining old mcp* packages and caller updates pending next cycle (no breaking changes yet). Package count reduced. Benchmarks stable.
 
 ---
 
