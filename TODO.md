@@ -261,7 +261,7 @@ All 18 utility packages implemented and tested.
 - [x] Zero-config auto-detection — API keys from env, project type from files, git remote → workspace
 - [x] Predictive prefetching — pre-load context before user needs it
 - [x] Offline mode (`--offline`) — local models only, cached indexes, no telemetry
-- [ ] Session tags & organization — tag sessions, filter, auto-tag, saved searches
+- [x] Session tags & organization — tag sessions, filter, auto-tag, saved searches
 
 ### Deep Multi-Agent Patterns
 - [ ] Agent handoff protocol — standardized context/artifact/confidence transfer between agents

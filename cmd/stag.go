@@ -14,9 +14,8 @@ var stagCmd = &cobra.Command{
 }
 
 var (
-	stagDir    string
-	stagColor  string
-	stagTags   []string
+	stagDir   string
+	stagTags  []string
 )
 
 func init() {
@@ -28,36 +27,28 @@ func init() {
 	stagCmd.AddCommand(stagAutoTagCmd)
 
 	stagCmd.PersistentFlags().StringVar(&stagDir, "dir", ".forge/tags", "Tag storage directory")
-	stagCreateCmd.Flags().StringVar(&stagColor, "color", "", "Tag color (hex)")
 	stagTagCmd.Flags().StringArrayVar(&stagTags, "tag", nil, "Tags to apply")
 	stagUntagCmd.Flags().StringArrayVar(&stagTags, "tag", nil, "Tags to remove")
 	stagFindCmd.Flags().StringArrayVar(&stagTags, "tag", nil, "Tags to search")
 }
 
-func getStagStore() (*sessiontag.Store, error) {
-	return sessiontag.NewStore(stagDir)
+func getStagMgr() *sessiontag.Manager {
+	return sessiontag.NewManager(stagDir)
 }
 
 var stagListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all tags",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		store, err := getStagStore()
-		if err != nil {
-			return err
-		}
-		tags := store.ListTags()
+		mgr := getStagMgr()
+		tags := mgr.ListTags()
 		if len(tags) == 0 {
 			fmt.Println("No tags found.")
 			return nil
 		}
 		fmt.Printf("Tags (%d):\n", len(tags))
 		for _, t := range tags {
-			auto := ""
-			if t.AutoTag {
-				auto = " (auto)"
-			}
-			fmt.Printf("  %s%s — %d sessions\n", t.Name, auto, t.Count)
+			fmt.Printf("  %s — %d sessions\n", t.Name, t.Count)
 		}
 		return nil
 	},
@@ -68,11 +59,8 @@ var stagCreateCmd = &cobra.Command{
 	Short: "Create a tag",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		store, err := getStagStore()
-		if err != nil {
-			return err
-		}
-		return store.CreateTag(args[0], stagColor)
+		mgr := getStagMgr()
+		return mgr.CreateTag(args[0], sessiontag.Color(""))
 	},
 }
 
@@ -84,11 +72,8 @@ var stagTagCmd = &cobra.Command{
 		if len(stagTags) == 0 {
 			return fmt.Errorf("--tag is required")
 		}
-		store, err := getStagStore()
-		if err != nil {
-			return err
-		}
-		return store.TagSession(args[0], stagTags)
+		mgr := getStagMgr()
+		return mgr.TagSession(args[0], stagTags)
 	},
 }
 
@@ -100,11 +85,8 @@ var stagUntagCmd = &cobra.Command{
 		if len(stagTags) == 0 {
 			return fmt.Errorf("--tag is required")
 		}
-		store, err := getStagStore()
-		if err != nil {
-			return err
-		}
-		return store.UntagSession(args[0], stagTags)
+		mgr := getStagMgr()
+		return mgr.UntagSession(args[0], stagTags)
 	},
 }
 
@@ -115,18 +97,15 @@ var stagFindCmd = &cobra.Command{
 		if len(stagTags) == 0 {
 			return fmt.Errorf("--tag is required")
 		}
-		store, err := getStagStore()
-		if err != nil {
-			return err
-		}
-		sessions := store.FindSessions(stagTags)
+		mgr := getStagMgr()
+		sessions := mgr.FindByTags(stagTags)
 		if len(sessions) == 0 {
 			fmt.Println("No matching sessions found.")
 			return nil
 		}
 		fmt.Printf("Found %d sessions:\n", len(sessions))
 		for _, s := range sessions {
-			fmt.Printf("  %s\n", s)
+			fmt.Printf("  %s\n", s.ID)
 		}
 		return nil
 	},
@@ -137,13 +116,9 @@ var stagAutoTagCmd = &cobra.Command{
 	Short: "Auto-tag a session based on content",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		store, err := getStagStore()
-		if err != nil {
-			return err
-		}
+		mgr := getStagMgr()
 		prompt, _ := cmd.Flags().GetString("prompt")
-		output, _ := cmd.Flags().GetString("output")
-		tags := store.AutoTag(args[0], prompt, output)
+		tags := mgr.AutoTag(args[0], prompt)
 		if len(tags) == 0 {
 			fmt.Println("No auto-tags generated.")
 		} else {
@@ -155,5 +130,4 @@ var stagAutoTagCmd = &cobra.Command{
 
 func init() {
 	stagAutoTagCmd.Flags().String("prompt", "", "Session prompt for auto-tagging")
-	stagAutoTagCmd.Flags().String("output", "", "Session output for auto-tagging")
 }
