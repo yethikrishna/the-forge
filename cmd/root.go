@@ -121,6 +121,8 @@ The wielder and the sword are one.`,
 		transparentCmd(),
 		autodetectCmd(),
 		prefetchCmd(),
+		startupCmd(),
+		offlineCmd(),
 		ciCmd(),
 		errteachCmd(),
 		notifyCmd(),
@@ -157,6 +159,7 @@ The wielder and the sword are one.`,
 		tokensCmd,
 		promptRegCmd,
 		poolCmd,
+		snapCmd,
 	)
 	return root.ExecuteContext(ctx)
 }
