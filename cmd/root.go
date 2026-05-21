@@ -114,6 +114,7 @@ The wielder and the sword are one.`,
 		approveCmd(),
 		roleCmd(),
 		trustCmd(),
+		scanCmd(),
 		ciCmd(),
 		errteachCmd(),
 		notifyCmd(),
@@ -125,6 +126,9 @@ The wielder and the sword are one.`,
 		tracesCmd(),
 		mcpComposeCmd(),
 		localInitCmd(),
+		subagentCmd(),
+		agentRoleCmd(),
+		codegraphCmd(),
 	)
 	return root.ExecuteContext(ctx)
 }
