@@ -21,16 +21,16 @@ import (
 type AgentType string
 
 const (
-	AgentClaude  AgentType = "claude"
-	AgentCodex   AgentType = "codex"
-	AgentGemini  AgentType = "gemini"
-	AgentAider   AgentType = "aider"
-	AgentGoose   AgentType = "goose"
-	AgentAmp     AgentType = "amp"
-	AgentCursor  AgentType = "cursor"
-	AgentAuggie  AgentType = "auggie"
-	AgentQ       AgentType = "q"
-	AgentCustom  AgentType = "custom"
+	AgentClaude AgentType = "claude"
+	AgentCodex  AgentType = "codex"
+	AgentGemini AgentType = "gemini"
+	AgentAider  AgentType = "aider"
+	AgentGoose  AgentType = "goose"
+	AgentAmp    AgentType = "amp"
+	AgentCursor AgentType = "cursor"
+	AgentAuggie AgentType = "auggie"
+	AgentQ      AgentType = "q"
+	AgentCustom AgentType = "custom"
 )
 
 // TransportType defines how to communicate with the agent.
@@ -43,17 +43,17 @@ const (
 
 // ProcessConfig configures an agent process.
 type ProcessConfig struct {
-	Type       AgentType
-	Transport  TransportType
-	Binary     string   // Override binary name
-	Args       []string // Additional arguments
-	Env        []string // Environment variables
-	WorkDir    string   // Working directory
-	Port       int      // API port (0 = auto)
-	Jail       bool     // Enable network sandboxing
-	JailRules  []string // httpjail allow rules
-	Model      string   // Model override
-	Verbose    bool     // Verbose output
+	Type      AgentType
+	Transport TransportType
+	Binary    string   // Override binary name
+	Args      []string // Additional arguments
+	Env       []string // Environment variables
+	WorkDir   string   // Working directory
+	Port      int      // API port (0 = auto)
+	Jail      bool     // Enable network sandboxing
+	JailRules []string // httpjail allow rules
+	Model     string   // Model override
+	Verbose   bool     // Verbose output
 }
 
 // Process represents a running agent process.

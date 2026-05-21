@@ -55,11 +55,11 @@ type Metric struct {
 
 // Variant represents a single configuration variant being tested.
 type Variant struct {
-	ID          string
-	Name        string
-	Config      map[string]interface{} // agent configuration
-	Results     []Observation
-	IsControl   bool // the baseline variant
+	ID        string
+	Name      string
+	Config    map[string]interface{} // agent configuration
+	Results   []Observation
+	IsControl bool // the baseline variant
 }
 
 // Observation is a single measurement from a variant.
@@ -81,7 +81,7 @@ type Experiment struct {
 	Status      Status
 	StartTime   time.Time
 	EndTime     time.Time
-	MinSamples  int     // minimum observations per variant
+	MinSamples  int // minimum observations per variant
 	MaxDuration time.Duration
 	Decision    *Decision
 	CreatedAt   time.Time

@@ -47,10 +47,10 @@ func (k Key) PublicKey() Key {
 
 // TunnelConfig configures a WireGuard tunnel.
 type TunnelConfig struct {
-	Name       string   // Interface name (e.g., "wg0")
-	Port       int      // Listening port
+	Name       string // Interface name (e.g., "wg0")
+	Port       int    // Listening port
 	PrivateKey Key
-	Address    string   // Tunnel IP address (e.g., "10.0.0.1/24")
+	Address    string // Tunnel IP address (e.g., "10.0.0.1/24")
 	Peers      []PeerConfig
 	DNS        []string
 	MTU        int

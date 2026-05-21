@@ -21,10 +21,10 @@ import (
 type ObligationType string
 
 const (
-	ObligationMust    ObligationType = "must"    // Agent must do this
+	ObligationMust    ObligationType = "must"     // Agent must do this
 	ObligationMustNot ObligationType = "must_not" // Agent must never do this
-	ObligationShould  ObligationType = "should"  // Agent should try to do this
-	ObligationEnsure  ObligationType = "ensure"  // Agent must ensure this condition
+	ObligationShould  ObligationType = "should"   // Agent should try to do this
+	ObligationEnsure  ObligationType = "ensure"   // Agent must ensure this condition
 )
 
 // ViolationSeverity classifies violation severity.
@@ -50,15 +50,15 @@ type Obligation struct {
 
 // Contract represents a behavioral contract for an agent.
 type Contract struct {
-	ID           string        `json:"id"`
-	AgentID      string        `json:"agent_id"`
-	Name         string        `json:"name"`
-	Description  string        `json:"description"`
-	Obligations  []Obligation  `json:"obligations"`
-	Violations   int           `json:"violations"`
-	Active       bool          `json:"active"`
-	CreatedAt    time.Time     `json:"created_at"`
-	UpdatedAt    time.Time     `json:"updated_at"`
+	ID          string       `json:"id"`
+	AgentID     string       `json:"agent_id"`
+	Name        string       `json:"name"`
+	Description string       `json:"description"`
+	Obligations []Obligation `json:"obligations"`
+	Violations  int          `json:"violations"`
+	Active      bool         `json:"active"`
+	CreatedAt   time.Time    `json:"created_at"`
+	UpdatedAt   time.Time    `json:"updated_at"`
 }
 
 // ViolationRecord records a contract violation.
@@ -75,10 +75,10 @@ type ViolationRecord struct {
 
 // Enforcer enforces behavioral contracts.
 type Enforcer struct {
-	dir       string
-	contracts map[string]*Contract
+	dir        string
+	contracts  map[string]*Contract
 	violations []ViolationRecord
-	mu        sync.RWMutex
+	mu         sync.RWMutex
 }
 
 // NewEnforcer creates a new contract enforcer.

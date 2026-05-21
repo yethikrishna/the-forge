@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/forge/sword/internal/resilience/circuit"
 	"github.com/forge/sword/internal/pretty"
+	"github.com/forge/sword/internal/resilience/circuit"
 	"github.com/spf13/cobra"
 )
 

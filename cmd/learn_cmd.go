@@ -468,9 +468,9 @@ Examples:
 
 	// --- delete ---
 	deleteCmd := &cobra.Command{
-		Use:   "delete <lesson-id>",
-		Short: "Delete a lesson",
-		Args:  cobra.ExactArgs(1),
+		Use:     "delete <lesson-id>",
+		Short:   "Delete a lesson",
+		Args:    cobra.ExactArgs(1),
 		Aliases: []string{"rm"},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			store, err := getStore()

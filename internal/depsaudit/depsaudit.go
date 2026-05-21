@@ -34,10 +34,10 @@ const (
 type FindingCategory string
 
 const (
-	CategoryCVE       FindingCategory = "cve"
-	CategoryLicense    FindingCategory = "license"
-	CategoryOutdated   FindingCategory = "outdated"
-	CategoryUnused     FindingCategory = "unused"
+	CategoryCVE         FindingCategory = "cve"
+	CategoryLicense     FindingCategory = "license"
+	CategoryOutdated    FindingCategory = "outdated"
+	CategoryUnused      FindingCategory = "unused"
 	CategoryAlternative FindingCategory = "alternative"
 	CategoryMaintenance FindingCategory = "maintenance"
 )
@@ -57,11 +57,11 @@ type Finding struct {
 
 // Dependency represents a project dependency.
 type Dependency struct {
-	Name       string `json:"name"`
-	Version    string `json:"version"`
-	License    string `json:"license,omitempty"`
-	Indirect   bool   `json:"indirect"`
-	Location   string `json:"location,omitempty"` // where it's declared
+	Name     string `json:"name"`
+	Version  string `json:"version"`
+	License  string `json:"license,omitempty"`
+	Indirect bool   `json:"indirect"`
+	Location string `json:"location,omitempty"` // where it's declared
 }
 
 // AuditReport is the complete audit result.
@@ -76,12 +76,12 @@ type AuditReport struct {
 
 // AuditSummary holds counts by severity and category.
 type AuditSummary struct {
-	TotalDeps    int            `json:"total_deps"`
-	DirectDeps   int            `json:"direct_deps"`
-	IndirectDeps int            `json:"indirect_deps"`
-	BySeverity   map[Severity]int  `json:"by_severity"`
+	TotalDeps    int                     `json:"total_deps"`
+	DirectDeps   int                     `json:"direct_deps"`
+	IndirectDeps int                     `json:"indirect_deps"`
+	BySeverity   map[Severity]int        `json:"by_severity"`
 	ByCategory   map[FindingCategory]int `json:"by_category"`
-	Score        int            `json:"score"` // 0-100, higher is better
+	Score        int                     `json:"score"` // 0-100, higher is better
 }
 
 // Auditor performs dependency audits.
@@ -331,11 +331,11 @@ func auditGoVulnerabilities(dir string) []Finding {
 
 // Known problematic licenses
 var problematicLicenses = map[string]Severity{
-	"GPL-2.0":     SeverityHigh,
-	"GPL-3.0":     SeverityHigh,
-	"AGPL-3.0":    SeverityCritical,
-	"SSPL":        SeverityCritical,
-	"BSL":         SeverityMedium,
+	"GPL-2.0":        SeverityHigh,
+	"GPL-3.0":        SeverityHigh,
+	"AGPL-3.0":       SeverityCritical,
+	"SSPL":           SeverityCritical,
+	"BSL":            SeverityMedium,
 	"Commons-Clause": SeverityHigh,
 }
 
@@ -407,7 +407,7 @@ func auditOutdated(deps []Dependency, lang string) []Finding {
 	var findings []Finding
 
 	knownLatest := map[string]string{
-		"github.com/spf13/cobra":  "v1.8.0",
+		"github.com/spf13/cobra":      "v1.8.0",
 		"github.com/stretchr/testify": "v1.9.0",
 	}
 
@@ -531,9 +531,9 @@ func auditMaintenance(deps []Dependency) []Finding {
 
 func generateSummary(deps []Dependency, findings []Finding) AuditSummary {
 	summary := AuditSummary{
-		TotalDeps:    len(deps),
-		BySeverity:   make(map[Severity]int),
-		ByCategory:   make(map[FindingCategory]int),
+		TotalDeps:  len(deps),
+		BySeverity: make(map[Severity]int),
+		ByCategory: make(map[FindingCategory]int),
 	}
 
 	for _, dep := range deps {

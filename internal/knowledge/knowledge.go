@@ -20,13 +20,13 @@ import (
 type EntryType string
 
 const (
-	TypeFact       EntryType = "fact"
-	TypeProcedure  EntryType = "procedure"
-	TypeDecision   EntryType = "decision"
-	TypePattern    EntryType = "pattern"
-	TypeError      EntryType = "error"
-	TypeReference  EntryType = "reference"
-	TypeInsight    EntryType = "insight"
+	TypeFact      EntryType = "fact"
+	TypeProcedure EntryType = "procedure"
+	TypeDecision  EntryType = "decision"
+	TypePattern   EntryType = "pattern"
+	TypeError     EntryType = "error"
+	TypeReference EntryType = "reference"
+	TypeInsight   EntryType = "insight"
 )
 
 // Entry represents a knowledge entry.
@@ -35,13 +35,13 @@ type Entry struct {
 	Type        EntryType `json:"type"`
 	Title       string    `json:"title"`
 	Content     string    `json:"content"`
-	Source      string    `json:"source,omitempty"`  // Where this knowledge came from
+	Source      string    `json:"source,omitempty"` // Where this knowledge came from
 	AgentID     string    `json:"agent_id,omitempty"`
 	Tags        []string  `json:"tags,omitempty"`
 	Category    string    `json:"category,omitempty"`
-	Confidence  float64   `json:"confidence"`  // 0-1
+	Confidence  float64   `json:"confidence"` // 0-1
 	AccessCount int       `json:"access_count"`
-	Hash        string    `json:"hash"`        // Content hash for dedup
+	Hash        string    `json:"hash"` // Content hash for dedup
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -320,10 +320,10 @@ func (s *Store) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"total_entries": len(s.entries),
-		"by_type":       byType,
+		"total_entries":  len(s.entries),
+		"by_type":        byType,
 		"total_accesses": totalAccess,
-		"index_size":    len(s.index),
+		"index_size":     len(s.index),
 	}
 }
 

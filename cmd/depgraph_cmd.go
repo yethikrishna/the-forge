@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/depgraph"
+	"github.com/spf13/cobra"
 )
 
 var depgraphCmd = &cobra.Command{

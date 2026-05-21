@@ -27,12 +27,12 @@ func TestCreateBridge(t *testing.T) {
 func TestTranslateMCPToA2A(t *testing.T) {
 	b, _ := NewBridge(t.TempDir())
 	msg := &Message{
-		ID:       "msg-1",
-		Source:   ProtocolMCP,
-		Target:   ProtocolA2A,
-		Type:     "request",
-		Method:   "tools/list",
-		Params:   map[string]interface{}{},
+		ID:     "msg-1",
+		Source: ProtocolMCP,
+		Target: ProtocolA2A,
+		Type:   "request",
+		Method: "tools/list",
+		Params: map[string]interface{}{},
 	}
 	translated, err := b.Translate(msg)
 	if err != nil {
@@ -197,11 +197,11 @@ func TestListRules(t *testing.T) {
 
 func TestFormatMessage(t *testing.T) {
 	msg := &Message{
-		ID:       "msg-test",
-		Source:   ProtocolMCP,
-		Target:   ProtocolA2A,
-		Type:     "request",
-		Method:   "tools/list",
+		ID:        "msg-test",
+		Source:    ProtocolMCP,
+		Target:    ProtocolA2A,
+		Type:      "request",
+		Method:    "tools/list",
 		Converted: true,
 	}
 	output := FormatMessage(msg)

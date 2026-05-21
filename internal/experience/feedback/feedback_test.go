@@ -205,14 +205,14 @@ func TestAnalyzeEmptyAgent(t *testing.T) {
 
 func TestFormatAnalysis(t *testing.T) {
 	a := &Analysis{
-		Agent:           "builder",
-		TotalSignals:    10,
-		PositiveCount:   7,
-		NegativeCount:   3,
+		Agent:            "builder",
+		TotalSignals:     10,
+		PositiveCount:    7,
+		NegativeCount:    3,
 		SatisfactionRate: 0.7,
-		AvgRating:       4.2,
-		TrendDirection:  "improving",
-		TrendSlope:      0.15,
+		AvgRating:        4.2,
+		TrendDirection:   "improving",
+		TrendSlope:       0.15,
 		CommonIssues: []IssueFrequency{
 			{Issue: "correction", Count: 2, Percent: 66.7},
 		},

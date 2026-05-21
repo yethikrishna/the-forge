@@ -111,19 +111,19 @@ func (s RecordingStatus) String() string {
 
 // Pattern represents an extracted pattern from recordings.
 type Pattern struct {
-	ID           string
-	Name         string
-	Description  string
-	Actions      []ActionTemplate
+	ID             string
+	Name           string
+	Description    string
+	Actions        []ActionTemplate
 	DecisionPoints []DecisionPoint
-	Frequency    int // how many times this pattern appeared
-	Confidence   float64
-	Tags         []string
+	Frequency      int // how many times this pattern appeared
+	Confidence     float64
+	Tags           []string
 }
 
 // ActionTemplate is a parameterized action for replay.
 type ActionTemplate struct {
-	Type       ActionType
+	Type        ActionType
 	CommandTmpl string // template with {{.param}} placeholders
 	FilePattern string // regex or glob for matching files
 	IsRequired  bool
@@ -373,10 +373,10 @@ func (a *Analyzer) extractFilePatterns(actions []*Action) []*Pattern {
 		actionTemplates := make([]ActionTemplate, len(ops))
 		for i, op := range ops {
 			actionTemplates[i] = ActionTemplate{
-				Type:       op,
+				Type:        op,
 				FilePattern: dir + "/*",
-				IsRequired: true,
-				Order:      i,
+				IsRequired:  true,
+				Order:       i,
 			}
 		}
 
@@ -416,8 +416,8 @@ func (a *Analyzer) createLinearPattern(actions []*Action) *Pattern {
 	templates := make([]ActionTemplate, len(actions))
 	for i, act := range actions {
 		templates[i] = ActionTemplate{
-			Type:      act.Type,
-			Order:     i,
+			Type:       act.Type,
+			Order:      i,
 			IsRequired: true,
 		}
 		if act.Type == ActionCommand {

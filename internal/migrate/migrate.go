@@ -29,25 +29,25 @@ const (
 type Status string
 
 const (
-	StatusPending   Status = "pending"
-	StatusApplied   Status = "applied"
+	StatusPending    Status = "pending"
+	StatusApplied    Status = "applied"
 	StatusRolledBack Status = "rolled_back"
-	StatusFailed    Status = "failed"
+	StatusFailed     Status = "failed"
 )
 
 // Migration represents a single migration.
 type Migration struct {
-	ID          string    `json:"id"`
-	Version     int       `json:"version"`
-	Name        string    `json:"name"`
-	UpSQL       string    `json:"up_sql"`
-	DownSQL     string    `json:"down_sql"`
-	Checksum    string    `json:"checksum"`
-	Status      Status    `json:"status"`
-	AppliedAt   time.Time `json:"applied_at,omitempty"`
+	ID           string    `json:"id"`
+	Version      int       `json:"version"`
+	Name         string    `json:"name"`
+	UpSQL        string    `json:"up_sql"`
+	DownSQL      string    `json:"down_sql"`
+	Checksum     string    `json:"checksum"`
+	Status       Status    `json:"status"`
+	AppliedAt    time.Time `json:"applied_at,omitempty"`
 	RolledBackAt time.Time `json:"rolled_back_at,omitempty"`
-	Error       string    `json:"error,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
+	Error        string    `json:"error,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 // Manager manages migrations.

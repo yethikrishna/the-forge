@@ -152,7 +152,7 @@ func TestTopAgents(t *testing.T) {
 	dir := t.TempDir()
 	tracker, _ := NewTracker(dir)
 
-	tracker.Record("agent-1", "gpt-4.1", 10000, 5000) // high cost
+	tracker.Record("agent-1", "gpt-4.1", 10000, 5000)    // high cost
 	tracker.Record("agent-2", "gpt-4.1-mini", 1000, 500) // low cost
 
 	top := tracker.TopAgents(10)

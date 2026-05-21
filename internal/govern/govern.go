@@ -45,49 +45,49 @@ const (
 
 // Score represents a governance score for a single category.
 type Score struct {
-	Category     Category        `json:"category"`
-	Value        int             `json:"value"` // 0-100
-	Grade        Grade           `json:"grade"`
-	Weight       float64         `json:"weight"` // Relative weight
-	Findings     []Finding       `json:"findings,omitempty"`
-	LastAssessed time.Time       `json:"last_assessed"`
+	Category     Category  `json:"category"`
+	Value        int       `json:"value"` // 0-100
+	Grade        Grade     `json:"grade"`
+	Weight       float64   `json:"weight"` // Relative weight
+	Findings     []Finding `json:"findings,omitempty"`
+	LastAssessed time.Time `json:"last_assessed"`
 }
 
 // Finding represents a specific governance finding.
 type Finding struct {
-	ID          string   `json:"id"`
-	Severity    string   `json:"severity"` // critical, high, medium, low, info
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Category    Category `json:"category"`
-	Resource    string   `json:"resource,omitempty"`
-	Remediation string   `json:"remediation,omitempty"`
-	Status      string   `json:"status"` // open, resolved, accepted, deferred
-	Evidence    string   `json:"evidence,omitempty"`
-	DetectedAt  time.Time `json:"detected_at"`
+	ID          string     `json:"id"`
+	Severity    string     `json:"severity"` // critical, high, medium, low, info
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	Category    Category   `json:"category"`
+	Resource    string     `json:"resource,omitempty"`
+	Remediation string     `json:"remediation,omitempty"`
+	Status      string     `json:"status"` // open, resolved, accepted, deferred
+	Evidence    string     `json:"evidence,omitempty"`
+	DetectedAt  time.Time  `json:"detected_at"`
 	ResolvedAt  *time.Time `json:"resolved_at,omitempty"`
 }
 
 // Assessment is a complete governance assessment.
 type Assessment struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	TenantID    string    `json:"tenant_id,omitempty"`
-	Scores      []*Score  `json:"scores"`
-	OverallScore int      `json:"overall_score"` // 0-100
-	OverallGrade Grade    `json:"overall_grade"`
-	Findings    []Finding `json:"findings"`
-	Summary     string    `json:"summary"`
-	CreatedAt   time.Time `json:"created_at"`
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	TenantID     string    `json:"tenant_id,omitempty"`
+	Scores       []*Score  `json:"scores"`
+	OverallScore int       `json:"overall_score"` // 0-100
+	OverallGrade Grade     `json:"overall_grade"`
+	Findings     []Finding `json:"findings"`
+	Summary      string    `json:"summary"`
+	CreatedAt    time.Time `json:"created_at"`
 }
 
 // ReportConfig defines how a governance report should be generated.
 type ReportConfig struct {
-	Name       string    `json:"name"`
-	Framework  string    `json:"framework,omitempty"` // SOC2, HIPAA, GDPR, ISO27001
-	Categories []Category `json:"categories"`
+	Name       string               `json:"name"`
+	Framework  string               `json:"framework,omitempty"` // SOC2, HIPAA, GDPR, ISO27001
+	Categories []Category           `json:"categories"`
 	Weights    map[Category]float64 `json:"weights,omitempty"`
-	TenantID   string    `json:"tenant_id,omitempty"`
+	TenantID   string               `json:"tenant_id,omitempty"`
 }
 
 // Store manages governance assessments.
@@ -395,7 +395,7 @@ func (s *Store) ExportJSON(assessmentID string) ([]byte, error) {
 	return json.MarshalIndent(a, "", "  ")
 }
 
-	var counter int64
+var counter int64
 
 func nextID() int64 {
 	counter++

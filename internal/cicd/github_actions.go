@@ -9,19 +9,19 @@ import (
 
 // GitHubActionsWorkflow generates a GitHub Actions workflow YAML.
 type GitHubActionsWorkflow struct {
-	Name         string
-	On           GitHubActionsOn
-	Jobs         map[string]GitHubActionsJob
-	Permissions  map[string]string
-	Concurrency  *GitHubActionsConcurrency
+	Name        string
+	On          GitHubActionsOn
+	Jobs        map[string]GitHubActionsJob
+	Permissions map[string]string
+	Concurrency *GitHubActionsConcurrency
 }
 
 // GitHubActionsOn defines trigger conditions.
 type GitHubActionsOn struct {
-	Push    *GitHubActionsFilter `yaml:"push,omitempty"`
-	PR      *GitHubActionsFilter `yaml:"pull_request,omitempty"`
-	Schedule []string             `yaml:"schedule,omitempty"`
-	WorkflowDispatch bool         `yaml:"workflow_dispatch,omitempty"`
+	Push             *GitHubActionsFilter `yaml:"push,omitempty"`
+	PR               *GitHubActionsFilter `yaml:"pull_request,omitempty"`
+	Schedule         []string             `yaml:"schedule,omitempty"`
+	WorkflowDispatch bool                 `yaml:"workflow_dispatch,omitempty"`
 }
 
 // GitHubActionsFilter defines branch/path filters.
@@ -32,14 +32,14 @@ type GitHubActionsFilter struct {
 
 // GitHubActionsJob defines a single job.
 type GitHubActionsJob struct {
-	RunsOn    string                    `yaml:"runs-on"`
-	Steps     []GitHubActionsStep       `yaml:"steps"`
-	Needs     []string                  `yaml:"needs,omitempty"`
-	If        string                    `yaml:"if,omitempty"`
-	Env       map[string]string         `yaml:"env,omitempty"`
-	Timeout   int                       `yaml:"timeout-minutes,omitempty"`
-	Strategy  *GitHubActionsStrategy    `yaml:"strategy,omitempty"`
-	Services  map[string]GitHubActionsService `yaml:"services,omitempty"`
+	RunsOn   string                          `yaml:"runs-on"`
+	Steps    []GitHubActionsStep             `yaml:"steps"`
+	Needs    []string                        `yaml:"needs,omitempty"`
+	If       string                          `yaml:"if,omitempty"`
+	Env      map[string]string               `yaml:"env,omitempty"`
+	Timeout  int                             `yaml:"timeout-minutes,omitempty"`
+	Strategy *GitHubActionsStrategy          `yaml:"strategy,omitempty"`
+	Services map[string]GitHubActionsService `yaml:"services,omitempty"`
 }
 
 // GitHubActionsStep defines a workflow step.
@@ -55,8 +55,8 @@ type GitHubActionsStep struct {
 
 // GitHubActionsStrategy defines matrix strategy.
 type GitHubActionsStrategy struct {
-	Matrix map[string][]string `yaml:"matrix,omitempty"`
-	FailFast bool              `yaml:"fail-fast,omitempty"`
+	Matrix   map[string][]string `yaml:"matrix,omitempty"`
+	FailFast bool                `yaml:"fail-fast,omitempty"`
 }
 
 // GitHubActionsService defines a service container.
@@ -116,7 +116,7 @@ func GenerateReleaseWorkflow(goVersion string) *GitHubActionsWorkflow {
 	return &GitHubActionsWorkflow{
 		Name: "Release",
 		On: GitHubActionsOn{
-			Push: &GitHubActionsFilter{Branches: []string{"main"}, Paths: []string{"go.mod"}},
+			Push:             &GitHubActionsFilter{Branches: []string{"main"}, Paths: []string{"go.mod"}},
 			WorkflowDispatch: true,
 		},
 		Permissions: map[string]string{

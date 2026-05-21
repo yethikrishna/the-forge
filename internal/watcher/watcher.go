@@ -75,11 +75,11 @@ type Config struct {
 // DefaultConfig returns a sensible default configuration.
 func DefaultConfig(paths ...string) Config {
 	return Config{
-		Paths:         paths,
-		Extensions:    nil, // all files
-		Ignore:        []string{".git", "node_modules", ".forge", "vendor", "*.tmp", "*.swp", ".DS_Store"},
-		Debounce:      300 * time.Millisecond,
-		PollInterval:  500 * time.Millisecond,
+		Paths:        paths,
+		Extensions:   nil, // all files
+		Ignore:       []string{".git", "node_modules", ".forge", "vendor", "*.tmp", "*.swp", ".DS_Store"},
+		Debounce:     300 * time.Millisecond,
+		PollInterval: 500 * time.Millisecond,
 	}
 }
 

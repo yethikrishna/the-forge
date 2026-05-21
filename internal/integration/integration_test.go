@@ -170,7 +170,7 @@ func TestFormatTask(t *testing.T) {
 
 func TestFormatConnection(t *testing.T) {
 	c := &Connection{
-		ID: "conn-test",
+		ID:     "conn-test",
 		Config: Config{Provider: ProviderNotion, Name: "My Notion", BaseURL: "https://notion.so"},
 		Status: "active",
 	}

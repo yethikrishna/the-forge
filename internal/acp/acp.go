@@ -19,11 +19,11 @@ const Version = "0.1.0"
 
 // Message types.
 const (
-	MessageTypeUser      = "user"
-	MessageTypeAssistant = "assistant"
-	MessageTypeSystem    = "system"
-	MessageTypeError     = "error"
-	MessageTypeToolUse   = "tool_use"
+	MessageTypeUser       = "user"
+	MessageTypeAssistant  = "assistant"
+	MessageTypeSystem     = "system"
+	MessageTypeError      = "error"
+	MessageTypeToolUse    = "tool_use"
 	MessageTypeToolResult = "tool_result"
 )
 
@@ -39,13 +39,13 @@ const (
 
 // Message represents a chat message.
 type Message struct {
-	ID        string                 `json:"id"`
-	Type      string                 `json:"type"`
-	Content   string                 `json:"content,omitempty"`
-	Role      string                 `json:"role"`
-	Timestamp time.Time              `json:"timestamp"`
-	Metadata  map[string]any         `json:"metadata,omitempty"`
-	ToolCalls []ToolCall             `json:"tool_calls,omitempty"`
+	ID        string         `json:"id"`
+	Type      string         `json:"type"`
+	Content   string         `json:"content,omitempty"`
+	Role      string         `json:"role"`
+	Timestamp time.Time      `json:"timestamp"`
+	Metadata  map[string]any `json:"metadata,omitempty"`
+	ToolCalls []ToolCall     `json:"tool_calls,omitempty"`
 }
 
 // ToolCall represents a tool invocation within a message.
@@ -65,12 +65,12 @@ type ContentBlock struct {
 
 // Event represents a streaming event.
 type Event struct {
-	Type      string         `json:"type"`
-	Message   *Message       `json:"message,omitempty"`
-	Block     *ContentBlock  `json:"block,omitempty"`
-	Delta     string         `json:"delta,omitempty"`
-	Error     string         `json:"error,omitempty"`
-	Timestamp time.Time      `json:"timestamp"`
+	Type      string        `json:"type"`
+	Message   *Message      `json:"message,omitempty"`
+	Block     *ContentBlock `json:"block,omitempty"`
+	Delta     string        `json:"delta,omitempty"`
+	Error     string        `json:"error,omitempty"`
+	Timestamp time.Time     `json:"timestamp"`
 }
 
 // Session represents an agent session.
@@ -86,10 +86,10 @@ type Session struct {
 
 // AgentInfo describes an agent.
 type AgentInfo struct {
-	Name        string   `json:"name"`
-	Type        string   `json:"type"`
-	Version     string   `json:"version"`
-	Description string   `json:"description"`
+	Name         string   `json:"name"`
+	Type         string   `json:"type"`
+	Version      string   `json:"version"`
+	Description  string   `json:"description"`
 	Capabilities []string `json:"capabilities"`
 }
 

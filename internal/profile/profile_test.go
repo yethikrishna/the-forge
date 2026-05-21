@@ -178,7 +178,7 @@ func TestResolve(t *testing.T) {
 	m := NewManager(dir)
 
 	m.Create("base", "Base", "", map[string]interface{}{
-		"timeout": 30,
+		"timeout":  30,
 		"cost_cap": "$10",
 	})
 	m.Create("dev", "Dev", "base", map[string]interface{}{
@@ -271,8 +271,8 @@ func TestDiff(t *testing.T) {
 		"debug":    true,
 	})
 	m.Create("prod", "Prod", "", map[string]interface{}{
-		"cost_cap": "$50/day",
-		"models":   []string{"anthropic/claude-sonnet-4"},
+		"cost_cap":         "$50/day",
+		"models":           []string{"anthropic/claude-sonnet-4"},
 		"require_approval": true,
 	})
 

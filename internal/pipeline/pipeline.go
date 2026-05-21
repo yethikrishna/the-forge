@@ -43,7 +43,7 @@ type Step struct {
 type Pipeline struct {
 	Name     string `yaml:"name" json:"name"`
 	Steps    []Step `yaml:"steps" json:"steps"`
-	OnFail   string `yaml:"on_fail" json:"on_fail"`    // "stop" or "continue"
+	OnFail   string `yaml:"on_fail" json:"on_fail"` // "stop" or "continue"
 	Parallel bool   `yaml:"parallel" json:"parallel"`
 	Timeout  string `yaml:"timeout" json:"timeout"`
 }
@@ -62,13 +62,13 @@ type StepResult struct {
 
 // PipelineResult holds the result of a completed pipeline run.
 type PipelineResult struct {
-	Pipeline   string        `json:"pipeline"`
-	Status     StepStatus    `json:"status"`
-	Steps      []StepResult  `json:"steps"`
-	TotalCost  float64       `json:"total_cost"`
-	Duration   string        `json:"duration"`
-	StartedAt  time.Time     `json:"started_at"`
-	FinishedAt time.Time     `json:"finished_at"`
+	Pipeline   string       `json:"pipeline"`
+	Status     StepStatus   `json:"status"`
+	Steps      []StepResult `json:"steps"`
+	TotalCost  float64      `json:"total_cost"`
+	Duration   string       `json:"duration"`
+	StartedAt  time.Time    `json:"started_at"`
+	FinishedAt time.Time    `json:"finished_at"`
 }
 
 // AgentRunner is the interface for executing an agent step.
@@ -90,12 +90,12 @@ func (d *DefaultApprovalHandler) RequestApproval(_ context.Context, _ Step, _ st
 
 // Executor runs pipelines.
 type Executor struct {
-	runner    AgentRunner
-	approver  ApprovalHandler
-	tracker   *cost.Tracker
-	project   string
-	onStep    func(step Step, status StepStatus)
-	mu        sync.Mutex
+	runner   AgentRunner
+	approver ApprovalHandler
+	tracker  *cost.Tracker
+	project  string
+	onStep   func(step Step, status StepStatus)
+	mu       sync.Mutex
 }
 
 // NewExecutor creates a new pipeline executor.

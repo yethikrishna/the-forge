@@ -17,13 +17,13 @@ import (
 
 // Service represents a Docker Compose service definition.
 type Service struct {
-	Name       string            `json:"name" yaml:"name"`
-	Image      string            `json:"image" yaml:"image"`
-	Command    string            `json:"command,omitempty" yaml:"command,omitempty"`
-	Ports      []string          `json:"ports,omitempty" yaml:"ports,omitempty"`
-	Env        map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
-	Volumes    []string          `json:"volumes,omitempty" yaml:"volumes,omitempty"`
-	DependsOn  []string          `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
+	Name        string            `json:"name" yaml:"name"`
+	Image       string            `json:"image" yaml:"image"`
+	Command     string            `json:"command,omitempty" yaml:"command,omitempty"`
+	Ports       []string          `json:"ports,omitempty" yaml:"ports,omitempty"`
+	Env         map[string]string `json:"env,omitempty" yaml:"env,omitempty"`
+	Volumes     []string          `json:"volumes,omitempty" yaml:"volumes,omitempty"`
+	DependsOn   []string          `json:"depends_on,omitempty" yaml:"depends_on,omitempty"`
 	HealthCheck *HealthCheck      `json:"healthcheck,omitempty" yaml:"healthcheck,omitempty"`
 }
 
@@ -37,12 +37,12 @@ type HealthCheck struct {
 
 // Environment represents a Docker Compose environment.
 type Environment struct {
-	ID        string             `json:"id"`
-	Name      string             `json:"name"`
+	ID        string              `json:"id"`
+	Name      string              `json:"name"`
 	Services  map[string]*Service `json:"services"`
-	Dir       string             `json:"dir"`
-	CreatedAt time.Time          `json:"created_at"`
-	Status    string             `json:"status"` // created, running, stopped, error
+	Dir       string              `json:"dir"`
+	CreatedAt time.Time           `json:"created_at"`
+	Status    string              `json:"status"` // created, running, stopped, error
 }
 
 // Manager manages Docker Compose environments.
@@ -60,7 +60,7 @@ func Preset(name string) *Environment {
 	switch name {
 	case "postgres":
 		return &Environment{
-			Name:   "postgres",
+			Name: "postgres",
 			Services: map[string]*Service{
 				"postgres": {
 					Name:  "postgres",
@@ -78,7 +78,7 @@ func Preset(name string) *Environment {
 		}
 	case "redis":
 		return &Environment{
-			Name:   "redis",
+			Name: "redis",
 			Services: map[string]*Service{
 				"redis": {
 					Name:  "redis",
@@ -95,7 +95,7 @@ func Preset(name string) *Environment {
 		}
 	case "mysql":
 		return &Environment{
-			Name:   "mysql",
+			Name: "mysql",
 			Services: map[string]*Service{
 				"mysql": {
 					Name:  "mysql",
@@ -128,10 +128,10 @@ func Preset(name string) *Environment {
 					DependsOn: []string{"postgres"},
 				},
 				"minio": {
-					Name:  "minio",
-					Image: "minio/minio:latest",
-					Ports: []string{"9000:9000", "9001:9001"},
-					Env:   map[string]string{"MINIO_ROOT_USER": "forge", "MINIO_ROOT_PASSWORD": "forge1234"},
+					Name:    "minio",
+					Image:   "minio/minio:latest",
+					Ports:   []string{"9000:9000", "9001:9001"},
+					Env:     map[string]string{"MINIO_ROOT_USER": "forge", "MINIO_ROOT_PASSWORD": "forge1234"},
 					Command: "server /data --console-address ':9001'",
 				},
 			},

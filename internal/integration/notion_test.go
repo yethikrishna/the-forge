@@ -14,9 +14,9 @@ func TestNotionClient_FetchTasks(t *testing.T) {
 	response := map[string]interface{}{
 		"results": []map[string]interface{}{
 			{
-				"id":            "page-1",
-				"url":           "https://notion.so/page-1",
-				"created_time":  "2024-01-15T10:30:00Z",
+				"id":               "page-1",
+				"url":              "https://notion.so/page-1",
+				"created_time":     "2024-01-15T10:30:00Z",
 				"last_edited_time": "2024-01-16T14:00:00Z",
 				"properties": map[string]interface{}{
 					"Name": map[string]interface{}{
@@ -47,9 +47,9 @@ func TestNotionClient_FetchTasks(t *testing.T) {
 				},
 			},
 			{
-				"id":            "page-2",
-				"url":           "https://notion.so/page-2",
-				"created_time":  "2024-01-10T08:00:00Z",
+				"id":               "page-2",
+				"url":              "https://notion.so/page-2",
+				"created_time":     "2024-01-10T08:00:00Z",
 				"last_edited_time": "2024-01-12T09:00:00Z",
 				"properties": map[string]interface{}{
 					"Name": map[string]interface{}{

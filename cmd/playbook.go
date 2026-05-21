@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/playbook"
+	"github.com/spf13/cobra"
 )
 
 var playbookCmd = &cobra.Command{

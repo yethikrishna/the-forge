@@ -67,7 +67,7 @@ func TestCompletionBashNoDesc(t *testing.T) {
 	// Build a minimal root with completion registered
 	root := &cobra.Command{Use: "forge", SilenceUsage: true}
 	root.AddCommand(completionCmd())
-	
+
 	compCmd, _, _ := root.Find([]string{"completion", "bash"})
 	if compCmd == nil {
 		t.Fatal("completion command not found")

@@ -18,11 +18,11 @@ import (
 type CanaryStatus string
 
 const (
-	CanaryPending   CanaryStatus = "pending"
-	CanaryRunning   CanaryStatus = "running"
-	CanaryPromoted  CanaryStatus = "promoted"
+	CanaryPending    CanaryStatus = "pending"
+	CanaryRunning    CanaryStatus = "running"
+	CanaryPromoted   CanaryStatus = "promoted"
 	CanaryRolledBack CanaryStatus = "rolled_back"
-	CanaryFailed    CanaryStatus = "failed"
+	CanaryFailed     CanaryStatus = "failed"
 )
 
 // MetricType represents a metric to track.
@@ -45,52 +45,52 @@ type MetricSample struct {
 
 // Threshold defines comparison thresholds for canary evaluation.
 type Threshold struct {
-	Metric    MetricType `json:"metric"`
-	MaxDelta  float64    `json:"max_delta"`  // max acceptable difference (canary - baseline)
-	MinDelta  float64    `json:"min_delta"`  // min acceptable difference (for quality, higher is better)
-	Critical  bool       `json:"critical"`   // if true, violation triggers immediate rollback
+	Metric   MetricType `json:"metric"`
+	MaxDelta float64    `json:"max_delta"` // max acceptable difference (canary - baseline)
+	MinDelta float64    `json:"min_delta"` // min acceptable difference (for quality, higher is better)
+	Critical bool       `json:"critical"`  // if true, violation triggers immediate rollback
 }
 
 // Deployment represents a canary deployment.
 type Deployment struct {
-	ID            string        `json:"id"`
-	Name          string        `json:"name"`
-	BaselineModel string        `json:"baseline_model"`
-	CanaryModel   string        `json:"canary_model"`
-	Status        CanaryStatus  `json:"status"`
-	TrafficPct    float64       `json:"traffic_pct"` // 0-100, % of traffic to canary
-	CreatedAt     time.Time     `json:"created_at"`
-	StartedAt     time.Time     `json:"started_at,omitempty"`
-	EndedAt       time.Time     `json:"ended_at,omitempty"`
-	Thresholds    []Threshold   `json:"thresholds"`
-	Samples       []MetricSample `json:"samples,omitempty"`
-	BaselineTasks int           `json:"baseline_tasks"`
-	CanaryTasks   int           `json:"canary_tasks"`
-	AutoRollback  bool          `json:"auto_rollback"`
-	PromoteAt     float64       `json:"promote_at"` // traffic % at which to auto-promote
-	Tags          []string      `json:"tags"`
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	BaselineModel string            `json:"baseline_model"`
+	CanaryModel   string            `json:"canary_model"`
+	Status        CanaryStatus      `json:"status"`
+	TrafficPct    float64           `json:"traffic_pct"` // 0-100, % of traffic to canary
+	CreatedAt     time.Time         `json:"created_at"`
+	StartedAt     time.Time         `json:"started_at,omitempty"`
+	EndedAt       time.Time         `json:"ended_at,omitempty"`
+	Thresholds    []Threshold       `json:"thresholds"`
+	Samples       []MetricSample    `json:"samples,omitempty"`
+	BaselineTasks int               `json:"baseline_tasks"`
+	CanaryTasks   int               `json:"canary_tasks"`
+	AutoRollback  bool              `json:"auto_rollback"`
+	PromoteAt     float64           `json:"promote_at"` // traffic % at which to auto-promote
+	Tags          []string          `json:"tags"`
 	Metadata      map[string]string `json:"metadata,omitempty"`
 }
 
 // EvaluationResult represents the result of evaluating a canary.
 type EvaluationResult struct {
-	DeploymentID  string             `json:"deployment_id"`
-	Timestamp     time.Time          `json:"timestamp"`
-	Pass          bool               `json:"pass"`
-	Violations    []ThresholdViolation `json:"violations,omitempty"`
-	Recommendation string            `json:"recommendation"`
-	CanaryScore   float64            `json:"canary_score"` // 0-100
-	BaselineScore float64            `json:"baseline_score"`
+	DeploymentID   string               `json:"deployment_id"`
+	Timestamp      time.Time            `json:"timestamp"`
+	Pass           bool                 `json:"pass"`
+	Violations     []ThresholdViolation `json:"violations,omitempty"`
+	Recommendation string               `json:"recommendation"`
+	CanaryScore    float64              `json:"canary_score"` // 0-100
+	BaselineScore  float64              `json:"baseline_score"`
 }
 
 // ThresholdViolation represents a threshold breach.
 type ThresholdViolation struct {
-	Metric      MetricType `json:"metric"`
-	CanaryValue float64    `json:"canary_value"`
-	BaselineValue float64  `json:"baseline_value"`
-	Delta       float64    `json:"delta"`
-	Threshold   float64    `json:"threshold"`
-	Critical    bool       `json:"critical"`
+	Metric        MetricType `json:"metric"`
+	CanaryValue   float64    `json:"canary_value"`
+	BaselineValue float64    `json:"baseline_value"`
+	Delta         float64    `json:"delta"`
+	Threshold     float64    `json:"threshold"`
+	Critical      bool       `json:"critical"`
 }
 
 // Manager manages canary deployments.
@@ -298,12 +298,12 @@ func (m *Manager) evaluate(d *Deployment) *EvaluationResult {
 		if violated {
 			result.Pass = false
 			result.Violations = append(result.Violations, ThresholdViolation{
-				Metric:       t.Metric,
-				CanaryValue:  canaryVal,
+				Metric:        t.Metric,
+				CanaryValue:   canaryVal,
 				BaselineValue: baselineVal,
-				Delta:        delta,
-				Threshold:    t.MaxDelta,
-				Critical:     t.Critical,
+				Delta:         delta,
+				Threshold:     t.MaxDelta,
+				Critical:      t.Critical,
 			})
 		}
 	}
@@ -444,7 +444,7 @@ func DefaultThresholds() []Threshold {
 		{Metric: MetricErrorRate, MaxDelta: 0.05, Critical: true},
 		{Metric: MetricLatency, MaxDelta: 500, Critical: false}, // 500ms max increase
 		{Metric: MetricCostPerTask, MaxDelta: 0.01, Critical: false},
-		{Metric: MetricSuccessRate, MinDelta: -0.05, Critical: true}, // -5% max decrease
+		{Metric: MetricSuccessRate, MinDelta: -0.05, Critical: true},  // -5% max decrease
 		{Metric: MetricQualityScore, MinDelta: -0.1, Critical: false}, // -0.1 max decrease
 	}
 }

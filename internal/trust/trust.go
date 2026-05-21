@@ -28,19 +28,19 @@ const (
 
 // AgentRecord tracks trust metrics for one agent.
 type AgentRecord struct {
-	AgentID           string    `json:"agent_id"`
-	TrustScore        float64   `json:"trust_score"`
-	TotalActions      int       `json:"total_actions"`
-	SuccessActions    int       `json:"success_actions"`
-	UndoneActions     int       `json:"undone_actions"`
-	FeedbackPositive  int       `json:"feedback_positive"`
-	FeedbackNegative  int       `json:"feedback_negative"`
-	TestsPassed       int       `json:"tests_passed"`
-	TestsFailed       int       `json:"tests_failed"`
-	SecurityIssues    int       `json:"security_issues"`
-	LastActionAt      time.Time `json:"last_action_at"`
-	CreatedAt         time.Time `json:"created_at"`
-	History           []ScoreChange `json:"history,omitempty"`
+	AgentID          string        `json:"agent_id"`
+	TrustScore       float64       `json:"trust_score"`
+	TotalActions     int           `json:"total_actions"`
+	SuccessActions   int           `json:"success_actions"`
+	UndoneActions    int           `json:"undone_actions"`
+	FeedbackPositive int           `json:"feedback_positive"`
+	FeedbackNegative int           `json:"feedback_negative"`
+	TestsPassed      int           `json:"tests_passed"`
+	TestsFailed      int           `json:"tests_failed"`
+	SecurityIssues   int           `json:"security_issues"`
+	LastActionAt     time.Time     `json:"last_action_at"`
+	CreatedAt        time.Time     `json:"created_at"`
+	History          []ScoreChange `json:"history,omitempty"`
 }
 
 // ScoreChange records a trust score change.

@@ -20,33 +20,33 @@ import (
 type DocType string
 
 const (
-	DocReadme  DocType = "readme"
-	DocAPI     DocType = "api"
-	DocArch    DocType = "architecture"
-	DocADR     DocType = "adr"
+	DocReadme    DocType = "readme"
+	DocAPI       DocType = "api"
+	DocArch      DocType = "architecture"
+	DocADR       DocType = "adr"
 	DocChangelog DocType = "changelog"
-	DocCLI     DocType = "cli"
-	DocPkg     DocType = "pkg"
+	DocCLI       DocType = "cli"
+	DocPkg       DocType = "pkg"
 )
 
 // DocFile represents a generated documentation file.
 type DocFile struct {
-	Path     string    `json:"path"`
-	Type     DocType   `json:"type"`
-	Title    string    `json:"title"`
-	Content  string    `json:"content"`
+	Path      string    `json:"path"`
+	Type      DocType   `json:"type"`
+	Title     string    `json:"title"`
+	Content   string    `json:"content"`
 	Generated time.Time `json:"generated"`
-	Source   string    `json:"source,omitempty"` // what generated this
+	Source    string    `json:"source,omitempty"` // what generated this
 }
 
 // PackageInfo holds extracted information about a Go package.
 type PackageInfo struct {
-	Dir         string       `json:"dir"`
-	Name        string       `json:"name"`
-	Doc         string       `json:"doc,omitempty"`
-	Files       []FileInfo   `json:"files"`
-	Exports     []ExportInfo `json:"exports"`
-	Imports     []string     `json:"imports,omitempty"`
+	Dir     string       `json:"dir"`
+	Name    string       `json:"name"`
+	Doc     string       `json:"doc,omitempty"`
+	Files   []FileInfo   `json:"files"`
+	Exports []ExportInfo `json:"exports"`
+	Imports []string     `json:"imports,omitempty"`
 }
 
 // FileInfo holds metadata about a Go source file.
@@ -59,9 +59,9 @@ type FileInfo struct {
 
 // ExportInfo describes an exported symbol.
 type ExportInfo struct {
-	Name string `json:"name"`
-	Kind string `json:"kind"` // func, type, var, const
-	Doc  string `json:"doc,omitempty"`
+	Name      string `json:"name"`
+	Kind      string `json:"kind"` // func, type, var, const
+	Doc       string `json:"doc,omitempty"`
 	Signature string `json:"signature,omitempty"`
 }
 

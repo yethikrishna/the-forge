@@ -65,7 +65,8 @@ func mockMCPServer(t *testing.T) (*httptest.Server, *[]map[string]interface{}) {
 
 // TestCrossToolBridgeToGatewayRoundTrip is the primary E2E test.
 // Flow: test calls CrossBridge.SendTo (Cursor target) → bridge POSTs to mock MCP server
-//       → GatewayRequest built from bridge response → Gateway.ProcessRequest approves it.
+//
+//	→ GatewayRequest built from bridge response → Gateway.ProcessRequest approves it.
 func TestCrossToolBridgeToGatewayRoundTrip(t *testing.T) {
 	// 1. Start a mock MCP server (stands in for Cursor's local API).
 	mcpSrv, received := mockMCPServer(t)

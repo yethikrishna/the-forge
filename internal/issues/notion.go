@@ -93,7 +93,7 @@ type notionPage struct {
 		Date *struct {
 			Start string `json:"start"`
 		} `json:"date,omitempty"`
-		Checkbox *bool `json:"checkbox,omitempty"`
+		Checkbox *bool    `json:"checkbox,omitempty"`
 		Number   *float64 `json:"number,omitempty"`
 	} `json:"properties"`
 }

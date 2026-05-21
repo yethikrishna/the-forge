@@ -12,10 +12,10 @@ import (
 
 // LinearProvider implements the Provider interface for Linear.
 type LinearProvider struct {
-	url     string
-	token   string
-	teamID  string
-	client  *http.Client
+	url    string
+	token  string
+	teamID string
+	client *http.Client
 }
 
 // NewLinearProvider creates a new Linear provider from config.
@@ -76,8 +76,8 @@ type linearIssue struct {
 	State       struct {
 		Name string `json:"name"`
 	} `json:"state"`
-	Priority   float64 `json:"priority"`
-	Assignee   *struct {
+	Priority float64 `json:"priority"`
+	Assignee *struct {
 		Name string `json:"name"`
 	} `json:"assignee"`
 	Creator *struct {

@@ -11,11 +11,11 @@ import (
 func TestGatewayNoAuth(t *testing.T) {
 	dir := t.TempDir()
 	gw, err := NewGateway(dir, GatewayConfig{
-		Name:    "test",
-		Version: "1.0",
-		Auth:    AuthConfig{Method: AuthNone},
+		Name:      "test",
+		Version:   "1.0",
+		Auth:      AuthConfig{Method: AuthNone},
 		RateLimit: RateLimitConfig{RequestsPerMinute: 100},
-		Enabled: true,
+		Enabled:   true,
 	})
 	if err != nil {
 		t.Fatalf("NewGateway: %v", err)
@@ -92,7 +92,7 @@ func TestGatewayOAuth2Auth(t *testing.T) {
 	dir := t.TempDir()
 	gw, _ := NewGateway(dir, GatewayConfig{
 		Auth: AuthConfig{
-			Method: AuthOAuth2,
+			Method:  AuthOAuth2,
 			OIDCURL: "https://auth.example.com",
 		},
 		RateLimit: RateLimitConfig{RequestsPerMinute: 100},
@@ -182,8 +182,8 @@ func TestGatewayValidation(t *testing.T) {
 		Enabled:   true,
 		Validation: []ValidationRule{
 			{
-				ToolName:   "forge_run",
-				Required:   []string{"prompt"},
+				ToolName:    "forge_run",
+				Required:    []string{"prompt"},
 				AllowedArgs: []string{"prompt", "model", "agent"},
 			},
 		},
@@ -244,7 +244,7 @@ func TestGatewayPayloadSize(t *testing.T) {
 	smallPayload, _ := json.Marshal(map[string]string{"data": "hello"})
 	resp := gw.ProcessRequest(GatewayRequest{
 		ClientID: "c1", Method: "tools/call", ToolName: "upload",
-		Args: map[string]interface{}{"data": "hello"},
+		Args:    map[string]interface{}{"data": "hello"},
 		Payload: smallPayload,
 	})
 	if !resp.Allowed {
@@ -258,7 +258,7 @@ func TestGatewayPayloadSize(t *testing.T) {
 	}
 	resp2 := gw.ProcessRequest(GatewayRequest{
 		ClientID: "c1", Method: "tools/call", ToolName: "upload",
-		Args: map[string]interface{}{"data": "big"},
+		Args:    map[string]interface{}{"data": "big"},
 		Payload: largePayload,
 	})
 	if resp2.Allowed {
@@ -320,9 +320,9 @@ func TestGatewayAuditLog(t *testing.T) {
 func TestGatewayDeniedAuditLog(t *testing.T) {
 	dir := t.TempDir()
 	gw, _ := NewGateway(dir, GatewayConfig{
-		Auth: AuthConfig{Method: AuthToken, Tokens: []string{"valid"}},
+		Auth:      AuthConfig{Method: AuthToken, Tokens: []string{"valid"}},
 		RateLimit: RateLimitConfig{RequestsPerMinute: 100},
-		Enabled: true,
+		Enabled:   true,
 	})
 
 	gw.ProcessRequest(GatewayRequest{ClientID: "c1", Method: "tools/list", Token: "invalid"})
@@ -339,9 +339,9 @@ func TestGatewayDeniedAuditLog(t *testing.T) {
 func TestGatewayStats(t *testing.T) {
 	dir := t.TempDir()
 	gw, _ := NewGateway(dir, GatewayConfig{
-		Auth: AuthConfig{Method: AuthToken, Tokens: []string{"valid"}},
+		Auth:      AuthConfig{Method: AuthToken, Tokens: []string{"valid"}},
 		RateLimit: RateLimitConfig{RequestsPerMinute: 100},
-		Enabled: true,
+		Enabled:   true,
 	})
 
 	gw.ProcessRequest(GatewayRequest{ClientID: "c1", Method: "tools/list", Token: "valid"})
@@ -366,9 +366,9 @@ func TestGatewayStats(t *testing.T) {
 func TestGatewayResetRateLimits(t *testing.T) {
 	dir := t.TempDir()
 	gw, _ := NewGateway(dir, GatewayConfig{
-		Auth: AuthConfig{Method: AuthNone},
+		Auth:      AuthConfig{Method: AuthNone},
 		RateLimit: RateLimitConfig{RequestsPerMinute: 2},
-		Enabled: true,
+		Enabled:   true,
 	})
 
 	// Hit the limit
@@ -390,9 +390,9 @@ func TestGatewayResetRateLimits(t *testing.T) {
 func TestGatewayPurgeAudit(t *testing.T) {
 	dir := t.TempDir()
 	gw, _ := NewGateway(dir, GatewayConfig{
-		Auth: AuthConfig{Method: AuthNone},
+		Auth:      AuthConfig{Method: AuthNone},
 		RateLimit: RateLimitConfig{RequestsPerMinute: 100},
-		Enabled: true,
+		Enabled:   true,
 	})
 
 	gw.ProcessRequest(GatewayRequest{ClientID: "c1", Method: "tools/list"})
@@ -407,7 +407,7 @@ func TestGatewayPurgeAudit(t *testing.T) {
 func TestGatewayUpdateConfig(t *testing.T) {
 	dir := t.TempDir()
 	gw, _ := NewGateway(dir, GatewayConfig{
-		Auth: AuthConfig{Method: AuthNone},
+		Auth:    AuthConfig{Method: AuthNone},
 		Enabled: true,
 	})
 
@@ -419,7 +419,7 @@ func TestGatewayUpdateConfig(t *testing.T) {
 
 	// Switch to token auth
 	gw.UpdateConfig(GatewayConfig{
-		Auth: AuthConfig{Method: AuthToken, Tokens: []string{"secret"}},
+		Auth:    AuthConfig{Method: AuthToken, Tokens: []string{"secret"}},
 		Enabled: true,
 	})
 
@@ -437,8 +437,8 @@ func TestGatewayUpdateConfig(t *testing.T) {
 func TestGatewayGetConfig(t *testing.T) {
 	dir := t.TempDir()
 	cfg := GatewayConfig{
-		Name: "test-gw",
-		Auth: AuthConfig{Method: AuthToken, Tokens: []string{"abc"}},
+		Name:    "test-gw",
+		Auth:    AuthConfig{Method: AuthToken, Tokens: []string{"abc"}},
 		Enabled: true,
 	}
 	gw, _ := NewGateway(dir, cfg)
@@ -452,9 +452,9 @@ func TestGatewayGetConfig(t *testing.T) {
 func TestGatewayPersistence(t *testing.T) {
 	dir := t.TempDir()
 	gw1, _ := NewGateway(dir, GatewayConfig{
-		Auth: AuthConfig{Method: AuthNone},
+		Auth:      AuthConfig{Method: AuthNone},
 		RateLimit: RateLimitConfig{RequestsPerMinute: 100},
-		Enabled: true,
+		Enabled:   true,
 	})
 	gw1.ProcessRequest(GatewayRequest{ClientID: "c1", Method: "tools/list"})
 
@@ -474,12 +474,12 @@ func TestGatewayPersistence(t *testing.T) {
 
 func TestFormatAuditEntry(t *testing.T) {
 	entry := AuditEntry{
-		Timestamp: time.Now(),
-		ClientID:  "client-1",
-		Method:    "tools/call",
-		ToolName:  "forge_run",
+		Timestamp:  time.Now(),
+		ClientID:   "client-1",
+		Method:     "tools/call",
+		ToolName:   "forge_run",
 		StatusCode: "ok",
-		Duration:  50 * time.Millisecond,
+		Duration:   50 * time.Millisecond,
 	}
 	output := FormatAuditEntry(entry)
 	if len(output) == 0 {
@@ -504,9 +504,9 @@ func TestFormatStats(t *testing.T) {
 func TestGatewayConcurrency(t *testing.T) {
 	dir := t.TempDir()
 	gw, _ := NewGateway(dir, GatewayConfig{
-		Auth: AuthConfig{Method: AuthNone},
+		Auth:      AuthConfig{Method: AuthNone},
 		RateLimit: RateLimitConfig{RequestsPerMinute: 1000},
-		Enabled: true,
+		Enabled:   true,
 	})
 
 	var wg sync.WaitGroup
@@ -531,13 +531,13 @@ func TestGatewayConcurrency(t *testing.T) {
 func TestGatewayFullPipeline(t *testing.T) {
 	dir := t.TempDir()
 	gw, _ := NewGateway(dir, GatewayConfig{
-		Auth: AuthConfig{Method: AuthToken, Tokens: []string{"secret"}},
+		Auth:      AuthConfig{Method: AuthToken, Tokens: []string{"secret"}},
 		RateLimit: RateLimitConfig{RequestsPerMinute: 100, Burst: 10},
-		Enabled: true,
+		Enabled:   true,
 		Validation: []ValidationRule{
 			{
-				ToolName:   "forge_run",
-				Required:   []string{"prompt"},
+				ToolName:    "forge_run",
+				Required:    []string{"prompt"},
 				AllowedArgs: []string{"prompt", "model"},
 			},
 		},

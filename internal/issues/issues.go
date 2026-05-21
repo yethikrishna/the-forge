@@ -52,12 +52,12 @@ const (
 type IssueType string
 
 const (
-	TypeTask       IssueType = "task"
-	TypeBug        IssueType = "bug"
-	TypeStory      IssueType = "story"
-	TypeEpic       IssueType = "epic"
-	TypeSubTask    IssueType = "subtask"
-	TypeIncident   IssueType = "incident"
+	TypeTask        IssueType = "task"
+	TypeBug         IssueType = "bug"
+	TypeStory       IssueType = "story"
+	TypeEpic        IssueType = "epic"
+	TypeSubTask     IssueType = "subtask"
+	TypeIncident    IssueType = "incident"
 	TypeImprovement IssueType = "improvement"
 )
 
@@ -133,28 +133,28 @@ type UpdateIssueRequest struct {
 
 // SearchFilter defines search criteria.
 type SearchFilter struct {
-	Query      string       `json:"query,omitempty"`
-	Status     []IssueStatus `json:"status,omitempty"`
-	Priority   []Priority   `json:"priority,omitempty"`
-	Type       []IssueType  `json:"type,omitempty"`
-	Assignee   string       `json:"assignee,omitempty"`
-	Project    string       `json:"project,omitempty"`
-	Labels     []string     `json:"labels,omitempty"`
-	Provider   ProviderType `json:"provider,omitempty"`
-	Since      *time.Time   `json:"since,omitempty"`
-	Limit      int          `json:"limit,omitempty"`
+	Query    string        `json:"query,omitempty"`
+	Status   []IssueStatus `json:"status,omitempty"`
+	Priority []Priority    `json:"priority,omitempty"`
+	Type     []IssueType   `json:"type,omitempty"`
+	Assignee string        `json:"assignee,omitempty"`
+	Project  string        `json:"project,omitempty"`
+	Labels   []string      `json:"labels,omitempty"`
+	Provider ProviderType  `json:"provider,omitempty"`
+	Since    *time.Time    `json:"since,omitempty"`
+	Limit    int           `json:"limit,omitempty"`
 }
 
 // ProviderConfig holds credentials for a single provider.
 type ProviderConfig struct {
-	Name      ProviderType `json:"name"`
-	URL       string       `json:"url,omitempty"` // Base URL (Jira: https://domain.atlassian.net)
-	Token     string       `json:"token"`
-	Email     string       `json:"email,omitempty"` // Jira needs email
-	ProjectID string       `json:"project_id,omitempty"`
-	DatabaseID string      `json:"database_id,omitempty"` // Notion database ID
-	TeamID    string       `json:"team_id,omitempty"`     // Linear team ID
-	Enabled   bool         `json:"enabled"`
+	Name       ProviderType `json:"name"`
+	URL        string       `json:"url,omitempty"` // Base URL (Jira: https://domain.atlassian.net)
+	Token      string       `json:"token"`
+	Email      string       `json:"email,omitempty"` // Jira needs email
+	ProjectID  string       `json:"project_id,omitempty"`
+	DatabaseID string       `json:"database_id,omitempty"` // Notion database ID
+	TeamID     string       `json:"team_id,omitempty"`     // Linear team ID
+	Enabled    bool         `json:"enabled"`
 }
 
 // Provider is the interface each tracker must implement.

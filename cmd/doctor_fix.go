@@ -181,9 +181,9 @@ func fixAddForgefileSection(r checkResult, section string) *fixResult {
 	// Don't add if already present.
 	if strings.Contains(content, "["+section+"]") {
 		return &fixResult{
-			checkMsg: r.message,
-			fixDesc:  "Add [" + section + "] section",
-			applied:  false,
+			checkMsg:  r.message,
+			fixDesc:   "Add [" + section + "] section",
+			applied:   false,
 			manualMsg: "Section already exists — check for typos.",
 		}
 	}
@@ -200,10 +200,10 @@ func fixAddForgefileSection(r checkResult, section string) *fixResult {
 
 	if err := os.WriteFile(forgePath, []byte(content+addition), 0o644); err != nil {
 		return &fixResult{
-			checkMsg:  r.message,
-			fixDesc:   "Add [" + section + "] section",
-			applied:   false,
-			err:       err,
+			checkMsg: r.message,
+			fixDesc:  "Add [" + section + "] section",
+			applied:  false,
+			err:      err,
 		}
 	}
 

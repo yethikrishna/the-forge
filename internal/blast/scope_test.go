@@ -58,12 +58,12 @@ func TestRenderResult(t *testing.T) {
 			{Path: "foo.go", Package: "internal/foo", Symbol: "Bar"},
 		},
 		Stats: blast.ScopeStats{
-			ChangedFiles:    1,
-			ChangedPackages: 1,
-			ImpactedFiles:   0,
+			ChangedFiles:     1,
+			ChangedPackages:  1,
+			ImpactedFiles:    0,
 			ImpactedPackages: 0,
-			MaxDepth:        0,
-			TestFiles:       0,
+			MaxDepth:         0,
+			TestFiles:        0,
 		},
 	}
 	text := blast.RenderResult(result)

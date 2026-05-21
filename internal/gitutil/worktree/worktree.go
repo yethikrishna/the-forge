@@ -17,13 +17,13 @@ import (
 
 // Worktree represents a git worktree for an agent.
 type Worktree struct {
-	ID         string    `json:"id"`
-	AgentID    string    `json:"agent_id"`
-	Path       string    `json:"path"`
-	Branch     string    `json:"branch"`
-	RepoPath   string    `json:"repo_path"`
-	CreatedAt  time.Time `json:"created_at"`
-	Status     string    `json:"status"` // active, merged, abandoned
+	ID        string    `json:"id"`
+	AgentID   string    `json:"agent_id"`
+	Path      string    `json:"path"`
+	Branch    string    `json:"branch"`
+	RepoPath  string    `json:"repo_path"`
+	CreatedAt time.Time `json:"created_at"`
+	Status    string    `json:"status"` // active, merged, abandoned
 }
 
 // Manager manages git worktrees for parallel agents.

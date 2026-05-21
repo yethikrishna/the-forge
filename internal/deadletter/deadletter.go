@@ -31,22 +31,22 @@ const (
 
 // Entry represents a dead-lettered task.
 type Entry struct {
-	ID          string                 `json:"id"`
-	AgentID     string                 `json:"agent_id"`
-	Task        string                 `json:"task"`
-	Reason      Reason                 `json:"reason"`
-	Error       string                 `json:"error"`
-	Provider    string                 `json:"provider,omitempty"`
-	Model       string                 `json:"model,omitempty"`
-	CostUSD     float64                `json:"cost_usd,omitempty"`
-	TokensUsed  int64                  `json:"tokens_used,omitempty"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	RetryCount  int                    `json:"retry_count"`
-	MaxRetries  int                    `json:"max_retries"`
-	Status      string                 `json:"status"` // pending, retried, dismissed, expired
-	CreatedAt   time.Time              `json:"created_at"`
-	UpdatedAt   time.Time              `json:"updated_at"`
-	ExpiresAt   *time.Time             `json:"expires_at,omitempty"`
+	ID         string                 `json:"id"`
+	AgentID    string                 `json:"agent_id"`
+	Task       string                 `json:"task"`
+	Reason     Reason                 `json:"reason"`
+	Error      string                 `json:"error"`
+	Provider   string                 `json:"provider,omitempty"`
+	Model      string                 `json:"model,omitempty"`
+	CostUSD    float64                `json:"cost_usd,omitempty"`
+	TokensUsed int64                  `json:"tokens_used,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	RetryCount int                    `json:"retry_count"`
+	MaxRetries int                    `json:"max_retries"`
+	Status     string                 `json:"status"` // pending, retried, dismissed, expired
+	CreatedAt  time.Time              `json:"created_at"`
+	UpdatedAt  time.Time              `json:"updated_at"`
+	ExpiresAt  *time.Time             `json:"expires_at,omitempty"`
 }
 
 // Store manages dead letter entries.
@@ -218,10 +218,10 @@ func (s *Store) Delete(id string) error {
 
 // Stats returns statistics about the dead letter queue.
 type Stats struct {
-	Total     int            `json:"total"`
-	ByReason  map[Reason]int `json:"by_reason"`
-	ByStatus  map[string]int `json:"by_status"`
-	ByAgent   map[string]int `json:"by_agent"`
+	Total    int            `json:"total"`
+	ByReason map[Reason]int `json:"by_reason"`
+	ByStatus map[string]int `json:"by_status"`
+	ByAgent  map[string]int `json:"by_agent"`
 }
 
 // Stats returns dead letter queue statistics.

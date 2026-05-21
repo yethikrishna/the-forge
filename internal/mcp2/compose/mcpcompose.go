@@ -30,8 +30,8 @@ type ServerConfig struct {
 
 // ComposeConfig is the full composition configuration.
 type ComposeConfig struct {
-	Servers []ServerConfig `json:"servers" yaml:"servers"`
-	Gateway GatewayConfig  `json:"gateway" yaml:"gateway"`
+	Servers    []ServerConfig   `json:"servers" yaml:"servers"`
+	Gateway    GatewayConfig    `json:"gateway" yaml:"gateway"`
 	Middleware MiddlewareConfig `json:"middleware" yaml:"middleware"`
 }
 
@@ -45,12 +45,12 @@ type GatewayConfig struct {
 
 // MiddlewareConfig configures middleware applied to all upstream calls.
 type MiddlewareConfig struct {
-	CostTracking  bool `json:"cost_tracking" yaml:"cost_tracking"`
-	RateLimiting  bool `json:"rate_limiting" yaml:"rate_limiting"`
-	AuditLogging  bool `json:"audit_logging" yaml:"audit_logging"`
-	RetryEnabled  bool `json:"retry_enabled" yaml:"retry_enabled"`
-	MaxRetries    int  `json:"max_retries" yaml:"max_retries"`
-	RetryDelayMs  int  `json:"retry_delay_ms" yaml:"retry_delay_ms"`
+	CostTracking bool `json:"cost_tracking" yaml:"cost_tracking"`
+	RateLimiting bool `json:"rate_limiting" yaml:"rate_limiting"`
+	AuditLogging bool `json:"audit_logging" yaml:"audit_logging"`
+	RetryEnabled bool `json:"retry_enabled" yaml:"retry_enabled"`
+	MaxRetries   int  `json:"max_retries" yaml:"max_retries"`
+	RetryDelayMs int  `json:"retry_delay_ms" yaml:"retry_delay_ms"`
 }
 
 // UpstreamServer represents a connected upstream MCP server.
@@ -66,31 +66,31 @@ type UpstreamServer struct {
 
 // ToolInfo describes a tool from an upstream server.
 type ToolInfo struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	InputSchema interface{} `json:"inputSchema"`
-	Server      string      `json:"server"`
-	PrefixedName string     `json:"prefixedName"`
+	Name         string      `json:"name"`
+	Description  string      `json:"description"`
+	InputSchema  interface{} `json:"inputSchema"`
+	Server       string      `json:"server"`
+	PrefixedName string      `json:"prefixedName"`
 }
 
 // ComposeGateway is the composition gateway.
 type ComposeGateway struct {
-	config    ComposeConfig
-	upstreams map[string]*UpstreamServer
-	toolIndex map[string]*UpstreamServer // prefixed tool name → upstream
-	mu        sync.RWMutex
-	auditLog  []AuditEntry
+	config     ComposeConfig
+	upstreams  map[string]*UpstreamServer
+	toolIndex  map[string]*UpstreamServer // prefixed tool name → upstream
+	mu         sync.RWMutex
+	auditLog   []AuditEntry
 	httpServer *http.Server
 }
 
 // AuditEntry records a tool call through the gateway.
 type AuditEntry struct {
-	Timestamp time.Time `json:"timestamp"`
-	Server    string    `json:"server"`
-	Tool      string    `json:"tool"`
+	Timestamp time.Time     `json:"timestamp"`
+	Server    string        `json:"server"`
+	Tool      string        `json:"tool"`
 	Duration  time.Duration `json:"duration"`
-	Status    string    `json:"status"`
-	Error     string    `json:"error,omitempty"`
+	Status    string        `json:"status"`
+	Error     string        `json:"error,omitempty"`
 }
 
 // NewComposeGateway creates a composition gateway.
@@ -192,7 +192,7 @@ func (g *ComposeGateway) ConnectAll(ctx context.Context) error {
 // startProcess starts a stdio-based MCP server process.
 func (g *ComposeGateway) startProcess(ctx context.Context, upstream *UpstreamServer) error {
 	cmd := exec.CommandContext(ctx, upstream.Config.Command, upstream.Config.Args...)
-	
+
 	// Set environment
 	cmd.Env = os.Environ()
 	for k, v := range upstream.Config.Env {
@@ -443,11 +443,11 @@ func (g *ComposeGateway) ListServers() []ServerStatus {
 	var statuses []ServerStatus
 	for name, upstream := range g.upstreams {
 		status := ServerStatus{
-			Name:     name,
-			Healthy:  upstream.Healthy,
+			Name:      name,
+			Healthy:   upstream.Healthy,
 			ToolCount: len(upstream.Tools),
-			LastPing: upstream.LastPing,
-			Enabled:  upstream.Config.Enabled,
+			LastPing:  upstream.LastPing,
+			Enabled:   upstream.Config.Enabled,
 		}
 		if upstream.Config.URL != "" {
 			status.Transport = "http"

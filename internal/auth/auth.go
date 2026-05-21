@@ -26,14 +26,14 @@ const (
 
 // Key represents a stored API key.
 type Key struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	Type      KeyType   `json:"type"`
-	Provider  string    `json:"provider,omitempty"`
-	KeyHash   string    `json:"key_hash"`   // SHA-256 hash of the key
-	Prefix    string    `json:"prefix"`     // First 8 chars for identification
-	CreatedAt time.Time `json:"created_at"`
-	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+	ID        string            `json:"id"`
+	Name      string            `json:"name"`
+	Type      KeyType           `json:"type"`
+	Provider  string            `json:"provider,omitempty"`
+	KeyHash   string            `json:"key_hash"` // SHA-256 hash of the key
+	Prefix    string            `json:"prefix"`   // First 8 chars for identification
+	CreatedAt time.Time         `json:"created_at"`
+	ExpiresAt *time.Time        `json:"expires_at,omitempty"`
 	Metadata  map[string]string `json:"metadata,omitempty"`
 }
 

@@ -17,9 +17,9 @@ import (
 type State string
 
 const (
-	StateClosed    State = "closed"    // Normal operation
-	StateOpen      State = "open"      // Failing, reject calls
-	StateHalfOpen  State = "half_open" // Testing if service recovered
+	StateClosed   State = "closed"    // Normal operation
+	StateOpen     State = "open"      // Failing, reject calls
+	StateHalfOpen State = "half_open" // Testing if service recovered
 )
 
 // Event represents a circuit breaker event.
@@ -55,25 +55,25 @@ func DefaultConfig(name string) Config {
 
 // Breaker is a circuit breaker instance.
 type Breaker struct {
-	mu             sync.Mutex
-	config         Config
-	state          State
-	failures       int
-	successes      int
-	halfOpenCalls  int
-	lastFailure    time.Time
+	mu              sync.Mutex
+	config          Config
+	state           State
+	failures        int
+	successes       int
+	halfOpenCalls   int
+	lastFailure     time.Time
 	lastStateChange time.Time
-	events         []Event
-	totalCalls     int64
-	totalFailures  int64
-	totalRejected  int64
+	events          []Event
+	totalCalls      int64
+	totalFailures   int64
+	totalRejected   int64
 }
 
 // NewBreaker creates a circuit breaker with the given config.
 func NewBreaker(config Config) *Breaker {
 	return &Breaker{
-		config:         config,
-		state:          StateClosed,
+		config:          config,
+		state:           StateClosed,
 		lastStateChange: time.Now(),
 	}
 }
@@ -137,14 +137,14 @@ func (b *Breaker) Stats() map[string]interface{} {
 	defer b.mu.Unlock()
 
 	return map[string]interface{}{
-		"name":           b.config.Name,
-		"state":          string(b.state),
-		"failures":       b.failures,
-		"successes":      b.successes,
-		"total_calls":    b.totalCalls,
-		"total_failures": b.totalFailures,
-		"total_rejected": b.totalRejected,
-		"last_failure":   b.lastFailure.Format(time.RFC3339),
+		"name":              b.config.Name,
+		"state":             string(b.state),
+		"failures":          b.failures,
+		"successes":         b.successes,
+		"total_calls":       b.totalCalls,
+		"total_failures":    b.totalFailures,
+		"total_rejected":    b.totalRejected,
+		"last_failure":      b.lastFailure.Format(time.RFC3339),
 		"last_state_change": b.lastStateChange.Format(time.RFC3339),
 	}
 }

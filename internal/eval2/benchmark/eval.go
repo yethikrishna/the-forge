@@ -44,7 +44,7 @@ type EvalResult struct {
 	Model       string    `json:"model"`
 	Output      string    `json:"output"`
 	Expected    string    `json:"expected"`
-	Score       float64   `json:"score"`    // 0.0 - 1.0
+	Score       float64   `json:"score"` // 0.0 - 1.0
 	Grade       Grade     `json:"grade"`
 	Duration    string    `json:"duration"`
 	Cost        float64   `json:"cost"`
@@ -54,16 +54,16 @@ type EvalResult struct {
 
 // RunResult is the result of an evaluation run (multiple benchmarks).
 type RunResult struct {
-	ID         string       `json:"id"`
-	Name       string       `json:"name"`
-	Agent      string       `json:"agent"`
-	Model      string       `json:"model"`
-	Results    []EvalResult `json:"results"`
-	AvgScore   float64      `json:"avg_score"`
-	Grade      Grade        `json:"grade"`
-	TotalCost  float64      `json:"total_cost"`
-	Duration   string       `json:"duration"`
-	Timestamp  time.Time    `json:"timestamp"`
+	ID        string       `json:"id"`
+	Name      string       `json:"name"`
+	Agent     string       `json:"agent"`
+	Model     string       `json:"model"`
+	Results   []EvalResult `json:"results"`
+	AvgScore  float64      `json:"avg_score"`
+	Grade     Grade        `json:"grade"`
+	TotalCost float64      `json:"total_cost"`
+	Duration  string       `json:"duration"`
+	Timestamp time.Time    `json:"timestamp"`
 }
 
 // Scorer evaluates an agent's output against expected output.
@@ -250,50 +250,50 @@ func BuiltInBenchmarks() []Benchmark {
 		{
 			ID: "hello-world", Name: "Hello World",
 			Description: "Generate a simple hello world program",
-			Category: "code-gen", Difficulty: "easy",
-			Prompt: "Write a hello world program in Go",
+			Category:    "code-gen", Difficulty: "easy",
+			Prompt:   "Write a hello world program in Go",
 			Expected: "package main; fmt.Println; Hello",
-			Tags: []string{"go", "basic"},
+			Tags:     []string{"go", "basic"},
 		},
 		{
 			ID: "fix-bug", Name: "Bug Fix",
 			Description: "Fix a simple off-by-one bug",
-			Category: "debugging", Difficulty: "easy",
-			Prompt: "Fix the bug: for i := 0; i <= len(arr); i++",
+			Category:    "debugging", Difficulty: "easy",
+			Prompt:   "Fix the bug: for i := 0; i <= len(arr); i++",
 			Expected: "i < len; off-by-one; less than",
-			Tags: []string{"debugging", "go"},
+			Tags:     []string{"debugging", "go"},
 		},
 		{
 			ID: "api-design", Name: "API Design",
 			Description: "Design a REST API for a todo app",
-			Category: "design", Difficulty: "medium",
-			Prompt: "Design a REST API for a todo application with CRUD operations",
+			Category:    "design", Difficulty: "medium",
+			Prompt:   "Design a REST API for a todo application with CRUD operations",
 			Expected: "GET POST PUT DELETE; /todos; CRUD; status codes",
-			Tags: []string{"api", "rest", "design"},
+			Tags:     []string{"api", "rest", "design"},
 		},
 		{
 			ID: "error-handling", Name: "Error Handling",
 			Description: "Add proper error handling to Go code",
-			Category: "code-gen", Difficulty: "medium",
-			Prompt: "Add error handling to this function that reads a file",
+			Category:    "code-gen", Difficulty: "medium",
+			Prompt:   "Add error handling to this function that reads a file",
 			Expected: "os.Open; defer Close; if err != nil; return error",
-			Tags: []string{"go", "errors"},
+			Tags:     []string{"go", "errors"},
 		},
 		{
 			ID: "concurrency", Name: "Concurrency",
 			Description: "Write a concurrent Go program",
-			Category: "code-gen", Difficulty: "hard",
-			Prompt: "Write a Go program that fetches multiple URLs concurrently using goroutines",
+			Category:    "code-gen", Difficulty: "hard",
+			Prompt:   "Write a Go program that fetches multiple URLs concurrently using goroutines",
 			Expected: "go func; sync.WaitGroup; chan; http.Get; concurrent",
-			Tags: []string{"go", "concurrency", "goroutines"},
+			Tags:     []string{"go", "concurrency", "goroutines"},
 		},
 		{
 			ID: "refactor", Name: "Code Refactoring",
 			Description: "Refactor code to follow Go best practices",
-			Category: "refactoring", Difficulty: "medium",
-			Prompt: "Refactor this Go code to be more idiomatic",
+			Category:    "refactoring", Difficulty: "medium",
+			Prompt:   "Refactor this Go code to be more idiomatic",
 			Expected: "idiomatic; error wrapping; context; small functions",
-			Tags: []string{"go", "refactoring"},
+			Tags:     []string{"go", "refactoring"},
 		},
 	}
 }

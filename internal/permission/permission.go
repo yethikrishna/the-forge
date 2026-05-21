@@ -19,35 +19,35 @@ import (
 type Scope string
 
 const (
-	ScopeReadOnly  Scope = "read-only"  // Can only read files, no writes/execution
-	ScopeSrcOnly   Scope = "src-only"   // Can only access src/ directory
-	ScopeSandbox   Scope = "sandbox"    // Can only write to sandbox directory
-	ScopeFull      Scope = "full"       // Full access (default)
+	ScopeReadOnly Scope = "read-only" // Can only read files, no writes/execution
+	ScopeSrcOnly  Scope = "src-only"  // Can only access src/ directory
+	ScopeSandbox  Scope = "sandbox"   // Can only write to sandbox directory
+	ScopeFull     Scope = "full"      // Full access (default)
 )
 
 // Action represents an agent action type.
 type Action string
 
 const (
-	ActionRead     Action = "read"
-	ActionWrite    Action = "write"
-	ActionExecute  Action = "execute"
-	ActionDelete   Action = "delete"
-	ActionNetwork  Action = "network"
-	ActionEnv      Action = "env"
+	ActionRead    Action = "read"
+	ActionWrite   Action = "write"
+	ActionExecute Action = "execute"
+	ActionDelete  Action = "delete"
+	ActionNetwork Action = "network"
+	ActionEnv     Action = "env"
 )
 
 // Policy is the permission policy for a session.
 type Policy struct {
-	SessionID   string      `json:"session_id"`
-	Scope       Scope       `json:"scope"`
-	AllowedDirs []string    `json:"allowed_dirs"`
-	BlockedDirs []string    `json:"blocked_dirs"`
-	AllowedActions []Action `json:"allowed_actions"`
-	BlockedActions []Action `json:"blocked_actions"`
-	MaxFileSize int64       `json:"max_file_size"` // max file size in bytes (0 = unlimited)
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
+	SessionID      string    `json:"session_id"`
+	Scope          Scope     `json:"scope"`
+	AllowedDirs    []string  `json:"allowed_dirs"`
+	BlockedDirs    []string  `json:"blocked_dirs"`
+	AllowedActions []Action  `json:"allowed_actions"`
+	BlockedActions []Action  `json:"blocked_actions"`
+	MaxFileSize    int64     `json:"max_file_size"` // max file size in bytes (0 = unlimited)
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 // Violation represents a permission violation.
@@ -62,10 +62,10 @@ type Violation struct {
 
 // Enforcer enforces per-session permissions.
 type Enforcer struct {
-	policies    map[string]*Policy
-	violations  map[string][]Violation // sessionID -> violations
-	storeDir    string
-	mu          sync.RWMutex
+	policies   map[string]*Policy
+	violations map[string][]Violation // sessionID -> violations
+	storeDir   string
+	mu         sync.RWMutex
 }
 
 // NewEnforcer creates a permission enforcer.

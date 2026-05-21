@@ -202,12 +202,12 @@ func TestMaxSnapshots(t *testing.T) {
 
 func TestFormatSnapshot(t *testing.T) {
 	snap := ResourceSnapshot{
-		Timestamp:    time.Now(),
-		Goroutines:   42,
-		HeapAllocMB:  128.5,
-		StackInUseMB: 8.2,
-		NumGC:        15,
-		GCPauseMs:    3.7,
+		Timestamp:     time.Now(),
+		Goroutines:    42,
+		HeapAllocMB:   128.5,
+		StackInUseMB:  8.2,
+		NumGC:         15,
+		GCPauseMs:     3.7,
 		UptimeSeconds: 3600,
 	}
 	output := FormatSnapshot(snap)

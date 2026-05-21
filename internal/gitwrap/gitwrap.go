@@ -12,15 +12,15 @@ import (
 
 // Status represents the current git status.
 type Status struct {
-	Branch     string   `json:"branch"`
-	Commit     string   `json:"commit"`
-	CommitMsg  string   `json:"commit_msg"`
-	Modified   []string `json:"modified"`
-	Staged     []string `json:"staged"`
-	Untracked  []string `json:"untracked"`
-	Behind     int      `json:"behind"`
-	Ahead      int      `json:"ahead"`
-	Dirty      bool     `json:"dirty"`
+	Branch    string   `json:"branch"`
+	Commit    string   `json:"commit"`
+	CommitMsg string   `json:"commit_msg"`
+	Modified  []string `json:"modified"`
+	Staged    []string `json:"staged"`
+	Untracked []string `json:"untracked"`
+	Behind    int      `json:"behind"`
+	Ahead     int      `json:"ahead"`
+	Dirty     bool     `json:"dirty"`
 }
 
 // LogEntry represents a single git log entry.

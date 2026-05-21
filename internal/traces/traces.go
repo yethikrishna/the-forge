@@ -15,26 +15,26 @@ import (
 
 // TraceStore persists and queries OTel spans.
 type TraceStore struct {
-	dir  string
-	mu   sync.Mutex
-	spans []StoredSpan
+	dir    string
+	mu     sync.Mutex
+	spans  []StoredSpan
 	loaded bool
 }
 
 // StoredSpan is a persisted span with metadata.
 type StoredSpan struct {
-	TraceID   string            `json:"trace_id"`
-	SpanID    string            `json:"span_id"`
-	ParentID  string            `json:"parent_id,omitempty"`
-	Name      string            `json:"name"`
-	Kind      string            `json:"kind"`
-	Status    string            `json:"status"`
-	Start     time.Time         `json:"start"`
-	End       time.Time         `json:"end,omitempty"`
-	Duration  time.Duration     `json:"duration"`
-	Attrs     map[string]string `json:"attrs,omitempty"`
-	Events    []SpanEvent       `json:"events,omitempty"`
-	Service   string            `json:"service"`
+	TraceID  string            `json:"trace_id"`
+	SpanID   string            `json:"span_id"`
+	ParentID string            `json:"parent_id,omitempty"`
+	Name     string            `json:"name"`
+	Kind     string            `json:"kind"`
+	Status   string            `json:"status"`
+	Start    time.Time         `json:"start"`
+	End      time.Time         `json:"end,omitempty"`
+	Duration time.Duration     `json:"duration"`
+	Attrs    map[string]string `json:"attrs,omitempty"`
+	Events   []SpanEvent       `json:"events,omitempty"`
+	Service  string            `json:"service"`
 }
 
 // SpanEvent is an event within a span.
@@ -58,15 +58,15 @@ type TraceSummary struct {
 
 // TraceDetail is a full trace with all spans.
 type TraceDetail struct {
-	TraceID   string        `json:"trace_id"`
-	Summary   TraceSummary  `json:"summary"`
-	Spans     []StoredSpan  `json:"spans"`
-	Tree      SpanNode      `json:"tree,omitempty"`
+	TraceID string       `json:"trace_id"`
+	Summary TraceSummary `json:"summary"`
+	Spans   []StoredSpan `json:"spans"`
+	Tree    SpanNode     `json:"tree,omitempty"`
 }
 
 // SpanNode represents a span in a tree structure.
 type SpanNode struct {
-	Span    StoredSpan  `json:"span"`
+	Span     StoredSpan `json:"span"`
 	Children []SpanNode `json:"children,omitempty"`
 }
 
@@ -211,7 +211,7 @@ func (ts *TraceStore) Stats() StoreStats {
 	}
 
 	stats := StoreStats{
-		TotalSpans:  len(ts.spans),
+		TotalSpans:   len(ts.spans),
 		ServiceCount: make(map[string]int),
 	}
 
@@ -246,12 +246,12 @@ type StoreStats struct {
 
 // ListOpts filters trace listings.
 type ListOpts struct {
-	Service string    `json:"service,omitempty"`
-	Status  string    `json:"status,omitempty"`
-	After   time.Time `json:"after,omitempty"`
-	Before  time.Time `json:"before,omitempty"`
+	Service string        `json:"service,omitempty"`
+	Status  string        `json:"status,omitempty"`
+	After   time.Time     `json:"after,omitempty"`
+	Before  time.Time     `json:"before,omitempty"`
 	MinDur  time.Duration `json:"min_duration,omitempty"`
-	Limit   int       `json:"limit,omitempty"`
+	Limit   int           `json:"limit,omitempty"`
 }
 
 func (o ListOpts) matches(s StoredSpan) bool {
@@ -292,8 +292,8 @@ func (ts *TraceStore) ExportJaeger(opts ListOpts) ([]JaegerTrace, error) {
 	result := make([]JaegerTrace, 0, len(traces))
 	for tid, spans := range traces {
 		jt := JaegerTrace{
-			TraceID:   tid,
-			Spans:     make([]JaegerSpan, 0, len(spans)),
+			TraceID: tid,
+			Spans:   make([]JaegerSpan, 0, len(spans)),
 		}
 
 		services := make(map[string]string)
@@ -355,13 +355,13 @@ func (ts *TraceStore) ExportZipkin(opts ListOpts) ([]ZipkinSpan, error) {
 		}
 
 		zs := ZipkinSpan{
-			ID:          s.SpanID,
-			TraceID:     s.TraceID,
-			Name:        s.Name,
-			Timestamp:   s.Start.UnixMicro(),
-			Duration:    s.Duration.Microseconds(),
+			ID:            s.SpanID,
+			TraceID:       s.TraceID,
+			Name:          s.Name,
+			Timestamp:     s.Start.UnixMicro(),
+			Duration:      s.Duration.Microseconds(),
 			LocalEndpoint: &ZipkinEndpoint{ServiceName: s.Service},
-			Tags:        s.Attrs,
+			Tags:          s.Attrs,
 		}
 
 		if s.ParentID != "" {
@@ -419,14 +419,14 @@ func (ts *TraceStore) ExportOpenTelemetry(opts ListOpts) (*OTLPExport, error) {
 
 		for _, s := range spans {
 			os := OTLPSpan{
-				TraceID:        s.TraceID,
-				SpanID:         s.SpanID,
-				ParentSpanID:   s.ParentID,
-				Name:           s.Name,
-				Kind:           spanKindToInt(s.Kind),
-				StartTimeUnix:  s.Start.UnixNano(),
-				EndTimeUnix:    s.End.UnixNano(),
-				Attributes:     make([]OTLPAttribute, 0),
+				TraceID:       s.TraceID,
+				SpanID:        s.SpanID,
+				ParentSpanID:  s.ParentID,
+				Name:          s.Name,
+				Kind:          spanKindToInt(s.Kind),
+				StartTimeUnix: s.Start.UnixNano(),
+				EndTimeUnix:   s.End.UnixNano(),
+				Attributes:    make([]OTLPAttribute, 0),
 			}
 
 			for k, v := range s.Attrs {
@@ -459,14 +459,14 @@ type JaegerTrace struct {
 
 // JaegerSpan is a Jaeger-format span.
 type JaegerSpan struct {
-	TraceID      string       `json:"traceID"`
-	SpanID       string       `json:"spanID"`
-	ParentSpanID string       `json:"parentSpanID,omitempty"`
-	Operation    string       `json:"operationName"`
-	StartTime    int64        `json:"startTime"`
-	Duration     int64        `json:"duration"`
-	Tags         []JaegerTag  `json:"tags"`
-	Flags        int          `json:"flags"`
+	TraceID      string      `json:"traceID"`
+	SpanID       string      `json:"spanID"`
+	ParentSpanID string      `json:"parentSpanID,omitempty"`
+	Operation    string      `json:"operationName"`
+	StartTime    int64       `json:"startTime"`
+	Duration     int64       `json:"duration"`
+	Tags         []JaegerTag `json:"tags"`
+	Flags        int         `json:"flags"`
 }
 
 // JaegerTag is a Jaeger key-value tag.
@@ -510,8 +510,8 @@ type OTLPExport struct {
 
 // OTLPResourceSpans groups spans by resource.
 type OTLPResourceSpans struct {
-	Resource   OTLPResource      `json:"resource"`
-	ScopeSpans []OTLPScopeSpans  `json:"scopeSpans"`
+	Resource   OTLPResource     `json:"resource"`
+	ScopeSpans []OTLPScopeSpans `json:"scopeSpans"`
 }
 
 // OTLPResource describes the resource.
@@ -521,7 +521,7 @@ type OTLPResource struct {
 
 // OTLPAttribute is a key-value attribute.
 type OTLPAttribute struct {
-	Key   string   `json:"key"`
+	Key   string    `json:"key"`
 	Value OTLPValue `json:"value"`
 }
 

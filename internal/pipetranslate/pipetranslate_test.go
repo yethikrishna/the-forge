@@ -162,7 +162,7 @@ func TestConfidence(t *testing.T) {
 
 	// Short description → lower confidence
 	short, _ := tr.FromNaturalLanguage("review code")
-	
+
 	// Detailed description → higher confidence
 	detailed, _ := tr.FromNaturalLanguage("review the code changes in the pull request, check for security issues, suggest improvements, and then write unit tests for the new functionality")
 
@@ -173,7 +173,7 @@ func TestConfidence(t *testing.T) {
 
 func TestPipelineToYAML(t *testing.T) {
 	pipeline := &pipetranslate.Pipeline{
-		Name:    "test",
+		Name: "test",
 		Steps: []pipetranslate.Step{
 			{Name: "step1", Prompt: "Do something", Tools: []string{"git", "read"}},
 		},

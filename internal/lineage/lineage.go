@@ -17,32 +17,32 @@ import (
 
 // LineageRecord captures a single agent execution and its ancestry.
 type LineageRecord struct {
-	ID          string            `json:"id"`
-	ParentID    string            `json:"parent_id,omitempty"`
-	Agent       string            `json:"agent"`
-	Model       string            `json:"model,omitempty"`
-	Prompt      string            `json:"prompt,omitempty"`
-	Result      string            `json:"result,omitempty"`
-	Children    []string          `json:"children,omitempty"`
-	TokensIn    int               `json:"tokens_in,omitempty"`
-	TokensOut   int               `json:"tokens_out,omitempty"`
-	Cost        float64           `json:"cost,omitempty"`
-	Duration    string            `json:"duration,omitempty"`
-	Status      string            `json:"status"` // success, failure, timeout
-	Labels      map[string]string `json:"labels,omitempty"`
-	Timestamp   time.Time         `json:"timestamp"`
-	SessionID   string            `json:"session_id,omitempty"`
-	PipelineID  string            `json:"pipeline_id,omitempty"`
+	ID         string            `json:"id"`
+	ParentID   string            `json:"parent_id,omitempty"`
+	Agent      string            `json:"agent"`
+	Model      string            `json:"model,omitempty"`
+	Prompt     string            `json:"prompt,omitempty"`
+	Result     string            `json:"result,omitempty"`
+	Children   []string          `json:"children,omitempty"`
+	TokensIn   int               `json:"tokens_in,omitempty"`
+	TokensOut  int               `json:"tokens_out,omitempty"`
+	Cost       float64           `json:"cost,omitempty"`
+	Duration   string            `json:"duration,omitempty"`
+	Status     string            `json:"status"` // success, failure, timeout
+	Labels     map[string]string `json:"labels,omitempty"`
+	Timestamp  time.Time         `json:"timestamp"`
+	SessionID  string            `json:"session_id,omitempty"`
+	PipelineID string            `json:"pipeline_id,omitempty"`
 }
 
 // FamilyTree represents the complete lineage tree for a root agent.
 type FamilyTree struct {
-	Root      *LineageRecord `json:"root"`
+	Root      *LineageRecord            `json:"root"`
 	Records   map[string]*LineageRecord `json:"records"`
-	Depth     int            `json:"depth"`
-	Size      int            `json:"size"`
-	TotalCost float64        `json:"total_cost"`
-	TotalTime string         `json:"total_time"`
+	Depth     int                       `json:"depth"`
+	Size      int                       `json:"size"`
+	TotalCost float64                   `json:"total_cost"`
+	TotalTime string                    `json:"total_time"`
 }
 
 // Store manages lineage records.

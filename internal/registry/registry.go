@@ -50,18 +50,18 @@ type Entry struct {
 	License     string      `json:"license,omitempty"`
 
 	// Stats
-	Downloads   int       `json:"downloads"`
-	Rating      float64   `json:"rating"`      // 0-5 stars
-	RatingCount int       `json:"rating_count"`
-	Installs    int       `json:"installs"`
+	Downloads   int     `json:"downloads"`
+	Rating      float64 `json:"rating"` // 0-5 stars
+	RatingCount int     `json:"rating_count"`
+	Installs    int     `json:"installs"`
 
 	// Content
-	Config      string    `json:"config,omitempty"`      // JSON config
-	Readme      string    `json:"readme,omitempty"`      // README content
-	Entrypoint  string    `json:"entrypoint,omitempty"`  // Main file/function
+	Config     string `json:"config,omitempty"`     // JSON config
+	Readme     string `json:"readme,omitempty"`     // README content
+	Entrypoint string `json:"entrypoint,omitempty"` // Main file/function
 
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 	PublishedAt *time.Time `json:"published_at,omitempty"`
 }
 
@@ -328,11 +328,11 @@ func (r *Registry) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"total_entries":    len(r.entries),
-		"total_downloads":  totalDownloads,
-		"by_type":          byType,
-		"by_status":        byStatus,
-		"total_ratings":    len(r.ratings),
+		"total_entries":   len(r.entries),
+		"total_downloads": totalDownloads,
+		"by_type":         byType,
+		"by_status":       byStatus,
+		"total_ratings":   len(r.ratings),
 	}
 }
 

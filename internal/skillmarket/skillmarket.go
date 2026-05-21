@@ -28,16 +28,16 @@ const (
 type Category string
 
 const (
-	CatCoding     Category = "coding"
-	CatAnalysis   Category = "analysis"
-	CatReview     Category = "review"
-	CatTesting    Category = "testing"
-	CatDevOps     Category = "devops"
-	CatSecurity   Category = "security"
-	CatWriting    Category = "writing"
-	CatData       Category = "data"
-	CatLearning   Category = "learning"
-	CatCustom     Category = "custom"
+	CatCoding   Category = "coding"
+	CatAnalysis Category = "analysis"
+	CatReview   Category = "review"
+	CatTesting  Category = "testing"
+	CatDevOps   Category = "devops"
+	CatSecurity Category = "security"
+	CatWriting  Category = "writing"
+	CatData     Category = "data"
+	CatLearning Category = "learning"
+	CatCustom   Category = "custom"
 )
 
 // Rating represents a skill rating.
@@ -50,29 +50,29 @@ type Rating struct {
 
 // Skill represents a marketplace skill.
 type Skill struct {
-	ID          string       `json:"id"`
-	Name        string       `json:"name"`
-	Author      string       `json:"author"`
-	Category    Category     `json:"category"`
-	Description string       `json:"description"`
-	Version     string       `json:"version"`
-	Status      SkillStatus  `json:"status"`
-	CreatedAt   time.Time    `json:"created_at"`
-	UpdatedAt   time.Time    `json:"updated_at"`
-	PublishedAt time.Time    `json:"published_at,omitempty"`
-	Downloads   int          `json:"downloads"`
-	Rating      float64      `json:"rating"` // average 1-5
-	RatingCount int          `json:"rating_count"`
-	Tags        []string     `json:"tags"`
-	Requirements []string    `json:"requirements,omitempty"`
-	License     string       `json:"license,omitempty"`
-	Homepage    string       `json:"homepage,omitempty"`
-	SourceURL   string       `json:"source_url,omitempty"`
-	Readme      string       `json:"readme,omitempty"`
-	Entrypoint  string       `json:"entrypoint"` // skill function name
-	Parameters  []Parameter  `json:"parameters,omitempty"`
-	Ratings     []Rating     `json:"-"` // not serialized in main file
-	Metadata    map[string]string `json:"metadata,omitempty"`
+	ID           string            `json:"id"`
+	Name         string            `json:"name"`
+	Author       string            `json:"author"`
+	Category     Category          `json:"category"`
+	Description  string            `json:"description"`
+	Version      string            `json:"version"`
+	Status       SkillStatus       `json:"status"`
+	CreatedAt    time.Time         `json:"created_at"`
+	UpdatedAt    time.Time         `json:"updated_at"`
+	PublishedAt  time.Time         `json:"published_at,omitempty"`
+	Downloads    int               `json:"downloads"`
+	Rating       float64           `json:"rating"` // average 1-5
+	RatingCount  int               `json:"rating_count"`
+	Tags         []string          `json:"tags"`
+	Requirements []string          `json:"requirements,omitempty"`
+	License      string            `json:"license,omitempty"`
+	Homepage     string            `json:"homepage,omitempty"`
+	SourceURL    string            `json:"source_url,omitempty"`
+	Readme       string            `json:"readme,omitempty"`
+	Entrypoint   string            `json:"entrypoint"` // skill function name
+	Parameters   []Parameter       `json:"parameters,omitempty"`
+	Ratings      []Rating          `json:"-"` // not serialized in main file
+	Metadata     map[string]string `json:"metadata,omitempty"`
 }
 
 // Parameter represents a skill parameter.
@@ -86,9 +86,9 @@ type Parameter struct {
 
 // Market manages the skill marketplace.
 type Market struct {
-	mu     sync.RWMutex
-	dir    string
-	skills map[string]*Skill
+	mu      sync.RWMutex
+	dir     string
+	skills  map[string]*Skill
 	ratings map[string][]Rating // skill ID -> ratings
 }
 
@@ -385,12 +385,12 @@ func (m *Market) Categories() []Category {
 
 // Stats returns marketplace statistics.
 type Stats struct {
-	TotalSkills   int             `json:"total_skills"`
-	Published     int             `json:"published"`
-	Deprecated    int             `json:"deprecated"`
-	TotalDownloads int            `json:"total_downloads"`
-	AvgRating     float64         `json:"avg_rating"`
-	ByCategory    map[Category]int `json:"by_category"`
+	TotalSkills    int              `json:"total_skills"`
+	Published      int              `json:"published"`
+	Deprecated     int              `json:"deprecated"`
+	TotalDownloads int              `json:"total_downloads"`
+	AvgRating      float64          `json:"avg_rating"`
+	ByCategory     map[Category]int `json:"by_category"`
 }
 
 // Stats returns marketplace statistics.

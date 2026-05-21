@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/persona"
+	"github.com/spf13/cobra"
 )
 
 var personaCmd = &cobra.Command{

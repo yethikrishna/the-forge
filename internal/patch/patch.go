@@ -25,12 +25,12 @@ import (
 type PatchStatus string
 
 const (
-	StatusDraft     PatchStatus = "draft"
-	StatusReady     PatchStatus = "ready"
-	StatusApplied   PatchStatus = "applied"
-	StatusReverted  PatchStatus = "reverted"
-	StatusConflict  PatchStatus = "conflict"
-	StatusRejected  PatchStatus = "rejected"
+	StatusDraft    PatchStatus = "draft"
+	StatusReady    PatchStatus = "ready"
+	StatusApplied  PatchStatus = "applied"
+	StatusReverted PatchStatus = "reverted"
+	StatusConflict PatchStatus = "conflict"
+	StatusRejected PatchStatus = "rejected"
 )
 
 // OperationType classifies a patch operation.
@@ -68,25 +68,25 @@ type FilePatch struct {
 
 // Patch represents a collection of file changes.
 type Patch struct {
-	ID          string       `json:"id"`
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	Author      string       `json:"author,omitempty"`
-	AgentID     string       `json:"agent_id,omitempty"`
-	SessionID   string       `json:"session_id,omitempty"`
-	Files       []FilePatch  `json:"files"`
-	Status      PatchStatus  `json:"status"`
-	Tags        []string     `json:"tags,omitempty"`
-	CreatedAt   time.Time    `json:"created_at"`
-	AppliedAt   time.Time    `json:"applied_at,omitempty"`
-	RevertedAt  time.Time    `json:"reverted_at,omitempty"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Author      string      `json:"author,omitempty"`
+	AgentID     string      `json:"agent_id,omitempty"`
+	SessionID   string      `json:"session_id,omitempty"`
+	Files       []FilePatch `json:"files"`
+	Status      PatchStatus `json:"status"`
+	Tags        []string    `json:"tags,omitempty"`
+	CreatedAt   time.Time   `json:"created_at"`
+	AppliedAt   time.Time   `json:"applied_at,omitempty"`
+	RevertedAt  time.Time   `json:"reverted_at,omitempty"`
 }
 
 // Manager manages patches.
 type Manager struct {
-	dir    string
+	dir     string
 	patches map[string]*Patch
-	mu     sync.RWMutex
+	mu      sync.RWMutex
 }
 
 // NewManager creates a new patch manager.
@@ -173,9 +173,9 @@ func (m *Manager) AddFileChange(patchID, file, oldContent, newContent string) er
 	}
 
 	fp := FilePatch{
-		File:      file,
-		OldSHA:    sha256str(oldContent),
-		NewSHA:    sha256str(newContent),
+		File:   file,
+		OldSHA: sha256str(oldContent),
+		NewSHA: sha256str(newContent),
 	}
 
 	if oldContent == "" && newContent != "" {
@@ -183,16 +183,16 @@ func (m *Manager) AddFileChange(patchID, file, oldContent, newContent string) er
 		fp.Hunks = []Hunk{{
 			OldStart: 0, OldCount: 0,
 			NewStart: 1, NewCount: countLines(newContent),
-			OldText:  "",
-			NewText:  newContent,
+			OldText: "",
+			NewText: newContent,
 		}}
 	} else if oldContent != "" && newContent == "" {
 		fp.Operation = OpDelete
 		fp.Hunks = []Hunk{{
 			OldStart: 1, OldCount: countLines(oldContent),
 			NewStart: 0, NewCount: 0,
-			OldText:  oldContent,
-			NewText:  "",
+			OldText: oldContent,
+			NewText: "",
 		}}
 	} else if oldContent != newContent {
 		fp.Operation = OpModify

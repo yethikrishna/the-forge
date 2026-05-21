@@ -64,7 +64,7 @@ func sessionListCmd() *cobra.Command {
 			fmt.Println("Forge: Saved sessions:")
 			fmt.Println()
 			fmt.Printf("  %-12s %-10s %-25s %-20s\n", "ID", "Agent", "Created", "Model")
-			fmt.Println("  " + "---- "+repeat("-", 65))
+			fmt.Println("  " + "---- " + repeat("-", 65))
 
 			for _, entry := range entries {
 				if entry.IsDir() {

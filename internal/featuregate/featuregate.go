@@ -19,41 +19,41 @@ type GateStatus string
 const (
 	StatusActive    GateStatus = "active"
 	StatusDisabled  GateStatus = "disabled"
-	StatusGradual   GateStatus = "gradual"    // gradual rollout in progress
-	StatusKilled    GateStatus = "killed"     // emergency kill switch activated
-	StatusCompleted GateStatus = "completed"  // rollout 100%, feature fully enabled
+	StatusGradual   GateStatus = "gradual"   // gradual rollout in progress
+	StatusKilled    GateStatus = "killed"    // emergency kill switch activated
+	StatusCompleted GateStatus = "completed" // rollout 100%, feature fully enabled
 )
 
 // TargetRule defines who a feature gate applies to.
 type TargetRule struct {
 	UserIDs    []string          `json:"user_ids,omitempty"`
-	UserPct    float64           `json:"user_pct,omitempty"`    // 0-100 percentage
-	Agents     []string          `json:"agents,omitempty"`      // specific agents
-	Tags       []string          `json:"tags,omitempty"`        // user/agent tags
-	Attributes map[string]string `json:"attributes,omitempty"`  // attribute matching
+	UserPct    float64           `json:"user_pct,omitempty"`   // 0-100 percentage
+	Agents     []string          `json:"agents,omitempty"`     // specific agents
+	Tags       []string          `json:"tags,omitempty"`       // user/agent tags
+	Attributes map[string]string `json:"attributes,omitempty"` // attribute matching
 }
 
 // Gate represents a feature gate.
 type Gate struct {
-	ID          string      `json:"id"`
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Owner       string      `json:"owner,omitempty"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
-	Status      GateStatus  `json:"status"`
-	RolloutPct  float64     `json:"rollout_pct"` // 0-100
-	Target      TargetRule  `json:"target"`
-	DependsOn   []string    `json:"depends_on,omitempty"` // gate IDs this depends on
-	KillSwitch  bool        `json:"kill_switch"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Owner       string            `json:"owner,omitempty"`
+	CreatedAt   time.Time         `json:"created_at"`
+	UpdatedAt   time.Time         `json:"updated_at"`
+	Status      GateStatus        `json:"status"`
+	RolloutPct  float64           `json:"rollout_pct"` // 0-100
+	Target      TargetRule        `json:"target"`
+	DependsOn   []string          `json:"depends_on,omitempty"` // gate IDs this depends on
+	KillSwitch  bool              `json:"kill_switch"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
 // CheckResult holds the result of a gate check.
 type CheckResult struct {
-	GateID   string `json:"gate_id"`
-	Allowed  bool   `json:"allowed"`
-	Reason   string `json:"reason"`
+	GateID     string  `json:"gate_id"`
+	Allowed    bool    `json:"allowed"`
+	Reason     string  `json:"reason"`
 	RolloutPct float64 `json:"rollout_pct"`
 }
 
@@ -408,7 +408,7 @@ func (s *Store) Stats() map[string]interface{} {
 	defer s.mu.RUnlock()
 
 	stats := map[string]interface{}{
-		"total": len(s.gates),
+		"total":     len(s.gates),
 		"by_status": make(map[GateStatus]int),
 	}
 	byStatus := make(map[GateStatus]int)

@@ -233,7 +233,7 @@ func ciTemplatesCmd() *cobra.Command {
 					}
 					fmt.Printf("    %-15s [%s]%s\n", s.Name, s.Type, deps)
 				}
-			fmt.Print("\n")
+				fmt.Print("\n")
 			}
 			return nil
 		},

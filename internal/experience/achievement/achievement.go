@@ -216,8 +216,8 @@ func (t *Tracker) Stats() Stats {
 	defer t.mu.RUnlock()
 
 	stats := Stats{
-		Total:   len(t.achievements),
-		Tiers:   make(map[Tier]int),
+		Total:    len(t.achievements),
+		Tiers:    make(map[Tier]int),
 		Unlocked: make(map[Tier]int),
 	}
 
@@ -234,10 +234,10 @@ func (t *Tracker) Stats() Stats {
 
 // Stats holds achievement statistics.
 type Stats struct {
-	Total        int         `json:"total"`
-	UnlockedTotal int        `json:"unlocked_total"`
-	Tiers        map[Tier]int `json:"tiers"`
-	Unlocked     map[Tier]int `json:"unlocked"`
+	Total         int          `json:"total"`
+	UnlockedTotal int          `json:"unlocked_total"`
+	Tiers         map[Tier]int `json:"tiers"`
+	Unlocked      map[Tier]int `json:"unlocked"`
 }
 
 func (t *Tracker) checkForgeMaster() {

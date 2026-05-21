@@ -52,37 +52,37 @@ type Session struct {
 type AutoRule struct {
 	ID       string `json:"id"`
 	Tag      string `json:"tag"`
-	Pattern  string `json:"pattern"`  // regex to match title/content
-	Field    string `json:"field"`    // title, content, metadata
+	Pattern  string `json:"pattern"` // regex to match title/content
+	Field    string `json:"field"`   // title, content, metadata
 	Enabled  bool   `json:"enabled"`
 	Priority int    `json:"priority"`
 }
 
 // SavedSearch is a saved filter combination.
 type SavedSearch struct {
-	Name      string   `json:"name"`
-	Tags      []string `json:"tags"`
-	Query     string   `json:"query"`
+	Name      string    `json:"name"`
+	Tags      []string  `json:"tags"`
+	Query     string    `json:"query"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 // Manager manages session tags.
 type Manager struct {
-	sessions     map[string]*Session
-	tags         map[string]*Tag
-	autoRules    []AutoRule
+	sessions      map[string]*Session
+	tags          map[string]*Tag
+	autoRules     []AutoRule
 	savedSearches []SavedSearch
-	storeDir     string
-	mu           sync.Mutex
+	storeDir      string
+	mu            sync.Mutex
 }
 
 // NewManager creates a session tag manager.
 func NewManager(storeDir string) *Manager {
 	m := &Manager{
-		sessions:     make(map[string]*Session),
-		tags:         make(map[string]*Tag),
-		autoRules:    make([]AutoRule, 0),
-		storeDir:     storeDir,
+		sessions:  make(map[string]*Session),
+		tags:      make(map[string]*Tag),
+		autoRules: make([]AutoRule, 0),
+		storeDir:  storeDir,
 	}
 	m.registerDefaultTags()
 	m.registerDefaultRules()
@@ -356,9 +356,9 @@ func (m *Manager) save() {
 	}
 	os.MkdirAll(m.storeDir, 0755)
 	data, _ := json.MarshalIndent(map[string]interface{}{
-		"sessions":      m.sessions,
-		"tags":          m.tags,
-		"auto_rules":    m.autoRules,
+		"sessions":       m.sessions,
+		"tags":           m.tags,
+		"auto_rules":     m.autoRules,
 		"saved_searches": m.savedSearches,
 	}, "", "  ")
 	os.WriteFile(filepath.Join(m.storeDir, "session_tags.json"), data, 0644)

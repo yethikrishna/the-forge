@@ -261,10 +261,10 @@ func TestStoreGetReportNotFound(t *testing.T) {
 
 func TestFormatReport(t *testing.T) {
 	report := &DreamReport{
-		ID:        "dream-test",
-		Duration:  2 * time.Second,
-		Status:    "completed",
-		Phases:    []DreamPhase{PhaseAnalyze, PhaseOptimize, PhaseReport},
+		ID:       "dream-test",
+		Duration: 2 * time.Second,
+		Status:   "completed",
+		Phases:   []DreamPhase{PhaseAnalyze, PhaseOptimize, PhaseReport},
 		PatternsFound: []Pattern{
 			{Type: "error", Description: "Recurring timeout", Impact: "high", Frequency: 5},
 		},

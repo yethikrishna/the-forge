@@ -98,11 +98,11 @@ func LazyInit(name string, init func() error) *LazyModule {
 
 // LazyModule defers initialization until first use.
 type LazyModule struct {
-	name    string
-	init    func() error
-	loaded  bool
-	err     error
-	mu      sync.Mutex
+	name   string
+	init   func() error
+	loaded bool
+	err    error
+	mu     sync.Mutex
 }
 
 // Get ensures the module is loaded and returns any error.

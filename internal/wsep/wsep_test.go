@@ -95,4 +95,4 @@ type readWriteCloser struct {
 
 func (rwc *readWriteCloser) Read(p []byte) (int, error)  { return rwc.r.Read(p) }
 func (rwc *readWriteCloser) Write(p []byte) (int, error) { return rwc.w.Write(p) }
-func (rwc *readWriteCloser) Close() error                 { return nil }
+func (rwc *readWriteCloser) Close() error                { return nil }

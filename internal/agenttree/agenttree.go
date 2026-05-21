@@ -37,25 +37,25 @@ type Cost struct {
 
 // Node is an agent in the tree.
 type Node struct {
-	ID        string     `json:"id"`
-	ParentID  string     `json:"parent_id,omitempty"`
-	AgentID   string     `json:"agent_id"`
-	Role      string     `json:"role"`
-	Task      string     `json:"task"`
-	Status    NodeStatus `json:"status"`
-	Depth     int        `json:"depth"`
-	Cost      Cost       `json:"cost"`
-	Result    string     `json:"result,omitempty"`
-	Children  []string   `json:"children"`
-	CreatedAt time.Time  `json:"created_at"`
-	FinishedAt time.Time `json:"finished_at,omitempty"`
+	ID         string     `json:"id"`
+	ParentID   string     `json:"parent_id,omitempty"`
+	AgentID    string     `json:"agent_id"`
+	Role       string     `json:"role"`
+	Task       string     `json:"task"`
+	Status     NodeStatus `json:"status"`
+	Depth      int        `json:"depth"`
+	Cost       Cost       `json:"cost"`
+	Result     string     `json:"result,omitempty"`
+	Children   []string   `json:"children"`
+	CreatedAt  time.Time  `json:"created_at"`
+	FinishedAt time.Time  `json:"finished_at,omitempty"`
 }
 
 // Tree manages a hierarchical agent tree.
 type Tree struct {
-	RootID   string          `json:"root_id"`
+	RootID   string           `json:"root_id"`
 	Nodes    map[string]*Node `json:"nodes"`
-	MaxDepth int             `json:"max_depth"`
+	MaxDepth int              `json:"max_depth"`
 	storeDir string
 	mu       sync.RWMutex
 }

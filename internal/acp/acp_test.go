@@ -23,10 +23,10 @@ func TestClientSendMessage(t *testing.T) {
 		json.NewDecoder(r.Body).Decode(&req)
 
 		resp := acp.Message{
-			ID:        "msg-1",
-			Type:      acp.MessageTypeAssistant,
-			Content:   "Hello from agent",
-			Role:      "assistant",
+			ID:      "msg-1",
+			Type:    acp.MessageTypeAssistant,
+			Content: "Hello from agent",
+			Role:    "assistant",
 		}
 		json.NewEncoder(w).Encode(resp)
 	}))

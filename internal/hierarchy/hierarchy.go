@@ -19,10 +19,10 @@ import (
 type NodeStatus string
 
 const (
-	StatusIdle     NodeStatus = "idle"
-	StatusRunning  NodeStatus = "running"
-	StatusDone     NodeStatus = "done"
-	StatusFailed   NodeStatus = "failed"
+	StatusIdle      NodeStatus = "idle"
+	StatusRunning   NodeStatus = "running"
+	StatusDone      NodeStatus = "done"
+	StatusFailed    NodeStatus = "failed"
 	StatusCancelled NodeStatus = "cancelled"
 )
 
@@ -53,11 +53,11 @@ type Node struct {
 
 // Tree manages a hierarchical agent tree.
 type Tree struct {
-	RootID    string           `json:"root_id"`
-	Nodes     map[string]*Node `json:"nodes"`
-	MaxDepth  int              `json:"max_depth"`
-	storeDir  string
-	mu        sync.RWMutex
+	RootID   string           `json:"root_id"`
+	Nodes    map[string]*Node `json:"nodes"`
+	MaxDepth int              `json:"max_depth"`
+	storeDir string
+	mu       sync.RWMutex
 }
 
 // NewTree creates a new agent tree.
@@ -329,10 +329,10 @@ func (t *Tree) Stats() map[string]interface{} {
 	totalCost := t.rollupCost(t.RootID)
 
 	return map[string]interface{}{
-		"nodes":       len(t.Nodes),
-		"max_depth":   t.Depth(),
-		"statuses":    statuses,
-		"total_cost":  totalCost,
+		"nodes":      len(t.Nodes),
+		"max_depth":  t.Depth(),
+		"statuses":   statuses,
+		"total_cost": totalCost,
 	}
 }
 
@@ -385,13 +385,13 @@ type Store struct {
 
 // TreeStats holds aggregated statistics for a tree.
 type TreeStats struct {
-	TotalNodes   int
-	Running      int
-	Completed    int
-	Failed       int
-	Idle         int
-	MaxDepth     int
-	TotalCost    float64
+	TotalNodes     int
+	Running        int
+	Completed      int
+	Failed         int
+	Idle           int
+	MaxDepth       int
+	TotalCost      float64
 	AvgCostPerNode float64
 }
 

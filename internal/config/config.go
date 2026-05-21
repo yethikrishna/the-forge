@@ -15,19 +15,19 @@ import (
 
 // ForgeConfig is the top-level configuration loaded from forge.yaml.
 type ForgeConfig struct {
-	Project   ProjectConfig            `yaml:"project" json:"project"`
-	Agent     AgentConfig              `yaml:"agent" json:"agent"`
-	Security  SecurityConfig           `yaml:"security" json:"security"`
-	Models    ModelsConfig             `yaml:"models" json:"models"`
-	Tasks     TasksConfig              `yaml:"tasks" json:"tasks"`
-	Plugins   PluginsConfig            `yaml:"plugins" json:"plugins"`
-	Cost      CostConfig               `yaml:"cost" json:"cost"`
-	Pipelines PipelinesConfig          `yaml:"pipelines" json:"pipelines"`
-	Serve     ServeConfig              `yaml:"serve" json:"serve"`
-	Mux       MuxConfig                `yaml:"mux" json:"mux"`
-	Blink     BlinkConfig              `yaml:"blink" json:"blink"`
-	Envs      map[string]EnvConfig     `yaml:"envs" json:"envs"`
-	Jails     map[string]JailConfig    `yaml:"jails" json:"jails"`
+	Project   ProjectConfig             `yaml:"project" json:"project"`
+	Agent     AgentConfig               `yaml:"agent" json:"agent"`
+	Security  SecurityConfig            `yaml:"security" json:"security"`
+	Models    ModelsConfig              `yaml:"models" json:"models"`
+	Tasks     TasksConfig               `yaml:"tasks" json:"tasks"`
+	Plugins   PluginsConfig             `yaml:"plugins" json:"plugins"`
+	Cost      CostConfig                `yaml:"cost" json:"cost"`
+	Pipelines PipelinesConfig           `yaml:"pipelines" json:"pipelines"`
+	Serve     ServeConfig               `yaml:"serve" json:"serve"`
+	Mux       MuxConfig                 `yaml:"mux" json:"mux"`
+	Blink     BlinkConfig               `yaml:"blink" json:"blink"`
+	Envs      map[string]EnvConfig      `yaml:"envs" json:"envs"`
+	Jails     map[string]JailConfig     `yaml:"jails" json:"jails"`
 	Agents    map[string]AgentDefConfig `yaml:"agents" json:"agents"`
 }
 
@@ -55,13 +55,13 @@ type AgentConfig struct {
 
 // SecurityConfig holds security settings.
 type SecurityConfig struct {
-	Jail          bool     `yaml:"jail" json:"jail"`
-	JailRules     []string `yaml:"jail_rules" json:"jail_rules"`
-	AllowedHosts  []string `yaml:"allowed_hosts" json:"allowed_hosts"`
-	BlockedHosts  []string `yaml:"blocked_hosts" json:"blocked_hosts"`
-	SecretScan    bool     `yaml:"secret_scan" json:"secret_scan"`
-	PIIRedaction  bool     `yaml:"pii_redaction" json:"pii_redaction"`
-	AuditLog      string   `yaml:"audit_log" json:"audit_log"`
+	Jail         bool     `yaml:"jail" json:"jail"`
+	JailRules    []string `yaml:"jail_rules" json:"jail_rules"`
+	AllowedHosts []string `yaml:"allowed_hosts" json:"allowed_hosts"`
+	BlockedHosts []string `yaml:"blocked_hosts" json:"blocked_hosts"`
+	SecretScan   bool     `yaml:"secret_scan" json:"secret_scan"`
+	PIIRedaction bool     `yaml:"pii_redaction" json:"pii_redaction"`
+	AuditLog     string   `yaml:"audit_log" json:"audit_log"`
 }
 
 // ModelsConfig holds model aliases.
@@ -69,11 +69,11 @@ type ModelsConfig map[string]ModelAlias
 
 // ModelAlias defines a model alias with optional routing rules.
 type ModelAlias struct {
-	Provider    string  `yaml:"provider" json:"provider"`
-	Model       string  `yaml:"model" json:"model"`
-	MaxTokens   int     `yaml:"max_tokens" json:"max_tokens"`
-	Temperature float64 `yaml:"temperature" json:"temperature"`
-	CostPer1KIn float64 `yaml:"cost_per_1k_in" json:"cost_per_1k_in"`
+	Provider     string  `yaml:"provider" json:"provider"`
+	Model        string  `yaml:"model" json:"model"`
+	MaxTokens    int     `yaml:"max_tokens" json:"max_tokens"`
+	Temperature  float64 `yaml:"temperature" json:"temperature"`
+	CostPer1KIn  float64 `yaml:"cost_per_1k_in" json:"cost_per_1k_in"`
 	CostPer1KOut float64 `yaml:"cost_per_1k_out" json:"cost_per_1k_out"`
 }
 
@@ -135,10 +135,10 @@ type PipelineStep struct {
 
 // ServeConfig holds serve command settings.
 type ServeConfig struct {
-	Port    int    `yaml:"port" json:"port"`
-	Host    string `yaml:"host" json:"host"`
-	APIOnly bool   `yaml:"api_only" json:"api_only"`
-	TLS     bool   `yaml:"tls" json:"tls"`
+	Port     int    `yaml:"port" json:"port"`
+	Host     string `yaml:"host" json:"host"`
+	APIOnly  bool   `yaml:"api_only" json:"api_only"`
+	TLS      bool   `yaml:"tls" json:"tls"`
 	CertFile string `yaml:"cert_file" json:"cert_file"`
 	KeyFile  string `yaml:"key_file" json:"key_file"`
 }
@@ -165,22 +165,22 @@ type EnvConfig struct {
 
 // JailConfig defines a jail profile.
 type JailConfig struct {
-	AllowedHosts []string `yaml:"allowed_hosts" json:"allowed_hosts"`
-	BlockedHosts []string `yaml:"blocked_hosts" json:"blocked_hosts"`
-	AllowDNS    bool     `yaml:"allow_dns" json:"allow_dns"`
-	AllowOutbound bool   `yaml:"allow_outbound" json:"allow_outbound"`
+	AllowedHosts  []string `yaml:"allowed_hosts" json:"allowed_hosts"`
+	BlockedHosts  []string `yaml:"blocked_hosts" json:"blocked_hosts"`
+	AllowDNS      bool     `yaml:"allow_dns" json:"allow_dns"`
+	AllowOutbound bool     `yaml:"allow_outbound" json:"allow_outbound"`
 }
 
 // AgentDefConfig defines a named agent with its own configuration.
 type AgentDefConfig struct {
-	Type        string            `yaml:"type" json:"type"`
-	Model       string            `yaml:"model" json:"model"`
-	SystemPrompt string           `yaml:"system_prompt" json:"system_prompt"`
-	Tools       []string          `yaml:"tools" json:"tools"`
-	Env         map[string]string `yaml:"env" json:"env"`
-	Jail        string            `yaml:"jail" json:"jail"`
-	MaxTokens   int               `yaml:"max_tokens" json:"max_tokens"`
-	Temperature float64           `yaml:"temperature" json:"temperature"`
+	Type         string            `yaml:"type" json:"type"`
+	Model        string            `yaml:"model" json:"model"`
+	SystemPrompt string            `yaml:"system_prompt" json:"system_prompt"`
+	Tools        []string          `yaml:"tools" json:"tools"`
+	Env          map[string]string `yaml:"env" json:"env"`
+	Jail         string            `yaml:"jail" json:"jail"`
+	MaxTokens    int               `yaml:"max_tokens" json:"max_tokens"`
+	Temperature  float64           `yaml:"temperature" json:"temperature"`
 }
 
 // DefaultConfig returns the default configuration.
@@ -224,8 +224,8 @@ func DefaultConfig() ForgeConfig {
 		Blink: BlinkConfig{
 			Port: 8090,
 		},
-		Envs:  map[string]EnvConfig{},
-		Jails: map[string]JailConfig{},
+		Envs:   map[string]EnvConfig{},
+		Jails:  map[string]JailConfig{},
 		Agents: map[string]AgentDefConfig{},
 	}
 }

@@ -240,16 +240,16 @@ func TestStats(t *testing.T) {
 
 func TestIncidentReport(t *testing.T) {
 	inc := &Incident{
-		ID:           "inc-test",
-		AgentID:      "agent-1",
-		FailureType:  FailureTimeout,
-		Status:       IncidentResolved,
-		Message:      "Request timed out",
-		Remediation:  ActionRetry,
-		Attempt:      2,
-		MaxAttempts:  3,
-		Resolution:   "Succeeded on retry",
-		Duration:     "45s",
+		ID:          "inc-test",
+		AgentID:     "agent-1",
+		FailureType: FailureTimeout,
+		Status:      IncidentResolved,
+		Message:     "Request timed out",
+		Remediation: ActionRetry,
+		Attempt:     2,
+		MaxAttempts: 3,
+		Resolution:  "Succeeded on retry",
+		Duration:    "45s",
 	}
 
 	report := IncidentReport(inc)

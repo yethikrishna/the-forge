@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"runtime"
-	
 
 	"github.com/forge/sword/internal/config"
 	"github.com/forge/sword/internal/cost"

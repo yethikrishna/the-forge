@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/forge/sword/internal/aisdk"
-	forgeslog "github.com/forge/sword/internal/slog"
 	"github.com/forge/sword/internal/duration/timer"
+	forgeslog "github.com/forge/sword/internal/slog"
 	"github.com/spf13/cobra"
 )
 

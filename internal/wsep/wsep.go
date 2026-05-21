@@ -14,25 +14,25 @@ import (
 type MessageType string
 
 const (
-	TypeInit    MessageType = "init"
-	TypeStdin   MessageType = "stdin"
-	TypeStdout  MessageType = "stdout"
-	TypeStderr  MessageType = "stderr"
-	TypeExit    MessageType = "exit"
-	TypeResize  MessageType = "resize"
-	TypeSignal  MessageType = "signal"
-	TypeError   MessageType = "error"
+	TypeInit   MessageType = "init"
+	TypeStdin  MessageType = "stdin"
+	TypeStdout MessageType = "stdout"
+	TypeStderr MessageType = "stderr"
+	TypeExit   MessageType = "exit"
+	TypeResize MessageType = "resize"
+	TypeSignal MessageType = "signal"
+	TypeError  MessageType = "error"
 )
 
 // Message is a protocol message.
 type Message struct {
-	Type    MessageType `json:"type"`
-	Data    []byte      `json:"data,omitempty"`
-	ExitCode int        `json:"exit_code,omitempty"`
-	Error   string      `json:"error,omitempty"`
-	Width   int         `json:"width,omitempty"`
-	Height  int         `json:"height,omitempty"`
-	Signal  string      `json:"signal,omitempty"`
+	Type     MessageType `json:"type"`
+	Data     []byte      `json:"data,omitempty"`
+	ExitCode int         `json:"exit_code,omitempty"`
+	Error    string      `json:"error,omitempty"`
+	Width    int         `json:"width,omitempty"`
+	Height   int         `json:"height,omitempty"`
+	Signal   string      `json:"signal,omitempty"`
 }
 
 // InitMessage is the initial message to start a command.

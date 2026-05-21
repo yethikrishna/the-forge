@@ -42,24 +42,24 @@ type Contribution struct {
 
 // FusedResult is the merged output.
 type FusedResult struct {
-	ID             string         `json:"id"`
-	Topic          string         `json:"topic"`
-	Content        string         `json:"content"`
-	Strategy       MergeStrategy  `json:"strategy"`
-	Contributions  int            `json:"contributions"`
-	Confidence     float64        `json:"confidence"`
-	Agreement      float64        `json:"agreement"` // 0-1, how much agents agreed
-	ConflictCount  int            `json:"conflict_count"`
-	Contributors   []string       `json:"contributors"`
-	Timestamp      time.Time      `json:"timestamp"`
+	ID            string        `json:"id"`
+	Topic         string        `json:"topic"`
+	Content       string        `json:"content"`
+	Strategy      MergeStrategy `json:"strategy"`
+	Contributions int           `json:"contributions"`
+	Confidence    float64       `json:"confidence"`
+	Agreement     float64       `json:"agreement"` // 0-1, how much agents agreed
+	ConflictCount int           `json:"conflict_count"`
+	Contributors  []string      `json:"contributors"`
+	Timestamp     time.Time     `json:"timestamp"`
 }
 
 // Conflict represents a disagreement between agents.
 type Conflict struct {
-	Topic       string   `json:"topic"`
-	AgentIDs    []string `json:"agent_ids"`
-	Contents    []string `json:"contents"`
-	Resolution  string   `json:"resolution"`
+	Topic      string   `json:"topic"`
+	AgentIDs   []string `json:"agent_ids"`
+	Contents   []string `json:"contents"`
+	Resolution string   `json:"resolution"`
 }
 
 // Fuse handles knowledge fusion.
@@ -107,11 +107,11 @@ func (f *Fuse) Merge(topic string, strategy MergeStrategy) (*FusedResult, error)
 	}
 
 	result := &FusedResult{
-		ID:           fmt.Sprintf("f-%x", sha256.Sum256([]byte(topic)))[:16],
-		Topic:        topic,
-		Strategy:     strategy,
+		ID:            fmt.Sprintf("f-%x", sha256.Sum256([]byte(topic)))[:16],
+		Topic:         topic,
+		Strategy:      strategy,
 		Contributions: len(contribs),
-		Timestamp:    time.Now(),
+		Timestamp:     time.Now(),
 	}
 
 	// Collect contributors
@@ -217,9 +217,9 @@ func (f *Fuse) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"topics":           len(f.contributions),
+		"topics":              len(f.contributions),
 		"total_contributions": totalContribs,
-		"fused_results":    len(f.results),
+		"fused_results":       len(f.results),
 	}
 }
 

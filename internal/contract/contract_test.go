@@ -268,7 +268,7 @@ func TestSaveTests(t *testing.T) {
 
 func TestFormatDiff(t *testing.T) {
 	diff := &SpecDiff{
-		AddedEndpoints: []Endpoint{{Method: "GET", Path: "/new"}},
+		AddedEndpoints:   []Endpoint{{Method: "GET", Path: "/new"}},
 		RemovedEndpoints: []Endpoint{{Method: "POST", Path: "/old"}},
 		BreakingChanges: []BreakingChange{
 			{Type: "removed_endpoint", Severity: "breaking", Endpoint: "POST /old", Description: "Endpoint removed"},

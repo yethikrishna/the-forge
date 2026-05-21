@@ -337,8 +337,8 @@ type linearIssue struct {
 	State       struct {
 		Name string `json:"name"`
 	} `json:"state"`
-	Priority  int `json:"priority"`
-	Assignee  *struct {
+	Priority int `json:"priority"`
+	Assignee *struct {
 		Email       string `json:"email"`
 		DisplayName string `json:"displayName"`
 	} `json:"assignee"`

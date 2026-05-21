@@ -13,16 +13,16 @@ import (
 
 // Forgefile is the root configuration structure.
 type Forgefile struct {
-	Version    string               `json:"version" toml:"version"`
-	Name       string               `json:"name" toml:"name"`
-	Model      ModelDefaults        `json:"model" toml:"model"`
-	Agents     map[string]AgentDef  `json:"agents" toml:"agents"`
-	Workflows  map[string]Workflow  `json:"workflows" toml:"workflows"`
-	Models     map[string]ModelDef  `json:"models" toml:"models"`
-	Schedules  map[string]Schedule  `json:"schedules" toml:"schedules"`
-	Resources  ResourceConfig       `json:"resources" toml:"resources"`
-	Security   SecurityConfig       `json:"security" toml:"security"`
-	Integrations IntegrationConfig  `json:"integrations" toml:"integrations"`
+	Version      string              `json:"version" toml:"version"`
+	Name         string              `json:"name" toml:"name"`
+	Model        ModelDefaults       `json:"model" toml:"model"`
+	Agents       map[string]AgentDef `json:"agents" toml:"agents"`
+	Workflows    map[string]Workflow `json:"workflows" toml:"workflows"`
+	Models       map[string]ModelDef `json:"models" toml:"models"`
+	Schedules    map[string]Schedule `json:"schedules" toml:"schedules"`
+	Resources    ResourceConfig      `json:"resources" toml:"resources"`
+	Security     SecurityConfig      `json:"security" toml:"security"`
+	Integrations IntegrationConfig   `json:"integrations" toml:"integrations"`
 }
 
 // ModelDefaults sets default model configuration.
@@ -63,11 +63,11 @@ type Workflow struct {
 
 // TriggerConfig defines when a workflow runs.
 type TriggerConfig struct {
-	Event   string   `json:"event" toml:"event"`
-	Branch  []string `json:"branch" toml:"branch"`
-	Path    []string `json:"path" toml:"path"`
-	Cron    string   `json:"cron" toml:"cron"`
-	Manual  bool     `json:"manual" toml:"manual"`
+	Event  string   `json:"event" toml:"event"`
+	Branch []string `json:"branch" toml:"branch"`
+	Path   []string `json:"path" toml:"path"`
+	Cron   string   `json:"cron" toml:"cron"`
+	Manual bool     `json:"manual" toml:"manual"`
 }
 
 // WorkflowStep is a single step in a workflow.
@@ -97,12 +97,12 @@ type ModelDef struct {
 
 // Schedule defines a scheduled task.
 type Schedule struct {
-	Cron      string `json:"cron" toml:"cron"`
-	Workflow  string `json:"workflow" toml:"workflow"`
-	Agent     string `json:"agent" toml:"agent"`
-	Prompt    string `json:"prompt" toml:"prompt"`
-	Enabled   bool   `json:"enabled" toml:"enabled"`
-	Timezone  string `json:"timezone" toml:"timezone"`
+	Cron     string `json:"cron" toml:"cron"`
+	Workflow string `json:"workflow" toml:"workflow"`
+	Agent    string `json:"agent" toml:"agent"`
+	Prompt   string `json:"prompt" toml:"prompt"`
+	Enabled  bool   `json:"enabled" toml:"enabled"`
+	Timezone string `json:"timezone" toml:"timezone"`
 }
 
 // ResourceConfig defines resource constraints.
@@ -116,21 +116,21 @@ type ResourceConfig struct {
 
 // SecurityConfig defines security settings.
 type SecurityConfig struct {
-	Sandbox          string   `json:"sandbox" toml:"sandbox"`
-	AllowNetwork     bool     `json:"allow_network" toml:"allow_network"`
-	AllowedDomains   []string `json:"allowed_domains" toml:"allowed_domains"`
-	SecretScanning   bool     `json:"secret_scanning" toml:"secret_scanning"`
-	AuditLog         bool     `json:"audit_log" toml:"audit_log"`
-	RequireApproval  bool     `json:"require_approval" toml:"require_approval"`
-	DataResidency    string   `json:"data_residency" toml:"data_residency"`
+	Sandbox         string   `json:"sandbox" toml:"sandbox"`
+	AllowNetwork    bool     `json:"allow_network" toml:"allow_network"`
+	AllowedDomains  []string `json:"allowed_domains" toml:"allowed_domains"`
+	SecretScanning  bool     `json:"secret_scanning" toml:"secret_scanning"`
+	AuditLog        bool     `json:"audit_log" toml:"audit_log"`
+	RequireApproval bool     `json:"require_approval" toml:"require_approval"`
+	DataResidency   string   `json:"data_residency" toml:"data_residency"`
 }
 
 // IntegrationConfig defines external integrations.
 type IntegrationConfig struct {
-	GitHub   *GitHubIntegration   `json:"github,omitempty" toml:"github"`
-	Jira     *JiraIntegration     `json:"jira,omitempty" toml:"jira"`
-	Slack    *SlackIntegration    `json:"slack,omitempty" toml:"slack"`
-	Notion   *NotionIntegration   `json:"notion,omitempty" toml:"notion"`
+	GitHub *GitHubIntegration `json:"github,omitempty" toml:"github"`
+	Jira   *JiraIntegration   `json:"jira,omitempty" toml:"jira"`
+	Slack  *SlackIntegration  `json:"slack,omitempty" toml:"slack"`
+	Notion *NotionIntegration `json:"notion,omitempty" toml:"notion"`
 }
 
 // GitHubIntegration configures GitHub integration.
@@ -143,8 +143,8 @@ type GitHubIntegration struct {
 
 // JiraIntegration configures Jira integration.
 type JiraIntegration struct {
-	URL    string `json:"url" toml:"url"`
-	Token  string `json:"token" toml:"token"`
+	URL     string `json:"url" toml:"url"`
+	Token   string `json:"token" toml:"token"`
 	Project string `json:"project" toml:"project"`
 }
 
@@ -473,17 +473,17 @@ func Example() *Forgefile {
 		},
 		Agents: map[string]AgentDef{
 			"coder": {
-				Role:   "coder",
-				System: "You write clean, tested Go code.",
-				Tools:  []string{"search", "build", "test", "exec"},
+				Role:    "coder",
+				System:  "You write clean, tested Go code.",
+				Tools:   []string{"search", "build", "test", "exec"},
 				CostCap: 2.00,
 				Sandbox: "process",
 			},
 			"reviewer": {
-				Role:   "reviewer",
-				System: "You review code for quality and security.",
-				Tools:  []string{"search", "diff"},
-				Model:  "claude-sonnet-4",
+				Role:    "reviewer",
+				System:  "You review code for quality and security.",
+				Tools:   []string{"search", "diff"},
+				Model:   "claude-sonnet-4",
 				CostCap: 1.00,
 			},
 		},

@@ -13,9 +13,9 @@ func TestCreatePool(t *testing.T) {
 	}
 
 	pool, err := mgr.CreatePool("coders", "coder", "gpt-4.1", ScalingPolicy{
-		MinAgents: 2,
-		MaxAgents: 10,
-		ScaleUpThreshold: 5,
+		MinAgents:          2,
+		MaxAgents:          10,
+		ScaleUpThreshold:   5,
 		ScaleDownThreshold: 1,
 	})
 	if err != nil {
@@ -216,12 +216,12 @@ func TestCheckScaling(t *testing.T) {
 	mgr, _ := NewManager(dir)
 
 	pool, _ := mgr.CreatePool("coders", "coder", "gpt-4.1", ScalingPolicy{
-		MinAgents: 1,
-		MaxAgents: 10,
-		ScaleUpThreshold: 5,
+		MinAgents:          1,
+		MaxAgents:          10,
+		ScaleUpThreshold:   5,
 		ScaleDownThreshold: 1,
-		ScaleUpCooldown: 0,
-		ScaleDownCooldown: 0,
+		ScaleUpCooldown:    0,
+		ScaleDownCooldown:  0,
 	})
 
 	action, count := mgr.CheckScaling(pool.ID, 20)

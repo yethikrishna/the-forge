@@ -27,11 +27,11 @@ type LabelSet map[string]string
 
 // Metric represents a single metric with labels.
 type Metric struct {
-	Name   string    `json:"name"`
-	Help   string    `json:"help"`
+	Name   string     `json:"name"`
+	Help   string     `json:"help"`
 	Type   MetricType `json:"type"`
-	Labels LabelSet  `json:"labels,omitempty"`
-	Value  float64   `json:"value"`
+	Labels LabelSet   `json:"labels,omitempty"`
+	Value  float64    `json:"value"`
 }
 
 // Counter is a monotonically increasing counter.
@@ -149,10 +149,10 @@ func (h *Histogram) Type() MetricType { return TypeHistogram }
 
 // HistogramStats returns statistics for the histogram.
 type HistogramStats struct {
-	Count   int64              `json:"count"`
-	Sum     float64            `json:"sum"`
-	Buckets map[float64]int64  `json:"buckets"`
-	Mean    float64            `json:"mean,omitempty"`
+	Count   int64             `json:"count"`
+	Sum     float64           `json:"sum"`
+	Buckets map[float64]int64 `json:"buckets"`
+	Mean    float64           `json:"mean,omitempty"`
 }
 
 func (h *Histogram) Stats() HistogramStats {

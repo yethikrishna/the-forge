@@ -273,9 +273,15 @@ func TestSetWeight(t *testing.T) {
 }
 
 func TestClamp(t *testing.T) {
-	if clamp(-5) != 0 { t.Error("should clamp to 0") }
-	if clamp(150) != 100 { t.Error("should clamp to 100") }
-	if clamp(50) != 50 { t.Error("50 should stay 50") }
+	if clamp(-5) != 0 {
+		t.Error("should clamp to 0")
+	}
+	if clamp(150) != 100 {
+		t.Error("should clamp to 100")
+	}
+	if clamp(50) != 50 {
+		t.Error("50 should stay 50")
+	}
 }
 
 func TestScoreNoPrompt(t *testing.T) {

@@ -400,7 +400,7 @@ var (
 	cloneStoreInst = clonebehavior.NewStore()
 )
 
-func setActiveRecorder(r *clonebehavior.Recorder)  { activeRecorder = r }
-func getActiveRecorder() *clonebehavior.Recorder    { return activeRecorder }
-func clearActiveRecorder()                           { activeRecorder = nil }
-func getCloneStore() *clonebehavior.Store             { return cloneStoreInst }
+func setActiveRecorder(r *clonebehavior.Recorder) { activeRecorder = r }
+func getActiveRecorder() *clonebehavior.Recorder  { return activeRecorder }
+func clearActiveRecorder()                        { activeRecorder = nil }
+func getCloneStore() *clonebehavior.Store         { return cloneStoreInst }

@@ -18,37 +18,37 @@ import (
 type ProviderStatus string
 
 const (
-	StatusHealthy    ProviderStatus = "healthy"
-	StatusDegraded   ProviderStatus = "degraded"
-	StatusOutage     ProviderStatus = "outage"
-	StatusUnknown    ProviderStatus = "unknown"
+	StatusHealthy     ProviderStatus = "healthy"
+	StatusDegraded    ProviderStatus = "degraded"
+	StatusOutage      ProviderStatus = "outage"
+	StatusUnknown     ProviderStatus = "unknown"
 	StatusMaintenance ProviderStatus = "maintenance"
 )
 
 // Provider represents an AI provider.
 type Provider struct {
-	Name       string         `json:"name"`
-	Endpoint   string         `json:"endpoint"`
-	Status     ProviderStatus `json:"status"`
-	Priority   int            `json:"priority"` // lower = preferred
-	LastCheck  *time.Time     `json:"last_check,omitempty"`
-	LastError  string         `json:"last_error,omitempty"`
-	Latency    time.Duration  `json:"latency,omitempty"`
-	SuccessRate float64       `json:"success_rate"` // 0-1
+	Name        string         `json:"name"`
+	Endpoint    string         `json:"endpoint"`
+	Status      ProviderStatus `json:"status"`
+	Priority    int            `json:"priority"` // lower = preferred
+	LastCheck   *time.Time     `json:"last_check,omitempty"`
+	LastError   string         `json:"last_error,omitempty"`
+	Latency     time.Duration  `json:"latency,omitempty"`
+	SuccessRate float64        `json:"success_rate"` // 0-1
 }
 
 // Incident represents a provider outage incident.
 type Incident struct {
-	ID          string         `json:"id"`
-	Provider    string         `json:"provider"`
-	Status      string         `json:"status"` // investigating, identified, monitoring, resolved
-	Severity    string         `json:"severity"` // critical, high, medium, low
-	StartedAt   time.Time      `json:"started_at"`
-	ResolvedAt  *time.Time     `json:"resolved_at,omitempty"`
-	Description string         `json:"description"`
-	Timeline    []IncidentEvent `json:"timeline,omitempty"`
-	Fallbacks   []string       `json:"fallbacks_used,omitempty"`
-	AffectedAgents []string    `json:"affected_agents,omitempty"`
+	ID             string          `json:"id"`
+	Provider       string          `json:"provider"`
+	Status         string          `json:"status"`   // investigating, identified, monitoring, resolved
+	Severity       string          `json:"severity"` // critical, high, medium, low
+	StartedAt      time.Time       `json:"started_at"`
+	ResolvedAt     *time.Time      `json:"resolved_at,omitempty"`
+	Description    string          `json:"description"`
+	Timeline       []IncidentEvent `json:"timeline,omitempty"`
+	Fallbacks      []string        `json:"fallbacks_used,omitempty"`
+	AffectedAgents []string        `json:"affected_agents,omitempty"`
 }
 
 // IncidentEvent represents an event in an incident timeline.
@@ -71,9 +71,9 @@ type CheckResult struct {
 // Playbook defines the fallback strategy for a provider.
 type Playbook struct {
 	Provider     string   `json:"provider"`
-	Fallbacks    []string `json:"fallbacks"`     // ordered list of fallback providers
-	RetryCount   int      `json:"retry_count"`   // default: 3
-	RetryDelay   int      `json:"retry_delay"`   // seconds, default: 5
+	Fallbacks    []string `json:"fallbacks"`   // ordered list of fallback providers
+	RetryCount   int      `json:"retry_count"` // default: 3
+	RetryDelay   int      `json:"retry_delay"` // seconds, default: 5
 	NotifyEmail  []string `json:"notify_email,omitempty"`
 	AutoFallback bool     `json:"auto_fallback"` // default: true
 	CooldownSecs int      `json:"cooldown_secs"` // default: 300

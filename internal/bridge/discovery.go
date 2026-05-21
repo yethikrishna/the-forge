@@ -15,11 +15,11 @@ import (
 
 // DiscoveryConfig configures protocol endpoint discovery.
 type DiscoveryConfig struct {
-	ScanLocalhost bool   `json:"scan_localhost"`
-	ScanNetwork   bool   `json:"scan_network"`
+	ScanLocalhost bool          `json:"scan_localhost"`
+	ScanNetwork   bool          `json:"scan_network"`
 	Timeout       time.Duration `json:"timeout"`
-	KnownPorts    []int  `json:"known_ports"`
-	ConfigDir     string `json:"config_dir"`
+	KnownPorts    []int         `json:"known_ports"`
+	ConfigDir     string        `json:"config_dir"`
 }
 
 // DefaultDiscoveryConfig returns sensible defaults.
@@ -35,20 +35,20 @@ func DefaultDiscoveryConfig() DiscoveryConfig {
 
 // Endpoint represents a discovered protocol endpoint.
 type Endpoint struct {
-	Name       string            `json:"name"`
-	Protocol   Protocol          `json:"protocol"`
-	Address    string            `json:"address"`
-	Healthy    bool              `json:"healthy"`
-	ServerInfo map[string]string `json:"server_info,omitempty"`
-	DiscoveredAt time.Time       `json:"discovered_at"`
-	Source     string            `json:"source"` // "scan", "config", "mcp-registry"
+	Name         string            `json:"name"`
+	Protocol     Protocol          `json:"protocol"`
+	Address      string            `json:"address"`
+	Healthy      bool              `json:"healthy"`
+	ServerInfo   map[string]string `json:"server_info,omitempty"`
+	DiscoveredAt time.Time         `json:"discovered_at"`
+	Source       string            `json:"source"` // "scan", "config", "mcp-registry"
 }
 
 // Discoverer finds protocol endpoints on the network and in config.
 type Discoverer struct {
-	config   DiscoveryConfig
-	dir      string
-	cache    []Endpoint
+	config DiscoveryConfig
+	dir    string
+	cache  []Endpoint
 }
 
 // NewDiscoverer creates a protocol endpoint discoverer.
@@ -155,12 +155,12 @@ func (d *Discoverer) scanMCPServers() []Endpoint {
 			}
 			if addr != "" {
 				endpoints = append(endpoints, Endpoint{
-					Name:        name,
-					Protocol:    ProtocolMCP,
-					Address:     addr,
+					Name:         name,
+					Protocol:     ProtocolMCP,
+					Address:      addr,
 					DiscoveredAt: time.Now(),
-					Source:      "mcp-registry",
-					ServerInfo:  map[string]string{"config_path": p},
+					Source:       "mcp-registry",
+					ServerInfo:   map[string]string{"config_path": p},
 				})
 			}
 		}
@@ -186,11 +186,11 @@ func (d *Discoverer) scanLocalhost(ctx context.Context) []Endpoint {
 		protocol := d.identifyProtocol(ctx, addr)
 		if protocol != "" {
 			endpoints = append(endpoints, Endpoint{
-				Name:        fmt.Sprintf("localhost:%d", port),
-				Protocol:    protocol,
-				Address:     fmt.Sprintf("http://%s", addr),
+				Name:         fmt.Sprintf("localhost:%d", port),
+				Protocol:     protocol,
+				Address:      fmt.Sprintf("http://%s", addr),
 				DiscoveredAt: time.Now(),
-				Source:      "scan",
+				Source:       "scan",
 			})
 		}
 	}

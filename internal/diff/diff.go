@@ -11,10 +11,10 @@ import (
 type ChangeType int
 
 const (
-	ChangeNone    ChangeType = iota // Unchanged
-	ChangeAdd                       // Addition
-	ChangeDelete                    // Deletion
-	ChangeModify                    // Modification
+	ChangeNone   ChangeType = iota // Unchanged
+	ChangeAdd                      // Addition
+	ChangeDelete                   // Deletion
+	ChangeModify                   // Modification
 )
 
 // Line represents a single line in a diff.
@@ -27,10 +27,10 @@ type Line struct {
 
 // Diff represents a set of changes.
 type Diff struct {
-	File    string
-	Lines   []Line
-	Added   int
-	Deleted int
+	File     string
+	Lines    []Line
+	Added    int
+	Deleted  int
 	Modified int
 }
 

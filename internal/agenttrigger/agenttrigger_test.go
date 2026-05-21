@@ -10,10 +10,10 @@ import (
 
 // mockRunner is a test pipeline runner.
 type mockRunner struct {
-	mu       sync.Mutex
-	calls    []call
-	err      error
-	delay    time.Duration
+	mu    sync.Mutex
+	calls []call
+	err   error
+	delay time.Duration
 }
 
 type call struct {
@@ -508,7 +508,7 @@ func TestFormatHistory(t *testing.T) {
 		Status:      "completed",
 		StartedAt:   now,
 		FinishedAt:  &now,
-		Event: TriggerEvent{Type: TriggerFileChange},
+		Event:       TriggerEvent{Type: TriggerFileChange},
 	}
 	output := FormatHistory(rec)
 	if len(output) == 0 {

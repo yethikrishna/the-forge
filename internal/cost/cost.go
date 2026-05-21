@@ -10,10 +10,10 @@ import (
 
 // Pricing represents per-token pricing for a model.
 type Pricing struct {
-	InputPer1M       float64 `json:"input_per_1m"`       // USD per 1M input tokens
-	OutputPer1M      float64 `json:"output_per_1m"`      // USD per 1M output tokens
-	CacheReadPer1M   float64 `json:"cache_read_per_1m"`  // USD per 1M cached input tokens
-	CacheWritePer1M  float64 `json:"cache_write_per_1m"` // USD per 1M cache write tokens
+	InputPer1M      float64 `json:"input_per_1m"`       // USD per 1M input tokens
+	OutputPer1M     float64 `json:"output_per_1m"`      // USD per 1M output tokens
+	CacheReadPer1M  float64 `json:"cache_read_per_1m"`  // USD per 1M cached input tokens
+	CacheWritePer1M float64 `json:"cache_write_per_1m"` // USD per 1M cache write tokens
 }
 
 // ModelPricing bundles a model with its pricing.
@@ -25,12 +25,12 @@ type ModelPricing struct {
 
 // EstimateResult holds a cost estimate.
 type EstimateResult struct {
-	Model       string  `json:"model"`
-	InputTokens int64   `json:"input_tokens"`
-	OutputTokens int64  `json:"output_tokens"`
-	InputCost   float64 `json:"input_cost"`
-	OutputCost  float64 `json:"output_cost"`
-	TotalCost   float64 `json:"total_cost"`
+	Model        string  `json:"model"`
+	InputTokens  int64   `json:"input_tokens"`
+	OutputTokens int64   `json:"output_tokens"`
+	InputCost    float64 `json:"input_cost"`
+	OutputCost   float64 `json:"output_cost"`
+	TotalCost    float64 `json:"total_cost"`
 }
 
 // Catalog returns all known model pricing.

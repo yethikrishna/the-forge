@@ -19,26 +19,26 @@ import (
 type TemplateType string
 
 const (
-	TypeGoAPI      TemplateType = "go-api"
-	TypeGoCLI      TemplateType = "go-cli"
-	TypeGoGRPC     TemplateType = "go-grpc"
-	TypePythonML   TemplateType = "python-ml"
-	TypePythonAPI  TemplateType = "python-api"
-	TypeRustCLI    TemplateType = "rust-cli"
-	TypeTSNode     TemplateType = "ts-node"
-	TypeReact      TemplateType = "react"
-	TypeDocker     TemplateType = "docker"
-	TypeK8s        TemplateType = "k8s"
-	TypeCustom     TemplateType = "custom"
+	TypeGoAPI     TemplateType = "go-api"
+	TypeGoCLI     TemplateType = "go-cli"
+	TypeGoGRPC    TemplateType = "go-grpc"
+	TypePythonML  TemplateType = "python-ml"
+	TypePythonAPI TemplateType = "python-api"
+	TypeRustCLI   TemplateType = "rust-cli"
+	TypeTSNode    TemplateType = "ts-node"
+	TypeReact     TemplateType = "react"
+	TypeDocker    TemplateType = "docker"
+	TypeK8s       TemplateType = "k8s"
+	TypeCustom    TemplateType = "custom"
 )
 
 // TemplateFile represents a file in a template.
 type TemplateFile struct {
-	Path     string `json:"path"`       // relative path within project
-	Content  string `json:"content"`    // file content (may contain {{.Var}})
-	Mode     int    `json:"mode"`       // file permissions
-	Exec     bool   `json:"exec"`       // executable?
-	Optional bool   `json:"optional"`   // skip if exists?
+	Path     string `json:"path"`     // relative path within project
+	Content  string `json:"content"`  // file content (may contain {{.Var}})
+	Mode     int    `json:"mode"`     // file permissions
+	Exec     bool   `json:"exec"`     // executable?
+	Optional bool   `json:"optional"` // skip if exists?
 }
 
 // Var represents a template variable.
@@ -65,8 +65,8 @@ type Template struct {
 
 // ApplyResult holds the result of applying a template.
 type ApplyResult struct {
-	TemplateID string   `json:"template_id"`
-	TargetDir  string   `json:"target_dir"`
+	TemplateID   string   `json:"template_id"`
+	TargetDir    string   `json:"target_dir"`
 	FilesCreated []string `json:"files_created"`
 	FilesSkipped []string `json:"files_skipped"`
 }

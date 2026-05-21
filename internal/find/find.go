@@ -18,13 +18,13 @@ import (
 type ResultType string
 
 const (
-	TypeMemory    ResultType = "memory"
-	TypeSession   ResultType = "session"
-	TypePipeline  ResultType = "pipeline"
-	TypeTemplate  ResultType = "template"
-	TypeFile      ResultType = "file"
-	TypeConfig    ResultType = "config"
-	TypeCode      ResultType = "code"
+	TypeMemory   ResultType = "memory"
+	TypeSession  ResultType = "session"
+	TypePipeline ResultType = "pipeline"
+	TypeTemplate ResultType = "template"
+	TypeFile     ResultType = "file"
+	TypeConfig   ResultType = "config"
+	TypeCode     ResultType = "code"
 )
 
 // Result is a single search result.
@@ -32,9 +32,9 @@ type Result struct {
 	Type      ResultType `json:"type"`
 	Title     string     `json:"title"`
 	Path      string     `json:"path"`
-	Match     string     `json:"match"`      // the matching line/snippet
+	Match     string     `json:"match"` // the matching line/snippet
 	Line      int        `json:"line,omitempty"`
-	Score     float64    `json:"score"`       // relevance 0-1
+	Score     float64    `json:"score"` // relevance 0-1
 	Timestamp time.Time  `json:"timestamp,omitempty"`
 }
 

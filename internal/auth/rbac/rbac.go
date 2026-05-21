@@ -45,11 +45,11 @@ type Role struct {
 
 // User represents a user with assigned roles.
 type User struct {
-	ID       string    `json:"id"`
-	Name     string    `json:"name"`
-	Email    string    `json:"email"`
-	Roles    []string  `json:"roles"`    // role IDs
-	IsAdmin  bool      `json:"is_admin"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	Roles     []string  `json:"roles"` // role IDs
+	IsAdmin   bool      `json:"is_admin"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -76,22 +76,22 @@ type Condition struct {
 
 // AccessDecision is the result of an access check.
 type AccessDecision struct {
-	Allowed    bool     `json:"allowed"`
-	UserID     string   `json:"user_id"`
-	Resource   string   `json:"resource"`
-	Action     string   `json:"action"`
+	Allowed         bool     `json:"allowed"`
+	UserID          string   `json:"user_id"`
+	Resource        string   `json:"resource"`
+	Action          string   `json:"action"`
 	MatchedPolicies []string `json:"matched_policies,omitempty"`
-	DeniedBy   string   `json:"denied_by,omitempty"`
-	Reason     string   `json:"reason"`
+	DeniedBy        string   `json:"denied_by,omitempty"`
+	Reason          string   `json:"reason"`
 }
 
 // Manager manages RBAC state.
 type Manager struct {
-	roles   map[string]*Role
-	users   map[string]*User
+	roles    map[string]*Role
+	users    map[string]*User
 	policies map[string]*Policy
 	storeDir string
-	mu      sync.RWMutex
+	mu       sync.RWMutex
 }
 
 // NewManager creates a new RBAC manager.
@@ -462,11 +462,11 @@ func (m *Manager) Stats() RBACStats {
 	defer m.mu.RUnlock()
 
 	stats := RBACStats{
-		TotalRoles:   len(m.roles),
-		TotalUsers:   len(m.users),
+		TotalRoles:    len(m.roles),
+		TotalUsers:    len(m.users),
 		TotalPolicies: len(m.policies),
-		BuiltinRoles: 0,
-		CustomRoles:  0,
+		BuiltinRoles:  0,
+		CustomRoles:   0,
 	}
 
 	for _, r := range m.roles {

@@ -26,41 +26,41 @@ type ModelPricing struct {
 
 // SpendEntry records a single spending event.
 type SpendEntry struct {
-	ID          string    `json:"id"`
-	AgentID     string    `json:"agent_id"`
-	Model       string    `json:"model"`
-	InputTokens int       `json:"input_tokens"`
-	OutputTokens int      `json:"output_tokens"`
-	Cost        float64   `json:"cost"`
-	Timestamp   time.Time `json:"timestamp"`
-	Task        string    `json:"task,omitempty"`
+	ID           string    `json:"id"`
+	AgentID      string    `json:"agent_id"`
+	Model        string    `json:"model"`
+	InputTokens  int       `json:"input_tokens"`
+	OutputTokens int       `json:"output_tokens"`
+	Cost         float64   `json:"cost"`
+	Timestamp    time.Time `json:"timestamp"`
+	Task         string    `json:"task,omitempty"`
 }
 
 // Budget defines a spending budget.
 type Budget struct {
-	ID        string  `json:"id"`
-	Name      string  `json:"name"`
-	Scope     string  `json:"scope"`     // "global", "agent", "model"
-	ScopeKey  string  `json:"scope_key"` // Agent/model ID
-	Daily     float64 `json:"daily"`
-	Weekly    float64 `json:"weekly"`
-	Monthly   float64 `json:"monthly"`
-	AlertAt   float64 `json:"alert_at"` // Alert when % used (0-1)
-	HardStop  bool    `json:"hard_stop"`
-	Enabled   bool    `json:"enabled"`
+	ID       string  `json:"id"`
+	Name     string  `json:"name"`
+	Scope    string  `json:"scope"`     // "global", "agent", "model"
+	ScopeKey string  `json:"scope_key"` // Agent/model ID
+	Daily    float64 `json:"daily"`
+	Weekly   float64 `json:"weekly"`
+	Monthly  float64 `json:"monthly"`
+	AlertAt  float64 `json:"alert_at"` // Alert when % used (0-1)
+	HardStop bool    `json:"hard_stop"`
+	Enabled  bool    `json:"enabled"`
 }
 
 // Recommendation is a cost optimization suggestion.
 type Recommendation struct {
-	ID          string  `json:"id"`
-	Type        string  `json:"type"`         // "switch_model", "cache_hit", "reduce_tokens", "batch"
-	FromModel   string  `json:"from_model,omitempty"`
-	ToModel     string  `json:"to_model,omitempty"`
-	SavingsPct  float64 `json:"savings_pct"`   // % savings
-	SavingsUSD  float64 `json:"savings_usd"`   // Monthly savings
+	ID            string  `json:"id"`
+	Type          string  `json:"type"` // "switch_model", "cache_hit", "reduce_tokens", "batch"
+	FromModel     string  `json:"from_model,omitempty"`
+	ToModel       string  `json:"to_model,omitempty"`
+	SavingsPct    float64 `json:"savings_pct"`    // % savings
+	SavingsUSD    float64 `json:"savings_usd"`    // Monthly savings
 	QualityImpact float64 `json:"quality_impact"` // -1 to 1
-	Confidence  float64 `json:"confidence"`    // 0-1
-	Reason      string  `json:"reason"`
+	Confidence    float64 `json:"confidence"`     // 0-1
+	Reason        string  `json:"reason"`
 }
 
 // Optimizer manages cost optimization.
@@ -109,14 +109,14 @@ func (o *Optimizer) RecordSpend(agentID, model string, inputTokens, outputTokens
 	defer o.mu.Unlock()
 
 	entry := SpendEntry{
-		ID:          fmt.Sprintf("spend-%d", time.Now().UnixNano()),
-		AgentID:     agentID,
-		Model:       model,
-		InputTokens: inputTokens,
+		ID:           fmt.Sprintf("spend-%d", time.Now().UnixNano()),
+		AgentID:      agentID,
+		Model:        model,
+		InputTokens:  inputTokens,
 		OutputTokens: outputTokens,
-		Cost:        cost,
-		Timestamp:   time.Now(),
-		Task:        task,
+		Cost:         cost,
+		Timestamp:    time.Now(),
+		Task:         task,
 	}
 
 	o.spendings = append(o.spendings, entry)
@@ -198,7 +198,7 @@ func (o *Optimizer) Analyze() []Recommendation {
 						SavingsUSD:    spend * savingsPct * 30, // Monthly estimate
 						QualityImpact: (altPricing.QualityScore - pricing.QualityScore) / 100,
 						Confidence:    0.8,
-						Reason:        fmt.Sprintf("Switch from %s to %s: %.0f%% cheaper, quality diff: %.0f points",
+						Reason: fmt.Sprintf("Switch from %s to %s: %.0f%% cheaper, quality diff: %.0f points",
 							model, altModel, savingsPct*100, altPricing.QualityScore-pricing.QualityScore),
 					})
 				}
@@ -272,11 +272,11 @@ func (o *Optimizer) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"total_spend":     totalSpend,
-		"spend_entries":   len(o.spendings),
-		"models_tracked":  len(o.pricing),
-		"budgets":         len(o.budgets),
-		"cache_entries":   len(o.cache),
+		"total_spend":    totalSpend,
+		"spend_entries":  len(o.spendings),
+		"models_tracked": len(o.pricing),
+		"budgets":        len(o.budgets),
+		"cache_entries":  len(o.cache),
 	}
 }
 

@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"context"
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -191,7 +191,7 @@ Examples:
 			Args:  cobra.ExactArgs(1),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				name := args[0]
-			message, _ := cmd.Flags().GetString("message")
+				message, _ := cmd.Flags().GetString("message")
 				payload, _ := json.Marshal(BotMessage{From: "cli", Content: message, Channel: "test"})
 				resp, err := http.Post(
 					fmt.Sprintf("http://localhost:%d/api/message/%s", port, name),

@@ -305,12 +305,12 @@ func TestPolicies(t *testing.T) {
 	s := tempConsentStore(t)
 
 	p, err := s.CreatePolicy(Policy{
-		Name:            "default",
-		Description:     "Default consent policy",
+		Name:             "default",
+		Description:      "Default consent policy",
 		RequiredPurposes: []Purpose{PurposeAgentExecution},
 		OptionalPurposes: []Purpose{PurposeAnalytics},
-		DataCategories:  []DataCategory{DataSourceCode},
-		RetentionDays:   90,
+		DataCategories:   []DataCategory{DataSourceCode},
+		RetentionDays:    90,
 	})
 	if err != nil {
 		t.Fatalf("CreatePolicy: %v", err)

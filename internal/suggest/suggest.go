@@ -13,31 +13,31 @@ import (
 
 // Suggestion represents a recommended agent/model combination.
 type Suggestion struct {
-	Agent       string   `json:"agent"`
-	Model       string   `json:"model"`
-	Reason      string   `json:"reason"`
-	Confidence  float64  `json:"confidence"` // 0-1
+	Agent        string        `json:"agent"`
+	Model        string        `json:"model"`
+	Reason       string        `json:"reason"`
+	Confidence   float64       `json:"confidence"` // 0-1
 	Alternatives []Alternative `json:"alternatives,omitempty"`
 }
 
 // Alternative represents an alternative recommendation.
 type Alternative struct {
-	Agent string  `json:"agent"`
-	Model string  `json:"model"`
-	Why   string  `json:"why"`
-	Cost  string  `json:"cost"`
+	Agent string `json:"agent"`
+	Model string `json:"model"`
+	Why   string `json:"why"`
+	Cost  string `json:"cost"`
 }
 
 // Context provides the analysis context for suggestions.
 type Context struct {
-	FilePath    string `json:"file_path,omitempty"`
-	Language    string `json:"language,omitempty"`
-	ErrorType   string `json:"error_type,omitempty"`
+	FilePath     string `json:"file_path,omitempty"`
+	Language     string `json:"language,omitempty"`
+	ErrorType    string `json:"error_type,omitempty"`
 	ErrorMessage string `json:"error_message,omitempty"`
-	TaskType    string `json:"task_type,omitempty"` // fix, refactor, test, review, explain
-	IsTest      bool   `json:"is_test,omitempty"`
-	IsConfig    bool   `json:"is_config,omitempty"`
-	HasError    bool   `json:"has_error,omitempty"`
+	TaskType     string `json:"task_type,omitempty"` // fix, refactor, test, review, explain
+	IsTest       bool   `json:"is_test,omitempty"`
+	IsConfig     bool   `json:"is_config,omitempty"`
+	HasError     bool   `json:"has_error,omitempty"`
 }
 
 // Suggest returns agent/model suggestions for the given context.

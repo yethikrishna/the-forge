@@ -22,22 +22,22 @@ import (
 type ToolType string
 
 const (
-	ToolCursor    ToolType = "cursor"
-	ToolCopilot   ToolType = "copilot"
-	ToolClaude    ToolType = "claude"
-	ToolCodex     ToolType = "codex"
-	ToolOpenAI    ToolType = "openai"
+	ToolCursor  ToolType = "cursor"
+	ToolCopilot ToolType = "copilot"
+	ToolClaude  ToolType = "claude"
+	ToolCodex   ToolType = "codex"
+	ToolOpenAI  ToolType = "openai"
 )
 
 // ToolInfo describes an external tool's capabilities.
 type ToolInfo struct {
-	Type        ToolType         `json:"type"`
-	Name        string           `json:"name"`
-	Version     string           `json:"version,omitempty"`
-	Endpoint    string           `json:"endpoint,omitempty"`
-	Connected   bool             `json:"connected"`
-	Capabilities []string        `json:"capabilities"`
-	LastSeen    time.Time        `json:"last_seen,omitempty"`
+	Type         ToolType  `json:"type"`
+	Name         string    `json:"name"`
+	Version      string    `json:"version,omitempty"`
+	Endpoint     string    `json:"endpoint,omitempty"`
+	Connected    bool      `json:"connected"`
+	Capabilities []string  `json:"capabilities"`
+	LastSeen     time.Time `json:"last_seen,omitempty"`
 }
 
 // BridgeMessage is a message exchanged between tools.
@@ -57,7 +57,7 @@ type CursorConfig struct {
 	// Extension API endpoint (Cursor exposes a local API).
 	Endpoint string `json:"endpoint,omitempty"`
 	// API key if Cursor requires authentication.
-	APIKey   string `json:"api_key,omitempty"`
+	APIKey string `json:"api_key,omitempty"`
 	// Workspace path.
 	Workspace string `json:"workspace,omitempty"`
 }
@@ -65,19 +65,19 @@ type CursorConfig struct {
 // CopilotConfig is configuration for the Copilot bridge.
 type CopilotConfig struct {
 	// GitHub token for Copilot API.
-	Token    string `json:"token,omitempty"`
+	Token string `json:"token,omitempty"`
 	// Repository for context.
-	Repo     string `json:"repo,omitempty"`
+	Repo string `json:"repo,omitempty"`
 	// GitHub API base URL.
-	BaseURL  string `json:"base_url,omitempty"`
+	BaseURL string `json:"base_url,omitempty"`
 }
 
 // ClaudeConfig is configuration for the Claude Code bridge.
 type ClaudeConfig struct {
 	// Anthropic API key.
-	APIKey   string `json:"api_key,omitempty"`
+	APIKey string `json:"api_key,omitempty"`
 	// Model to use.
-	Model    string `json:"model,omitempty"`
+	Model string `json:"model,omitempty"`
 }
 
 // CrossBridge manages connections to external agent tools.
@@ -268,8 +268,8 @@ func (cb *CrossBridge) sendToCursor(ctx context.Context, method string, params m
 
 	// Translate Forge method to Cursor's protocol
 	cursorReq := map[string]interface{}{
-		"method":  method,
-		"params":  params,
+		"method": method,
+		"params": params,
 	}
 
 	return cb.doHTTPPost(ctx, endpoint+"/api/bridge", cursorReq)
@@ -286,8 +286,8 @@ func (cb *CrossBridge) sendToCopilot(ctx context.Context, method string, params 
 	}
 
 	copilotReq := map[string]interface{}{
-		"method":  method,
-		"params":  params,
+		"method": method,
+		"params": params,
 	}
 	if cfg.Repo != "" {
 		copilotReq["repo"] = cfg.Repo
@@ -418,12 +418,12 @@ func TranslateCapability(from, to ToolType, capability string) string {
 		},
 		"forge": {
 			"cursor": {
-				"run":     "agent",
-				"exec":    "terminal",
-				"search":  "file_search",
-				"patch":   "code_edit",
-				"chat":    "chat",
-				"review":  "code_edit",
+				"run":    "agent",
+				"exec":   "terminal",
+				"search": "file_search",
+				"patch":  "code_edit",
+				"chat":   "chat",
+				"review": "code_edit",
 			},
 			"copilot": {
 				"run":    "agent",

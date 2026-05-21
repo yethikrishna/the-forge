@@ -15,30 +15,30 @@ import (
 
 // Tenant represents an isolated tenant workspace.
 type Tenant struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Slug        string            `json:"slug"`
-	Plan        Plan              `json:"plan"`
-	Status      string            `json:"status"` // active, suspended, trial, cancelled
-	OwnerID     string            `json:"owner_id"`
-	Settings    TenantSettings    `json:"settings"`
-	Quota       Quota             `json:"quota"`
-	Usage       Usage             `json:"usage"`
-	Metadata    map[string]string `json:"metadata,omitempty"`
-	CreatedAt   time.Time         `json:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at"`
+	ID        string            `json:"id"`
+	Name      string            `json:"name"`
+	Slug      string            `json:"slug"`
+	Plan      Plan              `json:"plan"`
+	Status    string            `json:"status"` // active, suspended, trial, cancelled
+	OwnerID   string            `json:"owner_id"`
+	Settings  TenantSettings    `json:"settings"`
+	Quota     Quota             `json:"quota"`
+	Usage     Usage             `json:"usage"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
+	CreatedAt time.Time         `json:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at"`
 }
 
 // Plan represents a tenant plan.
 type Plan struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	Tier        string  `json:"tier"` // free, starter, pro, enterprise
-	MaxAgents   int     `json:"max_agents"`
-	MaxModels   int     `json:"max_models"`
-	MaxSessions int     `json:"max_sessions"`
-	MaxStorage  int64   `json:"max_storage_mb"`
-	MonthlyCost float64 `json:"monthly_cost"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Tier        string   `json:"tier"` // free, starter, pro, enterprise
+	MaxAgents   int      `json:"max_agents"`
+	MaxModels   int      `json:"max_models"`
+	MaxSessions int      `json:"max_sessions"`
+	MaxStorage  int64    `json:"max_storage_mb"`
+	MonthlyCost float64  `json:"monthly_cost"`
 	Features    []string `json:"features"`
 }
 
@@ -58,15 +58,15 @@ type TenantSettings struct {
 
 // Quota defines resource limits for a tenant.
 type Quota struct {
-	Agents         int     `json:"agents"`
-	Models         int     `json:"models"`
-	Sessions       int     `json:"sessions"`
-	StorageMB      int64   `json:"storage_mb"`
-	TokensPerDay   int64   `json:"tokens_per_day"`
-	CostPerDay     float64 `json:"cost_per_day"`
-	CostPerMonth   float64 `json:"cost_per_month"`
-	APIKeys        int     `json:"api_keys"`
-	TeamMembers    int     `json:"team_members"`
+	Agents       int     `json:"agents"`
+	Models       int     `json:"models"`
+	Sessions     int     `json:"sessions"`
+	StorageMB    int64   `json:"storage_mb"`
+	TokensPerDay int64   `json:"tokens_per_day"`
+	CostPerDay   float64 `json:"cost_per_day"`
+	CostPerMonth float64 `json:"cost_per_month"`
+	APIKeys      int     `json:"api_keys"`
+	TeamMembers  int     `json:"team_members"`
 }
 
 // Usage tracks current resource consumption.
@@ -112,25 +112,25 @@ func BuiltinPlans() []Plan {
 			ID: "free", Name: "Free", Tier: "free",
 			MaxAgents: 3, MaxModels: 3, MaxSessions: 100, MaxStorage: 100,
 			MonthlyCost: 0,
-			Features: []string{"basic_agents", "community_models", "local_execution"},
+			Features:    []string{"basic_agents", "community_models", "local_execution"},
 		},
 		{
 			ID: "starter", Name: "Starter", Tier: "starter",
 			MaxAgents: 5, MaxModels: 10, MaxSessions: 1000, MaxStorage: 1024,
 			MonthlyCost: 29,
-			Features: []string{"basic_agents", "all_models", "cloud_execution", "basic_analytics"},
+			Features:    []string{"basic_agents", "all_models", "cloud_execution", "basic_analytics"},
 		},
 		{
 			ID: "pro", Name: "Pro", Tier: "pro",
 			MaxAgents: 20, MaxModels: 50, MaxSessions: 10000, MaxStorage: 10240,
 			MonthlyCost: 99,
-			Features: []string{"advanced_agents", "all_models", "cloud_execution", "analytics", "sso", "api_keys", "priority_support"},
+			Features:    []string{"advanced_agents", "all_models", "cloud_execution", "analytics", "sso", "api_keys", "priority_support"},
 		},
 		{
 			ID: "enterprise", Name: "Enterprise", Tier: "enterprise",
 			MaxAgents: -1, MaxModels: -1, MaxSessions: -1, MaxStorage: -1,
 			MonthlyCost: 499,
-			Features: []string{"unlimited_agents", "all_models", "hybrid_execution", "analytics", "sso", "rbac", "audit", "sla", "dedicated_support", "custom_models"},
+			Features:    []string{"unlimited_agents", "all_models", "hybrid_execution", "analytics", "sso", "rbac", "audit", "sla", "dedicated_support", "custom_models"},
 		},
 	}
 }
@@ -161,8 +161,8 @@ func (tm *TenantManager) CreateTenant(name, slug, planID, ownerID string) (*Tena
 			RateLimit:       10,
 			LogRetention:    "30d",
 		},
-		Quota: quotaFromPlan(plan),
-		Usage: Usage{LastUpdated: time.Now().UTC().Format(time.RFC3339)},
+		Quota:     quotaFromPlan(plan),
+		Usage:     Usage{LastUpdated: time.Now().UTC().Format(time.RFC3339)},
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
 	}
@@ -423,10 +423,10 @@ const (
 
 // Member represents a tenant member.
 type Member struct {
-	ID       string `json:"id"`
-	TenantID string `json:"tenant_id"`
-	UserID   string `json:"user_id"`
-	Role     Role   `json:"role"`
+	ID       string    `json:"id"`
+	TenantID string    `json:"tenant_id"`
+	UserID   string    `json:"user_id"`
+	Role     Role      `json:"role"`
 	JoinedAt time.Time `json:"joined_at"`
 }
 

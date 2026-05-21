@@ -209,7 +209,7 @@ func TestFormatRole(t *testing.T) {
 	role := &Role{
 		Name: "coder", Category: CategoryCoding,
 		Description: "Implements code",
-		Tools: []string{"search", "build", "test"},
+		Tools:       []string{"search", "build", "test"},
 	}
 	output := FormatRole(role)
 	if len(output) == 0 {

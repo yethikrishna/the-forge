@@ -17,14 +17,14 @@ import (
 
 // Stage represents a pipeline stage.
 type Stage struct {
-	Name     string   `json:"name"`
-	Agent    string   `json:"agent"`
-	Task     string   `json:"task"`
-	Timeout  int      `json:"timeout,omitempty"` // seconds
-	DependsOn []string `json:"depends_on,omitempty"`
-	Env      map[string]string `json:"env,omitempty"`
-	OnError  string   `json:"on_error,omitempty"` // stop, continue, retry
-	Retries  int      `json:"retries,omitempty"`
+	Name      string            `json:"name"`
+	Agent     string            `json:"agent"`
+	Task      string            `json:"task"`
+	Timeout   int               `json:"timeout,omitempty"` // seconds
+	DependsOn []string          `json:"depends_on,omitempty"`
+	Env       map[string]string `json:"env,omitempty"`
+	OnError   string            `json:"on_error,omitempty"` // stop, continue, retry
+	Retries   int               `json:"retries,omitempty"`
 }
 
 // Pipeline represents a CI/CD pipeline.
@@ -41,25 +41,25 @@ type Pipeline struct {
 
 // Run represents a pipeline execution.
 type Run struct {
-	ID         string       `json:"id"`
-	PipelineID string       `json:"pipeline_id"`
-	Status     string       `json:"status"` // pending, running, success, failed, cancelled
-	Trigger    string       `json:"trigger"`
-	Commit     string       `json:"commit,omitempty"`
-	Branch     string       `json:"branch,omitempty"`
-	StageRuns  []*StageRun  `json:"stage_runs"`
-	StartedAt  *time.Time   `json:"started_at,omitempty"`
-	FinishedAt *time.Time   `json:"finished_at,omitempty"`
-	CreatedAt  time.Time    `json:"created_at"`
+	ID         string      `json:"id"`
+	PipelineID string      `json:"pipeline_id"`
+	Status     string      `json:"status"` // pending, running, success, failed, cancelled
+	Trigger    string      `json:"trigger"`
+	Commit     string      `json:"commit,omitempty"`
+	Branch     string      `json:"branch,omitempty"`
+	StageRuns  []*StageRun `json:"stage_runs"`
+	StartedAt  *time.Time  `json:"started_at,omitempty"`
+	FinishedAt *time.Time  `json:"finished_at,omitempty"`
+	CreatedAt  time.Time   `json:"created_at"`
 }
 
 // StageRun represents a stage execution within a run.
 type StageRun struct {
-	StageName string    `json:"stage_name"`
-	Status    string    `json:"status"` // pending, running, success, failed, skipped
-	Output    string    `json:"output,omitempty"`
-	Duration  int       `json:"duration,omitempty"` // seconds
-	StartedAt *time.Time `json:"started_at,omitempty"`
+	StageName  string     `json:"stage_name"`
+	Status     string     `json:"status"` // pending, running, success, failed, skipped
+	Output     string     `json:"output,omitempty"`
+	Duration   int        `json:"duration,omitempty"` // seconds
+	StartedAt  *time.Time `json:"started_at,omitempty"`
 	FinishedAt *time.Time `json:"finished_at,omitempty"`
 }
 

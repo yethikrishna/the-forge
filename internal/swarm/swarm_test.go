@@ -27,8 +27,8 @@ func TestAddAgent(t *testing.T) {
 	s := NewSwarm(DefaultConfig("test"))
 
 	err := s.AddAgent(SwarmAgent{
-		ID:   "agent-1",
-		Name: "Test Agent",
+		ID:    "agent-1",
+		Name:  "Test Agent",
 		Model: "gpt-4",
 	})
 	if err != nil {

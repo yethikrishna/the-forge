@@ -22,8 +22,8 @@ type RegressionTest struct {
 	Variables   map[string]string `json:"variables,omitempty"`
 	Template    string            `json:"template,omitempty"` // prompt template name (alternative to Prompt)
 	Expect      Expectation       `json:"expect"`
-	Model       string            `json:"model,omitempty"`   // single model
-	Models      []string          `json:"models,omitempty"`  // multiple models to compare
+	Model       string            `json:"model,omitempty"`    // single model
+	Models      []string          `json:"models,omitempty"`   // multiple models to compare
 	Variants    []Variant         `json:"variants,omitempty"` // prompt variants to A/B test
 	Tags        []string          `json:"tags,omitempty"`
 	Timeout     string            `json:"timeout,omitempty"`
@@ -47,15 +47,15 @@ type Variant struct {
 
 // TestResult is the outcome of running a regression test.
 type TestResult struct {
-	TestName    string        `json:"test_name"`
-	Model       string        `json:"model"`
-	Variant     string        `json:"variant,omitempty"`
-	Status      ResultStatus  `json:"status"`
-	Response    string        `json:"response"`
-	Duration    time.Duration `json:"duration"`
-	Checks      []CheckResult `json:"checks"`
-	Error       string        `json:"error,omitempty"`
-	Timestamp   time.Time     `json:"timestamp"`
+	TestName  string        `json:"test_name"`
+	Model     string        `json:"model"`
+	Variant   string        `json:"variant,omitempty"`
+	Status    ResultStatus  `json:"status"`
+	Response  string        `json:"response"`
+	Duration  time.Duration `json:"duration"`
+	Checks    []CheckResult `json:"checks"`
+	Error     string        `json:"error,omitempty"`
+	Timestamp time.Time     `json:"timestamp"`
 }
 
 // ResultStatus is pass/fail/error.
@@ -69,16 +69,16 @@ const (
 
 // CheckResult is the outcome of a single expectation check.
 type CheckResult struct {
-	Type    string `json:"type"`    // "contains", "not_contains", "length", "regex", "code_block"
+	Type    string `json:"type"` // "contains", "not_contains", "length", "regex", "code_block"
 	Passed  bool   `json:"passed"`
 	Message string `json:"message"`
 }
 
 // TestSuite is a collection of regression tests.
 type TestSuite struct {
-	Name    string           `json:"name"`
-	Tests   []RegressionTest `json:"tests"`
-	Source  string           `json:"source,omitempty"`
+	Name   string           `json:"name"`
+	Tests  []RegressionTest `json:"tests"`
+	Source string           `json:"source,omitempty"`
 }
 
 // SuiteResult is the aggregate outcome of a test suite.

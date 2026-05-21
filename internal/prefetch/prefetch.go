@@ -20,21 +20,21 @@ import (
 type ContextType string
 
 const (
-	ContextFile       ContextType = "file"
-	ContextDirectory  ContextType = "directory"
-	ContextCommand    ContextType = "command"
-	ContextHistory    ContextType = "history"
-	ContextPattern    ContextType = "pattern"
+	ContextFile      ContextType = "file"
+	ContextDirectory ContextType = "directory"
+	ContextCommand   ContextType = "command"
+	ContextHistory   ContextType = "history"
+	ContextPattern   ContextType = "pattern"
 )
 
 // PrefetchEntry is a predicted context to preload.
 type PrefetchEntry struct {
-	Type      ContextType `json:"type"`
-	Target    string      `json:"target"`
-	Priority  float64     `json:"priority"`   // 0-1, higher = more likely needed
-	Reason    string      `json:"reason"`
-	Loaded    bool        `json:"loaded"`
-	Size      int64       `json:"size,omitempty"`
+	Type     ContextType `json:"type"`
+	Target   string      `json:"target"`
+	Priority float64     `json:"priority"` // 0-1, higher = more likely needed
+	Reason   string      `json:"reason"`
+	Loaded   bool        `json:"loaded"`
+	Size     int64       `json:"size,omitempty"`
 }
 
 // UsageEvent records when a context was accessed.
@@ -47,11 +47,11 @@ type UsageEvent struct {
 
 // Pattern represents a learned usage pattern.
 type Pattern struct {
-	Trigger   string  `json:"trigger"`    // command or file that triggers
-	Prefetch  string  `json:"prefetch"`   // what to prefetch
-	Count     int     `json:"count"`      // how often this pattern occurred
-	Recency   float64 `json:"recency"`    // 0-1, how recent
-	Type      ContextType `json:"type"`
+	Trigger  string      `json:"trigger"`  // command or file that triggers
+	Prefetch string      `json:"prefetch"` // what to prefetch
+	Count    int         `json:"count"`    // how often this pattern occurred
+	Recency  float64     `json:"recency"`  // 0-1, how recent
+	Type     ContextType `json:"type"`
 }
 
 // Predictor learns usage patterns and predicts context to prefetch.

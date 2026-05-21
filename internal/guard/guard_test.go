@@ -76,9 +76,9 @@ func TestBlockRule(t *testing.T) {
 	})
 
 	verdict := g.Check(guard.Action{
-		AgentID:  "agent-1",
-		Type:     "shell",
-		Content:  "rm -rf /",
+		AgentID: "agent-1",
+		Type:    "shell",
+		Content: "rm -rf /",
 	})
 
 	if verdict.Allowed {
@@ -89,11 +89,11 @@ func TestBlockRule(t *testing.T) {
 func TestAllowRule(t *testing.T) {
 	g := guard.NewGuard(t.TempDir())
 	g.AddRule(guard.Rule{
-		Name:     "Allow read-only",
-		Type:     guard.RuleAllow,
-		Priority: 200, // higher than block
+		Name:        "Allow read-only",
+		Type:        guard.RuleAllow,
+		Priority:    200, // higher than block
 		ActionTypes: []string{"shell"},
-		Targets:  []string{"ls*"},
+		Targets:     []string{"ls*"},
 	})
 	g.AddRule(guard.Rule{
 		Name:        "Block all shell",

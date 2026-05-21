@@ -111,7 +111,7 @@ func TestRegisterTool(t *testing.T) {
 
 	// Call tool
 	params, _ := json.Marshal(map[string]interface{}{
-		"name": "test_tool",
+		"name":      "test_tool",
 		"arguments": map[string]interface{}{"key": "value"},
 	})
 	req2 := JSONRPCRequest{JSONRPC: "2.0", ID: 5, Method: "tools/call", Params: params}
@@ -288,11 +288,11 @@ func TestToolResultSerialization(t *testing.T) {
 
 func TestRPCErrorCodes(t *testing.T) {
 	codes := map[string]int{
-		"parse":     ErrorParseError,
-		"invalid":   ErrorInvalidRequest,
-		"notFound":  ErrorMethodNotFound,
-		"params":    ErrorInvalidParams,
-		"internal":  ErrorInternal,
+		"parse":    ErrorParseError,
+		"invalid":  ErrorInvalidRequest,
+		"notFound": ErrorMethodNotFound,
+		"params":   ErrorInvalidParams,
+		"internal": ErrorInternal,
 	}
 
 	for name, code := range codes {

@@ -10,9 +10,9 @@ import (
 
 func TestBigDurIntegration(t *testing.T) {
 	tests := []struct {
-		input    string
-		wantGTE  time.Duration // result should be >= this
-		wantLT   time.Duration // result should be < this
+		input   string
+		wantGTE time.Duration // result should be >= this
+		wantLT  time.Duration // result should be < this
 	}{
 		{"1d", 24 * time.Hour, 25 * time.Hour},
 		{"2w", 14 * 24 * time.Hour, 15 * 24 * time.Hour},

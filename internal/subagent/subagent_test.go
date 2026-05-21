@@ -165,13 +165,13 @@ func TestSpawnOptions(t *testing.T) {
 
 func TestTaskSpec(t *testing.T) {
 	spec := TaskSpec{
-		Name:      "spec-test",
-		Prompt:    "do the thing",
-		Model:     "gpt-4.1",
-		Role:      "reviewer",
-		Timeout:   "30s",
-		Priority:  3,
-		DependsOn: []string{"task-1"},
+		Name:       "spec-test",
+		Prompt:     "do the thing",
+		Model:      "gpt-4.1",
+		Role:       "reviewer",
+		Timeout:    "30s",
+		Priority:   3,
+		DependsOn:  []string{"task-1"},
 		MaxRetries: 2,
 	}
 
@@ -237,8 +237,8 @@ func TestSpawnerHooks(t *testing.T) {
 
 func TestFormatTask(t *testing.T) {
 	task := &Task{
-		ID:   "sub-001",
-		Name: "test",
+		ID:    "sub-001",
+		Name:  "test",
 		State: TaskCompleted,
 	}
 	output := FormatTask(task)

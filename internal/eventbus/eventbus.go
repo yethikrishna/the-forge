@@ -10,12 +10,12 @@ import (
 
 // Event represents a typed event on the bus.
 type Event struct {
-	ID        string                 `json:"id"`
-	Topic     string                 `json:"topic"`
-	Payload   interface{}            `json:"payload"`
-	Timestamp time.Time              `json:"timestamp"`
-	Source    string                 `json:"source,omitempty"`
-	Metadata  map[string]string      `json:"metadata,omitempty"`
+	ID        string            `json:"id"`
+	Topic     string            `json:"topic"`
+	Payload   interface{}       `json:"payload"`
+	Timestamp time.Time         `json:"timestamp"`
+	Source    string            `json:"source,omitempty"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
 }
 
 // Handler processes events.

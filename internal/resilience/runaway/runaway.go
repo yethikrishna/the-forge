@@ -14,27 +14,27 @@ import (
 type State string
 
 const (
-	StateRunning  State = "running"
-	StateStalled  State = "stalled"
-	StateLooping  State = "looping"
-	StateExploding State = "context_exploding"
-	StateHealthy  State = "healthy"
+	StateRunning    State = "running"
+	StateStalled    State = "stalled"
+	StateLooping    State = "looping"
+	StateExploding  State = "context_exploding"
+	StateHealthy    State = "healthy"
 	StateTerminated State = "terminated"
 )
 
 // AgentStatus tracks one agent's runtime status.
 type AgentStatus struct {
-	AgentID       string    `json:"agent_id"`
-	State         State     `json:"state"`
-	StartedAt     time.Time `json:"started_at"`
-	LastActivity  time.Time `json:"last_activity"`
-	Actions       int       `json:"actions"`
-	Errors        int       `json:"errors"`
-	ContextSize   int       `json:"context_size"` // tokens
-	Retries       int       `json:"retries"`
-	TokensUsed    int       `json:"tokens_used"`
-	CostUSD       float64   `json:"cost_usd"`
-	Warnings      []string  `json:"warnings,omitempty"`
+	AgentID      string    `json:"agent_id"`
+	State        State     `json:"state"`
+	StartedAt    time.Time `json:"started_at"`
+	LastActivity time.Time `json:"last_activity"`
+	Actions      int       `json:"actions"`
+	Errors       int       `json:"errors"`
+	ContextSize  int       `json:"context_size"` // tokens
+	Retries      int       `json:"retries"`
+	TokensUsed   int       `json:"tokens_used"`
+	CostUSD      float64   `json:"cost_usd"`
+	Warnings     []string  `json:"warnings,omitempty"`
 }
 
 // Config configures runaway detection thresholds.
@@ -335,14 +335,14 @@ func (d *Detector) ListAgents() []string {
 type IssueType string
 
 const (
-	TypeStalled         IssueType = "stalled"
-	TypeLooping         IssueType = "looping"
+	TypeStalled          IssueType = "stalled"
+	TypeLooping          IssueType = "looping"
 	TypeContextExplosion IssueType = "context_explosion"
 	TypeExcessiveRetries IssueType = "excessive_retries"
-	TypeTooManyActions  IssueType = "too_many_actions"
-	TypeCostExceeded    IssueType = "cost_exceeded"
-	TypeTokenExceeded   IssueType = "token_exceeded"
-	TypeTimeout         IssueType = "timeout"
+	TypeTooManyActions   IssueType = "too_many_actions"
+	TypeCostExceeded     IssueType = "cost_exceeded"
+	TypeTokenExceeded    IssueType = "token_exceeded"
+	TypeTimeout          IssueType = "timeout"
 )
 
 // IssueSeverity is how severe an issue is.

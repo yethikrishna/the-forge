@@ -20,14 +20,14 @@ type Pricing struct {
 
 // Known model pricing (approximate, May 2026).
 var ModelPricing = map[string]Pricing{
-	"gpt-5-mini":          {InputPer1M: 0.15, OutputPer1M: 0.60},
-	"gpt-5":               {InputPer1M: 2.50, OutputPer1M: 10.00},
-	"claude-sonnet-4":     {InputPer1M: 3.00, OutputPer1M: 15.00},
-	"claude-opus-4":       {InputPer1M: 15.00, OutputPer1M: 75.00},
-	"gemini-2.5-pro":      {InputPer1M: 1.25, OutputPer1M: 10.00},
-	"gemini-2.5-flash":    {InputPer1M: 0.15, OutputPer1M: 0.60},
-	"deepseek-r1":         {InputPer1M: 0.55, OutputPer1M: 2.19},
-	"llama-4-maverick":    {InputPer1M: 0.20, OutputPer1M: 0.80},
+	"gpt-5-mini":       {InputPer1M: 0.15, OutputPer1M: 0.60},
+	"gpt-5":            {InputPer1M: 2.50, OutputPer1M: 10.00},
+	"claude-sonnet-4":  {InputPer1M: 3.00, OutputPer1M: 15.00},
+	"claude-opus-4":    {InputPer1M: 15.00, OutputPer1M: 75.00},
+	"gemini-2.5-pro":   {InputPer1M: 1.25, OutputPer1M: 10.00},
+	"gemini-2.5-flash": {InputPer1M: 0.15, OutputPer1M: 0.60},
+	"deepseek-r1":      {InputPer1M: 0.55, OutputPer1M: 2.19},
+	"llama-4-maverick": {InputPer1M: 0.20, OutputPer1M: 0.80},
 }
 
 // Analysis is the result of analyzing a prompt.
@@ -54,11 +54,11 @@ type Redundancy struct {
 
 // Suggestion is an optimization recommendation.
 type Suggestion struct {
-	Type        string  `json:"type"` // "compress", "remove", "restructure"
-	Description string  `json:"description"`
-	Before      string  `json:"before,omitempty"`
-	After       string  `json:"after,omitempty"`
-	TokensSaved int     `json:"tokens_saved"`
+	Type        string `json:"type"` // "compress", "remove", "restructure"
+	Description string `json:"description"`
+	Before      string `json:"before,omitempty"`
+	After       string `json:"after,omitempty"`
+	TokensSaved int    `json:"tokens_saved"`
 }
 
 // Analyze performs a full analysis of a prompt.
@@ -282,8 +282,8 @@ func findRepeatedPhrases(text string, minWords int) map[string]int {
 
 // verbosePatterns maps verbose phrases to concise alternatives.
 var verbosePatterns = []struct {
-	verbose  string
-	concise  string
+	verbose string
+	concise string
 }{
 	{"in order to", "to"},
 	{"due to the fact that", "because"},

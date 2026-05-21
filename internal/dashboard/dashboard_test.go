@@ -50,12 +50,12 @@ func TestMemoryProviderLog(t *testing.T) {
 func TestUpdateStats(t *testing.T) {
 	p := NewMemoryProvider()
 	p.UpdateStats(Stats{
-		ActiveAgents:  5,
-		PendingTasks:  10,
+		ActiveAgents:   5,
+		PendingTasks:   10,
 		CompletedToday: 100,
-		SessionCost:   15.50,
-		QueueDepth:    20,
-		CanaryStatus:  "promoted",
+		SessionCost:    15.50,
+		QueueDepth:     20,
+		CanaryStatus:   "promoted",
 	})
 
 	stats := p.GetStats()

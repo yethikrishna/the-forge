@@ -17,24 +17,24 @@ import (
 
 // Recording is a captured human task session.
 type Recording struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
-	Steps       []Step     `json:"steps"`
-	Tags        []string   `json:"tags"`
-	CreatedAt   time.Time  `json:"created_at"`
-	Status      string     `json:"status"` // recording, done
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Steps       []Step    `json:"steps"`
+	Tags        []string  `json:"tags"`
+	CreatedAt   time.Time `json:"created_at"`
+	Status      string    `json:"status"` // recording, done
 }
 
 // Step is a single recorded action.
 type Step struct {
-	Index     int               `json:"index"`
-	Type      string            `json:"type"` // command, edit, search, browse, decision
-	Content   string            `json:"content"`
-	Target    string            `json:"target,omitempty"`
-	Result    string            `json:"result,omitempty"`
-	Duration  time.Duration     `json:"duration"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
+	Index    int               `json:"index"`
+	Type     string            `json:"type"` // command, edit, search, browse, decision
+	Content  string            `json:"content"`
+	Target   string            `json:"target,omitempty"`
+	Result   string            `json:"result,omitempty"`
+	Duration time.Duration     `json:"duration"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // Behavior is a generated agent behavior from a recording.
@@ -52,11 +52,11 @@ type Behavior struct {
 
 // Pattern is a detected behavior pattern.
 type Pattern struct {
-	Name        string   `json:"name"`
-	Trigger     string   `json:"trigger"`
-	Action      string   `json:"action"`
-	Conditions  []string `json:"conditions,omitempty"`
-	Frequency   int      `json:"frequency"`
+	Name       string   `json:"name"`
+	Trigger    string   `json:"trigger"`
+	Action     string   `json:"action"`
+	Conditions []string `json:"conditions,omitempty"`
+	Frequency  int      `json:"frequency"`
 }
 
 // Recorder records human task execution.

@@ -122,13 +122,13 @@ func (m *Monitor) Snapshot() ResourceSnapshot {
 	runtime.ReadMemStats(&memStats)
 
 	snap := ResourceSnapshot{
-		Timestamp:    time.Now(),
-		Goroutines:   runtime.NumGoroutine(),
-		HeapAllocMB:  float64(memStats.HeapAlloc) / 1024 / 1024,
-		HeapSysMB:    float64(memStats.HeapSys) / 1024 / 1024,
-		StackInUseMB: float64(memStats.StackInuse) / 1024 / 1024,
-		NumGC:        memStats.NumGC,
-		GCPauseMs:    float64(memStats.PauseTotalNs) / 1e6,
+		Timestamp:     time.Now(),
+		Goroutines:    runtime.NumGoroutine(),
+		HeapAllocMB:   float64(memStats.HeapAlloc) / 1024 / 1024,
+		HeapSysMB:     float64(memStats.HeapSys) / 1024 / 1024,
+		StackInUseMB:  float64(memStats.StackInuse) / 1024 / 1024,
+		NumGC:         memStats.NumGC,
+		GCPauseMs:     float64(memStats.PauseTotalNs) / 1e6,
 		UptimeSeconds: time.Since(m.startedAt).Seconds(),
 	}
 
@@ -281,13 +281,13 @@ func (m *Monitor) Stats() MonitorStats {
 
 // MonitorStats provides aggregate monitoring statistics.
 type MonitorStats struct {
-	SnapshotCount  int         `json:"snapshot_count"`
-	StartedAt      time.Time   `json:"started_at"`
+	SnapshotCount  int           `json:"snapshot_count"`
+	StartedAt      time.Time     `json:"started_at"`
 	Uptime         time.Duration `json:"uptime"`
-	AvgHeapMB      float64     `json:"avg_heap_mb"`
-	PeakHeapMB     float64     `json:"peak_heap_mb"`
-	AvgGoroutines  float64     `json:"avg_goroutines"`
-	PeakGoroutines int         `json:"peak_goroutines"`
+	AvgHeapMB      float64       `json:"avg_heap_mb"`
+	PeakHeapMB     float64       `json:"peak_heap_mb"`
+	AvgGoroutines  float64       `json:"avg_goroutines"`
+	PeakGoroutines int           `json:"peak_goroutines"`
 }
 
 // ForceGC forces a garbage collection and returns the post-GC snapshot.

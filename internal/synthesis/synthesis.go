@@ -16,55 +16,55 @@ import (
 type Strategy string
 
 const (
-	StrategyVote      Strategy = "vote"       // Majority voting
-	StrategyMerge     Strategy = "merge"      // Intelligent merge of all outputs
-	StrategyCascade   Strategy = "cascade"    // Try best agent first, fallback to others
-	StrategyEnsemble  Strategy = "ensemble"   // Weighted combination by confidence
-	StrategyConsensus Strategy = "consensus"  // Require agreement from majority
-	StrategyBest      Strategy = "best"       // Pick highest-confidence output
-	StrategyMRR       Strategy = "mrr"        // Multi-response ranking
+	StrategyVote      Strategy = "vote"      // Majority voting
+	StrategyMerge     Strategy = "merge"     // Intelligent merge of all outputs
+	StrategyCascade   Strategy = "cascade"   // Try best agent first, fallback to others
+	StrategyEnsemble  Strategy = "ensemble"  // Weighted combination by confidence
+	StrategyConsensus Strategy = "consensus" // Require agreement from majority
+	StrategyBest      Strategy = "best"      // Pick highest-confidence output
+	StrategyMRR       Strategy = "mrr"       // Multi-response ranking
 )
 
 // AgentResponse represents a single agent's response.
 type AgentResponse struct {
-	AgentID     string            `json:"agent_id"`
-	Model       string            `json:"model"`
-	Output      string            `json:"output"`
-	Confidence  float64           `json:"confidence"` // 0-1
-	Latency     time.Duration     `json:"latency"`
-	TokensUsed  int               `json:"tokens_used"`
-	Cost        float64           `json:"cost"`
-	Metadata    map[string]string `json:"metadata,omitempty"`
-	Tags        []string          `json:"tags,omitempty"`
-	Score       float64           `json:"score,omitempty"` // post-evaluation score
+	AgentID    string            `json:"agent_id"`
+	Model      string            `json:"model"`
+	Output     string            `json:"output"`
+	Confidence float64           `json:"confidence"` // 0-1
+	Latency    time.Duration     `json:"latency"`
+	TokensUsed int               `json:"tokens_used"`
+	Cost       float64           `json:"cost"`
+	Metadata   map[string]string `json:"metadata,omitempty"`
+	Tags       []string          `json:"tags,omitempty"`
+	Score      float64           `json:"score,omitempty"` // post-evaluation score
 }
 
 // SynthesisResult is the combined output.
 type SynthesisResult struct {
-	ID           string           `json:"id"`
-	Strategy     Strategy         `json:"strategy"`
-	Inputs       []AgentResponse  `json:"inputs"`
-	Output       string           `json:"output"`
-	Confidence   float64          `json:"confidence"`
-	Consensus    bool             `json:"consensus"`    // did agents agree?
-	DissentCount int              `json:"dissent_count"` // how many disagreed
-	AgentCount   int              `json:"agent_count"`
-	WinnerID     string           `json:"winner_id,omitempty"` // for vote/best strategies
-	Scores       map[string]float64 `json:"scores,omitempty"` // agent scores
-	QualityScore float64          `json:"quality_score"` // post-evaluation score
-	Duration     time.Duration    `json:"duration"`
-	TotalTokens  int              `json:"total_tokens"`
-	TotalCost    float64          `json:"total_cost"`
-	CreatedAt    time.Time        `json:"created_at"`
+	ID           string             `json:"id"`
+	Strategy     Strategy           `json:"strategy"`
+	Inputs       []AgentResponse    `json:"inputs"`
+	Output       string             `json:"output"`
+	Confidence   float64            `json:"confidence"`
+	Consensus    bool               `json:"consensus"`     // did agents agree?
+	DissentCount int                `json:"dissent_count"` // how many disagreed
+	AgentCount   int                `json:"agent_count"`
+	WinnerID     string             `json:"winner_id,omitempty"` // for vote/best strategies
+	Scores       map[string]float64 `json:"scores,omitempty"`    // agent scores
+	QualityScore float64            `json:"quality_score"`       // post-evaluation score
+	Duration     time.Duration      `json:"duration"`
+	TotalTokens  int                `json:"total_tokens"`
+	TotalCost    float64            `json:"total_cost"`
+	CreatedAt    time.Time          `json:"created_at"`
 }
 
 // Engine manages synthesis operations.
 type Engine struct {
-	mu       sync.RWMutex
-	history  []*SynthesisResult
+	mu         sync.RWMutex
+	history    []*SynthesisResult
 	strategies map[Strategy]SynthesizeFunc
-	evaluator Evaluator
-	nextID    int
+	evaluator  Evaluator
+	nextID     int
 }
 
 // SynthesizeFunc is the function signature for a synthesis strategy.
@@ -208,12 +208,12 @@ func (e *Engine) Stats() SynthesisStats {
 
 // SynthesisStats holds statistics about synthesis operations.
 type SynthesisStats struct {
-	TotalSyntheses int              `json:"total_syntheses"`
-	AvgConfidence  float64          `json:"avg_confidence"`
-	ConsensusRate  float64          `json:"consensus_rate"`
-	TotalTokens    int              `json:"total_tokens"`
-	TotalCost      float64          `json:"total_cost"`
-	ByStrategy     map[string]int   `json:"by_strategy"`
+	TotalSyntheses int            `json:"total_syntheses"`
+	AvgConfidence  float64        `json:"avg_confidence"`
+	ConsensusRate  float64        `json:"consensus_rate"`
+	TotalTokens    int            `json:"total_tokens"`
+	TotalCost      float64        `json:"total_cost"`
+	ByStrategy     map[string]int `json:"by_strategy"`
 }
 
 // --- Strategy implementations ---
@@ -272,9 +272,9 @@ func (e *Engine) synthesizeMerge(inputs []AgentResponse) (*SynthesisResult, erro
 	avgConf := totalConf / float64(len(inputs))
 
 	return &SynthesisResult{
-		Output:     output,
-		Confidence: avgConf,
-		Consensus:  len(parts) == 1,
+		Output:       output,
+		Confidence:   avgConf,
+		Consensus:    len(parts) == 1,
 		DissentCount: len(inputs) - len(seen),
 	}, nil
 }
@@ -303,10 +303,10 @@ func (e *Engine) synthesizeCascade(inputs []AgentResponse) (*SynthesisResult, er
 	// Fallback to best available
 	best := sorted[0]
 	return &SynthesisResult{
-		Output:      best.Output,
-		Confidence:  best.Confidence,
-		Consensus:   false,
-		WinnerID:    best.AgentID,
+		Output:     best.Output,
+		Confidence: best.Confidence,
+		Consensus:  false,
+		WinnerID:   best.AgentID,
 	}, nil
 }
 

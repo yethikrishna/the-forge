@@ -88,7 +88,7 @@ Examples:
 					fmt.Println(pretty.Sprint(pretty.BoldF, "  Attempting auto-fix..."))
 					fixes := attemptFixes(results)
 					printFixResults(fixes)
-			}
+				}
 
 				return fmt.Errorf("environment has %d issue(s) that need attention", failed)
 			}
@@ -114,7 +114,7 @@ const (
 )
 
 type checkResult struct {
-	status checkStatus
+	status  checkStatus
 	message string
 	hint    string
 	detail  string

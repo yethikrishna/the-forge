@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/qualitycorpus"
+	"github.com/spf13/cobra"
 )
 
 var qualityCorpusCmd = &cobra.Command{

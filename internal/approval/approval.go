@@ -18,10 +18,10 @@ import (
 type Status string
 
 const (
-	StatusPending  Status = "pending"
-	StatusApproved Status = "approved"
-	StatusRejected Status = "rejected"
-	StatusExpired  Status = "expired"
+	StatusPending   Status = "pending"
+	StatusApproved  Status = "approved"
+	StatusRejected  Status = "rejected"
+	StatusExpired   Status = "expired"
 	StatusEscalated Status = "escalated"
 	StatusCancelled Status = "cancelled"
 )
@@ -56,20 +56,20 @@ type Request struct {
 
 // Gate manages approval gates.
 type Gate struct {
-	pending    map[string]*Request
-	resolved   map[string]*Request
-	rules      []AutoApprovalRule
-	storeDir   string
-	mu         sync.RWMutex
-	nextID     int
+	pending  map[string]*Request
+	resolved map[string]*Request
+	rules    []AutoApprovalRule
+	storeDir string
+	mu       sync.RWMutex
+	nextID   int
 }
 
 // AutoApprovalRule defines when actions are auto-approved.
 type AutoApprovalRule struct {
-	AgentID  string    `json:"agent_id,omitempty"`
-	Action   string    `json:"action,omitempty"`
-	MaxRisk  RiskLevel `json:"max_risk"`
-	Enabled  bool      `json:"enabled"`
+	AgentID string    `json:"agent_id,omitempty"`
+	Action  string    `json:"action,omitempty"`
+	MaxRisk RiskLevel `json:"max_risk"`
+	Enabled bool      `json:"enabled"`
 }
 
 // NewGate creates a new approval gate.
@@ -339,10 +339,10 @@ func (g *Gate) load() {
 	}
 
 	var saved struct {
-		Pending  map[string]*Request    `json:"pending"`
-		Resolved map[string]*Request    `json:"resolved"`
-		Rules    []AutoApprovalRule     `json:"rules"`
-		NextID   int                    `json:"nextID"`
+		Pending  map[string]*Request `json:"pending"`
+		Resolved map[string]*Request `json:"resolved"`
+		Rules    []AutoApprovalRule  `json:"rules"`
+		NextID   int                 `json:"nextID"`
 	}
 	if err := json.Unmarshal(data, &saved); err != nil {
 		return

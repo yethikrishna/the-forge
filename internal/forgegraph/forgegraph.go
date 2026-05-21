@@ -40,20 +40,20 @@ const (
 type EdgeKind string
 
 const (
-	EdgeDependsOn    EdgeKind = "depends_on"
-	EdgeUses         EdgeKind = "uses"
-	EdgeProduces     EdgeKind = "produces"
-	EdgeConsumes     EdgeKind = "consumes"
-	EdgeTriggers     EdgeKind = "triggers"
-	EdgeBlocks       EdgeKind = "blocks"
-	EdgeOwns         EdgeKind = "owns"
-	EdgeBelongsTo    EdgeKind = "belongs_to"
-	EdgeMonitors     EdgeKind = "monitors"
-	EdgeRoutesTo     EdgeKind = "routes_to"
-	EdgeFallbackFor  EdgeKind = "fallback_for"
-	EdgeReplaces     EdgeKind = "replaces"
-	EdgeImplements   EdgeKind = "implements"
-	EdgeNotifies     EdgeKind = "notifies"
+	EdgeDependsOn   EdgeKind = "depends_on"
+	EdgeUses        EdgeKind = "uses"
+	EdgeProduces    EdgeKind = "produces"
+	EdgeConsumes    EdgeKind = "consumes"
+	EdgeTriggers    EdgeKind = "triggers"
+	EdgeBlocks      EdgeKind = "blocks"
+	EdgeOwns        EdgeKind = "owns"
+	EdgeBelongsTo   EdgeKind = "belongs_to"
+	EdgeMonitors    EdgeKind = "monitors"
+	EdgeRoutesTo    EdgeKind = "routes_to"
+	EdgeFallbackFor EdgeKind = "fallback_for"
+	EdgeReplaces    EdgeKind = "replaces"
+	EdgeImplements  EdgeKind = "implements"
+	EdgeNotifies    EdgeKind = "notifies"
 )
 
 // Node represents an entity in the knowledge graph.
@@ -89,9 +89,9 @@ type Graph struct {
 	store string
 
 	// Indexes for fast lookup
-	byKind    map[NodeKind][]string   // kind -> node IDs
-	outEdges  map[string][]string     // node ID -> outgoing edge IDs
-	inEdges   map[string][]string     // node ID -> incoming edge IDs
+	byKind     map[NodeKind][]string // kind -> node IDs
+	outEdges   map[string][]string   // node ID -> outgoing edge IDs
+	inEdges    map[string][]string   // node ID -> incoming edge IDs
 	nextNodeID int
 	nextEdgeID int
 }
@@ -383,10 +383,10 @@ func (g *Graph) ImpactAnalysis(nodeID string) (*ImpactReport, error) {
 	}
 
 	report := &ImpactReport{
-		NodeID:      nodeID,
-		NodeName:    g.nodes[nodeID].Name,
-		AnalyzedAt:  time.Now(),
-		DirectDeps:  make([]ImpactItem, 0),
+		NodeID:       nodeID,
+		NodeName:     g.nodes[nodeID].Name,
+		AnalyzedAt:   time.Now(),
+		DirectDeps:   make([]ImpactItem, 0),
 		IndirectDeps: make([]ImpactItem, 0),
 	}
 
@@ -436,22 +436,22 @@ func (g *Graph) impactBFS(nodeID string, depth int, visited map[string]bool, rep
 
 // ImpactReport describes the impact of a node change.
 type ImpactReport struct {
-	NodeID             string        `json:"node_id"`
-	NodeName           string        `json:"node_name"`
-	AnalyzedAt         time.Time     `json:"analyzed_at"`
-	DirectDeps         []ImpactItem  `json:"direct_deps"`
-	IndirectDeps       []ImpactItem  `json:"indirect_deps"`
-	DirectImpactCount  int           `json:"direct_impact_count"`
+	NodeID              string       `json:"node_id"`
+	NodeName            string       `json:"node_name"`
+	AnalyzedAt          time.Time    `json:"analyzed_at"`
+	DirectDeps          []ImpactItem `json:"direct_deps"`
+	IndirectDeps        []ImpactItem `json:"indirect_deps"`
+	DirectImpactCount   int          `json:"direct_impact_count"`
 	IndirectImpactCount int          `json:"indirect_impact_count"`
 }
 
 // ImpactItem describes a single impacted entity.
 type ImpactItem struct {
-	NodeID   string  `json:"node_id"`
-	NodeName string  `json:"node_name"`
+	NodeID   string   `json:"node_id"`
+	NodeName string   `json:"node_name"`
 	NodeKind NodeKind `json:"node_kind"`
 	EdgeKind EdgeKind `json:"edge_kind"`
-	Weight   float64 `json:"weight"`
+	Weight   float64  `json:"weight"`
 }
 
 // FindPath finds a path between two nodes using BFS.

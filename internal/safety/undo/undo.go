@@ -19,31 +19,31 @@ import (
 type ActionType string
 
 const (
-	ActionFileWrite   ActionType = "file_write"
-	ActionFileDelete  ActionType = "file_delete"
-	ActionFileRename  ActionType = "file_rename"
-	ActionGitCommit   ActionType = "git_commit"
-	ActionCommand     ActionType = "command"
-	ActionFileCreate  ActionType = "file_create"
+	ActionFileWrite  ActionType = "file_write"
+	ActionFileDelete ActionType = "file_delete"
+	ActionFileRename ActionType = "file_rename"
+	ActionGitCommit  ActionType = "git_commit"
+	ActionCommand    ActionType = "command"
+	ActionFileCreate ActionType = "file_create"
 )
 
 // Snapshot captures the state before an action was performed.
 type Snapshot struct {
-	ID        string     `json:"id"`
-	Timestamp time.Time  `json:"timestamp"`
-	Action    ActionType `json:"action"`
-	Path      string     `json:"path,omitempty"`
-	Content   string     `json:"content,omitempty"`   // original file content
-	CommitHash string   `json:"commit_hash,omitempty"`
-	Command   string    `json:"command,omitempty"`
-	Agent     string    `json:"agent,omitempty"`
-	Session   string    `json:"session,omitempty"`
-	Reverted  bool      `json:"reverted"`
+	ID         string     `json:"id"`
+	Timestamp  time.Time  `json:"timestamp"`
+	Action     ActionType `json:"action"`
+	Path       string     `json:"path,omitempty"`
+	Content    string     `json:"content,omitempty"` // original file content
+	CommitHash string     `json:"commit_hash,omitempty"`
+	Command    string     `json:"command,omitempty"`
+	Agent      string     `json:"agent,omitempty"`
+	Session    string     `json:"session,omitempty"`
+	Reverted   bool       `json:"reverted"`
 }
 
 // Journal records all agent actions for undo purposes.
 type Journal struct {
-	Dir    string
+	Dir     string
 	entries []Snapshot
 }
 

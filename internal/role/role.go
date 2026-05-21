@@ -14,27 +14,27 @@ import (
 
 // Role represents an agent role definition.
 type Role struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Capabilities []string `json:"capabilities"` // what this role can do
+	ID             string   `json:"id"`
+	Name           string   `json:"name"`
+	Description    string   `json:"description"`
+	Capabilities   []string `json:"capabilities"` // what this role can do
 	AllowedActions []string `json:"allowed_actions"`
 	DeniedActions  []string `json:"denied_actions"`
-	ModelPref  string   `json:"model_preference,omitempty"`
-	Temperature float64  `json:"temperature,omitempty"`
-	MaxTokens  int      `json:"max_tokens,omitempty"`
-	SystemPrompt string `json:"system_prompt,omitempty"`
-	Priority   int      `json:"priority"` // execution priority (lower = higher)
-	MaxConcurrent int   `json:"max_concurrent"` // max parallel instances
+	ModelPref      string   `json:"model_preference,omitempty"`
+	Temperature    float64  `json:"temperature,omitempty"`
+	MaxTokens      int      `json:"max_tokens,omitempty"`
+	SystemPrompt   string   `json:"system_prompt,omitempty"`
+	Priority       int      `json:"priority"`       // execution priority (lower = higher)
+	MaxConcurrent  int      `json:"max_concurrent"` // max parallel instances
 }
 
 // Assignment assigns a role to an agent instance.
 type Assignment struct {
-	AgentID    string `json:"agent_id"`
-	RoleID     string `json:"role_id"`
-	SessionID  string `json:"session_id"`
-	Status     string `json:"status"` // active, completed, failed
-	Task       string `json:"task"`
+	AgentID   string `json:"agent_id"`
+	RoleID    string `json:"role_id"`
+	SessionID string `json:"session_id"`
+	Status    string `json:"status"` // active, completed, failed
+	Task      string `json:"task"`
 }
 
 // Registry manages role definitions.
@@ -61,42 +61,42 @@ func (r *Registry) registerDefaults() {
 	defaults := []Role{
 		{
 			ID: "planner", Name: "Planner", Description: "Analyzes tasks and creates execution plans",
-			Capabilities: []string{"task_decomposition", "dependency_analysis", "plan_generation"},
+			Capabilities:   []string{"task_decomposition", "dependency_analysis", "plan_generation"},
 			AllowedActions: []string{"read", "search", "plan", "assign"},
 			DeniedActions:  []string{"write", "execute", "delete"},
-			Temperature: 0.3, Priority: 1, MaxConcurrent: 1,
+			Temperature:    0.3, Priority: 1, MaxConcurrent: 1,
 			SystemPrompt: "You are a planning agent. Analyze tasks and create step-by-step execution plans. Assign work to appropriate roles.",
 		},
 		{
 			ID: "coder", Name: "Coder", Description: "Implements code based on plans",
-			Capabilities: []string{"code_generation", "code_editing", "debugging"},
+			Capabilities:   []string{"code_generation", "code_editing", "debugging"},
 			AllowedActions: []string{"read", "write", "execute", "test"},
 			DeniedActions:  []string{"delete", "plan", "deploy"},
-			Temperature: 0.2, Priority: 2, MaxConcurrent: 3,
+			Temperature:    0.2, Priority: 2, MaxConcurrent: 3,
 			SystemPrompt: "You are a coding agent. Write clean, tested code following the plan. Follow project conventions.",
 		},
 		{
 			ID: "tester", Name: "Tester", Description: "Writes and runs tests for code quality",
-			Capabilities: []string{"test_generation", "test_execution", "coverage_analysis"},
+			Capabilities:   []string{"test_generation", "test_execution", "coverage_analysis"},
 			AllowedActions: []string{"read", "write", "execute", "test"},
 			DeniedActions:  []string{"delete", "deploy"},
-			Temperature: 0.1, Priority: 3, MaxConcurrent: 2,
+			Temperature:    0.1, Priority: 3, MaxConcurrent: 2,
 			SystemPrompt: "You are a testing agent. Write comprehensive tests. Focus on edge cases and failure modes.",
 		},
 		{
 			ID: "reviewer", Name: "Reviewer", Description: "Reviews code for quality, security, and correctness",
-			Capabilities: []string{"code_review", "security_audit", "style_check"},
+			Capabilities:   []string{"code_review", "security_audit", "style_check"},
 			AllowedActions: []string{"read", "search"},
 			DeniedActions:  []string{"write", "execute", "delete", "deploy"},
-			Temperature: 0.2, Priority: 4, MaxConcurrent: 2,
+			Temperature:    0.2, Priority: 4, MaxConcurrent: 2,
 			SystemPrompt: "You are a code reviewer. Focus on correctness, security, performance, and maintainability.",
 		},
 		{
 			ID: "deployer", Name: "Deployer", Description: "Handles deployment and release tasks",
-			Capabilities: []string{"deployment", "release_management", "rollback"},
+			Capabilities:   []string{"deployment", "release_management", "rollback"},
 			AllowedActions: []string{"read", "execute", "deploy"},
 			DeniedActions:  []string{"write", "delete"},
-			Temperature: 0.0, Priority: 5, MaxConcurrent: 1,
+			Temperature:    0.0, Priority: 5, MaxConcurrent: 1,
 			SystemPrompt: "You are a deployment agent. Follow deployment procedures carefully. Never skip safety checks.",
 		},
 	}

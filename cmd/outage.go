@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/forge/sword/internal/resilience/outage"
 	"github.com/forge/sword/internal/pretty"
+	"github.com/forge/sword/internal/resilience/outage"
 	"github.com/spf13/cobra"
 )
 

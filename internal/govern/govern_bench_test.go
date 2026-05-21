@@ -64,7 +64,7 @@ func BenchmarkAssess(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		cfg.Name = fmt.Sprintf("bench-report-%d", i) // avoid duplicate ID
-		s.Assess(cfg, scores, findings) //nolint:errcheck
+		s.Assess(cfg, scores, findings)              //nolint:errcheck
 	}
 }
 

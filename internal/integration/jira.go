@@ -302,7 +302,7 @@ type jiraIssue struct {
 	Key    string `json:"key"`
 	ID     string `json:"id"`
 	Fields struct {
-		Summary     string `json:"summary"`
+		Summary     string      `json:"summary"`
 		Description interface{} `json:"description"`
 		Status      struct {
 			Name string `json:"name"`
@@ -314,8 +314,8 @@ type jiraIssue struct {
 			EmailAddress string `json:"emailAddress"`
 			DisplayName  string `json:"displayName"`
 		} `json:"assignee"`
-		Labels    []string  `json:"labels"`
-		Project   struct {
+		Labels  []string `json:"labels"`
+		Project struct {
 			Key string `json:"key"`
 		} `json:"project"`
 		Parent *struct {
@@ -324,9 +324,9 @@ type jiraIssue struct {
 		IssueType struct {
 			Name string `json:"name"`
 		} `json:"issuetype"`
-		Created   string  `json:"created"`
-		Updated   string  `json:"updated"`
-		DueDate   string  `json:"duedate"`
+		Created string `json:"created"`
+		Updated string `json:"updated"`
+		DueDate string `json:"duedate"`
 	} `json:"fields"`
 }
 

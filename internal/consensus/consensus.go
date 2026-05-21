@@ -18,20 +18,20 @@ import (
 type Strategy string
 
 const (
-	StrategyMajority   Strategy = "majority"
-	StrategyWeighted   Strategy = "weighted"
-	StrategyUnanimous  Strategy = "unanimous"
+	StrategyMajority    Strategy = "majority"
+	StrategyWeighted    Strategy = "weighted"
+	StrategyUnanimous   Strategy = "unanimous"
 	StrategyAdversarial Strategy = "adversarial"
 )
 
 // Vote represents a single agent's vote.
 type Vote struct {
-	AgentID   string    `json:"agent_id"`
-	Answer    string    `json:"answer"`
-	Reasoning string    `json:"reasoning"`
-	Weight    float64   `json:"weight"`
-	Confidence float64  `json:"confidence"`
-	Timestamp time.Time `json:"timestamp"`
+	AgentID    string    `json:"agent_id"`
+	Answer     string    `json:"answer"`
+	Reasoning  string    `json:"reasoning"`
+	Weight     float64   `json:"weight"`
+	Confidence float64   `json:"confidence"`
+	Timestamp  time.Time `json:"timestamp"`
 }
 
 // Round is a single consensus round.

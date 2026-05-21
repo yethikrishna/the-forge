@@ -19,8 +19,8 @@ import (
 type Level string
 
 const (
-	LevelOK      Level = "ok"
-	LevelWarn    Level = "warn"
+	LevelOK       Level = "ok"
+	LevelWarn     Level = "warn"
 	LevelCritical Level = "critical"
 )
 
@@ -28,8 +28,8 @@ const (
 type Thresholds struct {
 	MemoryPercent float64 `json:"memory_percent"` // default: 80
 	DiskPercent   float64 `json:"disk_percent"`   // default: 90
-	Goroutines    int     `json:"goroutines"`      // default: 1000
-	OpenFiles     int     `json:"open_files"`      // default: 500
+	Goroutines    int     `json:"goroutines"`     // default: 1000
+	OpenFiles     int     `json:"open_files"`     // default: 500
 }
 
 // DefaultThresholds returns sensible defaults.

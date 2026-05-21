@@ -46,11 +46,11 @@ var swarmCreateCmd = &cobra.Command{
 
 		if jsonOutput, _ := cmd.Flags().GetBool("json"); jsonOutput {
 			data, _ := json.MarshalIndent(map[string]interface{}{
-				"id":        s.ID(),
-				"name":      name,
-				"strategy":  cfg.Strategy,
+				"id":         s.ID(),
+				"name":       name,
+				"strategy":   cfg.Strategy,
 				"max_agents": cfg.MaxAgents,
-				"budget":    cfg.CostBudget,
+				"budget":     cfg.CostBudget,
 			}, "", "  ")
 			fmt.Println(string(data))
 		} else {

@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/canary"
+	"github.com/spf13/cobra"
 )
 
 var canaryCmd = &cobra.Command{
@@ -14,10 +14,10 @@ var canaryCmd = &cobra.Command{
 }
 
 var (
-	canaryDir        string
-	canaryBaseline   string
-	canaryCandidate  string
-	canaryTraffic    float64
+	canaryDir          string
+	canaryBaseline     string
+	canaryCandidate    string
+	canaryTraffic      float64
 	canaryAutoRollback bool
 )
 

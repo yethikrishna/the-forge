@@ -21,7 +21,7 @@ import (
 type EventType int
 
 const (
-	EventPrompt      EventType = iota
+	EventPrompt EventType = iota
 	EventResponse
 	EventToolCall
 	EventToolResult
@@ -203,8 +203,8 @@ func (r *Recorder) RecordToolResult(toolName string, result interface{}, duratio
 // RecordError records an error event.
 func (r *Recorder) RecordError(err error, recoverable bool) Event {
 	return r.Record(EventError, map[string]interface{}{
-		"error":        err.Error(),
-		"recoverable":  recoverable,
+		"error":       err.Error(),
+		"recoverable": recoverable,
 	})
 }
 
@@ -249,14 +249,14 @@ func (r *Recorder) Branch(fromSeq int) *Recorder {
 
 	now := time.Now()
 	newSession := &Session{
-		ID:          fmt.Sprintf("sess-%d", now.UnixMilli()),
-		Name:        r.session.Name + " (branch)",
-		AgentID:     r.session.AgentID,
-		Events:      make([]Event, fromSeq),
-		StartedAt:   now,
-		Status:      "recording",
-		BranchFrom:  r.session.ID,
-		BranchAt:    fromSeq,
+		ID:         fmt.Sprintf("sess-%d", now.UnixMilli()),
+		Name:       r.session.Name + " (branch)",
+		AgentID:    r.session.AgentID,
+		Events:     make([]Event, fromSeq),
+		StartedAt:  now,
+		Status:     "recording",
+		BranchFrom: r.session.ID,
+		BranchAt:   fromSeq,
 	}
 
 	copy(newSession.Events, r.session.Events[:fromSeq])
@@ -452,15 +452,15 @@ func (p *Player) Summary() SessionSummary {
 
 // SessionSummary holds summary statistics.
 type SessionSummary struct {
-	SessionID   string            `json:"session_id"`
-	Name        string            `json:"name"`
-	TotalEvents int               `json:"total_events"`
-	StartedAt   time.Time         `json:"started_at"`
-	EndedAt     time.Time         `json:"ended_at"`
-	Duration    time.Duration     `json:"duration"`
-	TotalTokens int               `json:"total_tokens"`
-	TotalCost   float64           `json:"total_cost"`
-	ByType      map[string]int    `json:"by_type"`
+	SessionID   string         `json:"session_id"`
+	Name        string         `json:"name"`
+	TotalEvents int            `json:"total_events"`
+	StartedAt   time.Time      `json:"started_at"`
+	EndedAt     time.Time      `json:"ended_at"`
+	Duration    time.Duration  `json:"duration"`
+	TotalTokens int            `json:"total_tokens"`
+	TotalCost   float64        `json:"total_cost"`
+	ByType      map[string]int `json:"by_type"`
 }
 
 // Store manages replay sessions.
@@ -580,17 +580,17 @@ func (s *Store) Compare(id1, id2 string) (*Comparison, error) {
 
 // Comparison holds the result of comparing two sessions.
 type Comparison struct {
-	SessionA    string  `json:"session_a"`
-	SessionB    string  `json:"session_b"`
-	EventsA     int     `json:"events_a"`
-	EventsB     int     `json:"events_b"`
-	TokensA     int     `json:"tokens_a"`
-	TokensB     int     `json:"tokens_b"`
-	CostA       float64 `json:"cost_a"`
-	CostB       float64 `json:"cost_b"`
-	TokenDiff   float64 `json:"token_diff_pct"`
-	CostDiff    float64 `json:"cost_diff_pct"`
-	CommonPrefix int    `json:"common_prefix"`
+	SessionA     string  `json:"session_a"`
+	SessionB     string  `json:"session_b"`
+	EventsA      int     `json:"events_a"`
+	EventsB      int     `json:"events_b"`
+	TokensA      int     `json:"tokens_a"`
+	TokensB      int     `json:"tokens_b"`
+	CostA        float64 `json:"cost_a"`
+	CostB        float64 `json:"cost_b"`
+	TokenDiff    float64 `json:"token_diff_pct"`
+	CostDiff     float64 `json:"cost_diff_pct"`
+	CommonPrefix int     `json:"common_prefix"`
 }
 
 func (p *Player) getEvent(pos int) *Event {

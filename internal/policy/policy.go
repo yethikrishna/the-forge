@@ -49,9 +49,9 @@ type Policy struct {
 	Description string            `json:"description"`
 	Effect      Effect            `json:"effect"`
 	Actions     []ActionType      `json:"actions"`
-	Resources   []string          `json:"resources"`   // glob patterns for resources
+	Resources   []string          `json:"resources"` // glob patterns for resources
 	Conditions  []PolicyCondition `json:"conditions"`
-	Priority    int               `json:"priority"`    // higher = evaluated first
+	Priority    int               `json:"priority"` // higher = evaluated first
 	Enabled     bool              `json:"enabled"`
 	Tags        []string          `json:"tags"`
 	Metadata    map[string]string `json:"metadata"`
@@ -77,12 +77,12 @@ type Decision struct {
 
 // CheckRequest is a request to check if an action is allowed.
 type CheckRequest struct {
-	Action   ActionType `json:"action"`
-	Resource string     `json:"resource"`
-	Agent    string     `json:"agent"`
-	Cost     float64    `json:"cost,omitempty"`
-	Scope    string     `json:"scope,omitempty"`
-	Tags     []string   `json:"tags,omitempty"`
+	Action   ActionType        `json:"action"`
+	Resource string            `json:"resource"`
+	Agent    string            `json:"agent"`
+	Cost     float64           `json:"cost,omitempty"`
+	Scope    string            `json:"scope,omitempty"`
+	Tags     []string          `json:"tags,omitempty"`
 	Context  map[string]string `json:"context,omitempty"`
 }
 
@@ -96,11 +96,11 @@ type Engine struct {
 
 // AuditEntry represents an audited policy decision.
 type AuditEntry struct {
-	Timestamp time.Time     `json:"timestamp"`
-	Action    ActionType    `json:"action"`
-	Resource  string        `json:"resource"`
-	Agent     string        `json:"agent"`
-	Decision  Decision      `json:"decision"`
+	Timestamp time.Time  `json:"timestamp"`
+	Action    ActionType `json:"action"`
+	Resource  string     `json:"resource"`
+	Agent     string     `json:"agent"`
+	Decision  Decision   `json:"decision"`
 }
 
 // EngineStats holds policy engine statistics.

@@ -36,16 +36,16 @@ const (
 
 // LanguageInfo holds metadata about a language.
 type LanguageInfo struct {
-	Lang       Language `json:"lang"`
-	Name       string   `json:"name"`
-	Ext        string   `json:"ext"`        // primary file extension
-	ExtAlt     string   `json:"ext_alt,omitempty"` // alternative extension
-	Indent     int      `json:"indent"`     // indent size
-	CommentLn  string   `json:"comment_ln"` // single-line comment prefix
-	CommentBlk string   `json:"comment_blk_start,omitempty"` // block comment start
-	CommentBlkE string  `json:"comment_blk_end,omitempty"`   // block comment end
-	HasSemicol bool     `json:"has_semicol"`
-	PackageMgmt string  `json:"package_mgmt,omitempty"` // go mod, pip, npm, cargo, etc.
+	Lang        Language `json:"lang"`
+	Name        string   `json:"name"`
+	Ext         string   `json:"ext"`                         // primary file extension
+	ExtAlt      string   `json:"ext_alt,omitempty"`           // alternative extension
+	Indent      int      `json:"indent"`                      // indent size
+	CommentLn   string   `json:"comment_ln"`                  // single-line comment prefix
+	CommentBlk  string   `json:"comment_blk_start,omitempty"` // block comment start
+	CommentBlkE string   `json:"comment_blk_end,omitempty"`   // block comment end
+	HasSemicol  bool     `json:"has_semicol"`
+	PackageMgmt string   `json:"package_mgmt,omitempty"` // go mod, pip, npm, cargo, etc.
 }
 
 // TranslationResult holds the output of a translation.
@@ -234,9 +234,9 @@ func (t *Translator) translateCode(source string, sourceLang, targetLang Languag
 
 // CodeBlock represents a parsed block of code.
 type CodeBlock struct {
-	Type    string // package, import, func, type, var, const, comment, blank, other
-	Name    string
-	Content string
+	Type     string // package, import, func, type, var, const, comment, blank, other
+	Name     string
+	Content  string
 	Children []CodeBlock
 }
 

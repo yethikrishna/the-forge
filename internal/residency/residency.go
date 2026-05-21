@@ -34,23 +34,23 @@ type Policy struct {
 	Name           string    `json:"name"`
 	AllowedRegions []Region  `json:"allowed_regions"`
 	PrimaryRegion  Region    `json:"primary_region"`
-	Replication    bool      `json:"replication"`     // allow cross-region replication
+	Replication    bool      `json:"replication"` // allow cross-region replication
 	ReplicaRegions []Region  `json:"replica_regions,omitempty"`
-	Strict         bool      `json:"strict"`          // reject operations outside allowed regions
+	Strict         bool      `json:"strict"` // reject operations outside allowed regions
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 // Violation represents a data residency violation.
 type Violation struct {
-	ID          string    `json:"id"`
-	PolicyID    string    `json:"policy_id"`
-	AgentID     string    `json:"agent_id"`
-	Operation   string    `json:"operation"`
-	TargetRegion Region   `json:"target_region"`
-	AllowedRegions []Region `json:"allowed_regions"`
-	Blocked     bool      `json:"blocked"`
-	Timestamp   time.Time `json:"timestamp"`
+	ID             string    `json:"id"`
+	PolicyID       string    `json:"policy_id"`
+	AgentID        string    `json:"agent_id"`
+	Operation      string    `json:"operation"`
+	TargetRegion   Region    `json:"target_region"`
+	AllowedRegions []Region  `json:"allowed_regions"`
+	Blocked        bool      `json:"blocked"`
+	Timestamp      time.Time `json:"timestamp"`
 }
 
 // Enforcer enforces data residency policies.
@@ -140,14 +140,14 @@ func (e *Enforcer) CheckOperation(policyID, agentID, operation string, targetReg
 	allowed := isRegionAllowed(targetRegion, policy)
 
 	violation := &Violation{
-		ID:            fmt.Sprintf("viol-%d", time.Now().UnixNano()),
-		PolicyID:      policyID,
-		AgentID:       agentID,
-		Operation:     operation,
-		TargetRegion:  targetRegion,
+		ID:             fmt.Sprintf("viol-%d", time.Now().UnixNano()),
+		PolicyID:       policyID,
+		AgentID:        agentID,
+		Operation:      operation,
+		TargetRegion:   targetRegion,
 		AllowedRegions: policy.AllowedRegions,
-		Blocked:       !allowed,
-		Timestamp:     time.Now(),
+		Blocked:        !allowed,
+		Timestamp:      time.Now(),
 	}
 
 	// Record violation if blocked

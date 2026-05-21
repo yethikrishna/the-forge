@@ -232,8 +232,8 @@ func TestIsBreakingChange(t *testing.T) {
 	engine := NewEngine(".")
 
 	tests := []struct {
-		refType   RefactorType
-		breaking  bool
+		refType  RefactorType
+		breaking bool
 	}{
 		{ChangeSignature, true},
 		{RemoveParam, true},

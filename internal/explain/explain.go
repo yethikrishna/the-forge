@@ -10,28 +10,28 @@ import (
 
 // Decision represents an agent decision to be explained.
 type Decision struct {
-	Agent      string            `json:"agent"`
-	Model      string            `json:"model"`
-	Action     string            `json:"action"`
-	Reason     string            `json:"reason"`
-	Inputs     []string          `json:"inputs,omitempty"`
-	Outputs    []string          `json:"outputs,omitempty"`
-	FilesRead  []string          `json:"files_read,omitempty"`
-	FilesWrite []string          `json:"files_write,omitempty"`
-	Cost       float64           `json:"cost,omitempty"`
-	Duration   string            `json:"duration,omitempty"`
-	Confidence float64           `json:"confidence,omitempty"`
-	Alternatives []Alternative   `json:"alternatives,omitempty"`
-	Context    map[string]string `json:"context,omitempty"`
-	Timestamp  time.Time         `json:"timestamp"`
+	Agent        string            `json:"agent"`
+	Model        string            `json:"model"`
+	Action       string            `json:"action"`
+	Reason       string            `json:"reason"`
+	Inputs       []string          `json:"inputs,omitempty"`
+	Outputs      []string          `json:"outputs,omitempty"`
+	FilesRead    []string          `json:"files_read,omitempty"`
+	FilesWrite   []string          `json:"files_write,omitempty"`
+	Cost         float64           `json:"cost,omitempty"`
+	Duration     string            `json:"duration,omitempty"`
+	Confidence   float64           `json:"confidence,omitempty"`
+	Alternatives []Alternative     `json:"alternatives,omitempty"`
+	Context      map[string]string `json:"context,omitempty"`
+	Timestamp    time.Time         `json:"timestamp"`
 }
 
 // Alternative is a considered-but-not-chosen option.
 type Alternative struct {
-	Option    string  `json:"option"`
-	Reason    string  `json:"reason"`
-	Score     float64 `json:"score"`
-	Rejected  bool    `json:"rejected"`
+	Option   string  `json:"option"`
+	Reason   string  `json:"reason"`
+	Score    float64 `json:"score"`
+	Rejected bool    `json:"rejected"`
 }
 
 // Explanation is a formatted explanation of a decision.
@@ -55,9 +55,9 @@ func NewExplainer() *Explainer {
 		modelAliases: map[string]string{
 			"anthropic/claude-sonnet-4-20250514": "Claude Sonnet",
 			"anthropic/claude-opus-4-20250514":   "Claude Opus",
-			"openai/gpt-4o":                     "GPT-4o",
-			"openai/gpt-5-mini":                 "GPT-5 Mini",
-			"google/gemini-2.5-pro":             "Gemini Pro",
+			"openai/gpt-4o":                      "GPT-4o",
+			"openai/gpt-5-mini":                  "GPT-5 Mini",
+			"google/gemini-2.5-pro":              "Gemini Pro",
 		},
 	}
 }

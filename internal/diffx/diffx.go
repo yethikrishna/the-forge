@@ -20,13 +20,13 @@ import (
 type ChangeType string
 
 const (
-	ChangeAdded      ChangeType = "added"
-	ChangeRemoved    ChangeType = "removed"
-	ChangeModified   ChangeType = "modified"
-	ChangeMoved      ChangeType = "moved"
-	ChangeRenamed    ChangeType = "renamed"
+	ChangeAdded       ChangeType = "added"
+	ChangeRemoved     ChangeType = "removed"
+	ChangeModified    ChangeType = "modified"
+	ChangeMoved       ChangeType = "moved"
+	ChangeRenamed     ChangeType = "renamed"
 	ChangeReformatted ChangeType = "reformatted"
-	ChangeUnchanged  ChangeType = "unchanged"
+	ChangeUnchanged   ChangeType = "unchanged"
 )
 
 // Language represents a programming language.
@@ -43,12 +43,12 @@ const (
 
 // CodeBlock represents a logical code unit.
 type CodeBlock struct {
-	Type     string   `json:"type"` // "function", "method", "struct", "interface", "class", "import", "const", "var"
-	Name     string   `json:"name"`
-	StartLine int     `json:"start_line"`
-	EndLine   int     `json:"end_line"`
-	Content  string   `json:"content"`
-	Language Language `json:"language"`
+	Type      string   `json:"type"` // "function", "method", "struct", "interface", "class", "import", "const", "var"
+	Name      string   `json:"name"`
+	StartLine int      `json:"start_line"`
+	EndLine   int      `json:"end_line"`
+	Content   string   `json:"content"`
+	Language  Language `json:"language"`
 }
 
 // SemanticChange represents a single semantic change.
@@ -63,11 +63,11 @@ type SemanticChange struct {
 
 // DiffResult holds the complete semantic diff.
 type DiffResult struct {
-	Language Language          `json:"language"`
-	OldFile  string            `json:"old_file"`
-	NewFile  string            `json:"new_file"`
-	Changes  []SemanticChange  `json:"changes"`
-	Stats    DiffStats         `json:"stats"`
+	Language Language         `json:"language"`
+	OldFile  string           `json:"old_file"`
+	NewFile  string           `json:"new_file"`
+	Changes  []SemanticChange `json:"changes"`
+	Stats    DiffStats        `json:"stats"`
 }
 
 // DiffStats holds diff statistics.
@@ -343,7 +343,7 @@ func parseGo(content string) []CodeBlock {
 					braceDepth = 1
 				} else {
 					blocks = append(blocks, CodeBlock{
-						Type:      blockType, Name: blockName,
+						Type: blockType, Name: blockName,
 						StartLine: blockStart, EndLine: i + 1,
 						Content: line, Language: LangGo,
 					})

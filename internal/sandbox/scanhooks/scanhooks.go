@@ -49,33 +49,33 @@ type Finding struct {
 
 // ScanResult is the result of a scan hook.
 type ScanResult struct {
-	HookType   HookType   `json:"hook_type"`
-	AgentID    string     `json:"agent_id"`
-	Timestamp  time.Time  `json:"timestamp"`
-	Findings   []Finding  `json:"findings"`
-	Blocked    bool       `json:"blocked"`
-	BlockReason string   `json:"block_reason,omitempty"`
-	Duration   string     `json:"duration"`
+	HookType    HookType  `json:"hook_type"`
+	AgentID     string    `json:"agent_id"`
+	Timestamp   time.Time `json:"timestamp"`
+	Findings    []Finding `json:"findings"`
+	Blocked     bool      `json:"blocked"`
+	BlockReason string    `json:"block_reason,omitempty"`
+	Duration    string    `json:"duration"`
 }
 
 // HookConfig configures a scan hook.
 type HookConfig struct {
-	Name        string   `json:"name"`
-	Type        HookType `json:"type"`
-	Enabled     bool     `json:"enabled"`
-	BlockOn     []Severity `json:"block_on"` // severities that block execution
-	SecretScan  bool     `json:"secret_scan"`
-	VulnScan    bool     `json:"vuln_scan"`
-	PolicyScan  bool     `json:"policy_scan"`
-	Paths       []string `json:"paths"` // paths to scan
+	Name       string     `json:"name"`
+	Type       HookType   `json:"type"`
+	Enabled    bool       `json:"enabled"`
+	BlockOn    []Severity `json:"block_on"` // severities that block execution
+	SecretScan bool       `json:"secret_scan"`
+	VulnScan   bool       `json:"vuln_scan"`
+	PolicyScan bool       `json:"policy_scan"`
+	Paths      []string   `json:"paths"` // paths to scan
 }
 
 // Scanner runs security scanning hooks.
 type Scanner struct {
-	configs map[string]*HookConfig
-	history []ScanResult
+	configs  map[string]*HookConfig
+	history  []ScanResult
 	storeDir string
-	mu      sync.RWMutex
+	mu       sync.RWMutex
 }
 
 // NewScanner creates a security scanner.
@@ -98,11 +98,11 @@ func (s *Scanner) registerDefaults() {
 		PolicyScan: true,
 	}
 	s.configs["post-default"] = &HookConfig{
-		Name:      "Post-execution scan",
-		Type:      HookPost,
-		Enabled:   true,
-		BlockOn:   []Severity{SevCritical},
-		VulnScan:  true,
+		Name:       "Post-execution scan",
+		Type:       HookPost,
+		Enabled:    true,
+		BlockOn:    []Severity{SevCritical},
+		VulnScan:   true,
 		PolicyScan: true,
 	}
 }
@@ -194,9 +194,9 @@ func (s *Scanner) scanSecrets(paths []string) []Finding {
 	var findings []Finding
 
 	patterns := []struct {
-		name    string
-		regex   string
-		sev     Severity
+		name  string
+		regex string
+		sev   Severity
 	}{
 		{"AWS Access Key", `AKIA[0-9A-Z]{16}`, SevCritical},
 		{"AWS Secret Key", `(?i)aws_secret_access_key\s*[=:]\s*\S{20,}`, SevCritical},
@@ -246,9 +246,9 @@ func (s *Scanner) scanVulnerabilities(paths []string) []Finding {
 	var findings []Finding
 
 	patterns := []struct {
-		name   string
-		regex  string
-		sev    Severity
+		name  string
+		regex string
+		sev   Severity
 	}{
 		{"SQL Injection", `(?i)(SELECT|INSERT|UPDATE|DELETE).*\+\s*(req|params|input)`, SevHigh},
 		{"Command Injection", `(?i)(exec|system|popen|shell)\s*\(\s*.*\+`, SevHigh},

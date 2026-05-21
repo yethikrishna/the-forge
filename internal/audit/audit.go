@@ -21,21 +21,21 @@ import (
 type Action string
 
 const (
-	ActionCreate      Action = "create"
-	ActionRead        Action = "read"
-	ActionUpdate      Action = "update"
-	ActionDelete      Action = "delete"
-	ActionExecute     Action = "execute"
-	ActionLogin       Action = "login"
-	ActionLogout      Action = "logout"
-	ActionDeploy      Action = "deploy"
-	ActionRollback    Action = "rollback"
-	ActionConfig      Action = "config_change"
-	ActionAccess      Action = "access"
-	ActionExport      Action = "export"
-	ActionImport      Action = "import"
-	ActionApprove     Action = "approve"
-	ActionReject      Action = "reject"
+	ActionCreate   Action = "create"
+	ActionRead     Action = "read"
+	ActionUpdate   Action = "update"
+	ActionDelete   Action = "delete"
+	ActionExecute  Action = "execute"
+	ActionLogin    Action = "login"
+	ActionLogout   Action = "logout"
+	ActionDeploy   Action = "deploy"
+	ActionRollback Action = "rollback"
+	ActionConfig   Action = "config_change"
+	ActionAccess   Action = "access"
+	ActionExport   Action = "export"
+	ActionImport   Action = "import"
+	ActionApprove  Action = "approve"
+	ActionReject   Action = "reject"
 )
 
 // Severity represents audit log severity.
@@ -49,25 +49,25 @@ const (
 
 // Entry represents a single audit log entry.
 type Entry struct {
-	ID         string            `json:"id"`
-	Timestamp  time.Time         `json:"timestamp"`
-	Action     Action            `json:"action"`
-	Actor      string            `json:"actor"`       // who performed the action
-	Resource   string            `json:"resource"`    // what was acted upon
-	Details    string            `json:"details,omitempty"`
-	Before     string            `json:"before,omitempty"` // state before (for updates)
-	After      string            `json:"after,omitempty"`  // state after (for updates)
-	Severity   Severity          `json:"severity"`
-	Source     string            `json:"source,omitempty"` // IP, agent ID, etc.
-	SessionID  string            `json:"session_id,omitempty"`
-	Labels     map[string]string `json:"labels,omitempty"`
-	PrevHash   string            `json:"prev_hash"`    // hash of previous entry (chain)
-	Hash       string            `json:"hash"`         // hash of this entry
+	ID        string            `json:"id"`
+	Timestamp time.Time         `json:"timestamp"`
+	Action    Action            `json:"action"`
+	Actor     string            `json:"actor"`    // who performed the action
+	Resource  string            `json:"resource"` // what was acted upon
+	Details   string            `json:"details,omitempty"`
+	Before    string            `json:"before,omitempty"` // state before (for updates)
+	After     string            `json:"after,omitempty"`  // state after (for updates)
+	Severity  Severity          `json:"severity"`
+	Source    string            `json:"source,omitempty"` // IP, agent ID, etc.
+	SessionID string            `json:"session_id,omitempty"`
+	Labels    map[string]string `json:"labels,omitempty"`
+	PrevHash  string            `json:"prev_hash"` // hash of previous entry (chain)
+	Hash      string            `json:"hash"`      // hash of this entry
 }
 
 // Log manages audit entries.
 type Log struct {
-	Dir    string
+	Dir      string
 	lastHash string
 }
 

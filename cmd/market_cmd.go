@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/skillmarket"
+	"github.com/spf13/cobra"
 )
 
 var marketCmd = &cobra.Command{
@@ -14,10 +14,10 @@ var marketCmd = &cobra.Command{
 }
 
 var (
-	marketDir     string
-	marketCat     string
-	marketAuthor  string
-	marketEntry   string
+	marketDir    string
+	marketCat    string
+	marketAuthor string
+	marketEntry  string
 )
 
 func init() {

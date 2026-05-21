@@ -33,12 +33,12 @@ type CommitInfo struct {
 
 // FileHistory represents the history of a file.
 type FileHistory struct {
-	Path        string       `json:"path"`
-	TotalCommits int         `json:"total_commits"`
-	Authors     []string     `json:"authors"`
-	Commits     []CommitInfo `json:"commits"`
-	ChurnScore  float64      `json:"churn_score"`
-	LastChanged time.Time    `json:"last_changed"`
+	Path         string       `json:"path"`
+	TotalCommits int          `json:"total_commits"`
+	Authors      []string     `json:"authors"`
+	Commits      []CommitInfo `json:"commits"`
+	ChurnScore   float64      `json:"churn_score"`
+	LastChanged  time.Time    `json:"last_changed"`
 }
 
 // DeadCodeCandidate represents a potential dead code location.

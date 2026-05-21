@@ -63,11 +63,11 @@ type Plugin interface {
 
 // Context provides the plugin with access to Forge internals.
 type Context struct {
-	Config    map[string]interface{}
-	EventBus  EventBus
-	Store     Store
-	Logger    Logger
-	Metrics   Metrics
+	Config   map[string]interface{}
+	EventBus EventBus
+	Store    Store
+	Logger   Logger
+	Metrics  Metrics
 }
 
 // EventBus allows plugins to publish and subscribe to events.
@@ -108,8 +108,8 @@ type Metrics interface {
 
 // Hook represents a lifecycle hook subscription.
 type Hook struct {
-	Event    string    // "agent.before_call", "agent.after_call", "tool.before", "tool.after", "session.start", "session.end"
-	Priority int       // lower = runs first (default: 100)
+	Event    string // "agent.before_call", "agent.after_call", "tool.before", "tool.after", "session.start", "session.end"
+	Priority int    // lower = runs first (default: 100)
 	Handler  HookHandler
 }
 
@@ -130,10 +130,10 @@ type Event struct {
 
 // Result represents the outcome of a hook handler.
 type Result struct {
-	Modified bool                // whether the event data was modified
+	Modified bool                   // whether the event data was modified
 	Data     map[string]interface{} // modified event data
-	Error    string              // error message if the hook failed
-	Skip     bool                // skip remaining hooks
+	Error    string                 // error message if the hook failed
+	Skip     bool                   // skip remaining hooks
 }
 
 // Tool represents a custom tool that agents can use.
@@ -166,12 +166,12 @@ type MiddlewareNext func(ctx context.Context, req *AgentRequest) (*AgentResponse
 
 // AgentRequest represents a request to an AI agent.
 type AgentRequest struct {
-	AgentID    string
-	Model      string
-	Prompt     string
-	Tools      []string
-	Context    map[string]interface{}
-	MaxTokens  int
+	AgentID     string
+	Model       string
+	Prompt      string
+	Tools       []string
+	Context     map[string]interface{}
+	MaxTokens   int
 	Temperature float64
 }
 
@@ -203,8 +203,8 @@ type Registry struct {
 }
 
 type hookEntry struct {
-	plugin  string
-	hook    *Hook
+	plugin string
+	hook   *Hook
 }
 
 // NewRegistry creates a new plugin registry.

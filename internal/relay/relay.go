@@ -32,23 +32,23 @@ const (
 
 // Message represents a relay message.
 type Message struct {
-	ID          string            `json:"id"`
-	From        string            `json:"from"`
-	To          string            `json:"to"`     // agent ID or "broadcast" or channel name
-	Channel     string            `json:"channel,omitempty"`
-	Subject     string            `json:"subject"`
-	Body        string            `json:"body"`
-	Priority    int               `json:"priority"`
-	State       MessageState      `json:"state"`
-	CreatedAt   time.Time         `json:"created_at"`
-	DeliveredAt time.Time         `json:"delivered_at,omitempty"`
-	AckedAt     time.Time         `json:"acked_at,omitempty"`
-	ExpiresAt   time.Time         `json:"expires_at,omitempty"`
-	Retries     int               `json:"retries"`
-	MaxRetries  int               `json:"max_retries"`
-	Headers     map[string]string `json:"headers,omitempty"`
-	CorrelationID string          `json:"correlation_id,omitempty"` // for request/response
-	ReplyTo     string            `json:"reply_to,omitempty"`       // channel for replies
+	ID            string            `json:"id"`
+	From          string            `json:"from"`
+	To            string            `json:"to"` // agent ID or "broadcast" or channel name
+	Channel       string            `json:"channel,omitempty"`
+	Subject       string            `json:"subject"`
+	Body          string            `json:"body"`
+	Priority      int               `json:"priority"`
+	State         MessageState      `json:"state"`
+	CreatedAt     time.Time         `json:"created_at"`
+	DeliveredAt   time.Time         `json:"delivered_at,omitempty"`
+	AckedAt       time.Time         `json:"acked_at,omitempty"`
+	ExpiresAt     time.Time         `json:"expires_at,omitempty"`
+	Retries       int               `json:"retries"`
+	MaxRetries    int               `json:"max_retries"`
+	Headers       map[string]string `json:"headers,omitempty"`
+	CorrelationID string            `json:"correlation_id,omitempty"` // for request/response
+	ReplyTo       string            `json:"reply_to,omitempty"`       // channel for replies
 }
 
 // Subscription represents an agent's subscription to a channel.
@@ -73,8 +73,8 @@ type ChannelStats struct {
 type Relay struct {
 	mu            sync.RWMutex
 	dir           string
-	queues        map[string][]*Message       // agent/channel -> message queue
-	subscriptions map[string][]*Subscription   // channel -> subscriptions
+	queues        map[string][]*Message      // agent/channel -> message queue
+	subscriptions map[string][]*Subscription // channel -> subscriptions
 	deadLetters   []*Message
 	allMessages   map[string]*Message
 	stats         RelayStats
@@ -82,12 +82,12 @@ type Relay struct {
 
 // RelayStats holds relay statistics.
 type RelayStats struct {
-	TotalSent      int `json:"total_sent"`
-	TotalDelivered int `json:"total_delivered"`
-	TotalAcked     int `json:"total_acked"`
-	TotalFailed    int `json:"total_failed"`
-	TotalDead      int `json:"total_dead"`
-	ChannelCount   int `json:"channel_count"`
+	TotalSent       int `json:"total_sent"`
+	TotalDelivered  int `json:"total_delivered"`
+	TotalAcked      int `json:"total_acked"`
+	TotalFailed     int `json:"total_failed"`
+	TotalDead       int `json:"total_dead"`
+	ChannelCount    int `json:"channel_count"`
 	SubscriberCount int `json:"subscriber_count"`
 }
 

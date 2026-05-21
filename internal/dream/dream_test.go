@@ -39,13 +39,13 @@ func TestStartAndComplete(t *testing.T) {
 
 	// Add insight
 	err = engine.AddInsight(d.ID, dream.Insight{
-		Type:        "prediction",
-		Title:       "Caching reduces latency by 40%",
-		Confidence:  0.85,
-		Impact:      0.7,
-		Urgency:     0.5,
-		Actionable:  true,
-		Action:      "Enable caching for hot paths",
+		Type:       "prediction",
+		Title:      "Caching reduces latency by 40%",
+		Confidence: 0.85,
+		Impact:     0.7,
+		Urgency:    0.5,
+		Actionable: true,
+		Action:     "Enable caching for hot paths",
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

@@ -25,10 +25,10 @@ const (
 // Frame types (flags).
 const (
 	flagSYN  uint32 = 1 << iota // Stream open
-	flagACK                      // Stream acknowledged
-	flagFIN                      // Stream closed (write side)
-	flagRST                      // Stream reset
-	flagDATA                     // Data frame
+	flagACK                     // Stream acknowledged
+	flagFIN                     // Stream closed (write side)
+	flagRST                     // Stream reset
+	flagDATA                    // Data frame
 )
 
 // ErrSessionClosed is returned when the session is closed.
@@ -55,8 +55,8 @@ func DefaultConfig() *Config {
 
 // Session manages a multiplexed connection.
 type Session struct {
-	conn    net.Conn
-	config  *Config
+	conn     net.Conn
+	config   *Config
 	isClient bool
 
 	nextStreamID atomic.Uint32
@@ -86,13 +86,13 @@ func newSession(conn net.Conn, config *Config, isClient bool) *Session {
 	}
 
 	s := &Session{
-		conn:      conn,
-		config:    config,
-		isClient:  isClient,
-		streams:   make(map[uint32]*Stream),
-		readCh:    make(chan []byte, 64),
-		errCh:     make(chan error, 1),
-		closeCh:   make(chan struct{}),
+		conn:     conn,
+		config:   config,
+		isClient: isClient,
+		streams:  make(map[uint32]*Stream),
+		readCh:   make(chan []byte, 64),
+		errCh:    make(chan error, 1),
+		closeCh:  make(chan struct{}),
 	}
 
 	// Start client stream ID at 1 or 2 depending on role
@@ -293,11 +293,11 @@ type Stream struct {
 	id      uint32
 	session *Session
 
-	readBuf  []byte
-	readCh   chan []byte
-	writeCh  chan []byte
-	closeCh  chan struct{}
-	closed   atomic.Bool
+	readBuf     []byte
+	readCh      chan []byte
+	writeCh     chan []byte
+	closeCh     chan struct{}
+	closed      atomic.Bool
 	writeClosed atomic.Bool
 }
 

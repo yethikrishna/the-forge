@@ -17,11 +17,11 @@ import (
 type Encoding string
 
 const (
-	EncodingCl100k  Encoding = "cl100k_base"  // GPT-4, GPT-3.5-turbo
-	EncodingP50k    Encoding = "p50k_base"     // Code models
-	EncodingR50k    Encoding = "r50k_base"     // Legacy
-	EncodingO200k   Encoding = "o200k_base"    // GPT-4o, o1
-	EncodingSimple  Encoding = "simple"         // Approximate word-based
+	EncodingCl100k Encoding = "cl100k_base" // GPT-4, GPT-3.5-turbo
+	EncodingP50k   Encoding = "p50k_base"   // Code models
+	EncodingR50k   Encoding = "r50k_base"   // Legacy
+	EncodingO200k  Encoding = "o200k_base"  // GPT-4o, o1
+	EncodingSimple Encoding = "simple"      // Approximate word-based
 )
 
 // ModelEncoding maps model names to their encodings.
@@ -34,7 +34,7 @@ var ModelEncoding = map[string]Encoding{
 	"o1":            EncodingO200k,
 	"o1-mini":       EncodingO200k,
 	"o1-pro":        EncodingO200k,
-	"claude-3":      EncodingCl100k,  // approximate
+	"claude-3":      EncodingCl100k, // approximate
 	"claude-3.5":    EncodingCl100k,
 	"claude-4":      EncodingCl100k,
 	"gemini-pro":    EncodingCl100k,
@@ -44,7 +44,7 @@ var ModelEncoding = map[string]Encoding{
 
 // CharToTokenRatio maps encodings to approximate characters-per-token ratios.
 var CharToTokenRatio = map[Encoding]float64{
-	EncodingCl100k: 3.8,  // ~3.8 chars per token for English
+	EncodingCl100k: 3.8, // ~3.8 chars per token for English
 	EncodingP50k:   3.6,
 	EncodingR50k:   3.5,
 	EncodingO200k:  3.9,
@@ -53,15 +53,15 @@ var CharToTokenRatio = map[Encoding]float64{
 
 // TokenCount holds the result of token counting.
 type TokenCount struct {
-	Text         string  `json:"text,omitempty"`
-	Tokens       int     `json:"tokens"`
-	Characters   int     `json:"characters"`
-	Words        int     `json:"words"`
-	Lines        int     `json:"lines"`
-	Encoding     Encoding `json:"encoding"`
-	Model        string  `json:"model,omitempty"`
-	Ratio        float64 `json:"ratio"` // chars/token actually achieved
-	IsEstimate   bool    `json:"is_estimate"`
+	Text       string   `json:"text,omitempty"`
+	Tokens     int      `json:"tokens"`
+	Characters int      `json:"characters"`
+	Words      int      `json:"words"`
+	Lines      int      `json:"lines"`
+	Encoding   Encoding `json:"encoding"`
+	Model      string   `json:"model,omitempty"`
+	Ratio      float64  `json:"ratio"` // chars/token actually achieved
+	IsEstimate bool     `json:"is_estimate"`
 }
 
 // Tokenizer counts tokens.
@@ -163,13 +163,13 @@ type Message struct {
 
 // CostEstimate holds a cost estimate.
 type CostEstimate struct {
-	Model       string  `json:"model"`
-	InputTokens int     `json:"input_tokens"`
-	OutputTokens int    `json:"output_tokens"`
-	InputCost   float64 `json:"input_cost"`
-	OutputCost  float64 `json:"output_cost"`
-	TotalCost   float64 `json:"total_cost"`
-	Currency    string  `json:"currency"`
+	Model        string  `json:"model"`
+	InputTokens  int     `json:"input_tokens"`
+	OutputTokens int     `json:"output_tokens"`
+	InputCost    float64 `json:"input_cost"`
+	OutputCost   float64 `json:"output_cost"`
+	TotalCost    float64 `json:"total_cost"`
+	Currency     string  `json:"currency"`
 }
 
 // ModelPricing maps models to their per-token prices.

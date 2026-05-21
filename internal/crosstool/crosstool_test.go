@@ -14,7 +14,7 @@ func TestRegisterCursor(t *testing.T) {
 	}
 
 	info, err := cb.Register(ToolCursor, CursorConfig{
-		Endpoint: "http://localhost:9999",
+		Endpoint:  "http://localhost:9999",
 		Workspace: "/tmp/project",
 	})
 	if err != nil {
@@ -36,8 +36,8 @@ func TestRegisterCopilot(t *testing.T) {
 	cb, _ := NewCrossBridge(dir)
 
 	info, err := cb.Register(ToolCopilot, CopilotConfig{
-		Token:  "ghp_test",
-		Repo:   "org/repo",
+		Token: "ghp_test",
+		Repo:  "org/repo",
 	})
 	if err != nil {
 		t.Fatalf("Register: %v", err)
@@ -209,8 +209,8 @@ func TestPersistence(t *testing.T) {
 
 func TestTranslateCapability(t *testing.T) {
 	tests := []struct {
-		from, to   ToolType
-		cap, want  string
+		from, to  ToolType
+		cap, want string
 	}{
 		{"cursor", "forge", "code_edit", "patch"},
 		{"cursor", "forge", "file_search", "search"},

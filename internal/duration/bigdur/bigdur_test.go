@@ -31,8 +31,8 @@ func TestParseStandardDurations(t *testing.T) {
 
 func TestParseExtendedDurations(t *testing.T) {
 	tests := []struct {
-		input    string
-		minimum  time.Duration
+		input   string
+		minimum time.Duration
 	}{
 		{"1d", 24 * time.Hour},
 		{"2d", 48 * time.Hour},

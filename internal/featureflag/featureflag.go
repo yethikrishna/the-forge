@@ -18,10 +18,10 @@ import (
 type FlagType string
 
 const (
-	FlagBool     FlagType = "bool"      // On/off
-	FlagPercent  FlagType = "percent"   // Rollout percentage
-	FlagVariant  FlagType = "variant"   // A/B/n test variants
-	FlagSchedule FlagType = "schedule"  // Time-based enablement
+	FlagBool     FlagType = "bool"     // On/off
+	FlagPercent  FlagType = "percent"  // Rollout percentage
+	FlagVariant  FlagType = "variant"  // A/B/n test variants
+	FlagSchedule FlagType = "schedule" // Time-based enablement
 )
 
 // FlagStatus defines the status of a flag.
@@ -51,46 +51,46 @@ type Rule struct {
 
 // Flag represents a feature flag.
 type Flag struct {
-	ID           string     `json:"id"`
-	Name         string     `json:"name"`
-	Type         FlagType   `json:"type"`
-	Status       FlagStatus `json:"status"`
-	Description  string     `json:"description,omitempty"`
-	Owner        string     `json:"owner,omitempty"`
+	ID          string     `json:"id"`
+	Name        string     `json:"name"`
+	Type        FlagType   `json:"type"`
+	Status      FlagStatus `json:"status"`
+	Description string     `json:"description,omitempty"`
+	Owner       string     `json:"owner,omitempty"`
 
 	// Bool flags
-	Enabled      bool       `json:"enabled"`
+	Enabled bool `json:"enabled"`
 
 	// Percent flags
-	Percentage   float64    `json:"percentage,omitempty"` // 0-100
+	Percentage float64 `json:"percentage,omitempty"` // 0-100
 
 	// Variant flags
-	Variants     []Variant  `json:"variants,omitempty"`
+	Variants []Variant `json:"variants,omitempty"`
 
 	// Schedule flags
 	ScheduleFrom *time.Time `json:"schedule_from,omitempty"`
 	ScheduleTo   *time.Time `json:"schedule_to,omitempty"`
 
 	// Targeting
-	Rules        []Rule     `json:"rules,omitempty"`
-	DefaultVariant string   `json:"default_variant,omitempty"`
+	Rules          []Rule `json:"rules,omitempty"`
+	DefaultVariant string `json:"default_variant,omitempty"`
 
 	// Metadata
-	CreatedAt    time.Time  `json:"created_at"`
-	UpdatedAt    time.Time  `json:"updated_at"`
-	EnabledAt    *time.Time `json:"enabled_at,omitempty"`
-	DisabledAt   *time.Time `json:"disabled_at,omitempty"`
-	EvalCount    int64      `json:"eval_count"`
-	LastEvalAt   *time.Time `json:"last_eval_at,omitempty"`
+	CreatedAt  time.Time  `json:"created_at"`
+	UpdatedAt  time.Time  `json:"updated_at"`
+	EnabledAt  *time.Time `json:"enabled_at,omitempty"`
+	DisabledAt *time.Time `json:"disabled_at,omitempty"`
+	EvalCount  int64      `json:"eval_count"`
+	LastEvalAt *time.Time `json:"last_eval_at,omitempty"`
 }
 
 // EvaluationResult is the result of evaluating a flag.
 type EvaluationResult struct {
-	FlagID    string `json:"flag_id"`
-	FlagName  string `json:"flag_name"`
-	Enabled   bool   `json:"enabled"`
-	Variant   string `json:"variant,omitempty"`
-	Reason    string `json:"reason"`
+	FlagID   string `json:"flag_id"`
+	FlagName string `json:"flag_name"`
+	Enabled  bool   `json:"enabled"`
+	Variant  string `json:"variant,omitempty"`
+	Reason   string `json:"reason"`
 }
 
 // Context provides context for flag evaluation.
@@ -366,10 +366,10 @@ func (m *Manager) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"total_flags":  len(m.flags),
-		"by_type":      byType,
-		"by_status":    byStatus,
-		"total_evals":  totalEvals,
+		"total_flags": len(m.flags),
+		"by_type":     byType,
+		"by_status":   byStatus,
+		"total_evals": totalEvals,
 	}
 }
 

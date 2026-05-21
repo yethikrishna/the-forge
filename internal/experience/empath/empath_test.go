@@ -245,8 +245,8 @@ func TestHistoryMaxLimit(t *testing.T) {
 
 func TestScoreToLevel(t *testing.T) {
 	tests := []struct {
-		score   float64
-		level   FrustrationLevel
+		score float64
+		level FrustrationLevel
 	}{
 		{0, LevelCalm},
 		{5, LevelCalm},

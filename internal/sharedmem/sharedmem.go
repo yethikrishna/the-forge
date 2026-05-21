@@ -38,9 +38,9 @@ type Pattern struct {
 type PrivacyLevel string
 
 const (
-	PrivacyPrivate  PrivacyLevel = "private"  // Only the contributor
-	PrivacyTeam     PrivacyLevel = "team"     // Team members only
-	PrivacyPublic   PrivacyLevel = "public"   // Everyone
+	PrivacyPrivate PrivacyLevel = "private" // Only the contributor
+	PrivacyTeam    PrivacyLevel = "team"    // Team members only
+	PrivacyPublic  PrivacyLevel = "public"  // Everyone
 )
 
 // Insight is a shared learning insight.
@@ -294,9 +294,9 @@ func (s *Store) Stats() map[string]interface{} {
 		catCount[p.Category]++
 	}
 	return map[string]interface{}{
-		"patterns":    len(s.patterns),
-		"insights":    len(s.insights),
-		"categories":  catCount,
+		"patterns":   len(s.patterns),
+		"insights":   len(s.insights),
+		"categories": catCount,
 	}
 }
 

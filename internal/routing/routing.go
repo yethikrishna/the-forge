@@ -30,13 +30,13 @@ const (
 
 // Agent represents a routable agent endpoint.
 type Agent struct {
-	ID       string  `json:"id"`
-	Name     string  `json:"name"`
-	URL      string  `json:"url"`
-	Weight   float64 `json:"weight"`
-	Active   int64   `json:"active"`
-	Latency  float64 `json:"latency_ms"` // average latency in ms
-	Healthy  bool    `json:"healthy"`
+	ID       string            `json:"id"`
+	Name     string            `json:"name"`
+	URL      string            `json:"url"`
+	Weight   float64           `json:"weight"`
+	Active   int64             `json:"active"`
+	Latency  float64           `json:"latency_ms"` // average latency in ms
+	Healthy  bool              `json:"healthy"`
 	Metadata map[string]string `json:"metadata,omitempty"`
 }
 

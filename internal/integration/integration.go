@@ -21,31 +21,31 @@ import (
 type Provider string
 
 const (
-	ProviderJira   Provider = "jira"
-	ProviderLinear Provider = "linear"
-	ProviderNotion Provider = "notion"
-	ProviderGitHub Provider = "github"
+	ProviderJira    Provider = "jira"
+	ProviderLinear  Provider = "linear"
+	ProviderNotion  Provider = "notion"
+	ProviderGitHub  Provider = "github"
 	ProviderGeneric Provider = "generic"
 )
 
 // Task represents a task/ticket/issue across any provider.
 type Task struct {
-	ID          string            `json:"id"`
-	ProviderKey string            `json:"provider_key"` // e.g., PROJ-123, ENG-456
-	Title       string            `json:"title"`
-	Description string            `json:"description"`
-	Status      string            `json:"status"`
-	Priority    string            `json:"priority"` // critical, high, medium, low
-	Assignee    string            `json:"assignee"`
-	Labels      []string          `json:"labels"`
-	Project     string            `json:"project"`
-	ParentID    string            `json:"parent_id,omitempty"`
-	Subtasks    []string          `json:"subtasks,omitempty"`
-	URL         string            `json:"url"`
+	ID           string            `json:"id"`
+	ProviderKey  string            `json:"provider_key"` // e.g., PROJ-123, ENG-456
+	Title        string            `json:"title"`
+	Description  string            `json:"description"`
+	Status       string            `json:"status"`
+	Priority     string            `json:"priority"` // critical, high, medium, low
+	Assignee     string            `json:"assignee"`
+	Labels       []string          `json:"labels"`
+	Project      string            `json:"project"`
+	ParentID     string            `json:"parent_id,omitempty"`
+	Subtasks     []string          `json:"subtasks,omitempty"`
+	URL          string            `json:"url"`
 	CustomFields map[string]string `json:"custom_fields,omitempty"`
-	CreatedAt   time.Time         `json:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at"`
-	DueDate     *time.Time        `json:"due_date,omitempty"`
+	CreatedAt    time.Time         `json:"created_at"`
+	UpdatedAt    time.Time         `json:"updated_at"`
+	DueDate      *time.Time        `json:"due_date,omitempty"`
 }
 
 // Comment represents a comment on a task.
@@ -59,23 +59,23 @@ type Comment struct {
 
 // Config holds connection configuration for a provider.
 type Config struct {
-	Provider  Provider       `json:"provider"`
-	Name      string         `json:"name"`
-	BaseURL   string         `json:"base_url,omitempty"`
-	APIToken  string         `json:"api_token,omitempty"`
-	Email     string         `json:"email,omitempty"`
-	Project   string         `json:"project,omitempty"`
-	Workspace string         `json:"workspace,omitempty"`
+	Provider  Provider          `json:"provider"`
+	Name      string            `json:"name"`
+	BaseURL   string            `json:"base_url,omitempty"`
+	APIToken  string            `json:"api_token,omitempty"`
+	Email     string            `json:"email,omitempty"`
+	Project   string            `json:"project,omitempty"`
+	Workspace string            `json:"workspace,omitempty"`
 	Settings  map[string]string `json:"settings,omitempty"`
 }
 
 // Connection manages an integration connection.
 type Connection struct {
-	ID        string    `json:"id"`
-	Config    Config    `json:"config"`
-	Status    string    `json:"status"` // active, error, disconnected
+	ID        string     `json:"id"`
+	Config    Config     `json:"config"`
+	Status    string     `json:"status"` // active, error, disconnected
 	LastSync  *time.Time `json:"last_sync,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	CreatedAt time.Time  `json:"created_at"`
 }
 
 // Manager manages all integration connections.

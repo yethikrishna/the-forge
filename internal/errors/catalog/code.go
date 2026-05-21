@@ -19,24 +19,24 @@ import (
 type Category string
 
 const (
-	CatGeneral     Category = "general"
-	CatAgent       Category = "agent"
-	CatModel       Category = "model"
-	CatConfig      Category = "config"
-	CatNetwork     Category = "network"
-	CatSecurity    Category = "security"
-	CatSandbox     Category = "sandbox"
-	CatGit         Category = "git"
-	CatStorage     Category = "storage"
-	CatPipeline    Category = "pipeline"
-	CatPlugin      Category = "plugin"
-	CatAuth        Category = "auth"
-	CatCost        Category = "cost"
-	CatWorkspace   Category = "workspace"
-	CatSchedule    Category = "schedule"
-	CatSnapshot    Category = "snapshot"
-	CatQueue       Category = "queue"
-	CatMemory      Category = "memory"
+	CatGeneral   Category = "general"
+	CatAgent     Category = "agent"
+	CatModel     Category = "model"
+	CatConfig    Category = "config"
+	CatNetwork   Category = "network"
+	CatSecurity  Category = "security"
+	CatSandbox   Category = "sandbox"
+	CatGit       Category = "git"
+	CatStorage   Category = "storage"
+	CatPipeline  Category = "pipeline"
+	CatPlugin    Category = "plugin"
+	CatAuth      Category = "auth"
+	CatCost      Category = "cost"
+	CatWorkspace Category = "workspace"
+	CatSchedule  Category = "schedule"
+	CatSnapshot  Category = "snapshot"
+	CatQueue     Category = "queue"
+	CatMemory    Category = "memory"
 )
 
 // Severity indicates how critical an error is.
@@ -51,22 +51,22 @@ const (
 
 // Code represents a single error code definition.
 type Code struct {
-	ID          string   `json:"id"`           // e.g. "FORGE-E001"
-	Code        int      `json:"code"`         // numeric code e.g. 1
+	ID          string   `json:"id"`   // e.g. "FORGE-E001"
+	Code        int      `json:"code"` // numeric code e.g. 1
 	Category    Category `json:"category"`
 	Severity    Severity `json:"severity"`
-	Title       string   `json:"title"`        // short description
-	Description string   `json:"description"`  // detailed explanation
-	Fix         string   `json:"fix"`          // how to fix it
+	Title       string   `json:"title"`       // short description
+	Description string   `json:"description"` // detailed explanation
+	Fix         string   `json:"fix"`         // how to fix it
 	DocsURL     string   `json:"docs_url,omitempty"`
 }
 
 // ForgeError is a structured error with a code.
 type ForgeError struct {
-	Code     Code            `json:"code"`
-	Message  string          `json:"message"`            // user-facing message
-	Details  string          `json:"details,omitempty"`  // technical details
-	Metadata map[string]any  `json:"metadata,omitempty"` // additional context
+	Code     Code           `json:"code"`
+	Message  string         `json:"message"`            // user-facing message
+	Details  string         `json:"details,omitempty"`  // technical details
+	Metadata map[string]any `json:"metadata,omitempty"` // additional context
 }
 
 func (e *ForgeError) Error() string {

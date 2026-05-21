@@ -26,10 +26,10 @@ func TestDefaultRoles(t *testing.T) {
 func TestRegister(t *testing.T) {
 	r := NewRegistry("")
 	err := r.Register(Role{
-		ID:          "custom",
-		Name:        "Custom Agent",
-		Description: "A custom role",
-		Capabilities: []string{"custom_stuff"},
+		ID:             "custom",
+		Name:           "Custom Agent",
+		Description:    "A custom role",
+		Capabilities:   []string{"custom_stuff"},
 		AllowedActions: []string{"read"},
 	})
 	if err != nil {
@@ -201,10 +201,10 @@ func TestPersistence(t *testing.T) {
 
 func TestFormatRole(t *testing.T) {
 	role := &Role{
-		ID:            "coder",
-		Name:          "Coder",
-		Description:   "Writes code",
-		Capabilities:  []string{"code_generation"},
+		ID:             "coder",
+		Name:           "Coder",
+		Description:    "Writes code",
+		Capabilities:   []string{"code_generation"},
 		AllowedActions: []string{"read", "write"},
 		DeniedActions:  []string{"delete"},
 	}

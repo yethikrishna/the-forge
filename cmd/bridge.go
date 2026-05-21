@@ -7,8 +7,8 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/forge/sword/internal/bridge"
 	"github.com/forge/sword/internal/auth/identity"
+	"github.com/forge/sword/internal/bridge"
 	"github.com/spf13/cobra"
 )
 

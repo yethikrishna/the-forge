@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/sessiontag"
+	"github.com/spf13/cobra"
 )
 
 var stagCmd = &cobra.Command{
@@ -14,8 +14,8 @@ var stagCmd = &cobra.Command{
 }
 
 var (
-	stagDir   string
-	stagTags  []string
+	stagDir  string
+	stagTags []string
 )
 
 func init() {

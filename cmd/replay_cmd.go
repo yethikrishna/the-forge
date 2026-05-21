@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/replay"
+	"github.com/spf13/cobra"
 )
 
 var replayCmd = &cobra.Command{

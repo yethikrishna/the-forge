@@ -13,18 +13,18 @@ import (
 
 // UsageRecord represents a single token usage event.
 type UsageRecord struct {
-	ID          string    `json:"id"`
-	Timestamp   time.Time `json:"timestamp"`
-	Agent       string    `json:"agent"`
-	Session     string    `json:"session"`
-	Model       string    `json:"model"`
-	InputTokens int64     `json:"input_tokens"`
-	OutputTokens int64    `json:"output_tokens"`
-	InputCost   float64   `json:"input_cost"`
-	OutputCost  float64   `json:"output_cost"`
-	TotalCost   float64   `json:"total_cost"`
-	Project     string    `json:"project,omitempty"`
-	Task        string    `json:"task,omitempty"`
+	ID           string    `json:"id"`
+	Timestamp    time.Time `json:"timestamp"`
+	Agent        string    `json:"agent"`
+	Session      string    `json:"session"`
+	Model        string    `json:"model"`
+	InputTokens  int64     `json:"input_tokens"`
+	OutputTokens int64     `json:"output_tokens"`
+	InputCost    float64   `json:"input_cost"`
+	OutputCost   float64   `json:"output_cost"`
+	TotalCost    float64   `json:"total_cost"`
+	Project      string    `json:"project,omitempty"`
+	Task         string    `json:"task,omitempty"`
 }
 
 // SessionSummary is a cost summary for a session.
@@ -61,14 +61,14 @@ type MonthlySummary struct {
 
 // BudgetStatus represents the current budget status.
 type BudgetStatus struct {
-	Period       string  `json:"period"`
-	Budget       float64 `json:"budget"`
-	Spent        float64 `json:"spent"`
-	Remaining    float64 `json:"remaining"`
-	PercentUsed  int     `json:"percent_used"`
-	OverBudget   bool    `json:"over_budget"`
-	WarnThreshold int    `json:"warn_threshold"`
-	ShouldWarn   bool    `json:"should_warn"`
+	Period        string  `json:"period"`
+	Budget        float64 `json:"budget"`
+	Spent         float64 `json:"spent"`
+	Remaining     float64 `json:"remaining"`
+	PercentUsed   int     `json:"percent_used"`
+	OverBudget    bool    `json:"over_budget"`
+	WarnThreshold int     `json:"warn_threshold"`
+	ShouldWarn    bool    `json:"should_warn"`
 }
 
 // Tracker tracks LLM usage and costs with budget enforcement.
@@ -170,14 +170,14 @@ func (t *Tracker) CheckBudget(budgetType string, budget, estimatedCost float64) 
 	}
 
 	return &BudgetStatus{
-		Period:       budgetType,
-		Budget:       budget,
-		Spent:        spent,
-		Remaining:    remaining,
-		PercentUsed:  percentUsed,
-		OverBudget:   spent+estimatedCost > budget && budget > 0,
+		Period:        budgetType,
+		Budget:        budget,
+		Spent:         spent,
+		Remaining:     remaining,
+		PercentUsed:   percentUsed,
+		OverBudget:    spent+estimatedCost > budget && budget > 0,
 		WarnThreshold: 80,
-		ShouldWarn:   percentUsed >= 80,
+		ShouldWarn:    percentUsed >= 80,
 	}
 }
 

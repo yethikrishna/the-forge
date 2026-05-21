@@ -221,11 +221,11 @@ func TestDiscovererCache(t *testing.T) {
 
 func TestFormatEndpoint(t *testing.T) {
 	ep := Endpoint{
-		Name:        "test-endpoint",
-		Protocol:    ProtocolMCP,
-		Address:     "http://localhost:8080",
-		Healthy:     true,
-		Source:      "scan",
+		Name:         "test-endpoint",
+		Protocol:     ProtocolMCP,
+		Address:      "http://localhost:8080",
+		Healthy:      true,
+		Source:       "scan",
 		DiscoveredAt: time.Now(),
 	}
 	output := FormatEndpoint(ep)

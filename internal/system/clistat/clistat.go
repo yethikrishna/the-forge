@@ -48,9 +48,9 @@ func FormatBytes(b uint64) string {
 
 // Snapshot takes a snapshot at the current time.
 type Snapshot struct {
-	Time    time.Time
-	Alloc   uint64
-	Gorout  int
+	Time   time.Time
+	Alloc  uint64
+	Gorout int
 }
 
 // Tracker periodically collects stats.

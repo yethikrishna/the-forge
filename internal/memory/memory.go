@@ -28,16 +28,16 @@ type Memory struct {
 
 // Store is the memory store for an agent.
 type Store struct {
-	mu      sync.RWMutex
+	mu       sync.RWMutex
 	memories map[string]*Memory
-	path    string // persistence path
+	path     string // persistence path
 }
 
 // NewStore creates a new memory store.
 func NewStore(path string) *Store {
 	s := &Store{
 		memories: make(map[string]*Memory),
-		path:    path,
+		path:     path,
 	}
 	s.load()
 	return s

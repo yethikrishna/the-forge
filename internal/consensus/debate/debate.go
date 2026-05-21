@@ -19,45 +19,45 @@ import (
 type Position string
 
 const (
-	PositionFor      Position = "for"
-	PositionAgainst  Position = "against"
-	PositionNeutral  Position = "neutral"
-	PositionExpert   Position = "expert"
+	PositionFor     Position = "for"
+	PositionAgainst Position = "against"
+	PositionNeutral Position = "neutral"
+	PositionExpert  Position = "expert"
 )
 
 // Argument represents a single argument in the debate.
 type Argument struct {
-	ID         string   `json:"id"`
-	DebaterID  string   `json:"debater_id"`
-	Position   Position `json:"position"`
-	Claim      string   `json:"claim"`
-	Evidence   string   `json:"evidence,omitempty"`
-	Reasoning  string   `json:"reasoning,omitempty"`
-	RebuttalTo string   `json:"rebuttal_to,omitempty"` // ID of argument being rebutted
-	Round      int      `json:"round"`
+	ID         string    `json:"id"`
+	DebaterID  string    `json:"debater_id"`
+	Position   Position  `json:"position"`
+	Claim      string    `json:"claim"`
+	Evidence   string    `json:"evidence,omitempty"`
+	Reasoning  string    `json:"reasoning,omitempty"`
+	RebuttalTo string    `json:"rebuttal_to,omitempty"` // ID of argument being rebutted
+	Round      int       `json:"round"`
 	Timestamp  time.Time `json:"timestamp"`
-	Score      float64  `json:"score,omitempty"`
-	Model      string   `json:"model,omitempty"`
+	Score      float64   `json:"score,omitempty"`
+	Model      string    `json:"model,omitempty"`
 }
 
 // Debater represents a participant in the debate.
 type Debater struct {
-	ID       string   `json:"id"`
-	Name     string   `json:"name"`
-	Agent    string   `json:"agent"`
-	Model    string   `json:"model,omitempty"`
-	Position Position `json:"position"`
-	Expertise string  `json:"expertise,omitempty"`
+	ID        string   `json:"id"`
+	Name      string   `json:"name"`
+	Agent     string   `json:"agent"`
+	Model     string   `json:"model,omitempty"`
+	Position  Position `json:"position"`
+	Expertise string   `json:"expertise,omitempty"`
 }
 
 // Verdict represents the judge's final decision.
 type Verdict struct {
-	Winner       string  `json:"winner"`        // debater ID
-	Reasoning    string  `json:"reasoning"`
-	Confidence   float64 `json:"confidence"`     // 0-1
-	KeyPoints    []string `json:"key_points"`
-	Consensus    bool    `json:"consensus"`      // did debaters agree?
-	DissentingOpinion string `json:"dissenting_opinion,omitempty"`
+	Winner            string   `json:"winner"` // debater ID
+	Reasoning         string   `json:"reasoning"`
+	Confidence        float64  `json:"confidence"` // 0-1
+	KeyPoints         []string `json:"key_points"`
+	Consensus         bool     `json:"consensus"` // did debaters agree?
+	DissentingOpinion string   `json:"dissenting_opinion,omitempty"`
 }
 
 // Debate represents a complete debate session.
@@ -78,9 +78,9 @@ type Debate struct {
 
 // Judge evaluates arguments and produces a verdict.
 type Judge struct {
-	ID       string `json:"id"`
-	Agent    string `json:"agent"`
-	Model    string `json:"model,omitempty"`
+	ID       string   `json:"id"`
+	Agent    string   `json:"agent"`
+	Model    string   `json:"model,omitempty"`
 	Criteria []string `json:"criteria,omitempty"` // evaluation criteria
 }
 

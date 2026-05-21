@@ -21,10 +21,10 @@ import (
 type AgentStatus string
 
 const (
-	StatusDefined  AgentStatus = "defined"
-	StatusPlanned  AgentStatus = "planned"
-	StatusApplied  AgentStatus = "applied"
-	StatusFailed   AgentStatus = "failed"
+	StatusDefined   AgentStatus = "defined"
+	StatusPlanned   AgentStatus = "planned"
+	StatusApplied   AgentStatus = "applied"
+	StatusFailed    AgentStatus = "failed"
 	StatusDestroyed AgentStatus = "destroyed"
 )
 
@@ -32,59 +32,59 @@ const (
 type ResourceType string
 
 const (
-	ResourceModel    ResourceType = "model"
-	ResourceTool     ResourceType = "tool"
-	ResourceMemory   ResourceType = "memory"
-	ResourceNetwork  ResourceType = "network"
-	ResourceStorage  ResourceType = "storage"
+	ResourceModel   ResourceType = "model"
+	ResourceTool    ResourceType = "tool"
+	ResourceMemory  ResourceType = "memory"
+	ResourceNetwork ResourceType = "network"
+	ResourceStorage ResourceType = "storage"
 )
 
 // AgentDef defines an agent in a blueprint.
 type AgentDef struct {
-	Name        string            `json:"name"`
-	Model       string            `json:"model"`
-	Role        string            `json:"role"`
-	Description string            `json:"description"`
-	Capabilities []string         `json:"capabilities"`
-	Resources   []ResourceDef     `json:"resources"`
-	DependsOn   []string          `json:"depends_on"`
-	Environment map[string]string `json:"environment"`
-	MaxTokens   int               `json:"max_tokens"`
-	Temperature float64           `json:"temperature"`
-	AutoStart   bool              `json:"auto_start"`
+	Name         string            `json:"name"`
+	Model        string            `json:"model"`
+	Role         string            `json:"role"`
+	Description  string            `json:"description"`
+	Capabilities []string          `json:"capabilities"`
+	Resources    []ResourceDef     `json:"resources"`
+	DependsOn    []string          `json:"depends_on"`
+	Environment  map[string]string `json:"environment"`
+	MaxTokens    int               `json:"max_tokens"`
+	Temperature  float64           `json:"temperature"`
+	AutoStart    bool              `json:"auto_start"`
 }
 
 // ResourceDef defines a resource requirement.
 type ResourceDef struct {
-	Type ResourceType `json:"type"`
-	Name string       `json:"name"`
-	Size string       `json:"size"` // "small", "medium", "large"
+	Type   ResourceType      `json:"type"`
+	Name   string            `json:"name"`
+	Size   string            `json:"size"` // "small", "medium", "large"
 	Config map[string]string `json:"config,omitempty"`
 }
 
 // Blueprint represents a complete infrastructure definition.
 type Blueprint struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name"`
-	Version     string     `json:"version"`
-	Description string     `json:"description"`
-	Agents      []AgentDef `json:"agents"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Version     string            `json:"version"`
+	Description string            `json:"description"`
+	Agents      []AgentDef        `json:"agents"`
 	Variables   map[string]string `json:"variables,omitempty"`
 	Output      map[string]string `json:"output,omitempty"`
-	Status      AgentStatus `json:"status"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
+	Status      AgentStatus       `json:"status"`
+	CreatedAt   time.Time         `json:"created_at"`
+	UpdatedAt   time.Time         `json:"updated_at"`
 }
 
 // PlanResult represents a plan of what will be applied.
 type PlanResult struct {
-	BlueprintID string      `json:"blueprint_id"`
-	Create      []AgentDef  `json:"create"`
-	Update      []AgentDef  `json:"update"`
-	Destroy     []AgentDef  `json:"destroy"`
-	NoChange    []AgentDef  `json:"no_change"`
-	TotalAgents int         `json:"total_agents"`
-	Changes     int         `json:"changes"`
+	BlueprintID string     `json:"blueprint_id"`
+	Create      []AgentDef `json:"create"`
+	Update      []AgentDef `json:"update"`
+	Destroy     []AgentDef `json:"destroy"`
+	NoChange    []AgentDef `json:"no_change"`
+	TotalAgents int        `json:"total_agents"`
+	Changes     int        `json:"changes"`
 }
 
 // ApplyResult represents the result of applying a blueprint.
@@ -352,9 +352,9 @@ func (m *Manager) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"blueprints":    len(m.blueprints),
-		"applied":       len(m.applied),
-		"total_agents":  totalAgents,
+		"blueprints":   len(m.blueprints),
+		"applied":      len(m.applied),
+		"total_agents": totalAgents,
 	}
 }
 

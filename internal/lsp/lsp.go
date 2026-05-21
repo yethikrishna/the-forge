@@ -51,12 +51,12 @@ type Diagnostic struct {
 type CodeActionKind string
 
 const (
-	QuickFixCodeAction         CodeActionKind = "quickfix"
-	RefactorCodeAction         CodeActionKind = "refactor"
-	RefactorExtractCodeAction  CodeActionKind = "refactor.extract"
-	RefactorRewriteCodeAction  CodeActionKind = "refactor.rewrite"
-	SourceCodeAction           CodeActionKind = "source"
-	SourceFixAllCodeAction     CodeActionKind = "source.fixAll"
+	QuickFixCodeAction        CodeActionKind = "quickfix"
+	RefactorCodeAction        CodeActionKind = "refactor"
+	RefactorExtractCodeAction CodeActionKind = "refactor.extract"
+	RefactorRewriteCodeAction CodeActionKind = "refactor.rewrite"
+	SourceCodeAction          CodeActionKind = "source"
+	SourceFixAllCodeAction    CodeActionKind = "source.fixAll"
 )
 
 // TextEdit represents a text edit.
@@ -82,8 +82,8 @@ type CodeAction struct {
 
 // Command represents a command execution.
 type Command struct {
-	Title     string   `json:"title"`
-	Command   string   `json:"command"`
+	Title     string        `json:"title"`
+	Command   string        `json:"command"`
 	Arguments []interface{} `json:"arguments,omitempty"`
 }
 
@@ -101,11 +101,11 @@ type Hover struct {
 
 // CompletionItem represents a completion item.
 type CompletionItem struct {
-	Label         string         `json:"label"`
-	Kind          int            `json:"kind,omitempty"`
-	Detail        string         `json:"detail,omitempty"`
-	Documentation string         `json:"documentation,omitempty"`
-	InsertText    string         `json:"insertText,omitempty"`
+	Label         string `json:"label"`
+	Kind          int    `json:"kind,omitempty"`
+	Detail        string `json:"detail,omitempty"`
+	Documentation string `json:"documentation,omitempty"`
+	InsertText    string `json:"insertText,omitempty"`
 }
 
 // CompletionList represents a list of completion items.
@@ -124,9 +124,9 @@ type jsonrpcRequest struct {
 }
 
 type jsonrpcResponse struct {
-	JSONRPC string      `json:"jsonrpc"`
-	ID      interface{} `json:"id,omitempty"`
-	Result  interface{} `json:"result,omitempty"`
+	JSONRPC string        `json:"jsonrpc"`
+	ID      interface{}   `json:"id,omitempty"`
+	Result  interface{}   `json:"result,omitempty"`
 	Error   *jsonrpcError `json:"error,omitempty"`
 }
 
@@ -137,12 +137,12 @@ type jsonrpcError struct {
 
 // ServerCapabilities defines what the LSP server can do.
 type ServerCapabilities struct {
-	TextDocumentSync         *TextDocumentSyncOptions  `json:"textDocumentSync,omitempty"`
-	CompletionProvider      *CompletionOptions        `json:"completionProvider,omitempty"`
-	HoverProvider           bool                      `json:"hoverProvider"`
-	CodeActionProvider      *CodeActionOptions        `json:"codeActionProvider,omitempty"`
-	DiagnosticProvider      *DiagnosticOptions        `json:"diagnosticProvider,omitempty"`
-	ExecuteCommandProvider  *ExecuteCommandOptions    `json:"executeCommandProvider,omitempty"`
+	TextDocumentSync       *TextDocumentSyncOptions `json:"textDocumentSync,omitempty"`
+	CompletionProvider     *CompletionOptions       `json:"completionProvider,omitempty"`
+	HoverProvider          bool                     `json:"hoverProvider"`
+	CodeActionProvider     *CodeActionOptions       `json:"codeActionProvider,omitempty"`
+	DiagnosticProvider     *DiagnosticOptions       `json:"diagnosticProvider,omitempty"`
+	ExecuteCommandProvider *ExecuteCommandOptions   `json:"executeCommandProvider,omitempty"`
 }
 
 // TextDocumentSyncOptions defines how documents are synced.
@@ -164,8 +164,8 @@ type CodeActionOptions struct {
 // DiagnosticOptions defines diagnostic capabilities.
 type DiagnosticOptions struct {
 	Identifier            string `json:"identifier,omitempty"`
-	InterFileDependencies bool  `json:"interFileDependencies"`
-	WorkspaceDiagnostics  bool  `json:"workspaceDiagnostics"`
+	InterFileDependencies bool   `json:"interFileDependencies"`
+	WorkspaceDiagnostics  bool   `json:"workspaceDiagnostics"`
 }
 
 // ExecuteCommandOptions defines command execution capabilities.
@@ -184,11 +184,11 @@ type ForgeAction struct {
 
 // Server is an LSP server for Forge.
 type Server struct {
-	mu       sync.RWMutex
+	mu           sync.RWMutex
 	capabilities ServerCapabilities
-	actions  map[string]*ForgeAction
-	docs     map[string]string // URI -> content
-	version  string
+	actions      map[string]*ForgeAction
+	docs         map[string]string // URI -> content
+	version      string
 }
 
 // NewServer creates an LSP server for Forge.
@@ -346,8 +346,8 @@ func (s *Server) handleInitialize(params json.RawMessage) (interface{}, error) {
 func (s *Server) handleDidOpen(params json.RawMessage) (interface{}, error) {
 	var p struct {
 		TextDocument struct {
-			URI     string `json:"uri"`
-			Text    string `json:"text"`
+			URI  string `json:"uri"`
+			Text string `json:"text"`
 		} `json:"textDocument"`
 	}
 	if err := json.Unmarshal(params, &p); err != nil {
@@ -433,9 +433,9 @@ func (s *Server) handleCompletion(params json.RawMessage) (interface{}, error) {
 	// Add Forge command completions
 	for _, action := range s.actions {
 		items = append(items, CompletionItem{
-			Label:      action.ID,
-			Kind:       3,
-			Detail:     action.Title,
+			Label:         action.ID,
+			Kind:          3,
+			Detail:        action.Title,
 			Documentation: action.Description,
 		})
 	}
@@ -502,8 +502,8 @@ func (s *Server) handleDiagnostic(params json.RawMessage) (interface{}, error) {
 
 func (s *Server) handleExecuteCommand(params json.RawMessage) (interface{}, error) {
 	var p struct {
-		Command   string          `json:"command"`
-		Arguments []interface{}   `json:"arguments,omitempty"`
+		Command   string        `json:"command"`
+		Arguments []interface{} `json:"arguments,omitempty"`
 	}
 	if err := json.Unmarshal(params, &p); err != nil {
 		return nil, err

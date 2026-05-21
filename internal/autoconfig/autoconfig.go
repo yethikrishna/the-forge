@@ -14,35 +14,35 @@ import (
 
 // DetectedConfig holds all auto-detected configuration.
 type DetectedConfig struct {
-	ProjectType  ProjectType `json:"project_type"`
-	Language     string      `json:"language"`
-	PackageMgr   string      `json:"package_manager"`
-	TestFramework string    `json:"test_framework"`
-	BuildTool    string      `json:"build_tool"`
-	GitRemote    string      `json:"git_remote"`
-	GitBranch    string      `json:"git_branch"`
-	APIKeys      []string    `json:"detected_api_keys"` // names only, never values
-	Editor       string      `json:"editor"`
-	HasDocker    bool        `json:"has_docker"`
-	HasCI        bool        `json:"has_ci"`
-	HasTests     bool        `json:"has_tests"`
-	HasLinter    bool        `json:"has_linter"`
-	HasFormatter bool        `json:"has_formatter"`
-	Confidence   float64     `json:"confidence"` // 0-1
+	ProjectType   ProjectType `json:"project_type"`
+	Language      string      `json:"language"`
+	PackageMgr    string      `json:"package_manager"`
+	TestFramework string      `json:"test_framework"`
+	BuildTool     string      `json:"build_tool"`
+	GitRemote     string      `json:"git_remote"`
+	GitBranch     string      `json:"git_branch"`
+	APIKeys       []string    `json:"detected_api_keys"` // names only, never values
+	Editor        string      `json:"editor"`
+	HasDocker     bool        `json:"has_docker"`
+	HasCI         bool        `json:"has_ci"`
+	HasTests      bool        `json:"has_tests"`
+	HasLinter     bool        `json:"has_linter"`
+	HasFormatter  bool        `json:"has_formatter"`
+	Confidence    float64     `json:"confidence"` // 0-1
 }
 
 // ProjectType is the type of detected project.
 type ProjectType string
 
 const (
-	ProjectGo         ProjectType = "go"
-	ProjectPython     ProjectType = "python"
-	ProjectNode       ProjectType = "node"
-	ProjectRust       ProjectType = "rust"
-	ProjectJava       ProjectType = "java"
-	ProjectRuby       ProjectType = "ruby"
-	ProjectUnknown    ProjectType = "unknown"
-	ProjectMulti      ProjectType = "multi"
+	ProjectGo      ProjectType = "go"
+	ProjectPython  ProjectType = "python"
+	ProjectNode    ProjectType = "node"
+	ProjectRust    ProjectType = "rust"
+	ProjectJava    ProjectType = "java"
+	ProjectRuby    ProjectType = "ruby"
+	ProjectUnknown ProjectType = "unknown"
+	ProjectMulti   ProjectType = "multi"
 )
 
 // Detector auto-detects project configuration.

@@ -368,9 +368,9 @@ func TestExportJSON(t *testing.T) {
 	}
 
 	var export struct {
-		Entries  []*Entry  `json:"entries"`
+		Entries  []*Entry    `json:"entries"`
 		Audit    []*AuditLog `json:"audit_log"`
-		Exported time.Time `json:"exported"`
+		Exported time.Time   `json:"exported"`
 	}
 	if err := json.Unmarshal(data, &export); err != nil {
 		t.Fatalf("unmarshal: %v", err)

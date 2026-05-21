@@ -22,11 +22,11 @@ import (
 type TriggerType string
 
 const (
-	TriggerFileChange  TriggerType = "file_change"
-	TriggerWebhook     TriggerType = "webhook"
-	TriggerPR          TriggerType = "pr"
-	TriggerCron        TriggerType = "cron"
-	TriggerManual      TriggerType = "manual"
+	TriggerFileChange TriggerType = "file_change"
+	TriggerWebhook    TriggerType = "webhook"
+	TriggerPR         TriggerType = "pr"
+	TriggerCron       TriggerType = "cron"
+	TriggerManual     TriggerType = "manual"
 )
 
 // FileChangeCondition defines which file changes activate the trigger.
@@ -70,10 +70,10 @@ type WebhookCondition struct {
 
 // Condition is the trigger condition (only one field should be set).
 type Condition struct {
-	FileChange  *FileChangeCondition `json:"file_change,omitempty"`
-	PR          *PRCondition         `json:"pr,omitempty"`
-	Webhook     *WebhookCondition    `json:"webhook,omitempty"`
-	CronExpr    string               `json:"cron_expr,omitempty"`
+	FileChange *FileChangeCondition `json:"file_change,omitempty"`
+	PR         *PRCondition         `json:"pr,omitempty"`
+	Webhook    *WebhookCondition    `json:"webhook,omitempty"`
+	CronExpr   string               `json:"cron_expr,omitempty"`
 }
 
 // Action defines what happens when the trigger fires.
@@ -99,17 +99,17 @@ type Action struct {
 
 // Trigger is a complete trigger definition.
 type Trigger struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
+	ID          string      `json:"id"`
+	Name        string      `json:"name"`
 	Type        TriggerType `json:"type"`
-	Enabled     bool      `json:"enabled"`
-	Condition   Condition `json:"condition"`
-	Action      Action    `json:"action"`
-	Description string    `json:"description,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	FireCount   int       `json:"fire_count"`
-	LastFiredAt *time.Time `json:"last_fired_at,omitempty"`
+	Enabled     bool        `json:"enabled"`
+	Condition   Condition   `json:"condition"`
+	Action      Action      `json:"action"`
+	Description string      `json:"description,omitempty"`
+	CreatedAt   time.Time   `json:"created_at"`
+	UpdatedAt   time.Time   `json:"updated_at"`
+	FireCount   int         `json:"fire_count"`
+	LastFiredAt *time.Time  `json:"last_fired_at,omitempty"`
 }
 
 // TriggerEvent is an event that may fire triggers.
@@ -123,15 +123,15 @@ type TriggerEvent struct {
 
 // ExecutionRecord tracks a trigger execution.
 type ExecutionRecord struct {
-	ID         string     `json:"id"`
-	TriggerID  string     `json:"trigger_id"`
-	TriggerName string   `json:"trigger_name"`
-	Event      TriggerEvent `json:"event"`
-	Status     string     `json:"status"` // "started", "completed", "failed", "timeout"
-	StartedAt  time.Time  `json:"started_at"`
-	FinishedAt *time.Time `json:"finished_at,omitempty"`
-	Error      string     `json:"error,omitempty"`
-	PipelineOutput string `json:"pipeline_output,omitempty"`
+	ID             string       `json:"id"`
+	TriggerID      string       `json:"trigger_id"`
+	TriggerName    string       `json:"trigger_name"`
+	Event          TriggerEvent `json:"event"`
+	Status         string       `json:"status"` // "started", "completed", "failed", "timeout"
+	StartedAt      time.Time    `json:"started_at"`
+	FinishedAt     *time.Time   `json:"finished_at,omitempty"`
+	Error          string       `json:"error,omitempty"`
+	PipelineOutput string       `json:"pipeline_output,omitempty"`
 }
 
 // PipelineRunner is the interface for executing pipelines.
@@ -566,12 +566,12 @@ func WithAction(action Action) UpdateOption {
 
 // Stats returns trigger statistics.
 type Stats struct {
-	TotalTriggers   int            `json:"total_triggers"`
-	EnabledTriggers int            `json:"enabled_triggers"`
-	ByType          map[TriggerType]int `json:"by_type"`
-	TotalExecutions int            `json:"total_executions"`
-	FailedExecutions int           `json:"failed_executions"`
-	LastExecution   *time.Time     `json:"last_execution,omitempty"`
+	TotalTriggers    int                 `json:"total_triggers"`
+	EnabledTriggers  int                 `json:"enabled_triggers"`
+	ByType           map[TriggerType]int `json:"by_type"`
+	TotalExecutions  int                 `json:"total_executions"`
+	FailedExecutions int                 `json:"failed_executions"`
+	LastExecution    *time.Time          `json:"last_execution,omitempty"`
 }
 
 // Stats returns aggregate statistics.

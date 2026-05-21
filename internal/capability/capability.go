@@ -19,11 +19,11 @@ import (
 type Level int
 
 const (
-	LevelNone     Level = 0
-	LevelBasic    Level = 1
+	LevelNone         Level = 0
+	LevelBasic        Level = 1
 	LevelIntermediate Level = 2
-	LevelAdvanced Level = 3
-	LevelExpert   Level = 4
+	LevelAdvanced     Level = 3
+	LevelExpert       Level = 4
 )
 
 func (l Level) String() string {
@@ -61,11 +61,11 @@ func ParseLevel(s string) Level {
 
 // Capability represents a single agent capability.
 type Capability struct {
-	Name        string            `json:"name"`
-	Category    string            `json:"category"`
-	Level       Level             `json:"level"`
-	Description string            `json:"description,omitempty"`
-	Tags        []string          `json:"tags,omitempty"`
+	Name        string             `json:"name"`
+	Category    string             `json:"category"`
+	Level       Level              `json:"level"`
+	Description string             `json:"description,omitempty"`
+	Tags        []string           `json:"tags,omitempty"`
 	Metrics     map[string]float64 `json:"metrics,omitempty"` // success_rate, avg_time, etc.
 }
 
@@ -82,9 +82,9 @@ type AgentCaps struct {
 
 // MatchResult holds the result of matching agents to a capability.
 type MatchResult struct {
-	AgentID   string `json:"agent_id"`
-	AgentName string `json:"agent_name"`
-	Level     Level  `json:"level"`
+	AgentID   string  `json:"agent_id"`
+	AgentName string  `json:"agent_name"`
+	Level     Level   `json:"level"`
 	Score     float64 `json:"score"` // weighted score (0-100)
 }
 
@@ -171,7 +171,7 @@ func (r *Registry) FindByCapability(capName string, minLevel Level) []MatchResul
 
 				// Adjust score by success rate if available
 				if sr, ok := cap.Metrics["success_rate"]; ok {
-					score = score * 0.7 + sr * 100 * 0.3
+					score = score*0.7 + sr*100*0.3
 				}
 
 				results = append(results, MatchResult{

@@ -31,30 +31,30 @@ type State struct {
 
 // AgentState represents the state of a running agent.
 type AgentState struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Status      string    `json:"status"`
-	StartedAt   time.Time `json:"started_at"`
-	LastActive  time.Time `json:"last_active"`
-	SessionID   string    `json:"session_id"`
+	ID         string    `json:"id"`
+	Name       string    `json:"name"`
+	Status     string    `json:"status"`
+	StartedAt  time.Time `json:"started_at"`
+	LastActive time.Time `json:"last_active"`
+	SessionID  string    `json:"session_id"`
 }
 
 // TaskState represents a pending task.
 type TaskState struct {
-	ID        string                 `json:"id"`
-	Name      string                 `json:"name"`
-	Payload   map[string]interface{} `json:"payload,omitempty"`
-	QueuedAt  time.Time              `json:"queued_at"`
-	Priority  int                    `json:"priority"`
+	ID       string                 `json:"id"`
+	Name     string                 `json:"name"`
+	Payload  map[string]interface{} `json:"payload,omitempty"`
+	QueuedAt time.Time              `json:"queued_at"`
+	Priority int                    `json:"priority"`
 }
 
 // ShutdownConfig configures graceful shutdown behavior.
 type ShutdownConfig struct {
-	Timeout         time.Duration `json:"timeout"`          // Max time to wait for drain
-	StateDir        string        `json:"state_dir"`        // Directory to persist state
-	DrainOnSignal   bool          `json:"drain_on_signal"`  // Enable signal-based shutdown
-	SaveState       bool          `json:"save_state"`       // Persist state on shutdown
-	HealthCheckURL  string        `json:"health_check_url"` // URL to mark unhealthy
+	Timeout        time.Duration `json:"timeout"`          // Max time to wait for drain
+	StateDir       string        `json:"state_dir"`        // Directory to persist state
+	DrainOnSignal  bool          `json:"drain_on_signal"`  // Enable signal-based shutdown
+	SaveState      bool          `json:"save_state"`       // Persist state on shutdown
+	HealthCheckURL string        `json:"health_check_url"` // URL to mark unhealthy
 }
 
 // DefaultShutdownConfig returns sensible defaults.

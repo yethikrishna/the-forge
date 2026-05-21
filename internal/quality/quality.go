@@ -35,9 +35,9 @@ func AllDimensions() []Dimension {
 // Score is a single dimension score (0-100).
 type Score struct {
 	Dimension Dimension `json:"dimension"`
-	Value     float64   `json:"value"`     // 0-100
-	Weight    float64   `json:"weight"`    // relative weight
-	Reason    string    `json:"reason"`    // why this score
+	Value     float64   `json:"value"`  // 0-100
+	Weight    float64   `json:"weight"` // relative weight
+	Reason    string    `json:"reason"` // why this score
 }
 
 // Report is a full quality assessment.
@@ -61,16 +61,16 @@ type Report struct {
 type Grade string
 
 const (
-	GradeAPlus Grade = "A+"
-	GradeA     Grade = "A"
+	GradeAPlus  Grade = "A+"
+	GradeA      Grade = "A"
 	GradeAMinus Grade = "A-"
-	GradeBPlus Grade = "B+"
-	GradeB     Grade = "B"
+	GradeBPlus  Grade = "B+"
+	GradeB      Grade = "B"
 	GradeBMinus Grade = "B-"
-	GradeCPlus Grade = "C+"
-	GradeC     Grade = "C"
-	GradeD     Grade = "D"
-	GradeF     Grade = "F"
+	GradeCPlus  Grade = "C+"
+	GradeC      Grade = "C"
+	GradeD      Grade = "D"
+	GradeF      Grade = "F"
 )
 
 // ScoreToGrade converts a 0-100 score to a letter grade.
@@ -287,9 +287,15 @@ func (s *Scorer) scoreStyle(response string) Score {
 	hasCodeBlocks := strings.Contains(response, "```")
 
 	features := 0
-	if hasHeadings { features++ }
-	if hasLists { features++ }
-	if hasCodeBlocks { features++ }
+	if hasHeadings {
+		features++
+	}
+	if hasLists {
+		features++
+	}
+	if hasCodeBlocks {
+		features++
+	}
 
 	score += float64(features) * 7 // up to +21
 
@@ -486,18 +492,22 @@ func Compare(a, b *Report) Comparison {
 
 // Comparison holds the result of comparing two reports.
 type Comparison struct {
-	A         *Report  `json:"a"`
-	B         *Report  `json:"b"`
-	ScoreDiff float64  `json:"score_diff"`
-	GradeDiff string   `json:"grade_diff"`
-	Winner    string   `json:"winner"` // "a", "b", or "tie"
+	A         *Report `json:"a"`
+	B         *Report `json:"b"`
+	ScoreDiff float64 `json:"score_diff"`
+	GradeDiff string  `json:"grade_diff"`
+	Winner    string  `json:"winner"` // "a", "b", or "tie"
 }
 
 // helpers
 
 func clamp(v float64) float64 {
-	if v < 0 { return 0 }
-	if v > 100 { return 100 }
+	if v < 0 {
+		return 0
+	}
+	if v > 100 {
+		return 100
+	}
 	return math.Round(v*100) / 100
 }
 
@@ -571,13 +581,19 @@ func splitSentences(text string) []string {
 }
 
 func min(a, b int) int {
-	if a < b { return a }
+	if a < b {
+		return a
+	}
 	return b
 }
 
 func winner(a, b float64) string {
 	diff := b - a
-	if diff > 2 { return "b" }
-	if diff < -2 { return "a" }
+	if diff > 2 {
+		return "b"
+	}
+	if diff < -2 {
+		return "a"
+	}
 	return "tie"
 }

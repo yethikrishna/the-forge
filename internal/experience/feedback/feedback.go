@@ -19,16 +19,16 @@ import (
 type SignalType string
 
 const (
-	SignalThumbsUp    SignalType = "thumbs_up"
-	SignalThumbsDown  SignalType = "thumbs_down"
-	SignalCorrection  SignalType = "correction"
-	SignalRating      SignalType = "rating"
-	SignalBug         SignalType = "bug"
-	SignalPraise      SignalType = "praise"
-	SignalSuggestion  SignalType = "suggestion"
-	SignalSelfAssess  SignalType = "self_assessment"
-	SignalCostAlert   SignalType = "cost_alert"
-	SignalTimeout     SignalType = "timeout"
+	SignalThumbsUp   SignalType = "thumbs_up"
+	SignalThumbsDown SignalType = "thumbs_down"
+	SignalCorrection SignalType = "correction"
+	SignalRating     SignalType = "rating"
+	SignalBug        SignalType = "bug"
+	SignalPraise     SignalType = "praise"
+	SignalSuggestion SignalType = "suggestion"
+	SignalSelfAssess SignalType = "self_assessment"
+	SignalCostAlert  SignalType = "cost_alert"
+	SignalTimeout    SignalType = "timeout"
 )
 
 // Signal represents a single feedback signal.
@@ -49,36 +49,36 @@ type Signal struct {
 
 // Analysis represents aggregated feedback analysis.
 type Analysis struct {
-	Agent           string             `json:"agent"`
-	TotalSignals    int                `json:"total_signals"`
-	PositiveCount   int                `json:"positive_count"`
-	NegativeCount   int                `json:"negative_count"`
-	SatisfactionRate float64           `json:"satisfaction_rate"` // 0-1
-	AvgRating       float64           `json:"avg_rating"`
-	CommonIssues    []IssueFrequency   `json:"common_issues,omitempty"`
-	TrendDirection  string             `json:"trend_direction"` // improving, declining, stable
-	TrendSlope      float64           `json:"trend_slope"`
-	Period          string            `json:"period"`
-	Since           time.Time         `json:"since"`
-	Until           time.Time         `json:"until"`
+	Agent            string           `json:"agent"`
+	TotalSignals     int              `json:"total_signals"`
+	PositiveCount    int              `json:"positive_count"`
+	NegativeCount    int              `json:"negative_count"`
+	SatisfactionRate float64          `json:"satisfaction_rate"` // 0-1
+	AvgRating        float64          `json:"avg_rating"`
+	CommonIssues     []IssueFrequency `json:"common_issues,omitempty"`
+	TrendDirection   string           `json:"trend_direction"` // improving, declining, stable
+	TrendSlope       float64          `json:"trend_slope"`
+	Period           string           `json:"period"`
+	Since            time.Time        `json:"since"`
+	Until            time.Time        `json:"until"`
 }
 
 // IssueFrequency represents how often an issue occurs.
 type IssueFrequency struct {
-	Issue   string `json:"issue"`
-	Count   int    `json:"count"`
+	Issue   string  `json:"issue"`
+	Count   int     `json:"count"`
 	Percent float64 `json:"percent"`
 }
 
 // Loop represents a feedback loop — a cycle of signals about an agent.
 type Loop struct {
-	ID          string   `json:"id"`
-	Agent       string   `json:"agent"`
-	SignalIDs   []string `json:"signal_ids"`
-	Status      string   `json:"status"` // open, improving, resolved, ignored
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Resolution  string   `json:"resolution,omitempty"`
+	ID         string    `json:"id"`
+	Agent      string    `json:"agent"`
+	SignalIDs  []string  `json:"signal_ids"`
+	Status     string    `json:"status"` // open, improving, resolved, ignored
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+	Resolution string    `json:"resolution,omitempty"`
 }
 
 // Store manages feedback signals.

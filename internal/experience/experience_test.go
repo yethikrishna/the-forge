@@ -99,7 +99,7 @@ func TestFeedbackStoreRecord(t *testing.T) {
 	store := feedback.NewStore(t.TempDir())
 
 	sig, err := store.Record(feedback.Signal{
-		Type:    feedback.SignalRating,
+		Type:     feedback.SignalRating,
 		Response: "Great experience",
 		Rating:   5,
 	})

@@ -51,64 +51,64 @@ const (
 type ConditionOperator string
 
 const (
-	OpEquals     ConditionOperator = "eq"
-	OpNotEquals  ConditionOperator = "neq"
-	OpContains   ConditionOperator = "contains"
+	OpEquals      ConditionOperator = "eq"
+	OpNotEquals   ConditionOperator = "neq"
+	OpContains    ConditionOperator = "contains"
 	OpGreaterThan ConditionOperator = "gt"
-	OpLessThan   ConditionOperator = "lt"
-	OpExists     ConditionOperator = "exists"
-	OpSuccess    ConditionOperator = "success"
-	OpFailed     ConditionOperator = "failed"
+	OpLessThan    ConditionOperator = "lt"
+	OpExists      ConditionOperator = "exists"
+	OpSuccess     ConditionOperator = "success"
+	OpFailed      ConditionOperator = "failed"
 )
 
 // Condition is a condition that must be met for a step to run.
 type Condition struct {
-	StepID   string            `json:"step_id,omitempty"`  // reference another step
-	Field    string            `json:"field"`              // "state", "output.<key>", "duration"
+	StepID   string            `json:"step_id,omitempty"` // reference another step
+	Field    string            `json:"field"`             // "state", "output.<key>", "duration"
 	Operator ConditionOperator `json:"operator"`
 	Value    string            `json:"value,omitempty"`
 }
 
 // StepConfig defines a workflow step.
 type StepConfig struct {
-	ID          string        `json:"id"`
-	Name        string        `json:"name"`
-	Agent       string        `json:"agent,omitempty"`    // agent to use
-	Prompt      string        `json:"prompt"`             // the task prompt
-	DependsOn   []string      `json:"depends_on,omitempty"`
-	Conditions  []Condition   `json:"conditions,omitempty"`
-	Timeout     time.Duration `json:"timeout,omitempty"`
-	MaxRetries  int           `json:"max_retries,omitempty"`
-	RetryDelay  time.Duration `json:"retry_delay,omitempty"`
-	Parallel    int           `json:"parallel,omitempty"` // max parallel instances
-	OnFailure   string        `json:"on_failure,omitempty"` // "stop", "continue", "retry"
-	ExportAs    string        `json:"export_as,omitempty"`  // export output as this key
-	Tags        []string      `json:"tags,omitempty"`
+	ID         string        `json:"id"`
+	Name       string        `json:"name"`
+	Agent      string        `json:"agent,omitempty"` // agent to use
+	Prompt     string        `json:"prompt"`          // the task prompt
+	DependsOn  []string      `json:"depends_on,omitempty"`
+	Conditions []Condition   `json:"conditions,omitempty"`
+	Timeout    time.Duration `json:"timeout,omitempty"`
+	MaxRetries int           `json:"max_retries,omitempty"`
+	RetryDelay time.Duration `json:"retry_delay,omitempty"`
+	Parallel   int           `json:"parallel,omitempty"`   // max parallel instances
+	OnFailure  string        `json:"on_failure,omitempty"` // "stop", "continue", "retry"
+	ExportAs   string        `json:"export_as,omitempty"`  // export output as this key
+	Tags       []string      `json:"tags,omitempty"`
 }
 
 // StepResult holds the result of a step execution.
 type StepResult struct {
-	StepID     string        `json:"step_id"`
-	State      StepState     `json:"state"`
-	Output     string        `json:"output"`
-	Exports    map[string]string `json:"exports,omitempty"`
-	Error      string        `json:"error,omitempty"`
-	Duration   time.Duration `json:"duration"`
-	Retries    int           `json:"retries"`
-	TokensUsed int64         `json:"tokens_used"`
-	CostUSD    float64       `json:"cost_usd"`
-	StartedAt  time.Time     `json:"started_at"`
-	CompletedAt time.Time    `json:"completed_at"`
+	StepID      string            `json:"step_id"`
+	State       StepState         `json:"state"`
+	Output      string            `json:"output"`
+	Exports     map[string]string `json:"exports,omitempty"`
+	Error       string            `json:"error,omitempty"`
+	Duration    time.Duration     `json:"duration"`
+	Retries     int               `json:"retries"`
+	TokensUsed  int64             `json:"tokens_used"`
+	CostUSD     float64           `json:"cost_usd"`
+	StartedAt   time.Time         `json:"started_at"`
+	CompletedAt time.Time         `json:"completed_at"`
 }
 
 // WorkflowConfig defines a workflow.
 type WorkflowConfig struct {
-	ID          string       `json:"id"`
-	Name        string       `json:"name"`
-	Description string       `json:"description,omitempty"`
-	Steps       []StepConfig `json:"steps"`
-	Timeout     time.Duration `json:"timeout,omitempty"`
-	Tags        []string     `json:"tags,omitempty"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description,omitempty"`
+	Steps       []StepConfig      `json:"steps"`
+	Timeout     time.Duration     `json:"timeout,omitempty"`
+	Tags        []string          `json:"tags,omitempty"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
@@ -298,9 +298,9 @@ func (w *Workflow) Stats() WorkflowStats {
 	defer w.mu.RUnlock()
 
 	stats := WorkflowStats{
-		WorkflowID:   w.id,
-		TotalSteps:   len(w.config.Steps),
-		TotalCost:    w.costUsed,
+		WorkflowID: w.id,
+		TotalSteps: len(w.config.Steps),
+		TotalCost:  w.costUsed,
 	}
 
 	for _, result := range w.results {

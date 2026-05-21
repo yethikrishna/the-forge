@@ -377,9 +377,9 @@ func TestNodeInputFrom(t *testing.T) {
 		Agent: "builder",
 	})
 	g.AddNode(&Node{
-		ID:        "n2",
-		Agent:     "deployer",
-		InputFrom: map[string]string{"artifact": "n1.output"},
+		ID:           "n2",
+		Agent:        "deployer",
+		InputFrom:    map[string]string{"artifact": "n1.output"},
 		Dependencies: []string{"n1"},
 	})
 

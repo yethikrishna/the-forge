@@ -64,12 +64,12 @@ var (
 
 // Status-style formatters.
 var (
-	Success = Color(Green, Bold)   // Green bold for success
-	Warning = Color(Yellow, Bold)  // Yellow bold for warnings
-	Error   = Color(Red, Bold)     // Red bold for errors
-	Info    = Color(Cyan)          // Cyan for info
-	Header  = Color(Bold, Cyan)    // Bold cyan for headers
-	Muted   = Color(Dim)           // Dim for muted text
+	Success = Color(Green, Bold)  // Green bold for success
+	Warning = Color(Yellow, Bold) // Yellow bold for warnings
+	Error   = Color(Red, Bold)    // Red bold for errors
+	Info    = Color(Cyan)         // Cyan for info
+	Header  = Color(Bold, Cyan)   // Bold cyan for headers
+	Muted   = Color(Dim)          // Dim for muted text
 )
 
 // Sprint returns a styled string.

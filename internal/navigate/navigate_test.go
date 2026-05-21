@@ -1,8 +1,8 @@
 package navigate
 
 import (
-	"fmt"
 	"context"
+	"fmt"
 	"testing"
 )
 

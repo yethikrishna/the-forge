@@ -177,7 +177,7 @@ func TestEvaluateUnknownType(t *testing.T) {
 
 func TestEvaluateTestCase(t *testing.T) {
 	tc := TestCase{
-		Name:  "greeting test",
+		Name:   "greeting test",
 		Prompt: "Say hello",
 		Assertions: []Assertion{
 			{Type: AssertContains, Value: "Hello"},

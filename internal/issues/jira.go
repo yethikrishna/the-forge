@@ -95,14 +95,14 @@ type jiraIssue struct {
 		Reporter *struct {
 			DisplayName string `json:"displayName"`
 		} `json:"reporter"`
-		Labels    []string  `json:"labels"`
-		Project   struct {
-			Key string `json:"key"`
+		Labels  []string `json:"labels"`
+		Project struct {
+			Key  string `json:"key"`
 			Name string `json:"name"`
 		} `json:"project"`
-		Created   string `json:"created"`
-		Updated   string `json:"updated"`
-		Duedate   string `json:"duedate"`
+		Created string `json:"created"`
+		Updated string `json:"updated"`
+		Duedate string `json:"duedate"`
 	} `json:"fields"`
 }
 
@@ -326,8 +326,8 @@ func (j *JiraProvider) GetIssue(id string) (*Issue, error) {
 
 func (j *JiraProvider) CreateIssue(req CreateIssueRequest) (*Issue, error) {
 	fields := map[string]interface{}{
-		"summary": req.Title,
-		"project": map[string]string{"key": req.ProjectKey},
+		"summary":   req.Title,
+		"project":   map[string]string{"key": req.ProjectKey},
 		"issuetype": map[string]string{"name": string(req.Type)},
 	}
 	if req.Description != "" {

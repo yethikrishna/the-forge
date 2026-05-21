@@ -20,29 +20,29 @@ import (
 type TransformType string
 
 const (
-	TransformRename       TransformType = "rename"       // Rename symbol
-	TransformExtract      TransformType = "extract"      // Extract function/method
-	TransformInline       TransformType = "inline"       // Inline function/variable
-	TransformMove         TransformType = "move"         // Move symbol to another package
-	TransformReplace      TransformType = "replace"      // Find and replace text
-	TransformMigrate      TransformType = "migrate"      // API/framework migration
-	TransformModernize    TransformType = "modernize"    // Update to newer idioms
-	TransformSimplify     TransformType = "simplify"     // Simplify complex code
-	TransformDeduplicate  TransformType = "deduplicate"  // Remove duplicated code
-	TransformReorder      TransformType = "reorder"      // Reorder declarations
-	TransformWrap         TransformType = "wrap"         // Wrap with error handling/logging
+	TransformRename      TransformType = "rename"      // Rename symbol
+	TransformExtract     TransformType = "extract"     // Extract function/method
+	TransformInline      TransformType = "inline"      // Inline function/variable
+	TransformMove        TransformType = "move"        // Move symbol to another package
+	TransformReplace     TransformType = "replace"     // Find and replace text
+	TransformMigrate     TransformType = "migrate"     // API/framework migration
+	TransformModernize   TransformType = "modernize"   // Update to newer idioms
+	TransformSimplify    TransformType = "simplify"    // Simplify complex code
+	TransformDeduplicate TransformType = "deduplicate" // Remove duplicated code
+	TransformReorder     TransformType = "reorder"     // Reorder declarations
+	TransformWrap        TransformType = "wrap"        // Wrap with error handling/logging
 )
 
 // TransformState represents the state of a transformation.
 type TransformState string
 
 const (
-	StatePending   TransformState = "pending"
-	StateRunning   TransformState = "running"
-	StateApplied   TransformState = "applied"
+	StatePending    TransformState = "pending"
+	StateRunning    TransformState = "running"
+	StateApplied    TransformState = "applied"
 	StateRolledBack TransformState = "rolled_back"
-	StateFailed    TransformState = "failed"
-	StateSkipped   TransformState = "skipped"
+	StateFailed     TransformState = "failed"
+	StateSkipped    TransformState = "skipped"
 )
 
 // Rule defines a transformation rule.
@@ -51,12 +51,12 @@ type Rule struct {
 	Name        string            `json:"name"`
 	Type        TransformType     `json:"type"`
 	Description string            `json:"description"`
-	Find        string            `json:"find"`        // pattern to find
-	Replace     string            `json:"replace"`     // replacement pattern
-	FileGlob    string            `json:"file_glob"`   // file pattern to match (e.g. "*.go")
-	Package     string            `json:"package"`     // limit to package
-	Tags        []string          `json:"tags"`        // categorization tags
-	Conditions  []Condition       `json:"conditions"`  // conditions that must be met
+	Find        string            `json:"find"`       // pattern to find
+	Replace     string            `json:"replace"`    // replacement pattern
+	FileGlob    string            `json:"file_glob"`  // file pattern to match (e.g. "*.go")
+	Package     string            `json:"package"`    // limit to package
+	Tags        []string          `json:"tags"`       // categorization tags
+	Conditions  []Condition       `json:"conditions"` // conditions that must be met
 	Metadata    map[string]string `json:"metadata"`
 	CreatedAt   time.Time         `json:"created_at"`
 }
@@ -83,28 +83,28 @@ type Change struct {
 
 // TransformResult represents the result of applying a transformation.
 type TransformResult struct {
-	RuleID      string    `json:"rule_id"`
-	RuleName    string    `json:"rule_name"`
-	Type        TransformType `json:"type"`
-	Changes     []Change  `json:"changes"`
-	State       TransformState `json:"state"`
-	FilesAffected int      `json:"files_affected"`
-	Error       string    `json:"error,omitempty"`
-	StartedAt   time.Time `json:"started_at"`
-	CompletedAt time.Time `json:"completed_at"`
-	Duration    time.Duration `json:"duration"`
-	DryRun      bool      `json:"dry_run"`
+	RuleID        string         `json:"rule_id"`
+	RuleName      string         `json:"rule_name"`
+	Type          TransformType  `json:"type"`
+	Changes       []Change       `json:"changes"`
+	State         TransformState `json:"state"`
+	FilesAffected int            `json:"files_affected"`
+	Error         string         `json:"error,omitempty"`
+	StartedAt     time.Time      `json:"started_at"`
+	CompletedAt   time.Time      `json:"completed_at"`
+	Duration      time.Duration  `json:"duration"`
+	DryRun        bool           `json:"dry_run"`
 }
 
 // Engine is the transformation engine.
 type Engine struct {
-	mu       sync.RWMutex
-	dir      string
-	rules    map[string]*Rule
-	results  map[string]*TransformResult
-	history  []*TransformResult
-	backup   map[string]string // file -> original content (for rollback)
-	dryRun   bool
+	mu      sync.RWMutex
+	dir     string
+	rules   map[string]*Rule
+	results map[string]*TransformResult
+	history []*TransformResult
+	backup  map[string]string // file -> original content (for rollback)
+	dryRun  bool
 }
 
 // NewEngine creates a new transformation engine.
@@ -294,12 +294,12 @@ func (e *Engine) Stats() EngineStats {
 	defer e.mu.RUnlock()
 
 	stats := EngineStats{
-		RuleCount:     len(e.rules),
-		TotalApplied:  0,
+		RuleCount:       len(e.rules),
+		TotalApplied:    0,
 		TotalRolledBack: 0,
-		TotalFailed:   0,
-		TotalChanges:  0,
-		FilesBackedUp: len(e.backup),
+		TotalFailed:     0,
+		TotalChanges:    0,
+		FilesBackedUp:   len(e.backup),
 	}
 
 	for _, result := range e.results {

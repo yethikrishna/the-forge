@@ -14,21 +14,21 @@ type testPlugin struct {
 	initErr error
 }
 
-func (p *testPlugin) Name() string                          { return p.name }
-func (p *testPlugin) Version() string                       { return p.version }
-func (p *testPlugin) Init(ctx *pluginsdk.Context) error     { return p.initErr }
-func (p *testPlugin) Hooks() []*pluginsdk.Hook              { return nil }
-func (p *testPlugin) Tools() []*pluginsdk.Tool              { return nil }
+func (p *testPlugin) Name() string                           { return p.name }
+func (p *testPlugin) Version() string                        { return p.version }
+func (p *testPlugin) Init(ctx *pluginsdk.Context) error      { return p.initErr }
+func (p *testPlugin) Hooks() []*pluginsdk.Hook               { return nil }
+func (p *testPlugin) Tools() []*pluginsdk.Tool               { return nil }
 func (p *testPlugin) Middleware() []pluginsdk.MiddlewareFunc { return nil }
-func (p *testPlugin) Close() error                          { return nil }
+func (p *testPlugin) Close() error                           { return nil }
 
 func TestRegisterPlugin(t *testing.T) {
 	registry := pluginsdk.NewRegistry()
 	ctx := &pluginsdk.Context{
-		Config:   make(map[string]interface{}),
-		Store:    pluginsdk.NewSimpleStore(),
-		Logger:   &pluginsdk.SimpleLogger{},
-		Metrics:  pluginsdk.NewSimpleMetrics(),
+		Config:  make(map[string]interface{}),
+		Store:   pluginsdk.NewSimpleStore(),
+		Logger:  &pluginsdk.SimpleLogger{},
+		Metrics: pluginsdk.NewSimpleMetrics(),
 	}
 
 	plugin := &testPlugin{name: "test-plugin", version: "1.0.0"}
@@ -373,13 +373,13 @@ type hookPlugin struct {
 	hooks   []*pluginsdk.Hook
 }
 
-func (p *hookPlugin) Name() string                          { return p.name }
-func (p *hookPlugin) Version() string                       { return p.version }
-func (p *hookPlugin) Init(ctx *pluginsdk.Context) error     { return nil }
-func (p *hookPlugin) Hooks() []*pluginsdk.Hook              { return p.hooks }
-func (p *hookPlugin) Tools() []*pluginsdk.Tool              { return nil }
+func (p *hookPlugin) Name() string                           { return p.name }
+func (p *hookPlugin) Version() string                        { return p.version }
+func (p *hookPlugin) Init(ctx *pluginsdk.Context) error      { return nil }
+func (p *hookPlugin) Hooks() []*pluginsdk.Hook               { return p.hooks }
+func (p *hookPlugin) Tools() []*pluginsdk.Tool               { return nil }
 func (p *hookPlugin) Middleware() []pluginsdk.MiddlewareFunc { return nil }
-func (p *hookPlugin) Close() error                          { return nil }
+func (p *hookPlugin) Close() error                           { return nil }
 
 type toolPlugin struct {
 	name    string
@@ -387,10 +387,10 @@ type toolPlugin struct {
 	tools   []*pluginsdk.Tool
 }
 
-func (p *toolPlugin) Name() string                          { return p.name }
-func (p *toolPlugin) Version() string                       { return p.version }
-func (p *toolPlugin) Init(ctx *pluginsdk.Context) error     { return nil }
-func (p *toolPlugin) Hooks() []*pluginsdk.Hook              { return nil }
-func (p *toolPlugin) Tools() []*pluginsdk.Tool              { return p.tools }
+func (p *toolPlugin) Name() string                           { return p.name }
+func (p *toolPlugin) Version() string                        { return p.version }
+func (p *toolPlugin) Init(ctx *pluginsdk.Context) error      { return nil }
+func (p *toolPlugin) Hooks() []*pluginsdk.Hook               { return nil }
+func (p *toolPlugin) Tools() []*pluginsdk.Tool               { return p.tools }
 func (p *toolPlugin) Middleware() []pluginsdk.MiddlewareFunc { return nil }
-func (p *toolPlugin) Close() error                          { return nil }
+func (p *toolPlugin) Close() error                           { return nil }

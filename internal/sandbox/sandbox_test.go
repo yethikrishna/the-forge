@@ -166,9 +166,9 @@ func TestSetLimits(t *testing.T) {
 	env := m.Create("test-env", "agent-1", BackendProcess)
 
 	err := m.SetLimits(env.ID, ResourceLimits{
-		CPUCores:  4.0,
-		MemoryMB:  2048,
-		DiskMB:    4096,
+		CPUCores:   4.0,
+		MemoryMB:   2048,
+		DiskMB:     4096,
 		TimeoutSec: 600,
 	})
 	if err != nil {
@@ -191,8 +191,8 @@ func TestSetNetworkPolicy(t *testing.T) {
 	env := m.Create("test-env", "agent-1", BackendProcess)
 
 	policy := NetworkPolicy{
-		AllowDNS:   true,
-		AllowHTTPS: true,
+		AllowDNS:     true,
+		AllowHTTPS:   true,
 		AllowedHosts: []string{"api.example.com"},
 	}
 	m.SetNetworkPolicy(env.ID, policy)
@@ -259,13 +259,13 @@ func TestEnvironmentReport(t *testing.T) {
 		Backend: BackendDocker,
 		Status:  StatusRunning,
 		Limits: ResourceLimits{
-			CPUCores:  2.0,
-			MemoryMB:  512,
-			DiskMB:    1024,
+			CPUCores:   2.0,
+			MemoryMB:   512,
+			DiskMB:     1024,
 			TimeoutSec: 300,
 		},
-		Pid:         12345,
-		CPUUsage:    23.5,
+		Pid:           12345,
+		CPUUsage:      23.5,
 		MemoryUsageMB: 128,
 	}
 

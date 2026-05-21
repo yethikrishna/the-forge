@@ -144,10 +144,10 @@ logging:
   format: text
 `,
 		EnvVars: map[string]string{
-			"FORGE_PROVIDER":    "ollama",
-			"FORGE_OLLAMA_URL":  "http://localhost:11434",
-			"FORGE_MODEL":       "deepseek-r1:8b",
-			"FORGE_LOCAL_ONLY":  "true",
+			"FORGE_PROVIDER":   "ollama",
+			"FORGE_OLLAMA_URL": "http://localhost:11434",
+			"FORGE_MODEL":      "deepseek-r1:8b",
+			"FORGE_LOCAL_ONLY": "true",
 		},
 		Platform: []string{"linux", "darwin", "windows"},
 		MinRAM:   "8GB",
@@ -404,9 +404,9 @@ data_residency:
   local_only: true
 `,
 		EnvVars: map[string]string{
-			"FORGE_PROVIDER":   "lmstudio",
+			"FORGE_PROVIDER":     "lmstudio",
 			"FORGE_LMSTUDIO_URL": "http://localhost:1234/v1",
-			"FORGE_LOCAL_ONLY": "true",
+			"FORGE_LOCAL_ONLY":   "true",
 		},
 		Platform: []string{"linux", "darwin", "windows"},
 		MinRAM:   "8GB",

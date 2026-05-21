@@ -19,13 +19,13 @@ const ProtocolVersion = "0.1.0"
 type MessageType string
 
 const (
-	MessageTaskRequest    MessageType = "task_request"
-	MessageTaskResponse   MessageType = "task_response"
-	MessageCapabilityQuery MessageType = "capability_query"
+	MessageTaskRequest        MessageType = "task_request"
+	MessageTaskResponse       MessageType = "task_response"
+	MessageCapabilityQuery    MessageType = "capability_query"
 	MessageCapabilityResponse MessageType = "capability_response"
-	MessageHeartbeat      MessageType = "heartbeat"
-	MessageError          MessageType = "error"
-	MessageCancel         MessageType = "cancel"
+	MessageHeartbeat          MessageType = "heartbeat"
+	MessageError              MessageType = "error"
+	MessageCancel             MessageType = "cancel"
 )
 
 // AgentCard describes an agent's capabilities (A2A discovery).
@@ -43,48 +43,48 @@ type AgentCard struct {
 
 // Capability describes what an agent can do.
 type Capability struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	InputSchema string   `json:"input_schema,omitempty"`  // JSON Schema URI
-	OutputSchema string  `json:"output_schema,omitempty"`
-	Tags        []string `json:"tags,omitempty"`
+	ID           string   `json:"id"`
+	Name         string   `json:"name"`
+	Description  string   `json:"description"`
+	InputSchema  string   `json:"input_schema,omitempty"` // JSON Schema URI
+	OutputSchema string   `json:"output_schema,omitempty"`
+	Tags         []string `json:"tags,omitempty"`
 }
 
 // Message is an A2A protocol message.
 type Message struct {
-	ID          string                 `json:"id"`
-	Type        MessageType            `json:"type"`
-	From        string                 `json:"from"`
-	To          string                 `json:"to"`
-	Protocol    string                 `json:"protocol"`
-	Timestamp   time.Time              `json:"timestamp"`
-	Payload     json.RawMessage        `json:"payload"`
-	ReplyTo     string                 `json:"reply_to,omitempty"`
-	CorrelationID string               `json:"correlation_id,omitempty"`
-	TTL         int                    `json:"ttl,omitempty"` // seconds
+	ID            string          `json:"id"`
+	Type          MessageType     `json:"type"`
+	From          string          `json:"from"`
+	To            string          `json:"to"`
+	Protocol      string          `json:"protocol"`
+	Timestamp     time.Time       `json:"timestamp"`
+	Payload       json.RawMessage `json:"payload"`
+	ReplyTo       string          `json:"reply_to,omitempty"`
+	CorrelationID string          `json:"correlation_id,omitempty"`
+	TTL           int             `json:"ttl,omitempty"` // seconds
 }
 
 // TaskRequest is a request to perform a task.
 type TaskRequest struct {
-	TaskID      string                 `json:"task_id"`
-	Capability  string                 `json:"capability"`
-	Input       json.RawMessage        `json:"input"`
-	Priority    int                    `json:"priority"`
-	Deadline    *time.Time             `json:"deadline,omitempty"`
-	CallbackURL string                 `json:"callback_url,omitempty"`
-	Metadata    map[string]string      `json:"metadata,omitempty"`
+	TaskID      string            `json:"task_id"`
+	Capability  string            `json:"capability"`
+	Input       json.RawMessage   `json:"input"`
+	Priority    int               `json:"priority"`
+	Deadline    *time.Time        `json:"deadline,omitempty"`
+	CallbackURL string            `json:"callback_url,omitempty"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
 // TaskResponse is the response to a task.
 type TaskResponse struct {
-	TaskID      string                 `json:"task_id"`
-	Status      string                 `json:"status"` // pending, running, completed, failed
-	Output      json.RawMessage        `json:"output,omitempty"`
-	Error       string                 `json:"error,omitempty"`
-	Progress    float64                `json:"progress"`
-	DurationMs  int64                  `json:"duration_ms"`
-	Cost        float64                `json:"cost,omitempty"`
+	TaskID     string          `json:"task_id"`
+	Status     string          `json:"status"` // pending, running, completed, failed
+	Output     json.RawMessage `json:"output,omitempty"`
+	Error      string          `json:"error,omitempty"`
+	Progress   float64         `json:"progress"`
+	DurationMs int64           `json:"duration_ms"`
+	Cost       float64         `json:"cost,omitempty"`
 }
 
 // CapabilityQuery requests capability information.
@@ -96,18 +96,18 @@ type CapabilityQuery struct {
 
 // CapabilityResponse responds with capabilities.
 type CapabilityResponse struct {
-	Agents      []AgentCard `json:"agents"`
-	TotalCount  int         `json:"total_count"`
+	Agents     []AgentCard `json:"agents"`
+	TotalCount int         `json:"total_count"`
 }
 
 // A2AServer implements the A2A protocol server.
 type A2AServer struct {
-	agentCard  AgentCard
-	registry   map[string]*AgentCard
-	handlers   map[MessageType]MessageHandler
-	inbox      chan Message
-	storeDir   string
-	mu         sync.RWMutex
+	agentCard AgentCard
+	registry  map[string]*AgentCard
+	handlers  map[MessageType]MessageHandler
+	inbox     chan Message
+	storeDir  string
+	mu        sync.RWMutex
 }
 
 // MessageHandler handles incoming A2A messages.
@@ -300,10 +300,10 @@ func (s *A2AServer) Stats() A2AStats {
 	defer s.mu.RUnlock()
 
 	return A2AStats{
-		AgentID:       s.agentCard.ID,
+		AgentID:          s.agentCard.ID,
 		RegisteredAgents: len(s.registry),
-		Capabilities:  len(s.agentCard.Capabilities),
-		ProtocolVersion: ProtocolVersion,
+		Capabilities:     len(s.agentCard.Capabilities),
+		ProtocolVersion:  ProtocolVersion,
 	}
 }
 

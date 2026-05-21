@@ -92,7 +92,7 @@ func TestToolIndexBuilding(t *testing.T) {
 	gateway := NewComposeGateway(ComposeConfig{})
 
 	upstream := &UpstreamServer{
-		Config: ServerConfig{Name: "myserver", Prefix: "my"},
+		Config:  ServerConfig{Name: "myserver", Prefix: "my"},
 		Healthy: true,
 		Tools: []ToolInfo{
 			{Name: "read", Description: "Read a file", Server: "myserver", PrefixedName: "my_read"},

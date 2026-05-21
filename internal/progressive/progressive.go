@@ -58,10 +58,10 @@ type Milestone struct {
 
 // Ladder tracks a user's progression through the complexity levels.
 type Ladder struct {
-	UserLevel  Level                `json:"user_level"`
+	UserLevel  Level                 `json:"user_level"`
 	Milestones map[string]*Milestone `json:"milestones"`
-	XP         int                  `json:"xp"`
-	StorePath  string               `json:"-"`
+	XP         int                   `json:"xp"`
+	StorePath  string                `json:"-"`
 	mu         sync.Mutex
 }
 
@@ -334,12 +334,12 @@ func (l *Ladder) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"level":         l.UserLevel.String(),
-		"level_number":  int(l.UserLevel),
-		"xp":            l.XP,
-		"total_milestones": total,
+		"level":                l.UserLevel.String(),
+		"level_number":         int(l.UserLevel),
+		"xp":                   l.XP,
+		"total_milestones":     total,
 		"completed_milestones": completed,
-		"overall_pct":   l.overallProgress(),
+		"overall_pct":          l.overallProgress(),
 	}
 }
 

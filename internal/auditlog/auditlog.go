@@ -40,21 +40,21 @@ const (
 
 // Event represents an audit log event.
 type Event struct {
-	Index       int64     `json:"index"`
-	ID          string    `json:"id"`
-	Timestamp   time.Time `json:"timestamp"`
-	Severity    Severity  `json:"severity"`
-	Category    Category  `json:"category"`
-	Actor       string    `json:"actor"`       // Who did it
-	Action      string    `json:"action"`      // What they did
-	Resource    string    `json:"resource"`    // What was affected
-	Details     string    `json:"details,omitempty"`
-	AgentID     string    `json:"agent_id,omitempty"`
-	SessionID   string    `json:"session_id,omitempty"`
-	IPAddress   string    `json:"ip_address,omitempty"`
-	PrevHash    string    `json:"prev_hash"`   // Hash of previous event
-	Hash        string    `json:"hash"`        // Hash of this event
-	Tampered    bool      `json:"tampered,omitempty"` // Set during verification
+	Index     int64     `json:"index"`
+	ID        string    `json:"id"`
+	Timestamp time.Time `json:"timestamp"`
+	Severity  Severity  `json:"severity"`
+	Category  Category  `json:"category"`
+	Actor     string    `json:"actor"`    // Who did it
+	Action    string    `json:"action"`   // What they did
+	Resource  string    `json:"resource"` // What was affected
+	Details   string    `json:"details,omitempty"`
+	AgentID   string    `json:"agent_id,omitempty"`
+	SessionID string    `json:"session_id,omitempty"`
+	IPAddress string    `json:"ip_address,omitempty"`
+	PrevHash  string    `json:"prev_hash"`          // Hash of previous event
+	Hash      string    `json:"hash"`               // Hash of this event
+	Tampered  bool      `json:"tampered,omitempty"` // Set during verification
 }
 
 // RetentionPolicy defines how long to keep events.

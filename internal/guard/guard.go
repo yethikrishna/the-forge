@@ -20,9 +20,9 @@ import (
 type Action struct {
 	ID        string            `json:"id"`
 	AgentID   string            `json:"agent_id"`
-	Type      string            `json:"type"`       // "shell", "api_call", "file_write", "file_read", "message", "tool_use"
-	Target    string            `json:"target"`      // what the action targets
-	Content   string            `json:"content"`     // action content/payload
+	Type      string            `json:"type"`    // "shell", "api_call", "file_write", "file_read", "message", "tool_use"
+	Target    string            `json:"target"`  // what the action targets
+	Content   string            `json:"content"` // action content/payload
 	Metadata  map[string]string `json:"metadata,omitempty"`
 	Timestamp time.Time         `json:"timestamp"`
 }
@@ -31,7 +31,7 @@ type Action struct {
 type Verdict struct {
 	Allowed    bool     `json:"allowed"`
 	Reason     string   `json:"reason,omitempty"`
-	Modified   bool     `json:"modified,omitempty"`   // content was sanitized
+	Modified   bool     `json:"modified,omitempty"`    // content was sanitized
 	NewContent string   `json:"new_content,omitempty"` // sanitized content
 	Warnings   []string `json:"warnings,omitempty"`
 	RuleIDs    []string `json:"rule_ids,omitempty"` // which rules triggered
@@ -41,32 +41,32 @@ type Verdict struct {
 type RuleType string
 
 const (
-	RuleBlock      RuleType = "block"      // block matching actions
-	RuleAllow      RuleType = "allow"      // explicitly allow (override block)
-	RuleSanitize   RuleType = "sanitize"   // modify content
-	RuleRateLimit  RuleType = "rate_limit" // rate limit
-	RuleCostCap    RuleType = "cost_cap"   // cost cap
-	RuleRequire    RuleType = "require"    // require approval
-	RuleScope      RuleType = "scope"      // scope restriction
+	RuleBlock     RuleType = "block"      // block matching actions
+	RuleAllow     RuleType = "allow"      // explicitly allow (override block)
+	RuleSanitize  RuleType = "sanitize"   // modify content
+	RuleRateLimit RuleType = "rate_limit" // rate limit
+	RuleCostCap   RuleType = "cost_cap"   // cost cap
+	RuleRequire   RuleType = "require"    // require approval
+	RuleScope     RuleType = "scope"      // scope restriction
 )
 
 // Rule is a guard rule.
 type Rule struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Type        RuleType          `json:"type"`
-	Description string            `json:"description"`
-	Enabled     bool              `json:"enabled"`
-	Priority    int               `json:"priority"` // higher = checked first
-	ActionTypes []string          `json:"action_types,omitempty"` // empty = all
-	Targets     []string          `json:"targets,omitempty"`      // glob patterns
-	Contains    []string          `json:"contains,omitempty"`     // content contains
-	MaxRate     int               `json:"max_rate,omitempty"`     // max actions per minute
-	MaxCost     float64           `json:"max_cost,omitempty"`     // max cost
-	ReplaceWith string            `json:"replace_with,omitempty"` // for sanitize rules
-	Severity    string            `json:"severity,omitempty"`     // "low", "medium", "high", "critical"
-	Tags        []string          `json:"tags,omitempty"`
-	CreatedAt   time.Time         `json:"created_at"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Type        RuleType  `json:"type"`
+	Description string    `json:"description"`
+	Enabled     bool      `json:"enabled"`
+	Priority    int       `json:"priority"`               // higher = checked first
+	ActionTypes []string  `json:"action_types,omitempty"` // empty = all
+	Targets     []string  `json:"targets,omitempty"`      // glob patterns
+	Contains    []string  `json:"contains,omitempty"`     // content contains
+	MaxRate     int       `json:"max_rate,omitempty"`     // max actions per minute
+	MaxCost     float64   `json:"max_cost,omitempty"`     // max cost
+	ReplaceWith string    `json:"replace_with,omitempty"` // for sanitize rules
+	Severity    string    `json:"severity,omitempty"`     // "low", "medium", "high", "critical"
+	Tags        []string  `json:"tags,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 // GuardLog records a guard decision.
@@ -79,11 +79,11 @@ type GuardLog struct {
 
 // Guard manages safety guardrails.
 type Guard struct {
-	dir    string
-	rules  map[string]*Rule
-	logs   []GuardLog
-	rates  map[string][]time.Time // rule_id -> action timestamps for rate limiting
-	mu     sync.RWMutex
+	dir   string
+	rules map[string]*Rule
+	logs  []GuardLog
+	rates map[string][]time.Time // rule_id -> action timestamps for rate limiting
+	mu    sync.RWMutex
 }
 
 // NewGuard creates a new guard.

@@ -165,12 +165,12 @@ func TestValidate(t *testing.T) {
 
 func TestFormatManifest(t *testing.T) {
 	m := &Manifest{
-		Name:   "test",
-		ID:     "p1",
-		Type:   TypeWASM,
-		Path:   "/t.wasm",
-		Enabled: true,
-		Hooks:  []Hook{HookPreExec},
+		Name:     "test",
+		ID:       "p1",
+		Type:     TypeWASM,
+		Path:     "/t.wasm",
+		Enabled:  true,
+		Hooks:    []Hook{HookPreExec},
 		Commands: []CommandDef{{Name: "hello", Description: "says hello"}},
 	}
 	out := FormatManifest(m)

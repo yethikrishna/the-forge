@@ -57,8 +57,8 @@ type Tool struct {
 
 // ToolCall represents a tool invocation.
 type ToolCall struct {
-	Name   string                 `json:"name"`
-	Args   map[string]interface{} `json:"arguments,omitempty"`
+	Name string                 `json:"name"`
+	Args map[string]interface{} `json:"arguments,omitempty"`
 }
 
 // ToolResult represents a tool execution result.
@@ -75,10 +75,10 @@ type ContentBlock struct {
 
 // Resource represents an MCP resource.
 type Resource struct {
-	URI         string      `json:"uri"`
-	Name        string      `json:"name"`
-	Description string      `json:"description,omitempty"`
-	MimeType    string      `json:"mimeType,omitempty"`
+	URI         string `json:"uri"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	MimeType    string `json:"mimeType,omitempty"`
 }
 
 // ServerInfo represents server metadata.
@@ -89,9 +89,9 @@ type ServerInfo struct {
 
 // Prompt represents an MCP prompt template.
 type Prompt struct {
-	Name        string       `json:"name"`
-	Description string       `json:"description,omitempty"`
-	Arguments   []PromptArg  `json:"arguments,omitempty"`
+	Name        string      `json:"name"`
+	Description string      `json:"description,omitempty"`
+	Arguments   []PromptArg `json:"arguments,omitempty"`
 }
 
 // PromptArg represents a prompt argument.
@@ -106,11 +106,11 @@ type Handler func(params json.RawMessage) (interface{}, error)
 
 // Server is an MCP server.
 type Server struct {
-	Info       ServerInfo
-	tools      []Tool
-	resources  []Resource
-	prompts    []Prompt
-	handlers   map[string]Handler
+	Info         ServerInfo
+	tools        []Tool
+	resources    []Resource
+	prompts      []Prompt
+	handlers     map[string]Handler
 	toolHandlers map[string]func(map[string]interface{}) (ToolResult, error)
 }
 
@@ -291,7 +291,7 @@ func ForgeBuiltins() []Tool {
 			Name:        "forge_session",
 			Description: "Get current session info",
 			InputSchema: map[string]interface{}{
-				"type": "object",
+				"type":       "object",
 				"properties": map[string]interface{}{},
 			},
 		},
@@ -358,22 +358,22 @@ func (s *Server) RegisterForgeTools() {
 // RegisterForgeResources registers Forge resources.
 func (s *Server) RegisterForgeResources() {
 	s.RegisterResource(Resource{
-		URI:      "forge://config",
-		Name:     "Forge Configuration",
+		URI:         "forge://config",
+		Name:        "Forge Configuration",
 		Description: "Current Forge configuration",
-		MimeType: "application/json",
+		MimeType:    "application/json",
 	})
 	s.RegisterResource(Resource{
-		URI:      "forge://status",
-		Name:     "Forge Status",
+		URI:         "forge://status",
+		Name:        "Forge Status",
 		Description: "Current Forge system status",
-		MimeType: "application/json",
+		MimeType:    "application/json",
 	})
 	s.RegisterResource(Resource{
-		URI:      "forge://agents",
-		Name:     "Active Agents",
+		URI:         "forge://agents",
+		Name:        "Active Agents",
 		Description: "List of active agents",
-		MimeType: "application/json",
+		MimeType:    "application/json",
 	})
 }
 

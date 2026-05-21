@@ -41,28 +41,28 @@ type Scenario struct {
 
 // Result is the result of running a scenario.
 type Result struct {
-	ID           string    `json:"id"`
-	ScenarioID   string    `json:"scenario_id"`
-	AgentID      string    `json:"agent_id"`
-	Pass         bool      `json:"pass"`
-	Score        float64   `json:"score"` // 0-1
-	Output       string    `json:"output,omitempty"`
-	Duration     string    `json:"duration"`
-	Error        string    `json:"error,omitempty"`
-	Timestamp    time.Time `json:"timestamp"`
+	ID         string    `json:"id"`
+	ScenarioID string    `json:"scenario_id"`
+	AgentID    string    `json:"agent_id"`
+	Pass       bool      `json:"pass"`
+	Score      float64   `json:"score"` // 0-1
+	Output     string    `json:"output,omitempty"`
+	Duration   string    `json:"duration"`
+	Error      string    `json:"error,omitempty"`
+	Timestamp  time.Time `json:"timestamp"`
 }
 
 // Run is a collection of scenario results.
 type Run struct {
-	ID         string    `json:"id"`
-	AgentID    string    `json:"agent_id"`
-	Type       ScenarioType `json:"type"`
-	ScenarioIDs []string  `json:"scenario_ids"`
-	Results    []Result  `json:"results"`
-	PassRate   float64   `json:"pass_rate"`
-	AvgScore   float64   `json:"avg_score"`
-	StartedAt  time.Time `json:"started_at"`
-	FinishedAt time.Time `json:"finished_at"`
+	ID          string       `json:"id"`
+	AgentID     string       `json:"agent_id"`
+	Type        ScenarioType `json:"type"`
+	ScenarioIDs []string     `json:"scenario_ids"`
+	Results     []Result     `json:"results"`
+	PassRate    float64      `json:"pass_rate"`
+	AvgScore    float64      `json:"avg_score"`
+	StartedAt   time.Time    `json:"started_at"`
+	FinishedAt  time.Time    `json:"finished_at"`
 }
 
 // Engine manages simulations.
@@ -286,10 +286,10 @@ func (e *Engine) AgentStats(agentID string) map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"agent":      agentID,
-		"results":    len(agentResults),
-		"pass_rate":  float64(passCount) / float64(len(agentResults)),
-		"avg_score":  totalScore / float64(len(agentResults)),
+		"agent":     agentID,
+		"results":   len(agentResults),
+		"pass_rate": float64(passCount) / float64(len(agentResults)),
+		"avg_score": totalScore / float64(len(agentResults)),
 	}
 }
 

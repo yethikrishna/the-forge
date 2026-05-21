@@ -51,28 +51,28 @@ type Step struct {
 
 // Lesson is a complete tutorial lesson.
 type Lesson struct {
-	ID          string     `json:"id"`
-	Title       string     `json:"title"`
-	Description string     `json:"description"`
-	Difficulty  Difficulty `json:"difficulty"`
-	Category    string     `json:"category"` // e.g. "getting-started", "agents", "pipelines", "security"
-	Duration    string     `json:"duration"` // e.g. "5 min", "15 min"
-	Prerequisites []string `json:"prerequisites,omitempty"` // Lesson IDs
-	Steps       []Step    `json:"steps"`
-	Tags        []string  `json:"tags,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID            string     `json:"id"`
+	Title         string     `json:"title"`
+	Description   string     `json:"description"`
+	Difficulty    Difficulty `json:"difficulty"`
+	Category      string     `json:"category"`                // e.g. "getting-started", "agents", "pipelines", "security"
+	Duration      string     `json:"duration"`                // e.g. "5 min", "15 min"
+	Prerequisites []string   `json:"prerequisites,omitempty"` // Lesson IDs
+	Steps         []Step     `json:"steps"`
+	Tags          []string   `json:"tags,omitempty"`
+	CreatedAt     time.Time  `json:"created_at"`
+	UpdatedAt     time.Time  `json:"updated_at"`
 }
 
 // Progress tracks user progress across lessons.
 type Progress struct {
-	LessonID    string    `json:"lesson_id"`
+	LessonID    string     `json:"lesson_id"`
 	StartedAt   *time.Time `json:"started_at,omitempty"`
 	CompletedAt *time.Time `json:"completed_at,omitempty"`
-	CurrentStep int       `json:"current_step"`
-	StepsDone   int       `json:"steps_done"`
-	Status      string    `json:"status"` // not_started, in_progress, completed
-	Score       int       `json:"score"`  // 0-100
+	CurrentStep int        `json:"current_step"`
+	StepsDone   int        `json:"steps_done"`
+	Status      string     `json:"status"` // not_started, in_progress, completed
+	Score       int        `json:"score"`  // 0-100
 }
 
 // Store manages lessons and progress.
@@ -383,15 +383,15 @@ func (s *Store) ResetProgress(lessonID string) error {
 
 // Stats returns learning statistics.
 type Stats struct {
-	TotalLessons    int                    `json:"total_lessons"`
-	CompletedCount  int                    `json:"completed_count"`
-	InProgressCount int                    `json:"in_progress_count"`
-	NotStartedCount int                    `json:"not_started_count"`
-	AvgScore        float64               `json:"avg_score"`
-	ByDifficulty    map[Difficulty]int     `json:"by_difficulty"`
-	ByCategory      map[string]int         `json:"by_category"`
-	TotalSteps      int                    `json:"total_steps"`
-	StepsCompleted  int                    `json:"steps_completed"`
+	TotalLessons    int                `json:"total_lessons"`
+	CompletedCount  int                `json:"completed_count"`
+	InProgressCount int                `json:"in_progress_count"`
+	NotStartedCount int                `json:"not_started_count"`
+	AvgScore        float64            `json:"avg_score"`
+	ByDifficulty    map[Difficulty]int `json:"by_difficulty"`
+	ByCategory      map[string]int     `json:"by_category"`
+	TotalSteps      int                `json:"total_steps"`
+	StepsCompleted  int                `json:"steps_completed"`
 }
 
 // GetStats returns aggregate learning statistics.
@@ -511,7 +511,7 @@ func (s *Store) seedBuiltinLessons() {
 		{
 			ID: "building-pipelines", Title: "Building Pipelines", Category: "pipelines",
 			Difficulty: DiffIntermediate, Duration: "15 min",
-			Description: "Create multi-step agent pipelines for complex workflows.",
+			Description:   "Create multi-step agent pipelines for complex workflows.",
 			Prerequisites: []string{"your-first-agent"},
 			Steps: []Step{
 				{Title: "Understand pipeline syntax", Instruction: "Review the Forgefile pipeline format.", Explanation: "Pipelines chain agents together with input/output contracts."},
@@ -544,7 +544,7 @@ func (s *Store) seedBuiltinLessons() {
 		{
 			ID: "multi-agent-orchestration", Title: "Multi-Agent Orchestration", Category: "agents",
 			Difficulty: DiffAdvanced, Duration: "20 min",
-			Description: "Orchestrate multiple agents for complex tasks.",
+			Description:   "Orchestrate multiple agents for complex tasks.",
 			Prerequisites: []string{"building-pipelines"},
 			Steps: []Step{
 				{Title: "List agents", Instruction: "See available agents.", Command: "forge agents list", Explanation: "Know your team before you deploy."},

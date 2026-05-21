@@ -20,26 +20,26 @@ import (
 type ServerStatus string
 
 const (
-	StatusReachable ServerStatus = "reachable"
+	StatusReachable   ServerStatus = "reachable"
 	StatusUnreachable ServerStatus = "unreachable"
-	StatusUnknown   ServerStatus = "unknown"
+	StatusUnknown     ServerStatus = "unknown"
 )
 
 // DiscoveredServer represents a discovered MCP server.
 type DiscoveredServer struct {
-	Name        string            `json:"name"`
-	Protocol    string            `json:"protocol"` // mcp, streamable-http, sse
-	Transport   string            `json:"transport"` // stdio, http, sse
-	Address     string            `json:"address,omitempty"`
-	Command     string            `json:"command,omitempty"`
-	Args        []string          `json:"args,omitempty"`
-	Env         map[string]string `json:"env,omitempty"`
-	Status      ServerStatus      `json:"status"`
-	Latency     time.Duration     `json:"latency,omitempty"`
-	Source      string            `json:"source"` // config, network, process
-	Capabilities []string         `json:"capabilities,omitempty"`
-	ConfigPath  string            `json:"config_path,omitempty"`
-	DiscoveredAt time.Time        `json:"discovered_at"`
+	Name         string            `json:"name"`
+	Protocol     string            `json:"protocol"`  // mcp, streamable-http, sse
+	Transport    string            `json:"transport"` // stdio, http, sse
+	Address      string            `json:"address,omitempty"`
+	Command      string            `json:"command,omitempty"`
+	Args         []string          `json:"args,omitempty"`
+	Env          map[string]string `json:"env,omitempty"`
+	Status       ServerStatus      `json:"status"`
+	Latency      time.Duration     `json:"latency,omitempty"`
+	Source       string            `json:"source"` // config, network, process
+	Capabilities []string          `json:"capabilities,omitempty"`
+	ConfigPath   string            `json:"config_path,omitempty"`
+	DiscoveredAt time.Time         `json:"discovered_at"`
 }
 
 // DiscoveryResult holds the results of a discovery scan.
@@ -52,9 +52,9 @@ type DiscoveryResult struct {
 
 // Discoverer finds MCP servers.
 type Discoverer struct {
-	mu       sync.Mutex
+	mu         sync.Mutex
 	configDirs []string
-	scanPorts []int
+	scanPorts  []int
 }
 
 // NewDiscoverer creates an MCP server discoverer.

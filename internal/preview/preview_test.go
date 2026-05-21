@@ -180,9 +180,9 @@ func TestRestoreBackup(t *testing.T) {
 
 func TestAssessImpact(t *testing.T) {
 	tests := []struct {
-		action  ActionType
-		target  string
-		impact  Impact
+		action ActionType
+		target string
+		impact Impact
 	}{
 		{TypeFileDelete, "/tmp/test.txt", ImpactHigh},
 		{TypeFileDelete, "/etc/passwd", ImpactDestructive},
@@ -253,17 +253,17 @@ func TestPersistence(t *testing.T) {
 
 func TestFormatPlan(t *testing.T) {
 	plan := &Plan{
-		ID:          "plan-1",
-		AgentID:     "agent-1",
-		Type:        TypeFileDelete,
-		Target:      "/tmp/old.txt",
-		Description: "Delete old temp file",
-		Impact:      ImpactHigh,
-		Reversible:  false,
-		Risks:       []string{"Data loss"},
+		ID:           "plan-1",
+		AgentID:      "agent-1",
+		Type:         TypeFileDelete,
+		Target:       "/tmp/old.txt",
+		Description:  "Delete old temp file",
+		Impact:       ImpactHigh,
+		Reversible:   false,
+		Risks:        []string{"Data loss"},
 		Alternatives: []string{"Archive instead"},
-		Status:      "pending",
-		CreatedAt:   time.Now(),
+		Status:       "pending",
+		CreatedAt:    time.Now(),
 	}
 
 	s := FormatPlan(plan)

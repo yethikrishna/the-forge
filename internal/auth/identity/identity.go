@@ -30,10 +30,10 @@ type Identity struct {
 
 // SignedManifest is a manifest signed by an agent's private key.
 type SignedManifest struct {
-	Manifest   Manifest `json:"manifest"`
-	Signature  string   `json:"signature"`
-	SignerID   string   `json:"signer_id"`
-	SignedAt   time.Time `json:"signed_at"`
+	Manifest  Manifest  `json:"manifest"`
+	Signature string    `json:"signature"`
+	SignerID  string    `json:"signer_id"`
+	SignedAt  time.Time `json:"signed_at"`
 }
 
 // Manifest describes an agent's capabilities and configuration.
@@ -52,21 +52,21 @@ type Manifest struct {
 type TrustLevel string
 
 const (
-	TrustUnknown  TrustLevel = "unknown"
+	TrustUnknown   TrustLevel = "unknown"
 	TrustUntrusted TrustLevel = "untrusted"
-	TrustLimited  TrustLevel = "limited"
-	Trusted       TrustLevel = "trusted"
-	TrustVerified TrustLevel = "verified"
+	TrustLimited   TrustLevel = "limited"
+	Trusted        TrustLevel = "trusted"
+	TrustVerified  TrustLevel = "verified"
 )
 
 // TrustEntry records the trust level for an agent identity.
 type TrustEntry struct {
-	IdentityFingerprint string    `json:"identity_fingerprint"`
-	Name                string    `json:"name"`
+	IdentityFingerprint string     `json:"identity_fingerprint"`
+	Name                string     `json:"name"`
 	TrustLevel          TrustLevel `json:"trust_level"`
-	GrantedBy           string    `json:"granted_by"`
-	GrantedAt           time.Time `json:"granted_at"`
-	Reason              string    `json:"reason,omitempty"`
+	GrantedBy           string     `json:"granted_by"`
+	GrantedAt           time.Time  `json:"granted_at"`
+	Reason              string     `json:"reason,omitempty"`
 	ExpiresAt           *time.Time `json:"expires_at,omitempty"`
 }
 

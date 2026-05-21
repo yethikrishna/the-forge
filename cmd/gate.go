@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/featuregate"
+	"github.com/spf13/cobra"
 )
 
 var gateCmd = &cobra.Command{
@@ -14,15 +14,15 @@ var gateCmd = &cobra.Command{
 }
 
 var (
-	gateDir       string
-	gateName      string
-	gateDesc      string
-	gateOwner     string
-	gatePct       float64
-	gateUserIDs   []string
-	gateTags      []string
-	gateUserID    string
-	gateAgent     string
+	gateDir     string
+	gateName    string
+	gateDesc    string
+	gateOwner   string
+	gatePct     float64
+	gateUserIDs []string
+	gateTags    []string
+	gateUserID  string
+	gateAgent   string
 )
 
 func init() {

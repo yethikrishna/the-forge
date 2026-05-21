@@ -19,11 +19,11 @@ type Pattern struct {
 
 // Detection is a found secret in text.
 type Detection struct {
-	Pattern   Pattern `json:"pattern"`
-	Match     string  `json:"match"`
-	Start     int     `json:"start"`
-	End       int     `json:"end"`
-	Redacted  string  `json:"redacted"`
+	Pattern  Pattern `json:"pattern"`
+	Match    string  `json:"match"`
+	Start    int     `json:"start"`
+	End      int     `json:"end"`
+	Redacted string  `json:"redacted"`
 }
 
 // Scanner scans text for secrets and PII.
@@ -267,5 +267,6 @@ func redactForType(category string) string {
 		return "[REDACTED]"
 	}
 }
+
 // Need fmt import
 var _ = fmt.Sprintf

@@ -31,44 +31,44 @@ type UsageSnapshot struct {
 // LiveStats holds the computed live statistics.
 type LiveStats struct {
 	// Current session (since tracker started)
-	SessionInput      int                `json:"session_input"`
-	SessionOutput     int                `json:"session_output"`
-	SessionCost       float64            `json:"session_cost"`
-	SessionCalls      int                `json:"session_calls"`
-	SessionStart      time.Time          `json:"session_start"`
-	SessionDuration   time.Duration      `json:"session_duration"`
+	SessionInput    int           `json:"session_input"`
+	SessionOutput   int           `json:"session_output"`
+	SessionCost     float64       `json:"session_cost"`
+	SessionCalls    int           `json:"session_calls"`
+	SessionStart    time.Time     `json:"session_start"`
+	SessionDuration time.Duration `json:"session_duration"`
 
 	// Today
-	TodayInput        int                `json:"today_input"`
-	TodayOutput       int                `json:"today_output"`
-	TodayCost         float64            `json:"today_cost"`
-	TodayCalls        int                `json:"today_calls"`
+	TodayInput  int     `json:"today_input"`
+	TodayOutput int     `json:"today_output"`
+	TodayCost   float64 `json:"today_cost"`
+	TodayCalls  int     `json:"today_calls"`
 
 	// This month
-	MonthInput        int                `json:"month_input"`
-	MonthOutput       int                `json:"month_output"`
-	MonthCost         float64            `json:"month_cost"`
-	MonthCalls        int                `json:"month_calls"`
+	MonthInput  int     `json:"month_input"`
+	MonthOutput int     `json:"month_output"`
+	MonthCost   float64 `json:"month_cost"`
+	MonthCalls  int     `json:"month_calls"`
 
 	// Burn rate (based on last hour or available data)
-	TokensPerMinute   float64            `json:"tokens_per_minute"`
-	CostPerHour       float64            `json:"cost_per_hour"`
+	TokensPerMinute float64 `json:"tokens_per_minute"`
+	CostPerHour     float64 `json:"cost_per_hour"`
 
 	// Projections
-	ProjectedMonthly  float64            `json:"projected_monthly"`
-	ProjectedTokens   int64              `json:"projected_tokens"`
-	DaysRemaining     int                `json:"days_remaining"`
+	ProjectedMonthly float64 `json:"projected_monthly"`
+	ProjectedTokens  int64   `json:"projected_tokens"`
+	DaysRemaining    int     `json:"days_remaining"`
 
 	// Breakdowns
-	ByModel           map[string]ModelBreakdown `json:"by_model"`
-	ByAgent           map[string]AgentBreakdown `json:"by_agent"`
-	TopAgents         []AgentBreakdown          `json:"top_agents"`
+	ByModel   map[string]ModelBreakdown `json:"by_model"`
+	ByAgent   map[string]AgentBreakdown `json:"by_agent"`
+	TopAgents []AgentBreakdown          `json:"top_agents"`
 
 	// Budget
-	BudgetLimit       float64            `json:"budget_limit,omitempty"`
-	BudgetUsed        float64            `json:"budget_used"`
-	BudgetPct         float64            `json:"budget_pct"`
-	BudgetRemaining   float64            `json:"budget_remaining"`
+	BudgetLimit     float64 `json:"budget_limit,omitempty"`
+	BudgetUsed      float64 `json:"budget_used"`
+	BudgetPct       float64 `json:"budget_pct"`
+	BudgetRemaining float64 `json:"budget_remaining"`
 }
 
 // ModelBreakdown is cost/tokens for a specific model.
@@ -174,10 +174,10 @@ func (lt *LiveTracker) Stats() *LiveStats {
 	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
 
 	stats := &LiveStats{
-		SessionStart:  now,
-		ByModel:       make(map[string]ModelBreakdown),
-		ByAgent:       make(map[string]AgentBreakdown),
-		BudgetLimit:   lt.budget,
+		SessionStart: now,
+		ByModel:      make(map[string]ModelBreakdown),
+		ByAgent:      make(map[string]AgentBreakdown),
+		BudgetLimit:  lt.budget,
 	}
 
 	// Track earliest timestamp for session start

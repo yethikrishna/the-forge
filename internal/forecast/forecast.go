@@ -15,30 +15,30 @@ import (
 
 // HistoricalRecord is a past task execution record.
 type HistoricalRecord struct {
-	TaskType    string    `json:"task_type"`
-	Agent       string    `json:"agent"`
-	Model       string    `json:"model"`
-	InputTokens int64     `json:"input_tokens"`
-	OutputTokens int64    `json:"output_tokens"`
-	Cost        float64   `json:"cost"`
-	Duration    float64   `json:"duration_seconds"`
-	Success     bool      `json:"success"`
-	Timestamp   time.Time `json:"timestamp"`
+	TaskType     string    `json:"task_type"`
+	Agent        string    `json:"agent"`
+	Model        string    `json:"model"`
+	InputTokens  int64     `json:"input_tokens"`
+	OutputTokens int64     `json:"output_tokens"`
+	Cost         float64   `json:"cost"`
+	Duration     float64   `json:"duration_seconds"`
+	Success      bool      `json:"success"`
+	Timestamp    time.Time `json:"timestamp"`
 }
 
 // Forecast is a cost and time prediction.
 type Forecast struct {
-	TaskType       string  `json:"task_type"`
-	EstimatedCost  float64 `json:"estimated_cost"`
-	CostLow        float64 `json:"cost_low"`
-	CostHigh       float64 `json:"cost_high"`
-	EstimatedTime  float64 `json:"estimated_time_seconds"`
-	TimeLow        float64 `json:"time_low"`
-	TimeHigh       float64 `json:"time_high"`
-	Confidence     float64 `json:"confidence"`
-	SampleSize     int     `json:"sample_size"`
-	Model          string  `json:"recommended_model"`
-	AltModels      []ModelEstimate `json:"alt_models"`
+	TaskType      string          `json:"task_type"`
+	EstimatedCost float64         `json:"estimated_cost"`
+	CostLow       float64         `json:"cost_low"`
+	CostHigh      float64         `json:"cost_high"`
+	EstimatedTime float64         `json:"estimated_time_seconds"`
+	TimeLow       float64         `json:"time_low"`
+	TimeHigh      float64         `json:"time_high"`
+	Confidence    float64         `json:"confidence"`
+	SampleSize    int             `json:"sample_size"`
+	Model         string          `json:"recommended_model"`
+	AltModels     []ModelEstimate `json:"alt_models"`
 }
 
 // ModelEstimate is a per-model cost/time estimate.
@@ -71,15 +71,15 @@ func (f *Forecaster) Record(taskType, agent, model string, inputTokens, outputTo
 	defer f.mu.Unlock()
 
 	f.records = append(f.records, HistoricalRecord{
-		TaskType:    taskType,
-		Agent:       agent,
-		Model:       model,
-		InputTokens: inputTokens,
+		TaskType:     taskType,
+		Agent:        agent,
+		Model:        model,
+		InputTokens:  inputTokens,
 		OutputTokens: outputTokens,
-		Cost:        cost,
-		Duration:    duration.Seconds(),
-		Success:     success,
-		Timestamp:   time.Now().UTC(),
+		Cost:         cost,
+		Duration:     duration.Seconds(),
+		Success:      success,
+		Timestamp:    time.Now().UTC(),
 	})
 	f.save()
 }

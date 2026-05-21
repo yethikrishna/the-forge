@@ -18,8 +18,8 @@ type Step struct {
 	ID          string   `json:"id"`
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
-	Action      string   `json:"action"`      // what to do
-	Verify      string   `json:"verify"`       // how to verify success
+	Action      string   `json:"action"` // what to do
+	Verify      string   `json:"verify"` // how to verify success
 	Tips        []string `json:"tips"`
 	NextID      string   `json:"next_id"`
 	SkipIf      string   `json:"skip_if,omitempty"` // condition to skip
@@ -27,11 +27,11 @@ type Step struct {
 
 // Result is the result of a quickstart run.
 type Result struct {
-	CompletedSteps []string    `json:"completed_steps"`
-	SkippedSteps   []string    `json:"skipped_steps"`
-	StartTime      time.Time   `json:"start_time"`
-	EndTime        time.Time   `json:"end_time"`
-	FirstWin       string      `json:"first_win"`
+	CompletedSteps []string      `json:"completed_steps"`
+	SkippedSteps   []string      `json:"skipped_steps"`
+	StartTime      time.Time     `json:"start_time"`
+	EndTime        time.Time     `json:"end_time"`
+	FirstWin       string        `json:"first_win"`
 	Achievements   []Achievement `json:"achievements"`
 }
 
@@ -45,12 +45,12 @@ type Achievement struct {
 
 // Quickstart runs the interactive onboarding.
 type Quickstart struct {
-	steps       []Step
-	completed   map[string]bool
-	skipped     map[string]bool
-	startTime   time.Time
+	steps        []Step
+	completed    map[string]bool
+	skipped      map[string]bool
+	startTime    time.Time
 	achievements []Achievement
-	reader      *bufio.Reader
+	reader       *bufio.Reader
 }
 
 // NewQuickstart creates a new quickstart guide.

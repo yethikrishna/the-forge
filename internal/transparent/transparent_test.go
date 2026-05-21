@@ -239,14 +239,14 @@ func TestFormatEventTool(t *testing.T) {
 
 func TestFormatStats(t *testing.T) {
 	s := SessionStats{
-		SessionID: "sess-1",
-		AgentID:   "agent-1",
-		Model:     "gpt-4",
-		TotalTokens: TokenUsage{Prompt: 100, Completion: 50, Total: 150},
-		TotalCost:   CostInfo{TotalCost: 0.09, Currency: "$"},
-		ToolCalls:   5,
+		SessionID:    "sess-1",
+		AgentID:      "agent-1",
+		Model:        "gpt-4",
+		TotalTokens:  TokenUsage{Prompt: 100, Completion: 50, Total: 150},
+		TotalCost:    CostInfo{TotalCost: 0.09, Currency: "$"},
+		ToolCalls:    5,
 		FileAccesses: 3,
-		NetworkReqs: 2,
+		NetworkReqs:  2,
 	}
 	out := FormatStats(&s)
 	if !strings.Contains(out, "gpt-4") {

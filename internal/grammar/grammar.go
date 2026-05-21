@@ -21,9 +21,9 @@ type Violation struct {
 
 // Pattern represents a valid command pattern.
 type Pattern struct {
-	Noun      string   // e.g. "prompt", "session", "agent"
-	Verbs     []string // e.g. "list", "get", "create", "delete"
-	Aliases   []string // e.g. "ls" → "list"
+	Noun    string   // e.g. "prompt", "session", "agent"
+	Verbs   []string // e.g. "list", "get", "create", "delete"
+	Aliases []string // e.g. "ls" → "list"
 }
 
 // Auditor audits command grammar.

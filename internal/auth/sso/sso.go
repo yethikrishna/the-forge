@@ -29,11 +29,11 @@ const (
 
 // OIDCConfig holds OIDC provider configuration.
 type OIDCConfig struct {
-	Issuer       string   `json:"issuer"`
-	ClientID     string   `json:"client_id"`
-	ClientSecret string   `json:"client_secret"`
-	RedirectURL  string   `json:"redirect_url"`
-	Scopes       []string `json:"scopes"`
+	Issuer       string        `json:"issuer"`
+	ClientID     string        `json:"client_id"`
+	ClientSecret string        `json:"client_secret"`
+	RedirectURL  string        `json:"redirect_url"`
+	Scopes       []string      `json:"scopes"`
 	Endpoints    OIDCEndpoints `json:"endpoints,omitempty"`
 }
 
@@ -47,19 +47,19 @@ type OIDCEndpoints struct {
 
 // SAMLConfig holds SAML provider configuration.
 type SAMLConfig struct {
-	EntityID          string `json:"entity_id"`
-	SSOURL            string `json:"sso_url"`
-	SLOURL            string `json:"slo_url"`
-	Certificate       string `json:"certificate"`
-	AttributeMapping  map[string]string `json:"attribute_mapping,omitempty"`
+	EntityID         string            `json:"entity_id"`
+	SSOURL           string            `json:"sso_url"`
+	SLOURL           string            `json:"slo_url"`
+	Certificate      string            `json:"certificate"`
+	AttributeMapping map[string]string `json:"attribute_mapping,omitempty"`
 }
 
 // APIKeyConfig holds API key configuration.
 type APIKeyConfig struct {
-	Prefix      string        `json:"prefix"`       // e.g., "forge_"
-	KeyLength   int           `json:"key_length"`   // bytes of randomness
-	Expiration  time.Duration `json:"expiration"`   // 0 = never expires
-	RateLimit   float64       `json:"rate_limit"`   // requests per second
+	Prefix     string        `json:"prefix"`     // e.g., "forge_"
+	KeyLength  int           `json:"key_length"` // bytes of randomness
+	Expiration time.Duration `json:"expiration"` // 0 = never expires
+	RateLimit  float64       `json:"rate_limit"` // requests per second
 }
 
 // Session represents an authenticated session.
@@ -79,18 +79,18 @@ type Session struct {
 
 // APIKey represents an API key.
 type APIKey struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Key         string    `json:"key"`           // only shown at creation
-	KeyHash     string    `json:"key_hash"`      // stored hash
-	Prefix      string    `json:"prefix"`        // first 8 chars for identification
-	UserID      string    `json:"user_id"`
-	Scopes      []string  `json:"scopes"`
-	ExpiresAt   *time.Time `json:"expires_at,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	LastUsed    *time.Time `json:"last_used,omitempty"`
-	RequestCount int64    `json:"request_count"`
-	Active      bool      `json:"active"`
+	ID           string     `json:"id"`
+	Name         string     `json:"name"`
+	Key          string     `json:"key"`      // only shown at creation
+	KeyHash      string     `json:"key_hash"` // stored hash
+	Prefix       string     `json:"prefix"`   // first 8 chars for identification
+	UserID       string     `json:"user_id"`
+	Scopes       []string   `json:"scopes"`
+	ExpiresAt    *time.Time `json:"expires_at,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	LastUsed     *time.Time `json:"last_used,omitempty"`
+	RequestCount int64      `json:"request_count"`
+	Active       bool       `json:"active"`
 }
 
 // SSOManager manages SSO authentication.
@@ -340,11 +340,11 @@ func (m *SSOManager) Stats() SSOStats {
 	defer m.mu.RUnlock()
 
 	stats := SSOStats{
-		OIDCProviders: len(m.oidcConfigs),
-		SAMLProviders: len(m.samlConfigs),
+		OIDCProviders:  len(m.oidcConfigs),
+		SAMLProviders:  len(m.samlConfigs),
 		ActiveSessions: 0,
-		TotalAPIKeys:  len(m.apiKeys),
-		ActiveAPIKeys: 0,
+		TotalAPIKeys:   len(m.apiKeys),
+		ActiveAPIKeys:  0,
 	}
 
 	now := time.Now().UTC()

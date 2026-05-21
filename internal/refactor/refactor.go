@@ -24,16 +24,16 @@ import (
 type RefactorType string
 
 const (
-	RenameSymbol   RefactorType = "rename-symbol"
-	MovePackage    RefactorType = "move-package"
+	RenameSymbol    RefactorType = "rename-symbol"
+	MovePackage     RefactorType = "move-package"
 	ChangeSignature RefactorType = "change-signature"
-	ExtractFunc    RefactorType = "extract-func"
-	InlineFunc     RefactorType = "inline-func"
-	ChangeType     RefactorType = "change-type"
-	AddParam       RefactorType = "add-param"
-	RemoveParam    RefactorType = "remove-param"
-	SplitPackage   RefactorType = "split-package"
-	MergePackage   RefactorType = "merge-package"
+	ExtractFunc     RefactorType = "extract-func"
+	InlineFunc      RefactorType = "inline-func"
+	ChangeType      RefactorType = "change-type"
+	AddParam        RefactorType = "add-param"
+	RemoveParam     RefactorType = "remove-param"
+	SplitPackage    RefactorType = "split-package"
+	MergePackage    RefactorType = "merge-package"
 )
 
 // RiskLevel represents the risk of a refactoring step.
@@ -49,34 +49,34 @@ const (
 
 // Step represents a single step in a refactoring plan.
 type Step struct {
-	ID           string      `json:"id"`
-	Order        int         `json:"order"`
-	Type         RefactorType `json:"type"`
-	Description  string      `json:"description"`
-	Files        []string    `json:"files"`
-	Risk         RiskLevel   `json:"risk"`
-	DependsOn    []string    `json:"depends_on,omitempty"`
-	AutoApply    bool        `json:"auto_apply"`
-	Diff         string      `json:"diff,omitempty"`
-	Verified     bool        `json:"verified"`
-	Applied      bool        `json:"applied"`
-	Notes        string      `json:"notes,omitempty"`
+	ID          string       `json:"id"`
+	Order       int          `json:"order"`
+	Type        RefactorType `json:"type"`
+	Description string       `json:"description"`
+	Files       []string     `json:"files"`
+	Risk        RiskLevel    `json:"risk"`
+	DependsOn   []string     `json:"depends_on,omitempty"`
+	AutoApply   bool         `json:"auto_apply"`
+	Diff        string       `json:"diff,omitempty"`
+	Verified    bool         `json:"verified"`
+	Applied     bool         `json:"applied"`
+	Notes       string       `json:"notes,omitempty"`
 }
 
 // Plan represents a complete refactoring plan.
 type Plan struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name"`
-	Type        RefactorType `json:"type"`
-	Description string     `json:"description"`
-	CreatedAt   time.Time  `json:"created_at"`
-	Steps       []*Step    `json:"steps"`
-	TotalFiles  int        `json:"total_files"`
-	TotalSteps  int        `json:"total_steps"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Type        RefactorType      `json:"type"`
+	Description string            `json:"description"`
+	CreatedAt   time.Time         `json:"created_at"`
+	Steps       []*Step           `json:"steps"`
+	TotalFiles  int               `json:"total_files"`
+	TotalSteps  int               `json:"total_steps"`
 	RiskSummary map[RiskLevel]int `json:"risk_summary"`
-	Status      string     `json:"status"` // draft, ready, in-progress, completed, failed
-	DryRun      bool       `json:"dry_run"`
-	BaseDir     string     `json:"base_dir"`
+	Status      string            `json:"status"` // draft, ready, in-progress, completed, failed
+	DryRun      bool              `json:"dry_run"`
+	BaseDir     string            `json:"base_dir"`
 }
 
 // Dependency represents a code dependency relationship.
@@ -92,15 +92,15 @@ type Dependency struct {
 
 // ImpactAnalysis captures the blast radius of a refactoring operation.
 type ImpactAnalysis struct {
-	Target         string       `json:"target"`
-	Type           RefactorType `json:"type"`
-	DirectFiles    []string     `json:"direct_files"`
-	IndirectFiles  []string     `json:"indirect_files"`
-	AffectedPkgs   []string     `json:"affected_packages"`
+	Target         string        `json:"target"`
+	Type           RefactorType  `json:"type"`
+	DirectFiles    []string      `json:"direct_files"`
+	IndirectFiles  []string      `json:"indirect_files"`
+	AffectedPkgs   []string      `json:"affected_packages"`
 	Dependencies   []*Dependency `json:"dependencies"`
-	RiskLevel      RiskLevel    `json:"risk_level"`
-	EstimatedSteps int          `json:"estimated_steps"`
-	BreakingChange bool         `json:"breaking_change"`
+	RiskLevel      RiskLevel     `json:"risk_level"`
+	EstimatedSteps int           `json:"estimated_steps"`
+	BreakingChange bool          `json:"breaking_change"`
 }
 
 // Engine provides refactoring analysis and execution.
@@ -418,8 +418,8 @@ func (e *Engine) Stats() map[string]interface{} {
 	defer e.mu.RUnlock()
 
 	return map[string]interface{}{
-		"plans":         len(e.plans),
-		"dependencies":  len(e.deps),
+		"plans":           len(e.plans),
+		"dependencies":    len(e.deps),
 		"indexed_symbols": len(e.index),
 	}
 }

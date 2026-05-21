@@ -4,25 +4,25 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/forge/sword/internal/acp"
+	"github.com/forge/sword/internal/pretty"
+	"github.com/spf13/cobra"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
 	"sync"
 	"syscall"
-	"github.com/forge/sword/internal/acp"
-	"github.com/forge/sword/internal/pretty"
-	"github.com/spf13/cobra"
 )
 
 // MuxAgent represents an agent in the mux layout.
 type MuxAgent struct {
-	Name     string `json:"name"`
-	Type     string `json:"type"`
-	URL      string `json:"url"`
-	Port     int    `json:"port"`
-	Status   string `json:"status"`
-	LastMsg  string `json:"last_msg,omitempty"`
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	URL     string `json:"url"`
+	Port    int    `json:"port"`
+	Status  string `json:"status"`
+	LastMsg string `json:"last_msg,omitempty"`
 }
 
 // MuxLayout defines how agents are arranged.
@@ -128,7 +128,9 @@ Examples:
 				}
 
 				name := r.URL.Path[len("/api/message/"):]
-				var body struct{ Content string `json:"content"` }
+				var body struct {
+					Content string `json:"content"`
+				}
 				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 					http.Error(w, err.Error(), http.StatusBadRequest)
 					return
@@ -166,7 +168,9 @@ Examples:
 					return
 				}
 
-				var body struct{ Content string `json:"content"` }
+				var body struct {
+					Content string `json:"content"`
+				}
 				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 					http.Error(w, err.Error(), http.StatusBadRequest)
 					return

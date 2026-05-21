@@ -43,12 +43,12 @@ type Result struct {
 
 // EvaluationCriteria defines how to score and rank universe results.
 type EvaluationCriteria struct {
-	Method       ScoreMethod // scoring method
-	MinScore     float64     // reject results below this threshold
-	PreferLower  bool        // for cost/duration: lower is better
-	CostWeight   float64     // weight for cost in composite scoring (0-1)
-	QualityWeight float64    // weight for quality in composite scoring (0-1)
-	SpeedWeight  float64     // weight for speed in composite scoring (0-1)
+	Method        ScoreMethod // scoring method
+	MinScore      float64     // reject results below this threshold
+	PreferLower   bool        // for cost/duration: lower is better
+	CostWeight    float64     // weight for cost in composite scoring (0-1)
+	QualityWeight float64     // weight for quality in composite scoring (0-1)
+	SpeedWeight   float64     // weight for speed in composite scoring (0-1)
 }
 
 // ScoreMethod determines how results are evaluated.
@@ -71,12 +71,12 @@ const (
 
 // Config configures the quantum execution.
 type Config struct {
-	NumUniverses int               // number of parallel approaches (default: 3)
-	MaxDuration  time.Duration     // timeout for each universe (default: 5m)
+	NumUniverses int                // number of parallel approaches (default: 3)
+	MaxDuration  time.Duration      // timeout for each universe (default: 5m)
 	Criteria     EvaluationCriteria // how to pick the winner
-	Models       []string          // models to distribute across universes
-	Temperatures []float64         // temperatures to try
-	Strategies   []string          // strategy names to try
+	Models       []string           // models to distribute across universes
+	Temperatures []float64          // temperatures to try
+	Strategies   []string           // strategy names to try
 }
 
 // DefaultConfig returns sensible defaults.
@@ -365,21 +365,21 @@ func (e *Engine) compositePick(universes []*Universe, consensus float64) (*Unive
 	}
 
 	type scored struct {
-		universe *Universe
+		universe  *Universe
 		composite float64
 	}
 
-scoredEntries := make([]scored, len(universes))
+	scoredEntries := make([]scored, len(universes))
 	for i, u := range universes {
 		qualityNorm := u.Result.Score / maxScore
-		costNorm := 1.0 - (u.Result.CostUSD / maxCost) // lower cost = higher score
+		costNorm := 1.0 - (u.Result.CostUSD / maxCost)                  // lower cost = higher score
 		speedNorm := 1.0 - (float64(u.Duration) / float64(maxDuration)) // faster = higher score
 
 		composite := criteria.QualityWeight*qualityNorm +
 			criteria.CostWeight*costNorm +
 			criteria.SpeedWeight*speedNorm
 
-	scoredEntries[i] = scored{universe: u, composite: composite}
+		scoredEntries[i] = scored{universe: u, composite: composite}
 	}
 
 	sort.Slice(scoredEntries, func(i, j int) bool {
@@ -397,12 +397,12 @@ scoredEntries := make([]scored, len(universes))
 
 // Experiment represents a saved quantum experiment for comparison.
 type Experiment struct {
-	ID          string
-	Task        string
-	Config      Config
-	Result      *CollapseResult
-	CreatedAt   time.Time
-	Tags        []string
+	ID        string
+	Task      string
+	Config    Config
+	Result    *CollapseResult
+	CreatedAt time.Time
+	Tags      []string
 }
 
 // Store persists quantum experiments.

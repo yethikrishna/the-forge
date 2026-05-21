@@ -32,13 +32,13 @@ type Transfer struct {
 
 // ContextBundle holds the context being transferred.
 type ContextBundle struct {
-	Goal        string   `json:"goal"`
-	Summary     string   `json:"summary"`
-	Decisions   []string `json:"decisions"`
-	Blockers    []string `json:"blockers"`
+	Goal         string   `json:"goal"`
+	Summary      string   `json:"summary"`
+	Decisions    []string `json:"decisions"`
+	Blockers     []string `json:"blockers"`
 	FilesTouched []string `json:"files_touched"`
-	CommandsRun []string `json:"commands_run"`
-	OpenTasks   []string `json:"open_tasks"`
+	CommandsRun  []string `json:"commands_run"`
+	OpenTasks    []string `json:"open_tasks"`
 }
 
 // Artifact represents a file or data artifact in the transfer.
@@ -52,12 +52,12 @@ type Artifact struct {
 
 // ConfidenceScore represents the handing-off agent's confidence.
 type ConfidenceScore struct {
-	Overall    float64           `json:"overall"`     // 0-1
-	Task       float64           `json:"task"`        // task completion confidence
-	Quality    float64           `json:"quality"`     // output quality confidence
-	Context    float64           `json:"context"`     // context completeness
+	Overall    float64            `json:"overall"`    // 0-1
+	Task       float64            `json:"task"`       // task completion confidence
+	Quality    float64            `json:"quality"`    // output quality confidence
+	Context    float64            `json:"context"`    // context completeness
 	Assessment map[string]float64 `json:"assessment"` // per-aspect scores
-	Notes      string            `json:"notes"`
+	Notes      string             `json:"notes"`
 }
 
 // Manager manages agent handoffs.

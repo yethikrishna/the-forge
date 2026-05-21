@@ -21,16 +21,16 @@ type Purpose string
 
 const (
 	PurposeAgentExecution Purpose = "agent_execution" // Running agents on user data
-	PurposeMemory         Purpose = "memory"           // Storing agent memory
-	PurposeAnalytics      Purpose = "analytics"        // Usage analytics
-	PurposeTelemetry      Purpose = "telemetry"        // Telemetry data
-	PurposeCostTracking   Purpose = "cost_tracking"    // Cost tracking
-	PurposeAudit          Purpose = "audit"            // Audit logging
-	PurposeTraining       Purpose = "training"         // Model training data
-	PurposeSharing        Purpose = "sharing"          // Sharing with third parties
-	PurposeIndexing       Purpose = "indexing"         // Codebase indexing
-	PurposeCompliance     Purpose = "compliance"       // Compliance reporting
-	PurposeCustom         Purpose = "custom"           // Custom purpose
+	PurposeMemory         Purpose = "memory"          // Storing agent memory
+	PurposeAnalytics      Purpose = "analytics"       // Usage analytics
+	PurposeTelemetry      Purpose = "telemetry"       // Telemetry data
+	PurposeCostTracking   Purpose = "cost_tracking"   // Cost tracking
+	PurposeAudit          Purpose = "audit"           // Audit logging
+	PurposeTraining       Purpose = "training"        // Model training data
+	PurposeSharing        Purpose = "sharing"         // Sharing with third parties
+	PurposeIndexing       Purpose = "indexing"        // Codebase indexing
+	PurposeCompliance     Purpose = "compliance"      // Compliance reporting
+	PurposeCustom         Purpose = "custom"          // Custom purpose
 )
 
 // DataCategory describes the type of data being processed.
@@ -52,47 +52,47 @@ const (
 type Status string
 
 const (
-	StatusGranted  Status = "granted"
-	StatusRevoked  Status = "revoked"
-	StatusExpired  Status = "expired"
-	StatusPending  Status = "pending"
+	StatusGranted   Status = "granted"
+	StatusRevoked   Status = "revoked"
+	StatusExpired   Status = "expired"
+	StatusPending   Status = "pending"
 	StatusWithdrawn Status = "withdrawn"
 )
 
 // Record represents a single consent receipt.
 type Record struct {
-	ID           string        `json:"id"`
-	UserID       string        `json:"user_id"`
-	TenantID     string        `json:"tenant_id,omitempty"`
-	Purposes     []Purpose     `json:"purposes"`
-	DataCategories []DataCategory `json:"data_categories"`
-	Status       Status        `json:"status"`
-	GrantedAt    time.Time     `json:"granted_at"`
-	RevokedAt    *time.Time    `json:"revoked_at,omitempty"`
-	ExpiresAt    *time.Time    `json:"expires_at,omitempty"`
-	Source       string        `json:"source"` // cli, api, ui, imported
-	Description  string        `json:"description,omitempty"`
-	LegalBasis   string        `json:"legal_basis,omitempty"` // consent, legitimate_interest, contract, etc.
-	WithdrawalReason string    `json:"withdrawal_reason,omitempty"`
-	Checksum     string        `json:"checksum"`      // Tamper-evidence
-	PrevChecksum string        `json:"prev_checksum"` // Hash chain
-	Labels       map[string]string `json:"labels,omitempty"`
+	ID               string            `json:"id"`
+	UserID           string            `json:"user_id"`
+	TenantID         string            `json:"tenant_id,omitempty"`
+	Purposes         []Purpose         `json:"purposes"`
+	DataCategories   []DataCategory    `json:"data_categories"`
+	Status           Status            `json:"status"`
+	GrantedAt        time.Time         `json:"granted_at"`
+	RevokedAt        *time.Time        `json:"revoked_at,omitempty"`
+	ExpiresAt        *time.Time        `json:"expires_at,omitempty"`
+	Source           string            `json:"source"` // cli, api, ui, imported
+	Description      string            `json:"description,omitempty"`
+	LegalBasis       string            `json:"legal_basis,omitempty"` // consent, legitimate_interest, contract, etc.
+	WithdrawalReason string            `json:"withdrawal_reason,omitempty"`
+	Checksum         string            `json:"checksum"`      // Tamper-evidence
+	PrevChecksum     string            `json:"prev_checksum"` // Hash chain
+	Labels           map[string]string `json:"labels,omitempty"`
 }
 
 // Policy defines a consent policy that applies to a tenant or user.
 type Policy struct {
-	ID              string        `json:"id"`
-	Name            string        `json:"name"`
-	Description     string        `json:"description"`
-	RequiredPurposes []Purpose    `json:"required_purposes"`
-	OptionalPurposes []Purpose    `json:"optional_purposes"`
-	DataCategories  []DataCategory `json:"data_categories"`
-	RetentionDays   int           `json:"retention_days,omitempty"`
-	DefaultExpiryDays int         `json:"default_expiry_days,omitempty"`
-	AutoRevoke      bool          `json:"auto_revoke"`  // Revoke on policy change
-	Active          bool          `json:"active"`
-	CreatedAt       time.Time     `json:"created_at"`
-	UpdatedAt       time.Time     `json:"updated_at"`
+	ID                string         `json:"id"`
+	Name              string         `json:"name"`
+	Description       string         `json:"description"`
+	RequiredPurposes  []Purpose      `json:"required_purposes"`
+	OptionalPurposes  []Purpose      `json:"optional_purposes"`
+	DataCategories    []DataCategory `json:"data_categories"`
+	RetentionDays     int            `json:"retention_days,omitempty"`
+	DefaultExpiryDays int            `json:"default_expiry_days,omitempty"`
+	AutoRevoke        bool           `json:"auto_revoke"` // Revoke on policy change
+	Active            bool           `json:"active"`
+	CreatedAt         time.Time      `json:"created_at"`
+	UpdatedAt         time.Time      `json:"updated_at"`
 }
 
 // AuditEntry tracks consent changes for the audit log.
@@ -109,15 +109,15 @@ type AuditEntry struct {
 
 // Stats holds aggregate consent statistics.
 type Stats struct {
-	TotalRecords     int             `json:"total_records"`
-	GrantedCount     int             `json:"granted_count"`
-	RevokedCount     int             `json:"revoked_count"`
-	PendingCount     int             `json:"pending_count"`
-	ExpiredCount     int             `json:"expired_count"`
-	WithdrawnCount   int             `json:"withdrawn_count"`
-	PurposeBreakdown map[Purpose]int `json:"purpose_breakdown"`
+	TotalRecords     int                  `json:"total_records"`
+	GrantedCount     int                  `json:"granted_count"`
+	RevokedCount     int                  `json:"revoked_count"`
+	PendingCount     int                  `json:"pending_count"`
+	ExpiredCount     int                  `json:"expired_count"`
+	WithdrawnCount   int                  `json:"withdrawn_count"`
+	PurposeBreakdown map[Purpose]int      `json:"purpose_breakdown"`
 	DataBreakdown    map[DataCategory]int `json:"data_breakdown"`
-	AuditTrailCount  int             `json:"audit_trail_count"`
+	AuditTrailCount  int                  `json:"audit_trail_count"`
 }
 
 // Store manages consent records and policies.
@@ -559,7 +559,7 @@ func (s *Store) addAudit(recordID, action, userID, details string, prevStatus St
 		Timestamp:  time.Now().UTC(),
 		Details:    details,
 		PrevStatus: prevStatus,
-		NewStatus:  func() Status {
+		NewStatus: func() Status {
 			switch action {
 			case "grant":
 				return StatusGranted

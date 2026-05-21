@@ -29,9 +29,9 @@ const (
 type ControlStatus string
 
 const (
-	StatusCompliant    ControlStatus = "compliant"
-	StatusPartial      ControlStatus = "partial"
-	StatusNonCompliant ControlStatus = "non-compliant"
+	StatusCompliant     ControlStatus = "compliant"
+	StatusPartial       ControlStatus = "partial"
+	StatusNonCompliant  ControlStatus = "non-compliant"
 	StatusNotApplicable ControlStatus = "not-applicable"
 )
 

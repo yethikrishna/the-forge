@@ -466,8 +466,8 @@ func indexGoPackage(g *codegraph.Graph, path string) int {
 	// Add package node
 	pkgName := filepath.Base(path)
 	pkgID := g.AddNode(codegraph.Node{
-		Type: codegraph.NodePackage,
-		Name: pkgName,
+		Type:    codegraph.NodePackage,
+		Name:    pkgName,
 		Package: pkgName,
 	})
 	count++

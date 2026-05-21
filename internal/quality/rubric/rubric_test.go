@@ -210,10 +210,10 @@ func TestFormatRubric(t *testing.T) {
 
 func TestFormatStats(t *testing.T) {
 	stats := GraderStats{
-		TotalGrades:  10,
-		TotalRubrics: 3,
-		Passed:       7,
-		Failed:       3,
+		TotalGrades:   10,
+		TotalRubrics:  3,
+		Passed:        7,
+		Failed:        3,
 		AvgPercentage: 78.5,
 	}
 	output := FormatStats(stats)

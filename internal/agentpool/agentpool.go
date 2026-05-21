@@ -27,21 +27,21 @@ const (
 
 // ScalingPolicy represents an auto-scaling policy.
 type ScalingPolicy struct {
-	MinAgents     int     `json:"min_agents"`
-	MaxAgents     int     `json:"max_agents"`
-	TargetCPU     float64 `json:"target_cpu"`      // 0-1
-	TargetQueueDepth int   `json:"target_queue_depth"`
-	ScaleUpCooldown  time.Duration `json:"scale_up_cooldown"`
-	ScaleDownCooldown time.Duration `json:"scale_down_cooldown"`
-	ScaleUpThreshold  float64 `json:"scale_up_threshold"`  // queue depth to trigger scale up
-	ScaleDownThreshold float64 `json:"scale_down_threshold"` // queue depth to trigger scale down
+	MinAgents          int           `json:"min_agents"`
+	MaxAgents          int           `json:"max_agents"`
+	TargetCPU          float64       `json:"target_cpu"` // 0-1
+	TargetQueueDepth   int           `json:"target_queue_depth"`
+	ScaleUpCooldown    time.Duration `json:"scale_up_cooldown"`
+	ScaleDownCooldown  time.Duration `json:"scale_down_cooldown"`
+	ScaleUpThreshold   float64       `json:"scale_up_threshold"`   // queue depth to trigger scale up
+	ScaleDownThreshold float64       `json:"scale_down_threshold"` // queue depth to trigger scale down
 }
 
 // Agent represents an agent in the pool.
 type Agent struct {
 	ID          string            `json:"id"`
 	Name        string            `json:"name"`
-	Type        string            `json:"type"`     // "coder", "reviewer", "planner", "tester"
+	Type        string            `json:"type"` // "coder", "reviewer", "planner", "tester"
 	Model       string            `json:"model"`
 	Status      AgentStatus       `json:"status"`
 	PoolID      string            `json:"pool_id"`
@@ -50,7 +50,7 @@ type Agent struct {
 	TasksDone   int               `json:"tasks_done"`
 	TasksFailed int               `json:"tasks_failed"`
 	Cost        float64           `json:"cost"`
-	CPUUsage    float64           `json:"cpu_usage"` // 0-1
+	CPUUsage    float64           `json:"cpu_usage"`    // 0-1
 	MemoryUsage float64           `json:"memory_usage"` // 0-1
 	HealthScore float64           `json:"health_score"` // 0-100
 	Metadata    map[string]string `json:"metadata,omitempty"`

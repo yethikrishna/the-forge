@@ -19,28 +19,28 @@ import (
 type FailureType string
 
 const (
-	FailureTimeout     FailureType = "timeout"
-	FailureCrash       FailureType = "crash"
-	FailureOOM         FailureType = "oom"
-	FailureRateLimit   FailureType = "rate_limit"
-	FailureAuth        FailureType = "auth"
-	FailureNetwork     FailureType = "network"
-	FailureModel       FailureType = "model_error"
-	FailureContext     FailureType = "context_overflow"
-	FailureDeadlock    FailureType = "deadlock"
-	FailureUnknown     FailureType = "unknown"
+	FailureTimeout   FailureType = "timeout"
+	FailureCrash     FailureType = "crash"
+	FailureOOM       FailureType = "oom"
+	FailureRateLimit FailureType = "rate_limit"
+	FailureAuth      FailureType = "auth"
+	FailureNetwork   FailureType = "network"
+	FailureModel     FailureType = "model_error"
+	FailureContext   FailureType = "context_overflow"
+	FailureDeadlock  FailureType = "deadlock"
+	FailureUnknown   FailureType = "unknown"
 )
 
 // RemediationAction defines what to do about a failure.
 type RemediationAction string
 
 const (
-	ActionRestart    RemediationAction = "restart"
-	ActionFallback   RemediationAction = "fallback"
-	ActionRetry      RemediationAction = "retry"
-	ActionScaleDown  RemediationAction = "scale_down"
-	ActionEscalate   RemediationAction = "escalate"
-	ActionIgnore     RemediationAction = "ignore"
+	ActionRestart     RemediationAction = "restart"
+	ActionFallback    RemediationAction = "fallback"
+	ActionRetry       RemediationAction = "retry"
+	ActionScaleDown   RemediationAction = "scale_down"
+	ActionEscalate    RemediationAction = "escalate"
+	ActionIgnore      RemediationAction = "ignore"
 	ActionCircuitOpen RemediationAction = "circuit_open"
 )
 
@@ -48,29 +48,29 @@ const (
 type IncidentStatus string
 
 const (
-	IncidentOpen      IncidentStatus = "open"
+	IncidentOpen        IncidentStatus = "open"
 	IncidentRemediating IncidentStatus = "remediating"
-	IncidentResolved  IncidentStatus = "resolved"
-	IncidentEscalated IncidentStatus = "escalated"
-	IncidentIgnored   IncidentStatus = "ignored"
+	IncidentResolved    IncidentStatus = "resolved"
+	IncidentEscalated   IncidentStatus = "escalated"
+	IncidentIgnored     IncidentStatus = "ignored"
 )
 
 // Incident represents a failure incident.
 type Incident struct {
-	ID             string           `json:"id"`
-	AgentID        string           `json:"agent_id"`
-	FailureType    FailureType      `json:"failure_type"`
-	Status         IncidentStatus   `json:"status"`
-	Message        string           `json:"message"`
-	Remediation    RemediationAction `json:"remediation"`
-	Attempt        int              `json:"attempt"`
-	MaxAttempts    int              `json:"max_attempts"`
-	FallbackModel  string           `json:"fallback_model,omitempty"`
-	ResolvedBy     string           `json:"resolved_by,omitempty"`
-	Resolution     string           `json:"resolution,omitempty"`
-	CreatedAt      time.Time        `json:"created_at"`
-	ResolvedAt     *time.Time       `json:"resolved_at,omitempty"`
-	Duration       string           `json:"duration,omitempty"`
+	ID            string            `json:"id"`
+	AgentID       string            `json:"agent_id"`
+	FailureType   FailureType       `json:"failure_type"`
+	Status        IncidentStatus    `json:"status"`
+	Message       string            `json:"message"`
+	Remediation   RemediationAction `json:"remediation"`
+	Attempt       int               `json:"attempt"`
+	MaxAttempts   int               `json:"max_attempts"`
+	FallbackModel string            `json:"fallback_model,omitempty"`
+	ResolvedBy    string            `json:"resolved_by,omitempty"`
+	Resolution    string            `json:"resolution,omitempty"`
+	CreatedAt     time.Time         `json:"created_at"`
+	ResolvedAt    *time.Time        `json:"resolved_at,omitempty"`
+	Duration      string            `json:"duration,omitempty"`
 }
 
 // Rule defines a self-healing rule.

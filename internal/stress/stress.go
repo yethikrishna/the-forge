@@ -21,11 +21,11 @@ import (
 type TestType string
 
 const (
-	TypeRampUp     TestType = "ramp-up"     // gradually increase load
-	TypeSustained  TestType = "sustained"   // constant load
-	TypeSpike      TestType = "spike"       // sudden load spike
-	TypeWave       TestType = "wave"        // sine wave pattern
-	TypeCustom     TestType = "custom"      // user-defined pattern
+	TypeRampUp    TestType = "ramp-up"   // gradually increase load
+	TypeSustained TestType = "sustained" // constant load
+	TypeSpike     TestType = "spike"     // sudden load spike
+	TypeWave      TestType = "wave"      // sine wave pattern
+	TypeCustom    TestType = "custom"    // user-defined pattern
 )
 
 // SessionResult records the result of a single simulated session.
@@ -44,45 +44,45 @@ type SessionResult struct {
 
 // TestConfig configures a stress test.
 type TestConfig struct {
-	ID          string        `json:"id"`
-	Name        string        `json:"name"`
-	Type        TestType      `json:"type"`
-	AgentIDs    []string      `json:"agent_ids"`
-	Prompt      string        `json:"prompt"`
-	Concurrency int           `json:"concurrency"`
-	Duration    time.Duration `json:"duration"`
-	RampUpTime  time.Duration `json:"ramp_up_time"`
-	MaxRPS      float64       `json:"max_rps"`    // requests per second
-	TokensInAvg int           `json:"tokens_in_avg"`
-	TokensOutAvg int          `json:"tokens_out_avg"`
-	CostPerToken float64      `json:"cost_per_token"`
-	ErrorRate   float64       `json:"error_rate"` // simulated error rate 0-1
+	ID           string        `json:"id"`
+	Name         string        `json:"name"`
+	Type         TestType      `json:"type"`
+	AgentIDs     []string      `json:"agent_ids"`
+	Prompt       string        `json:"prompt"`
+	Concurrency  int           `json:"concurrency"`
+	Duration     time.Duration `json:"duration"`
+	RampUpTime   time.Duration `json:"ramp_up_time"`
+	MaxRPS       float64       `json:"max_rps"` // requests per second
+	TokensInAvg  int           `json:"tokens_in_avg"`
+	TokensOutAvg int           `json:"tokens_out_avg"`
+	CostPerToken float64       `json:"cost_per_token"`
+	ErrorRate    float64       `json:"error_rate"` // simulated error rate 0-1
 }
 
 // TestReport is the result of a completed stress test.
 type TestReport struct {
-	ConfigID      string          `json:"config_id"`
-	ConfigName    string          `json:"config_name"`
-	Type          TestType        `json:"type"`
-	TotalSessions int             `json:"total_sessions"`
-	SuccessCount  int             `json:"success_count"`
-	FailureCount  int             `json:"failure_count"`
-	ErrorRate     float64         `json:"error_rate"`
-	TotalTokensIn  int64          `json:"total_tokens_in"`
-	TotalTokensOut int64          `json:"total_tokens_out"`
-	TotalCost     float64         `json:"total_cost"`
-	AvgLatency    time.Duration   `json:"avg_latency"`
-	P50Latency    time.Duration   `json:"p50_latency"`
-	P90Latency    time.Duration   `json:"p90_latency"`
-	P99Latency    time.Duration   `json:"p99_latency"`
-	MaxLatency    time.Duration   `json:"max_latency"`
-	MinLatency    time.Duration   `json:"min_latency"`
-	ThroughputRPS float64         `json:"throughput_rps"`
-	PeakRPS       float64         `json:"peak_rps"`
-	StartedAt     time.Time       `json:"started_at"`
-	EndedAt       time.Time       `json:"ended_at"`
-	WallDuration  time.Duration   `json:"wall_duration"`
-	Sessions      []SessionResult `json:"sessions,omitempty"`
+	ConfigID       string          `json:"config_id"`
+	ConfigName     string          `json:"config_name"`
+	Type           TestType        `json:"type"`
+	TotalSessions  int             `json:"total_sessions"`
+	SuccessCount   int             `json:"success_count"`
+	FailureCount   int             `json:"failure_count"`
+	ErrorRate      float64         `json:"error_rate"`
+	TotalTokensIn  int64           `json:"total_tokens_in"`
+	TotalTokensOut int64           `json:"total_tokens_out"`
+	TotalCost      float64         `json:"total_cost"`
+	AvgLatency     time.Duration   `json:"avg_latency"`
+	P50Latency     time.Duration   `json:"p50_latency"`
+	P90Latency     time.Duration   `json:"p90_latency"`
+	P99Latency     time.Duration   `json:"p99_latency"`
+	MaxLatency     time.Duration   `json:"max_latency"`
+	MinLatency     time.Duration   `json:"min_latency"`
+	ThroughputRPS  float64         `json:"throughput_rps"`
+	PeakRPS        float64         `json:"peak_rps"`
+	StartedAt      time.Time       `json:"started_at"`
+	EndedAt        time.Time       `json:"ended_at"`
+	WallDuration   time.Duration   `json:"wall_duration"`
+	Sessions       []SessionResult `json:"sessions,omitempty"`
 }
 
 // Runner executes stress tests.

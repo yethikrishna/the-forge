@@ -19,11 +19,11 @@ import (
 type Type string
 
 const (
-	TypeManual       Type = "manual"
-	TypeAuto         Type = "auto"
-	TypePreOperation Type = "pre-operation"
+	TypeManual        Type = "manual"
+	TypeAuto          Type = "auto"
+	TypePreOperation  Type = "pre-operation"
 	TypePostOperation Type = "post-operation"
-	TypeMilestone    Type = "milestone"
+	TypeMilestone     Type = "milestone"
 )
 
 // FileEntry records a single file's state in a snapshot.
@@ -54,18 +54,18 @@ type Snapshot struct {
 
 // DiffResult describes a difference between two snapshots.
 type DiffResult struct {
-	Added    []string `json:"added"`
-	Removed  []string `json:"removed"`
-	Modified []string `json:"modified"`
-	Unchanged int     `json:"unchanged"`
+	Added     []string `json:"added"`
+	Removed   []string `json:"removed"`
+	Modified  []string `json:"modified"`
+	Unchanged int      `json:"unchanged"`
 }
 
 // Stats holds snapshot store statistics.
 type Stats struct {
-	TotalSnapshots int            `json:"total_snapshots"`
-	TotalFiles     int            `json:"total_files"`
-	TotalSize      int64          `json:"total_size"`
-	ByType         map[Type]int   `json:"by_type"`
+	TotalSnapshots int          `json:"total_snapshots"`
+	TotalFiles     int          `json:"total_files"`
+	TotalSize      int64        `json:"total_size"`
+	ByType         map[Type]int `json:"by_type"`
 }
 
 // Store manages snapshots.

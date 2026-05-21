@@ -20,14 +20,14 @@ import (
 type StageType string
 
 const (
-	StageBuild     StageType = "build"     // Build/compile
-	StageTest      StageType = "test"      // Run tests
-	StageLint      StageType = "lint"      // Code quality
-	StageSecurity  StageType = "security"  // Security scan
-	StageReview    StageType = "review"    // AI code review
-	StageCustom    StageType = "custom"    // Custom agent task
-	StageDeploy    StageType = "deploy"    // Deployment
-	StageNotify    StageType = "notify"    // Notification
+	StageBuild    StageType = "build"    // Build/compile
+	StageTest     StageType = "test"     // Run tests
+	StageLint     StageType = "lint"     // Code quality
+	StageSecurity StageType = "security" // Security scan
+	StageReview   StageType = "review"   // AI code review
+	StageCustom   StageType = "custom"   // Custom agent task
+	StageDeploy   StageType = "deploy"   // Deployment
+	StageNotify   StageType = "notify"   // Notification
 )
 
 // StageStatus represents the status of a CI stage.
@@ -56,20 +56,20 @@ const (
 
 // Stage defines a single CI stage.
 type Stage struct {
-	Name         string     `json:"name" yaml:"name"`
-	Type         StageType  `json:"type" yaml:"type"`
-	Agent        string     `json:"agent,omitempty" yaml:"agent,omitempty"`
-	Model        string     `json:"model,omitempty" yaml:"model,omitempty"`
-	Prompt       string     `json:"prompt,omitempty" yaml:"prompt,omitempty"`
-	Command      string     `json:"command,omitempty" yaml:"command,omitempty"`
-	Dependencies []string   `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
-	Timeout      Duration   `json:"timeout,omitempty" yaml:"timeout,omitempty"`
-	CostCap      string     `json:"cost_cap,omitempty" yaml:"cost_cap,omitempty"`
-	Condition    string     `json:"condition,omitempty" yaml:"condition,omitempty"`
-	RetryCount   int        `json:"retry_count,omitempty" yaml:"retry_count,omitempty"`
-	Environment  MapEnv     `json:"environment,omitempty" yaml:"environment,omitempty"`
-	WorkDir      string     `json:"work_dir,omitempty" yaml:"work_dir,omitempty"`
-	ContinueOn   bool       `json:"continue_on_fail,omitempty" yaml:"continue_on_fail,omitempty"`
+	Name         string    `json:"name" yaml:"name"`
+	Type         StageType `json:"type" yaml:"type"`
+	Agent        string    `json:"agent,omitempty" yaml:"agent,omitempty"`
+	Model        string    `json:"model,omitempty" yaml:"model,omitempty"`
+	Prompt       string    `json:"prompt,omitempty" yaml:"prompt,omitempty"`
+	Command      string    `json:"command,omitempty" yaml:"command,omitempty"`
+	Dependencies []string  `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
+	Timeout      Duration  `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	CostCap      string    `json:"cost_cap,omitempty" yaml:"cost_cap,omitempty"`
+	Condition    string    `json:"condition,omitempty" yaml:"condition,omitempty"`
+	RetryCount   int       `json:"retry_count,omitempty" yaml:"retry_count,omitempty"`
+	Environment  MapEnv    `json:"environment,omitempty" yaml:"environment,omitempty"`
+	WorkDir      string    `json:"work_dir,omitempty" yaml:"work_dir,omitempty"`
+	ContinueOn   bool      `json:"continue_on_fail,omitempty" yaml:"continue_on_fail,omitempty"`
 
 	// Runtime state
 	Status    StageStatus `json:"status"`

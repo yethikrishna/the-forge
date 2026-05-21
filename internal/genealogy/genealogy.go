@@ -23,27 +23,27 @@ import (
 type NodeType string
 
 const (
-	NodeArtifact     NodeType = "artifact"     // A file, code block, or generated output
-	NodeDecision     NodeType = "decision"     // An agent decision (model choice, routing, approval)
-	NodeToolCall     NodeType = "tool_call"    // A tool invocation (exec, search, etc.)
-	NodeAgentRun     NodeType = "agent_run"    // An agent execution
+	NodeArtifact     NodeType = "artifact"      // A file, code block, or generated output
+	NodeDecision     NodeType = "decision"      // An agent decision (model choice, routing, approval)
+	NodeToolCall     NodeType = "tool_call"     // A tool invocation (exec, search, etc.)
+	NodeAgentRun     NodeType = "agent_run"     // An agent execution
 	NodePipelineStep NodeType = "pipeline_step" // A step in a pipeline
-	NodeHumanInput   NodeType = "human_input"  // Human-provided input (prompt, approval, feedback)
-	NodeDataSource   NodeType = "data_source"  // External data (API response, file read, index query)
+	NodeHumanInput   NodeType = "human_input"   // Human-provided input (prompt, approval, feedback)
+	NodeDataSource   NodeType = "data_source"   // External data (API response, file read, index query)
 )
 
 // EdgeType describes the relationship between two provenance nodes.
 type EdgeType string
 
 const (
-	EdgeDerivedFrom  EdgeType = "derived_from"  // Output derived from input(s)
-	EdgeProducedBy   EdgeType = "produced_by"   // Artifact produced by agent run
-	EdgeTriggeredBy  EdgeType = "triggered_by"  // Action triggered by event
-	EdgeApprovedBy   EdgeType = "approved_by"   // Output approved by human/agent
-	EdgeModifiedBy   EdgeType = "modified_by"   // Artifact modified by agent
-	EdgeConsumedBy   EdgeType = "consumed_by"   // Data consumed by agent run
-	EdgeReplaced     EdgeType = "replaced"      // Artifact replaced by newer version
-	EdgeBranchOf     EdgeType = "branch_of"     // Derived with variations
+	EdgeDerivedFrom EdgeType = "derived_from" // Output derived from input(s)
+	EdgeProducedBy  EdgeType = "produced_by"  // Artifact produced by agent run
+	EdgeTriggeredBy EdgeType = "triggered_by" // Action triggered by event
+	EdgeApprovedBy  EdgeType = "approved_by"  // Output approved by human/agent
+	EdgeModifiedBy  EdgeType = "modified_by"  // Artifact modified by agent
+	EdgeConsumedBy  EdgeType = "consumed_by"  // Data consumed by agent run
+	EdgeReplaced    EdgeType = "replaced"     // Artifact replaced by newer version
+	EdgeBranchOf    EdgeType = "branch_of"    // Derived with variations
 )
 
 // ProvenanceNode is a single node in the provenance DAG.
@@ -56,9 +56,9 @@ type ProvenanceNode struct {
 	SessionID   string            `json:"session_id,omitempty"`
 	PipelineID  string            `json:"pipeline_id,omitempty"`
 	FilePath    string            `json:"file_path,omitempty"`
-	Checksum    string            `json:"checksum,omitempty"`     // SHA-256 of artifact content
-	ParentIDs   []string          `json:"parent_ids,omitempty"`   // Direct ancestors
-	ChildIDs    []string          `json:"child_ids,omitempty"`    // Direct descendants
+	Checksum    string            `json:"checksum,omitempty"`   // SHA-256 of artifact content
+	ParentIDs   []string          `json:"parent_ids,omitempty"` // Direct ancestors
+	ChildIDs    []string          `json:"child_ids,omitempty"`  // Direct descendants
 	Labels      map[string]string `json:"labels,omitempty"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
 	TokensIn    int               `json:"tokens_in,omitempty"`
@@ -89,44 +89,44 @@ type DAG struct {
 
 // AncestryResult holds the result of an ancestry query.
 type AncestryResult struct {
-	RootID       string              `json:"root_id"`
-	Root         *ProvenanceNode     `json:"root"`
-	Ancestors    []*ProvenanceNode   `json:"ancestors"`
-	Depth        int                 `json:"depth"`
-	TotalCost    float64             `json:"total_cost"`
-	TotalTokens  int                 `json:"total_tokens"`
-	AgentsUsed   []string            `json:"agents_used"`
-	ModelsUsed   []string            `json:"models_used"`
-	SessionsUsed []string            `json:"sessions_used"`
-	FilesTouched []string            `json:"files_touched"`
-	Timestamp    time.Time           `json:"timestamp"`
+	RootID       string            `json:"root_id"`
+	Root         *ProvenanceNode   `json:"root"`
+	Ancestors    []*ProvenanceNode `json:"ancestors"`
+	Depth        int               `json:"depth"`
+	TotalCost    float64           `json:"total_cost"`
+	TotalTokens  int               `json:"total_tokens"`
+	AgentsUsed   []string          `json:"agents_used"`
+	ModelsUsed   []string          `json:"models_used"`
+	SessionsUsed []string          `json:"sessions_used"`
+	FilesTouched []string          `json:"files_touched"`
+	Timestamp    time.Time         `json:"timestamp"`
 }
 
 // ImpactResult holds the result of a downstream impact query.
 type ImpactResult struct {
-	SourceID     string            `json:"source_id"`
-	Source       *ProvenanceNode   `json:"source"`
-	Descendants  []*ProvenanceNode `json:"descendants"`
-	Depth        int               `json:"depth"`
-	FilesAtRisk  []string          `json:"files_at_risk"`
-	AgentsImpacted []string        `json:"agents_impacted"`
-	Timestamp    time.Time         `json:"timestamp"`
+	SourceID       string            `json:"source_id"`
+	Source         *ProvenanceNode   `json:"source"`
+	Descendants    []*ProvenanceNode `json:"descendants"`
+	Depth          int               `json:"depth"`
+	FilesAtRisk    []string          `json:"files_at_risk"`
+	AgentsImpacted []string          `json:"agents_impacted"`
+	Timestamp      time.Time         `json:"timestamp"`
 }
 
 // Stats holds genealogy statistics.
 type Stats struct {
-	TotalNodes    int                `json:"total_nodes"`
-	TotalEdges    int                `json:"total_edges"`
-	NodesByType   map[NodeType]int   `json:"nodes_by_type"`
-	EdgesByType   map[EdgeType]int   `json:"edges_by_type"`
-	AgentsUsed    []string           `json:"agents_used"`
-	ModelsUsed    []string           `json:"models_used"`
-	SessionsCount int                `json:"sessions_count"`
-	TotalCost     float64            `json:"total_cost"`
-	TotalTokens   int                `json:"total_tokens"`
-	OldestNode    time.Time          `json:"oldest_node"`
-	NewestNode    time.Time          `json:"newest_node"`
-	Depth         int                `json:"max_depth"`
+	TotalNodes    int              `json:"total_nodes"`
+	TotalEdges    int              `json:"total_edges"`
+	NodesByType   map[NodeType]int `json:"nodes_by_type"`
+	EdgesByType   map[EdgeType]int `json:"edges_by_type"`
+	AgentsUsed    []string         `json:"agents_used"`
+	ModelsUsed    []string         `json:"models_used"`
+	SessionsCount int              `json:"sessions_count"`
+	TotalCost     float64          `json:"total_cost"`
+	TotalTokens   int              `json:"total_tokens"`
+	OldestNode    time.Time        `json:"oldest_node"`
+	NewestNode    time.Time        `json:"newest_node"`
+	Depth         int              `json:"max_depth"`
 }
 
 // Store persists the genealogy DAG to disk.

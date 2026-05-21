@@ -28,50 +28,50 @@ const (
 
 // Comment represents a single review comment.
 type Comment struct {
-	File     string   `json:"file"`
-	Line     int      `json:"line,omitempty"`
-	Severity Severity `json:"severity"`
-	Message  string   `json:"message"`
-	Suggestion string `json:"suggestion,omitempty"` // code suggestion
-	Rule     string   `json:"rule,omitempty"`       // rule that triggered the comment
+	File       string   `json:"file"`
+	Line       int      `json:"line,omitempty"`
+	Severity   Severity `json:"severity"`
+	Message    string   `json:"message"`
+	Suggestion string   `json:"suggestion,omitempty"` // code suggestion
+	Rule       string   `json:"rule,omitempty"`       // rule that triggered the comment
 }
 
 // Review represents a complete code review result.
 type Review struct {
-	ID          string    `json:"id"`
-	Target      string    `json:"target"`      // branch, commit, or PR
-	Reviewer    string    `json:"reviewer"`    // agent name
-	FilesReviewed int     `json:"files_reviewed"`
-	LinesAdded    int     `json:"lines_added"`
-	LinesRemoved  int     `json:"lines_removed"`
-	Comments    []Comment `json:"comments"`
-	Summary     string    `json:"summary"`
-	Approved    bool      `json:"approved"`
-	Score       int       `json:"score"` // 0-100
-	Timestamp   time.Time `json:"timestamp"`
-	Duration    string    `json:"duration,omitempty"`
+	ID            string    `json:"id"`
+	Target        string    `json:"target"`   // branch, commit, or PR
+	Reviewer      string    `json:"reviewer"` // agent name
+	FilesReviewed int       `json:"files_reviewed"`
+	LinesAdded    int       `json:"lines_added"`
+	LinesRemoved  int       `json:"lines_removed"`
+	Comments      []Comment `json:"comments"`
+	Summary       string    `json:"summary"`
+	Approved      bool      `json:"approved"`
+	Score         int       `json:"score"` // 0-100
+	Timestamp     time.Time `json:"timestamp"`
+	Duration      string    `json:"duration,omitempty"`
 }
 
 // Config defines review rules and policies.
 type Config struct {
-	MaxLineLength    int        `json:"max_line_length,omitempty"`
-	RequireTests     bool       `json:"require_tests"`
-	BlockSecrets     bool       `json:"block_secrets"`
-	BlockTODOs       bool       `json:"block_todos"`
-	RequiredDoc      bool       `json:"required_doc"`
-	StyleGuide       string     `json:"style_guide,omitempty"`
-	SeverityRules    map[string]Severity `json:"severity_rules,omitempty"`
-	ExcludePatterns  []string   `json:"exclude_patterns,omitempty"`
+	MaxLineLength   int                 `json:"max_line_length,omitempty"`
+	RequireTests    bool                `json:"require_tests"`
+	BlockSecrets    bool                `json:"block_secrets"`
+	BlockTODOs      bool                `json:"block_todos"`
+	RequiredDoc     bool                `json:"required_doc"`
+	StyleGuide      string              `json:"style_guide,omitempty"`
+	SeverityRules   map[string]Severity `json:"severity_rules,omitempty"`
+	ExcludePatterns []string            `json:"exclude_patterns,omitempty"`
 }
 
 // DefaultConfig returns a sensible review configuration.
 func DefaultConfig() Config {
 	return Config{
-		MaxLineLength: 120,
-		RequireTests:  true,
-		BlockSecrets:  true,
-		BlockTODOs:    false,
-		RequiredDoc:   false,
+		MaxLineLength:   120,
+		RequireTests:    true,
+		BlockSecrets:    true,
+		BlockTODOs:      false,
+		RequiredDoc:     false,
 		ExcludePatterns: []string{"vendor/", "node_modules/", ".git/", "*.min.js", "*.lock"},
 	}
 }
@@ -172,17 +172,17 @@ func (r *Reviewer) ReviewFile(path string) (*Review, error) {
 
 // DiffSection represents a section of a diff for one file.
 type DiffSection struct {
-	File    string
-	Header  string
-	Lines   []DiffLine
+	File   string
+	Header string
+	Lines  []DiffLine
 }
 
 // DiffLine represents a single line in a diff.
 type DiffLine struct {
-	Type     string // "+", "-", " " (context)
-	NewLine  int
-	OldLine  int
-	Content  string
+	Type    string // "+", "-", " " (context)
+	NewLine int
+	OldLine int
+	Content string
 }
 
 // DiffStats holds aggregate diff statistics.

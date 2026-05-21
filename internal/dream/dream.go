@@ -21,7 +21,7 @@ import (
 type DreamType int
 
 const (
-	DreamScenario   DreamType = iota // Simulate a future scenario
+	DreamScenario    DreamType = iota // Simulate a future scenario
 	DreamHypothesis                   // Test a hypothesis
 	DreamStress                       // Stress-test current config
 	DreamCreative                     // Explore creative solutions
@@ -78,26 +78,26 @@ func (s Status) String() string {
 
 // Dream represents a single dream session.
 type Dream struct {
-	ID           string                 `json:"id"`
-	Type         DreamType              `json:"type"`
-	AgentID      string                 `json:"agent_id"`
-	Prompt       string                 `json:"prompt"`
-	Context      map[string]interface{} `json:"context,omitempty"`
-	Scenario     string                 `json:"scenario,omitempty"`
-	Hypothesis   string                 `json:"hypothesis,omitempty"`
-	Insights     []Insight              `json:"insights,omitempty"`
-	Status       Status                 `json:"status"`
-	Confidence   float64                `json:"confidence"`
-	Relevance    float64                `json:"relevance"` // 0-1, how relevant this dream's insights are
-	Priority     int                    `json:"priority"`
-	CreatedAt    time.Time              `json:"created_at"`
-	StartedAt    time.Time              `json:"started_at,omitempty"`
-	CompletedAt  time.Time              `json:"completed_at,omitempty"`
-	Duration     time.Duration          `json:"duration,omitempty"`
-	TokensUsed   int                    `json:"tokens_used"`
-	ParentDreamID string               `json:"parent_dream_id,omitempty"` // for nested dreams
-	Depth        int                    `json:"depth"`                     // nesting depth
-	Tags         []string               `json:"tags,omitempty"`
+	ID            string                 `json:"id"`
+	Type          DreamType              `json:"type"`
+	AgentID       string                 `json:"agent_id"`
+	Prompt        string                 `json:"prompt"`
+	Context       map[string]interface{} `json:"context,omitempty"`
+	Scenario      string                 `json:"scenario,omitempty"`
+	Hypothesis    string                 `json:"hypothesis,omitempty"`
+	Insights      []Insight              `json:"insights,omitempty"`
+	Status        Status                 `json:"status"`
+	Confidence    float64                `json:"confidence"`
+	Relevance     float64                `json:"relevance"` // 0-1, how relevant this dream's insights are
+	Priority      int                    `json:"priority"`
+	CreatedAt     time.Time              `json:"created_at"`
+	StartedAt     time.Time              `json:"started_at,omitempty"`
+	CompletedAt   time.Time              `json:"completed_at,omitempty"`
+	Duration      time.Duration          `json:"duration,omitempty"`
+	TokensUsed    int                    `json:"tokens_used"`
+	ParentDreamID string                 `json:"parent_dream_id,omitempty"` // for nested dreams
+	Depth         int                    `json:"depth"`                     // nesting depth
+	Tags          []string               `json:"tags,omitempty"`
 }
 
 // Insight represents a discovered insight from a dream.
@@ -107,7 +107,7 @@ type Insight struct {
 	Title       string                 `json:"title"`
 	Description string                 `json:"description"`
 	Confidence  float64                `json:"confidence"`
-	Impact      float64                `json:"impact"` // 0-1
+	Impact      float64                `json:"impact"`  // 0-1
 	Urgency     float64                `json:"urgency"` // 0-1
 	Actionable  bool                   `json:"actionable"`
 	Action      string                 `json:"action,omitempty"`
@@ -140,12 +140,12 @@ func DefaultSchedule() DreamSchedule {
 
 // Engine manages the dream system.
 type Engine struct {
-	mu        sync.RWMutex
-	dreams    map[string]*Dream
-	schedule  DreamSchedule
-	storeDir  string
+	mu         sync.RWMutex
+	dreams     map[string]*Dream
+	schedule   DreamSchedule
+	storeDir   string
 	tokensUsed int // today's usage
-	nextID    int
+	nextID     int
 }
 
 // NewEngine creates a new dream engine.
@@ -443,14 +443,14 @@ func (e *Engine) Stats() DreamStats {
 
 // DreamStats holds statistics about the dream engine.
 type DreamStats struct {
-	TotalDreams       int               `json:"total_dreams"`
-	TotalInsights     int               `json:"total_insights"`
-	ActionableInsights int              `json:"actionable_insights"`
-	AvgRelevance      float64           `json:"avg_relevance"`
-	TokensUsed        int               `json:"tokens_used"`
-	BudgetRemaining   int               `json:"budget_remaining"`
-	ByType            map[string]int    `json:"by_type"`
-	ByStatus          map[string]int    `json:"by_status"`
+	TotalDreams        int            `json:"total_dreams"`
+	TotalInsights      int            `json:"total_insights"`
+	ActionableInsights int            `json:"actionable_insights"`
+	AvgRelevance       float64        `json:"avg_relevance"`
+	TokensUsed         int            `json:"tokens_used"`
+	BudgetRemaining    int            `json:"budget_remaining"`
+	ByType             map[string]int `json:"by_type"`
+	ByStatus           map[string]int `json:"by_status"`
 }
 
 // ShouldDream determines if a dream should be started.

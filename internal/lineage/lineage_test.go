@@ -202,9 +202,9 @@ func TestDelete(t *testing.T) {
 func TestFormatTree(t *testing.T) {
 	tree := &FamilyTree{
 		Root: &LineageRecord{
-			Agent:   "root",
-			Model:   "gpt-5",
-			Status:  "success",
+			Agent:    "root",
+			Model:    "gpt-5",
+			Status:   "success",
 			Children: []string{"child-1", "child-2"},
 		},
 		Records: map[string]*LineageRecord{

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/forge/sword/internal/resilience/anomaly"
 	"github.com/forge/sword/internal/pretty"
+	"github.com/forge/sword/internal/resilience/anomaly"
 	"github.com/spf13/cobra"
 )
 
@@ -134,10 +134,10 @@ func anomalyStatusCmd() *cobra.Command {
 
 			if asJSON {
 				data, _ := json.MarshalIndent(map[string]interface{}{
-					"daily_spend":     dailySpend,
-					"spend_by_agent":  spendByAgent,
+					"daily_spend":      dailySpend,
+					"spend_by_agent":   spendByAgent,
 					"recent_anomalies": anomalies,
-					"hard_stop":       detector.ShouldHardStop(),
+					"hard_stop":        detector.ShouldHardStop(),
 				}, "", "  ")
 				fmt.Println(string(data))
 				return nil

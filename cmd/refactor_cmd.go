@@ -17,12 +17,12 @@ var refactorCmd = &cobra.Command{
 }
 
 var (
-	refactorDir      string
-	refactorType     string
-	refactorTarget   string
-	refactorDryRun   bool
-	refactorPlanID   string
-	refactorOutput   string
+	refactorDir    string
+	refactorType   string
+	refactorTarget string
+	refactorDryRun bool
+	refactorPlanID string
+	refactorOutput string
 )
 
 func init() {

@@ -127,8 +127,8 @@ func (l *Logger) Error(args ...any) {
 
 // Package-level convenience functions.
 
-func SetLevel(level Level)        { Default.SetLevel(level) }
-func SetPrefix(prefix string)     { Default.SetPrefix(prefix) }
+func SetLevel(level Level)              { Default.SetLevel(level) }
+func SetPrefix(prefix string)           { Default.SetPrefix(prefix) }
 func Debugf(format string, args ...any) { Default.Debugf(format, args...) }
 func Infof(format string, args ...any)  { Default.Infof(format, args...) }
 func Warnf(format string, args ...any)  { Default.Warnf(format, args...) }

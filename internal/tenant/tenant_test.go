@@ -249,7 +249,7 @@ func TestFormatTenant(t *testing.T) {
 	tenant := &Tenant{
 		ID:     "tenant-1",
 		Name:   "acme",
-		Plan: findPlan("pro"),
+		Plan:   findPlan("pro"),
 		Quota:  Quota{Agents: 20, Sessions: 100, CostPerDay: 100},
 		Status: "active",
 	}

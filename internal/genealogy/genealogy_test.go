@@ -124,9 +124,9 @@ func TestGetAncestry(t *testing.T) {
 
 	// Build a simple chain: root -> mid -> leaf.
 	root, _ := s.AddNode(ProvenanceNode{
-		Type:   NodeHumanInput,
-		Name:   "user-prompt",
-		Agent:  "human",
+		Type:    NodeHumanInput,
+		Name:    "user-prompt",
+		Agent:   "human",
 		CostUSD: 0.0,
 	})
 	mid, _ := s.AddNode(ProvenanceNode{

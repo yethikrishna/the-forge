@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/persistentqueue"
+	"github.com/spf13/cobra"
 )
 
 var pqCmd = &cobra.Command{

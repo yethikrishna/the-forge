@@ -253,5 +253,3 @@ func TestEmptyDequeue(t *testing.T) {
 		t.Error("Expected nil task from empty queue")
 	}
 }
-
-

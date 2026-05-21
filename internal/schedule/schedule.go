@@ -18,9 +18,9 @@ import (
 type Schedule struct {
 	ID        string            `json:"id"`
 	Name      string            `json:"name"`
-	Cron      string            `json:"cron"`       // cron expression
-	Agent     string            `json:"agent"`       // agent name or ID
-	Task      string            `json:"task"`        // task to execute
+	Cron      string            `json:"cron"`  // cron expression
+	Agent     string            `json:"agent"` // agent name or ID
+	Task      string            `json:"task"`  // task to execute
 	Args      map[string]string `json:"args,omitempty"`
 	Enabled   bool              `json:"enabled"`
 	LastRun   time.Time         `json:"last_run,omitempty"`

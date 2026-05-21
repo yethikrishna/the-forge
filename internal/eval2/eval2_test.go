@@ -60,8 +60,8 @@ func TestABTestRecordResult(t *testing.T) {
 
 func TestABTestAnalyze(t *testing.T) {
 	exp := &abtest.Experiment{
-		Name:      "analyze-test",
-		Variants:  []abtest.Variant{{Name: "A"}, {Name: "B"}},
+		Name:     "analyze-test",
+		Variants: []abtest.Variant{{Name: "A"}, {Name: "B"}},
 		Results: []abtest.Result{
 			{Variant: "A", Score: 0.9, Success: true},
 			{Variant: "B", Score: 0.6, Success: true},

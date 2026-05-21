@@ -134,7 +134,8 @@ func loadConfig() *config.ForgeConfig {
 			return config.LoadOrDefault(p)
 		}
 	}
-	cfg := config.DefaultConfig(); return &cfg
+	cfg := config.DefaultConfig()
+	return &cfg
 }
 
 func getConfigValue(cfg *config.ForgeConfig, key string) string {

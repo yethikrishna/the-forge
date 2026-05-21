@@ -18,7 +18,7 @@ import (
 type Profile struct {
 	Name        string                 `json:"name"`
 	Description string                 `json:"description,omitempty"`
-	Extends     string                 `json:"extends,omitempty"`  // parent profile name
+	Extends     string                 `json:"extends,omitempty"` // parent profile name
 	Settings    map[string]interface{} `json:"settings"`
 	CreatedAt   string                 `json:"created_at,omitempty"`
 	UpdatedAt   string                 `json:"updated_at,omitempty"`

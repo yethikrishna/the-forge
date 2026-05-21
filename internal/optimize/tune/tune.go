@@ -21,10 +21,10 @@ import (
 type ParamType string
 
 const (
-	ParamFloat   ParamType = "float"
-	ParamInt     ParamType = "int"
-	ParamString  ParamType = "string"
-	ParamBool    ParamType = "bool"
+	ParamFloat  ParamType = "float"
+	ParamInt    ParamType = "int"
+	ParamString ParamType = "string"
+	ParamBool   ParamType = "bool"
 )
 
 // ParamDef defines a hyperparameter search space.
@@ -64,10 +64,10 @@ type Study struct {
 
 // Optimizer runs Bayesian optimization on agent parameters.
 type Optimizer struct {
-	mu     sync.Mutex
-	dir    string
-	study  *Study
-	rng    *rand.Rand
+	mu    sync.Mutex
+	dir   string
+	study *Study
+	rng   *rand.Rand
 }
 
 // NewOptimizer creates a new hyperparameter optimizer.

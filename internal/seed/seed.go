@@ -36,12 +36,12 @@ type Template struct {
 
 // SeedResult represents the result of a project seed.
 type SeedResult struct {
-	ProjectName string    `json:"project_name"`
+	ProjectName string      `json:"project_name"`
 	Type        ProjectType `json:"type"`
-	Path        string    `json:"path"`
-	Files       []string  `json:"files"`
-	Template    string    `json:"template"`
-	CreatedAt   time.Time `json:"created_at"`
+	Path        string      `json:"path"`
+	Files       []string    `json:"files"`
+	Template    string      `json:"template"`
+	CreatedAt   time.Time   `json:"created_at"`
 }
 
 // Seed bootstraps a project from a description.
@@ -70,9 +70,9 @@ func main() {
 	fmt.Println("Hello, World!")
 }
 `,
-			"go.mod":          "module {{.Name}}\n\ngo 1.23\n",
-			"README.md":       "# {{.Name}}\n\nBootstrapped with Forge.\n",
-			".gitignore":      "*.exe\n*.exe~\n*.dll\n*.so\n*.dylib\n*.test\n*.out\nvendor/\n",
+			"go.mod":     "module {{.Name}}\n\ngo 1.23\n",
+			"README.md":  "# {{.Name}}\n\nBootstrapped with Forge.\n",
+			".gitignore": "*.exe\n*.exe~\n*.dll\n*.so\n*.dylib\n*.test\n*.out\nvendor/\n",
 		},
 		InitCmds: []string{"go mod tidy"},
 	}
@@ -120,8 +120,8 @@ if __name__ == "__main__":
   "include": ["src/**/*"]
 }
 `,
-			"README.md":   "# {{.Name}}\n\nBootstrapped with Forge.\n",
-			".gitignore":  "node_modules/\ndist/\n",
+			"README.md":  "# {{.Name}}\n\nBootstrapped with Forge.\n",
+			".gitignore": "node_modules/\ndist/\n",
 		},
 	}
 
@@ -161,8 +161,8 @@ func main() {
 	os.Exit(0)
 }
 `,
-			"go.mod":     "module {{.Name}}\n\ngo 1.23\n",
-			"README.md":  "# {{.Name}}\n\nForge agent bootstrapped with `forge seed`.\n",
+			"go.mod":    "module {{.Name}}\n\ngo 1.23\n",
+			"README.md": "# {{.Name}}\n\nForge agent bootstrapped with `forge seed`.\n",
 		},
 		InitCmds: []string{"go mod tidy"},
 	}
@@ -378,7 +378,7 @@ func GenerateFromIntent(description, templateName string) (*SeedResult, error) {
 	s := NewSeed()
 	var ptype ProjectType
 	var name string
-	
+
 	if templateName != "" {
 		// Map template name to type
 		switch strings.ToLower(templateName) {
@@ -405,7 +405,7 @@ func GenerateFromIntent(description, templateName string) (*SeedResult, error) {
 	} else {
 		ptype, name = ParseIntent(description)
 	}
-	
+
 	return s.Generate(name, ptype, name)
 }
 

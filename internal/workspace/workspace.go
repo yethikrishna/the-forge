@@ -20,22 +20,22 @@ import (
 type RepoStatus string
 
 const (
-	RepoCloned    RepoStatus = "cloned"
-	RepoPending   RepoStatus = "pending"
-	RepoModified  RepoStatus = "modified"
-	RepoError     RepoStatus = "error"
-	RepoMissing   RepoStatus = "missing"
+	RepoCloned   RepoStatus = "cloned"
+	RepoPending  RepoStatus = "pending"
+	RepoModified RepoStatus = "modified"
+	RepoError    RepoStatus = "error"
+	RepoMissing  RepoStatus = "missing"
 )
 
 // Repo defines a single repository within a workspace.
 type Repo struct {
-	URL     string     `json:"url"`
-	Branch  string     `json:"branch,omitempty"`
-	Path    string     `json:"path,omitempty"`   // local path relative to workspace root
-	Status  RepoStatus `json:"status"`
-	Commit  string     `json:"commit,omitempty"` // current HEAD
-	Dirty   bool       `json:"dirty"`
-	Error   string     `json:"error,omitempty"`
+	URL    string     `json:"url"`
+	Branch string     `json:"branch,omitempty"`
+	Path   string     `json:"path,omitempty"` // local path relative to workspace root
+	Status RepoStatus `json:"status"`
+	Commit string     `json:"commit,omitempty"` // current HEAD
+	Dirty  bool       `json:"dirty"`
+	Error  string     `json:"error,omitempty"`
 }
 
 // Workspace defines a collection of repos that form a logical unit.
@@ -52,13 +52,13 @@ type Workspace struct {
 
 // DiffResult represents changes across the workspace.
 type DiffResult struct {
-	Repo      string `json:"repo"`
-	Branch    string `json:"branch"`
+	Repo      string   `json:"repo"`
+	Branch    string   `json:"branch"`
 	Modified  []string `json:"modified,omitempty"`
 	Added     []string `json:"added,omitempty"`
 	Deleted   []string `json:"deleted,omitempty"`
 	Untracked []string `json:"untracked,omitempty"`
-	Summary   string `json:"summary,omitempty"`
+	Summary   string   `json:"summary,omitempty"`
 }
 
 // CoordinationPlan describes the order of operations for cross-repo changes.
@@ -69,11 +69,11 @@ type CoordinationPlan struct {
 
 // CoordinationStep is a single step in a coordination plan.
 type CoordinationStep struct {
-	Repo     string `json:"repo"`
-	Action   string `json:"action"`   // branch, commit, push, pr
-	Message  string `json:"message,omitempty"`
+	Repo      string `json:"repo"`
+	Action    string `json:"action"` // branch, commit, push, pr
+	Message   string `json:"message,omitempty"`
 	DependsOn string `json:"depends_on,omitempty"` // repo name this step depends on
-	Priority int    `json:"priority,omitempty"`
+	Priority  int    `json:"priority,omitempty"`
 }
 
 // Manager handles workspace operations.
@@ -346,25 +346,25 @@ func (m *Manager) PlanCoordination(idOrName string) (*CoordinationPlan, error) {
 				Priority: priority,
 			},
 			CoordinationStep{
-				Repo:     repo.Path,
-				Action:   "commit",
-				Message:  fmt.Sprintf("Commit changes in %s", repo.Path),
+				Repo:      repo.Path,
+				Action:    "commit",
+				Message:   fmt.Sprintf("Commit changes in %s", repo.Path),
 				DependsOn: repo.Path,
-				Priority: priority + 1,
+				Priority:  priority + 1,
 			},
 			CoordinationStep{
-				Repo:     repo.Path,
-				Action:   "push",
-				Message:  fmt.Sprintf("Push %s branch to remote", repo.Path),
+				Repo:      repo.Path,
+				Action:    "push",
+				Message:   fmt.Sprintf("Push %s branch to remote", repo.Path),
 				DependsOn: repo.Path,
-				Priority: priority + 2,
+				Priority:  priority + 2,
 			},
 			CoordinationStep{
-				Repo:     repo.Path,
-				Action:   "pr",
-				Message:  fmt.Sprintf("Create PR for %s", repo.Path),
+				Repo:      repo.Path,
+				Action:    "pr",
+				Message:   fmt.Sprintf("Create PR for %s", repo.Path),
 				DependsOn: repo.Path,
-				Priority: priority + 3,
+				Priority:  priority + 3,
 			},
 		)
 		priority += 10

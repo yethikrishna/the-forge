@@ -35,7 +35,7 @@ type Signal struct {
 // Analysis is the result of analyzing a message for frustration.
 type Analysis struct {
 	Level      FrustrationLevel `json:"level"`
-	Score      float64          `json:"score"`      // 0-100
+	Score      float64          `json:"score"` // 0-100
 	Signals    []Signal         `json:"signals"`
 	Confidence float64          `json:"confidence"` // 0-1
 	Strategy   Strategy         `json:"strategy"`
@@ -43,18 +43,18 @@ type Analysis struct {
 
 // Strategy is the recommended response strategy.
 type Strategy struct {
-	Tone          string   `json:"tone"`           // "empathetic", "calm", "direct", "supportive"
-	Avoid         []string `json:"avoid"`          // things to avoid saying
-	Suggestions   []string `json:"suggestions"`    // response suggestions
-	Escalate      bool     `json:"escalate"`       // whether to escalate to human
-	SlowDown      bool     `json:"slow_down"`      // take extra care in response
-	Acknowledge   bool     `json:"acknowledge"`    // explicitly acknowledge frustration
-	MaxWords      int      `json:"max_words"`      // suggested response length (0 = no limit)
+	Tone        string   `json:"tone"`        // "empathetic", "calm", "direct", "supportive"
+	Avoid       []string `json:"avoid"`       // things to avoid saying
+	Suggestions []string `json:"suggestions"` // response suggestions
+	Escalate    bool     `json:"escalate"`    // whether to escalate to human
+	SlowDown    bool     `json:"slow_down"`   // take extra care in response
+	Acknowledge bool     `json:"acknowledge"` // explicitly acknowledge frustration
+	MaxWords    int      `json:"max_words"`   // suggested response length (0 = no limit)
 }
 
 // Analyzer detects frustration in messages.
 type Analyzer struct {
-	history   []messageEntry
+	history    []messageEntry
 	maxHistory int
 }
 
@@ -306,16 +306,16 @@ func (a *Analyzer) detectUrgency(msg string) []Signal {
 	lower := strings.ToLower(msg)
 
 	urgencyPatterns := map[string]float64{
-		"asap":       0.7,
-		"urgent":     0.8,
-		"emergency":  0.9,
-		"now":        0.6,
+		"asap":        0.7,
+		"urgent":      0.8,
+		"emergency":   0.9,
+		"now":         0.6,
 		"immediately": 0.8,
-		"right now":  0.7,
-		"hurry":      0.7,
-		"quickly":    0.5,
-		"help me":    0.6,
-		"help":       0.3,
+		"right now":   0.7,
+		"hurry":       0.7,
+		"quickly":     0.5,
+		"help me":     0.6,
+		"help":        0.3,
 	}
 
 	for pattern, weight := range urgencyPatterns {

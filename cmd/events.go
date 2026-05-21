@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/eventbus"
+	"github.com/spf13/cobra"
 )
 
 var eventbusCmd = &cobra.Command{
@@ -15,7 +15,7 @@ var eventbusCmd = &cobra.Command{
 }
 
 var (
-	ebTopic string
+	ebTopic  string
 	ebSource string
 )
 

@@ -254,11 +254,11 @@ type Comparison struct {
 func CompareSummaries(a, b *Summary) *Comparison {
 	c := &Comparison{SummaryA: a, SummaryB: b}
 	c.Delta = map[string]float64{
-		"latency_mean":  b.MeanLatencyMS - a.MeanLatencyMS,
-		"latency_p95":   b.P95LatencyMS - a.P95LatencyMS,
-		"cost_mean":     b.MeanCostUSD - a.MeanCostUSD,
-		"success_rate":  b.SuccessRate - a.SuccessRate,
-		"throughput":    b.ThroughputRPS - a.ThroughputRPS,
+		"latency_mean": b.MeanLatencyMS - a.MeanLatencyMS,
+		"latency_p95":  b.P95LatencyMS - a.P95LatencyMS,
+		"cost_mean":    b.MeanCostUSD - a.MeanCostUSD,
+		"success_rate": b.SuccessRate - a.SuccessRate,
+		"throughput":   b.ThroughputRPS - a.ThroughputRPS,
 	}
 
 	// Simple scoring: lower latency/cost is better, higher success/throughput is better

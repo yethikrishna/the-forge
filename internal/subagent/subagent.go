@@ -163,15 +163,15 @@ func (s *Spawner) Spawn(ctx context.Context, name, prompt string, opts ...SpawnO
 	id := fmt.Sprintf("sub-%06d", atomic.AddUint64(&s.counter, 1))
 
 	task := &Task{
-		ID:          id,
-		Name:        name,
-		Prompt:      prompt,
-		Timeout:     s.config.DefaultTimeout,
-		MaxRetries:  s.config.DefaultRetries,
-		Model:       s.config.Model,
-		State:       TaskPending,
-		CreatedAt:   time.Now().UTC(),
-		Metadata:    make(map[string]interface{}),
+		ID:         id,
+		Name:       name,
+		Prompt:     prompt,
+		Timeout:    s.config.DefaultTimeout,
+		MaxRetries: s.config.DefaultRetries,
+		Model:      s.config.Model,
+		State:      TaskPending,
+		CreatedAt:  time.Now().UTC(),
+		Metadata:   make(map[string]interface{}),
 	}
 
 	for _, opt := range opts {
@@ -409,10 +409,10 @@ func (s *Spawner) Stats() SpawnerStats {
 
 // SpawnerStats holds spawner statistics.
 type SpawnerStats struct {
-	TotalTasks int                    `json:"total_tasks"`
-	Running    int                    `json:"running"`
-	TotalCost  float64                `json:"total_cost"`
-	ByState    map[TaskState]int      `json:"by_state"`
+	TotalTasks int               `json:"total_tasks"`
+	Running    int               `json:"running"`
+	TotalCost  float64           `json:"total_cost"`
+	ByState    map[TaskState]int `json:"by_state"`
 }
 
 // SpawnOption customizes task creation.
@@ -460,14 +460,14 @@ func WithParentID(id string) SpawnOption {
 
 // TaskSpec is a declarative task specification.
 type TaskSpec struct {
-	Name      string   `json:"name"`
-	Prompt    string   `json:"prompt"`
-	Model     string   `json:"model,omitempty"`
-	Role      string   `json:"role,omitempty"`
-	Timeout   string   `json:"timeout,omitempty"`
-	Priority  int      `json:"priority,omitempty"`
-	DependsOn []string `json:"depends_on,omitempty"`
-	MaxRetries int     `json:"max_retries,omitempty"`
+	Name       string   `json:"name"`
+	Prompt     string   `json:"prompt"`
+	Model      string   `json:"model,omitempty"`
+	Role       string   `json:"role,omitempty"`
+	Timeout    string   `json:"timeout,omitempty"`
+	Priority   int      `json:"priority,omitempty"`
+	DependsOn  []string `json:"depends_on,omitempty"`
+	MaxRetries int      `json:"max_retries,omitempty"`
 }
 
 // ToOptions converts a TaskSpec to SpawnOptions.

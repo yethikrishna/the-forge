@@ -169,8 +169,8 @@ type Interceptor func(req *http.Request) (*http.Request, error)
 
 // InterceptingRouter wraps a Router with request interceptors.
 type InterceptingRouter struct {
-	router        *Router
-	interceptors  []Interceptor
+	router       *Router
+	interceptors []Interceptor
 }
 
 // NewInterceptingRouter creates a router with interceptors.

@@ -124,11 +124,11 @@ func TestWorktreeList(t *testing.T) {
 
 func TestWorktreeFormat(t *testing.T) {
 	wt := &worktree.Worktree{
-		ID:         "wt-1",
-		AgentID:    "agent-1",
-		Branch:     "feature-test",
-		Path:       "/tmp/worktree-1",
-		RepoPath:   "/tmp/repo",
+		ID:       "wt-1",
+		AgentID:  "agent-1",
+		Branch:   "feature-test",
+		Path:     "/tmp/worktree-1",
+		RepoPath: "/tmp/repo",
 	}
 	s := worktree.FormatWorktree(wt)
 	if s == "" {

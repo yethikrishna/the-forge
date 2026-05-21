@@ -222,12 +222,12 @@ func TestPersistence(t *testing.T) {
 
 func TestFormatTransfer(t *testing.T) {
 	xfer := &Transfer{
-		ID:        "xfer-1",
-		FromAgent: "coder",
-		ToAgent:   "reviewer",
-		SessionID: "sess-1",
-		Status:    "pending",
-		Context:   ContextBundle{Goal: "Ship feature X", Summary: "Code complete"},
+		ID:         "xfer-1",
+		FromAgent:  "coder",
+		ToAgent:    "reviewer",
+		SessionID:  "sess-1",
+		Status:     "pending",
+		Context:    ContextBundle{Goal: "Ship feature X", Summary: "Code complete"},
 		Confidence: ConfidenceScore{Overall: 0.85},
 	}
 

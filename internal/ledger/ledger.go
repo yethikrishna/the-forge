@@ -33,35 +33,35 @@ const (
 
 // Entry represents a single ledger entry.
 type Entry struct {
-	Index       int64             `json:"index"`
-	Hash        string            `json:"hash"`
-	PrevHash    string            `json:"prev_hash"`
-	Type        EntryType         `json:"type"`
-	AgentID     string            `json:"agent_id"`
-	SessionID   string            `json:"session_id"`
-	Model       string            `json:"model,omitempty"`
-	TokensIn    int64             `json:"tokens_in,omitempty"`
-	TokensOut   int64             `json:"tokens_out,omitempty"`
-	CostUSD     float64           `json:"cost_usd"`
-	TotalCost   float64           `json:"total_cost"` // running total
-	Action      string            `json:"action,omitempty"`
-	Resource    string            `json:"resource,omitempty"`
-	Duration    time.Duration     `json:"duration,omitempty"`
-	Timestamp   time.Time         `json:"timestamp"`
-	Metadata    map[string]string `json:"metadata,omitempty"`
+	Index     int64             `json:"index"`
+	Hash      string            `json:"hash"`
+	PrevHash  string            `json:"prev_hash"`
+	Type      EntryType         `json:"type"`
+	AgentID   string            `json:"agent_id"`
+	SessionID string            `json:"session_id"`
+	Model     string            `json:"model,omitempty"`
+	TokensIn  int64             `json:"tokens_in,omitempty"`
+	TokensOut int64             `json:"tokens_out,omitempty"`
+	CostUSD   float64           `json:"cost_usd"`
+	TotalCost float64           `json:"total_cost"` // running total
+	Action    string            `json:"action,omitempty"`
+	Resource  string            `json:"resource,omitempty"`
+	Duration  time.Duration     `json:"duration,omitempty"`
+	Timestamp time.Time         `json:"timestamp"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
 }
 
 // Ledger is the append-only transaction ledger.
 type Ledger struct {
-	mu        sync.RWMutex
-	dir       string
-	entries   []Entry
-	agentCost map[string]float64 // agent -> cumulative cost
-	modelCost map[string]float64 // model -> cumulative cost
+	mu          sync.RWMutex
+	dir         string
+	entries     []Entry
+	agentCost   map[string]float64 // agent -> cumulative cost
+	modelCost   map[string]float64 // model -> cumulative cost
 	sessionCost map[string]float64 // session -> cumulative cost
-	totalCost float64
-	budget    float64
-	nextIndex int64
+	totalCost   float64
+	budget      float64
+	nextIndex   int64
 }
 
 // NewLedger creates a new ledger.
@@ -266,16 +266,16 @@ func (l *Ledger) Stats() LedgerStats {
 
 // LedgerStats holds ledger statistics.
 type LedgerStats struct {
-	TotalEntries    int                `json:"total_entries"`
-	TotalCost       float64            `json:"total_cost"`
-	TotalTokensIn   int64              `json:"total_tokens_in"`
-	TotalTokensOut  int64              `json:"total_tokens_out"`
-	Budget          float64            `json:"budget"`
-	AgentCount      int                `json:"agent_count"`
-	ModelCount      int                `json:"model_count"`
-	SessionCount    int                `json:"session_count"`
-	AgentBreakdown  map[string]float64 `json:"agent_breakdown"`
-	ModelBreakdown  map[string]float64 `json:"model_breakdown"`
+	TotalEntries   int                `json:"total_entries"`
+	TotalCost      float64            `json:"total_cost"`
+	TotalTokensIn  int64              `json:"total_tokens_in"`
+	TotalTokensOut int64              `json:"total_tokens_out"`
+	Budget         float64            `json:"budget"`
+	AgentCount     int                `json:"agent_count"`
+	ModelCount     int                `json:"model_count"`
+	SessionCount   int                `json:"session_count"`
+	AgentBreakdown map[string]float64 `json:"agent_breakdown"`
+	ModelBreakdown map[string]float64 `json:"model_breakdown"`
 }
 
 // Verify checks the integrity of the ledger by verifying hashes.

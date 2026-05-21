@@ -71,10 +71,10 @@ func (s *Server) Healthz() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":    "alive",
-			"version":   s.version,
-			"started":   s.started,
-			"uptime":    time.Since(s.started).Round(time.Second).String(),
+			"status":  "alive",
+			"version": s.version,
+			"started": s.started,
+			"uptime":  time.Since(s.started).Round(time.Second).String(),
 		})
 	}
 }
@@ -104,11 +104,11 @@ func (s *Server) Readyz() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(statusCode)
 		json.NewEncoder(w).Encode(map[string]interface{}{
-			"status":    overall,
-			"version":   s.version,
-			"started":   s.started,
-			"uptime":    time.Since(s.started).Round(time.Second).String(),
-			"checks":    results,
+			"status":  overall,
+			"version": s.version,
+			"started": s.started,
+			"uptime":  time.Since(s.started).Round(time.Second).String(),
+			"checks":  results,
 		})
 	}
 }
@@ -185,8 +185,8 @@ func DiskChecker(path string, minBytes uint64) Checker {
 func MemoryChecker() Checker {
 	return func() CheckResult {
 		return CheckResult{
-			Name:   "memory",
-			Status: StatusHealthy,
+			Name:    "memory",
+			Status:  StatusHealthy,
 			Message: "Memory check passed",
 		}
 	}

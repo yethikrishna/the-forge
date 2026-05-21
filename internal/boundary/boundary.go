@@ -31,14 +31,14 @@ const (
 // Config configures process isolation.
 type Config struct {
 	Level        IsolationLevel
-	AllowNetwork []string // Host patterns allowed for network access
-	AllowPaths   []string // Paths allowed for filesystem access
-	WorkDir      string   // Working directory for the process
-	Env          []string // Environment variables
-	UID          int      // User ID to run as (Unix only)
-	GID          int      // Group ID to run as (Unix only)
-	MemoryLimit  int64    // Memory limit in bytes (0 = unlimited)
-	CPUTimeLimit int64    // CPU time limit in seconds (0 = unlimited)
+	AllowNetwork []string      // Host patterns allowed for network access
+	AllowPaths   []string      // Paths allowed for filesystem access
+	WorkDir      string        // Working directory for the process
+	Env          []string      // Environment variables
+	UID          int           // User ID to run as (Unix only)
+	GID          int           // Group ID to run as (Unix only)
+	MemoryLimit  int64         // Memory limit in bytes (0 = unlimited)
+	CPUTimeLimit int64         // CPU time limit in seconds (0 = unlimited)
 	Timeout      time.Duration // Max execution time (0 = unlimited)
 }
 

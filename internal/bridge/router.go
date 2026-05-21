@@ -37,12 +37,12 @@ type RouterStats struct {
 // Route defines a routing rule: messages matching the filter get forwarded
 // to all target adapters after protocol translation.
 type Route struct {
-	Name      string   `json:"name"`
-	Source    Protocol `json:"source"`    // source protocol filter (empty = any)
-	Target    Protocol `json:"target"`    // target protocol (required)
-	Method    string   `json:"method"`    // method prefix filter (empty = any)
-	Adapter   string   `json:"adapter"`   // target adapter name (required)
-	Enabled   bool     `json:"enabled"`
+	Name    string   `json:"name"`
+	Source  Protocol `json:"source"`  // source protocol filter (empty = any)
+	Target  Protocol `json:"target"`  // target protocol (required)
+	Method  string   `json:"method"`  // method prefix filter (empty = any)
+	Adapter string   `json:"adapter"` // target adapter name (required)
+	Enabled bool     `json:"enabled"`
 }
 
 // NewRouter creates a message router.

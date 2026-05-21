@@ -26,29 +26,29 @@ const (
 
 // Component represents a software component in the SBOM.
 type Component struct {
-	Name         string   `json:"name"`
-	Version      string   `json:"version"`
-	Type         string   `json:"type"` // library, application, framework, OS
-	PackageURL   string   `json:"purl,omitempty"`
-	Licenses     []string `json:"licenses,omitempty"`
-	SHA256       string   `json:"sha256,omitempty"`
-	FilePath     string   `json:"file_path,omitempty"`
-	Supplier     string   `json:"supplier,omitempty"`
-	Dependencies []string `json:"dependencies,omitempty"`
-	Vulnerabilities int   `json:"vulnerabilities,omitempty"`
+	Name            string   `json:"name"`
+	Version         string   `json:"version"`
+	Type            string   `json:"type"` // library, application, framework, OS
+	PackageURL      string   `json:"purl,omitempty"`
+	Licenses        []string `json:"licenses,omitempty"`
+	SHA256          string   `json:"sha256,omitempty"`
+	FilePath        string   `json:"file_path,omitempty"`
+	Supplier        string   `json:"supplier,omitempty"`
+	Dependencies    []string `json:"dependencies,omitempty"`
+	Vulnerabilities int      `json:"vulnerabilities,omitempty"`
 }
 
 // SBOM represents a complete Software Bill of Materials.
 type SBOM struct {
-	ID          string      `json:"id"`
-	Name        string      `json:"name"`
-	Version     string      `json:"version"`
-	Format      Format      `json:"format"`
-	CreatedAt   time.Time   `json:"created_at"`
-	Creator     string      `json:"creator"`
-	Components  []Component `json:"components"`
-	TotalDeps   int         `json:"total_deps"`
-	TotalVulns  int         `json:"total_vulnerabilities"`
+	ID         string      `json:"id"`
+	Name       string      `json:"name"`
+	Version    string      `json:"version"`
+	Format     Format      `json:"format"`
+	CreatedAt  time.Time   `json:"created_at"`
+	Creator    string      `json:"creator"`
+	Components []Component `json:"components"`
+	TotalDeps  int         `json:"total_deps"`
+	TotalVulns int         `json:"total_vulnerabilities"`
 }
 
 // Generator creates SBOMs for Go projects.

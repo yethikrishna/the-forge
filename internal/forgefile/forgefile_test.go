@@ -100,7 +100,7 @@ model = "claude-sonnet-4"
 func TestValidate(t *testing.T) {
 	ff := &Forgefile{
 		Version: "2",
-		Model: ModelDefaults{Primary: "gpt-4.1"},
+		Model:   ModelDefaults{Primary: "gpt-4.1"},
 		Agents: map[string]AgentDef{
 			"coder": {Model: "gpt-4.1"},
 		},

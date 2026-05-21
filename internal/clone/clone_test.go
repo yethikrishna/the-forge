@@ -1,9 +1,9 @@
 package clone
 
 import (
+	"fmt"
 	"strings"
 	"testing"
-	"fmt"
 	"time"
 )
 

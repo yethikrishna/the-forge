@@ -15,15 +15,15 @@ import (
 
 // ReviewSession is a single memory review session.
 type ReviewSession struct {
-	ID           string          `json:"id"`
-	StartedAt    time.Time       `json:"started_at"`
-	FinishedAt   *time.Time      `json:"finished_at,omitempty"`
-	InputsScanned int            `json:"inputs_scanned"`
-	PatternsFound []Pattern      `json:"patterns_found"`
-	Suggestions   []Suggestion    `json:"suggestions"`
-	PrunedCount   int            `json:"pruned_count"`
-	NewMemory     []MemoryEntry  `json:"new_memory"`
-	Status        string         `json:"status"`
+	ID            string        `json:"id"`
+	StartedAt     time.Time     `json:"started_at"`
+	FinishedAt    *time.Time    `json:"finished_at,omitempty"`
+	InputsScanned int           `json:"inputs_scanned"`
+	PatternsFound []Pattern     `json:"patterns_found"`
+	Suggestions   []Suggestion  `json:"suggestions"`
+	PrunedCount   int           `json:"pruned_count"`
+	NewMemory     []MemoryEntry `json:"new_memory"`
+	Status        string        `json:"status"`
 }
 
 // Pattern represents a discovered pattern in agent interactions.
@@ -40,24 +40,24 @@ type Pattern struct {
 
 // Suggestion is an actionable recommendation from a pattern.
 type Suggestion struct {
-	ID          string  `json:"id"`
-	PatternID   string  `json:"pattern_id"`
-	Type        string  `json:"type"`
-	Description string  `json:"description"`
-	Priority    int     `json:"priority"`
-	Impact      string  `json:"impact"`
-	AutoApply   bool    `json:"auto_apply"`
-	Applied     bool    `json:"applied"`
+	ID          string `json:"id"`
+	PatternID   string `json:"pattern_id"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
+	Priority    int    `json:"priority"`
+	Impact      string `json:"impact"`
+	AutoApply   bool   `json:"auto_apply"`
+	Applied     bool   `json:"applied"`
 }
 
 // MemoryEntry is a distilled memory extracted from patterns.
 type MemoryEntry struct {
-	Key       string    `json:"key"`
-	Value     string    `json:"value"`
-	Source    string    `json:"source"`
-	Confidence float64  `json:"confidence"`
-	CreatedAt time.Time `json:"created_at"`
-	TTL       string    `json:"ttl,omitempty"`
+	Key        string    `json:"key"`
+	Value      string    `json:"value"`
+	Source     string    `json:"source"`
+	Confidence float64   `json:"confidence"`
+	CreatedAt  time.Time `json:"created_at"`
+	TTL        string    `json:"ttl,omitempty"`
 }
 
 // ReviewConfig configures the dream review process.
@@ -103,9 +103,9 @@ func NewDreamReviewer(config ReviewConfig) *DreamReviewer {
 // Run executes a memory review cycle.
 func (dr *DreamReviewer) Run(inputs []ReviewInput) (*ReviewSession, error) {
 	session := &ReviewSession{
-		ID:          fmt.Sprintf("dream-%d", time.Now().UnixNano()),
-		StartedAt:   time.Now().UTC(),
-		Status:      "running",
+		ID:            fmt.Sprintf("dream-%d", time.Now().UnixNano()),
+		StartedAt:     time.Now().UTC(),
+		Status:        "running",
 		InputsScanned: len(inputs),
 	}
 
@@ -344,7 +344,7 @@ func (dr *DreamReviewer) extractMemories(patterns []Pattern, inputs []ReviewInpu
 		entry := MemoryEntry{
 			Key:        fmt.Sprintf("pattern:%s:%s", p.Type, p.ID),
 			Value:      p.Description,
-			Source:      "dream_review",
+			Source:     "dream_review",
 			Confidence: p.Confidence,
 			CreatedAt:  time.Now().UTC(),
 			TTL:        "7d",
@@ -374,7 +374,7 @@ func (dr *DreamReviewer) extractMemories(patterns []Pattern, inputs []ReviewInpu
 			memories = append(memories, MemoryEntry{
 				Key:        fmt.Sprintf("success:%d", len(memories)),
 				Value:      fmt.Sprintf("Successful pattern (x%d): %s", count, truncate(content, 80)),
-				Source:      "dream_review",
+				Source:     "dream_review",
 				Confidence: float64(count) / float64(len(inputs)),
 				CreatedAt:  time.Now().UTC(),
 				TTL:        "14d",

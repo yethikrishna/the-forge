@@ -28,12 +28,12 @@ type SwarmState string
 
 const (
 	StateInitializing SwarmState = "initializing"
-	StateActive      SwarmState = "active"
-	StateScaling     SwarmState = "scaling"
-	StateCompleting  SwarmState = "completing"
-	StateCompleted   SwarmState = "completed"
-	StateFailed      SwarmState = "failed"
-	StateCancelled   SwarmState = "cancelled"
+	StateActive       SwarmState = "active"
+	StateScaling      SwarmState = "scaling"
+	StateCompleting   SwarmState = "completing"
+	StateCompleted    SwarmState = "completed"
+	StateFailed       SwarmState = "failed"
+	StateCancelled    SwarmState = "cancelled"
 )
 
 // AggregationStrategy defines how swarm results are combined.
@@ -111,31 +111,31 @@ type TaskResult struct {
 
 // SwarmAgent represents an agent in the swarm.
 type SwarmAgent struct {
-	ID          string      `json:"id"`
-	Name        string      `json:"name"`
-	Model       string      `json:"model"`
-	State       AgentState  `json:"state"`
-	TasksDone   int         `json:"tasks_done"`
-	TasksFailed int         `json:"tasks_failed"`
-	TotalCost   float64     `json:"total_cost"`
-	TokensUsed  int64       `json:"tokens_used"`
-	JoinedAt    time.Time   `json:"joined_at"`
-	LastActive  time.Time   `json:"last_active"`
-	Capabilities []string   `json:"capabilities,omitempty"`
-	MaxConcurrent int       `json:"max_concurrent"`
-	CurrentTasks int        `json:"current_tasks"`
+	ID            string     `json:"id"`
+	Name          string     `json:"name"`
+	Model         string     `json:"model"`
+	State         AgentState `json:"state"`
+	TasksDone     int        `json:"tasks_done"`
+	TasksFailed   int        `json:"tasks_failed"`
+	TotalCost     float64    `json:"total_cost"`
+	TokensUsed    int64      `json:"tokens_used"`
+	JoinedAt      time.Time  `json:"joined_at"`
+	LastActive    time.Time  `json:"last_active"`
+	Capabilities  []string   `json:"capabilities,omitempty"`
+	MaxConcurrent int        `json:"max_concurrent"`
+	CurrentTasks  int        `json:"current_tasks"`
 }
 
 // Config holds swarm configuration.
 type Config struct {
-	Name              string             `json:"name"`
-	Strategy          AggregationStrategy `json:"strategy"`
-	MaxAgents         int                `json:"max_agents"`
-	MaxRetries        int                `json:"max_retries"`
-	Timeout           time.Duration      `json:"timeout"`
-	CostBudget        float64            `json:"cost_budget"`
-	ConsensusThreshold float64           `json:"consensus_threshold"` // 0.0-1.0, fraction needed
-	PriorityMode      bool               `json:"priority_mode"`       // process higher priority tasks first
+	Name               string              `json:"name"`
+	Strategy           AggregationStrategy `json:"strategy"`
+	MaxAgents          int                 `json:"max_agents"`
+	MaxRetries         int                 `json:"max_retries"`
+	Timeout            time.Duration       `json:"timeout"`
+	CostBudget         float64             `json:"cost_budget"`
+	ConsensusThreshold float64             `json:"consensus_threshold"` // 0.0-1.0, fraction needed
+	PriorityMode       bool                `json:"priority_mode"`       // process higher priority tasks first
 }
 
 // DefaultConfig returns sensible defaults.
@@ -154,16 +154,16 @@ func DefaultConfig(name string) Config {
 
 // Swarm is the main swarm coordinator.
 type Swarm struct {
-	mu       sync.RWMutex
-	config   Config
-	id       string
-	state    SwarmState
-	agents   map[string]*SwarmAgent
-	tasks    map[string]*Task
-	results  []*TaskResult
-	eventLog []Event
-	costUsed float64
-	cancelFn context.CancelFunc
+	mu        sync.RWMutex
+	config    Config
+	id        string
+	state     SwarmState
+	agents    map[string]*SwarmAgent
+	tasks     map[string]*Task
+	results   []*TaskResult
+	eventLog  []Event
+	costUsed  float64
+	cancelFn  context.CancelFunc
 	createdAt time.Time
 
 	taskQueue []*Task // ordered by priority

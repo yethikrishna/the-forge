@@ -16,8 +16,8 @@ import (
 // ModelPricing represents pricing for a model.
 type ModelPricing struct {
 	Model            string  `json:"model"`
-	InputPer1K       float64 `json:"input_per_1k"`    // cost per 1K input tokens
-	OutputPer1K      float64 `json:"output_per_1k"`   // cost per 1K output tokens
+	InputPer1K       float64 `json:"input_per_1k"`  // cost per 1K input tokens
+	OutputPer1K      float64 `json:"output_per_1k"` // cost per 1K output tokens
 	CachedInputPer1K float64 `json:"cached_input_per_1k,omitempty"`
 }
 
@@ -51,23 +51,23 @@ type Budget struct {
 
 // Tracker tracks token usage.
 type Tracker struct {
-	mu       sync.RWMutex
-	dir      string
-	usages   []Usage
-	budgets  map[string]*Budget // key: agentID or "global"
-	pricing  map[string]ModelPricing
+	mu      sync.RWMutex
+	dir     string
+	usages  []Usage
+	budgets map[string]*Budget // key: agentID or "global"
+	pricing map[string]ModelPricing
 }
 
 // DefaultPricing returns default model pricing.
 func DefaultPricing() map[string]ModelPricing {
 	return map[string]ModelPricing{
-		"gpt-4.1":         {Model: "gpt-4.1", InputPer1K: 0.002, OutputPer1K: 0.008},
-		"gpt-4.1-mini":    {Model: "gpt-4.1-mini", InputPer1K: 0.0004, OutputPer1K: 0.0016},
-		"gpt-4.1-nano":    {Model: "gpt-4.1-nano", InputPer1K: 0.0001, OutputPer1K: 0.0004},
+		"gpt-4.1":          {Model: "gpt-4.1", InputPer1K: 0.002, OutputPer1K: 0.008},
+		"gpt-4.1-mini":     {Model: "gpt-4.1-mini", InputPer1K: 0.0004, OutputPer1K: 0.0016},
+		"gpt-4.1-nano":     {Model: "gpt-4.1-nano", InputPer1K: 0.0001, OutputPer1K: 0.0004},
 		"claude-sonnet-4":  {Model: "claude-sonnet-4", InputPer1K: 0.003, OutputPer1K: 0.015},
 		"claude-haiku-3.5": {Model: "claude-haiku-3.5", InputPer1K: 0.0008, OutputPer1K: 0.004},
-		"o3":              {Model: "o3", InputPer1K: 0.002, OutputPer1K: 0.008},
-		"o4-mini":         {Model: "o4-mini", InputPer1K: 0.0011, OutputPer1K: 0.0044},
+		"o3":               {Model: "o3", InputPer1K: 0.002, OutputPer1K: 0.008},
+		"o4-mini":          {Model: "o4-mini", InputPer1K: 0.0011, OutputPer1K: 0.0044},
 	}
 }
 
@@ -279,14 +279,14 @@ func (t *Tracker) GetUsage(agentID, model string, since time.Time) []Usage {
 
 // Summary returns a usage summary.
 type Summary struct {
-	AgentID         string  `json:"agent_id"`
-	Model           string  `json:"model,omitempty"`
-	TotalInput      int     `json:"total_input"`
-	TotalOutput     int     `json:"total_output"`
-	TotalTokens     int     `json:"total_tokens"`
-	TotalCost       float64 `json:"total_cost"`
-	AvgCostPerCall  float64 `json:"avg_cost_per_call"`
-	CallCount       int     `json:"call_count"`
+	AgentID        string  `json:"agent_id"`
+	Model          string  `json:"model,omitempty"`
+	TotalInput     int     `json:"total_input"`
+	TotalOutput    int     `json:"total_output"`
+	TotalTokens    int     `json:"total_tokens"`
+	TotalCost      float64 `json:"total_cost"`
+	AvgCostPerCall float64 `json:"avg_cost_per_call"`
+	CallCount      int     `json:"call_count"`
 }
 
 // Summary returns usage summary for an agent.

@@ -16,23 +16,23 @@ import (
 
 // Style represents an agent's communication style.
 type Style struct {
-	Tone       string   `json:"tone"`        // "formal", "casual", "technical", "friendly"
-	Verbosity  string   `json:"verbosity"`   // "concise", "moderate", "detailed"
-	Humor      float64  `json:"humor"`       // 0-1
-	Proactivity float64 `json:"proactivity"` // 0-1, how proactive to be
-	Emojis     bool     `json:"emojis"`
-	Headers    bool     `json:"headers"`     // use markdown headers
-	CodeBlocks bool     `json:"code_blocks"` // prefer code blocks
-	Language   string   `json:"language"`    // preferred language
-	Formats    []string `json:"formats"`     // preferred output formats
+	Tone        string   `json:"tone"`        // "formal", "casual", "technical", "friendly"
+	Verbosity   string   `json:"verbosity"`   // "concise", "moderate", "detailed"
+	Humor       float64  `json:"humor"`       // 0-1
+	Proactivity float64  `json:"proactivity"` // 0-1, how proactive to be
+	Emojis      bool     `json:"emojis"`
+	Headers     bool     `json:"headers"`     // use markdown headers
+	CodeBlocks  bool     `json:"code_blocks"` // prefer code blocks
+	Language    string   `json:"language"`    // preferred language
+	Formats     []string `json:"formats"`     // preferred output formats
 }
 
 // Preference represents a persona preference.
 type Preference struct {
-	Key       string `json:"key"`
-	Value     string `json:"value"`
-	Priority  int    `json:"priority"` // 1-5, higher = more important
-	Reason    string `json:"reason,omitempty"`
+	Key      string `json:"key"`
+	Value    string `json:"value"`
+	Priority int    `json:"priority"` // 1-5, higher = more important
+	Reason   string `json:"reason,omitempty"`
 }
 
 // TrustLevel represents the trust level for a persona.
@@ -59,7 +59,7 @@ type Persona struct {
 	Style       Style             `json:"style"`
 	Preferences []Preference      `json:"preferences"`
 	TrustLevel  TrustLevel        `json:"trust_level"`
-	TrustScore  float64           `json:"trust_score"` // 0-100
+	TrustScore  float64           `json:"trust_score"`           // 0-100
 	ModelPrefs  map[string]string `json:"model_prefs,omitempty"` // task type -> preferred model
 	Tags        []string          `json:"tags"`
 	MemoryIDs   []string          `json:"memory_ids,omitempty"` // associated memory IDs
@@ -313,11 +313,11 @@ func DefaultPersonas() []Persona {
 			Name:        "coder",
 			Description: "Technical coding assistant focused on writing clean, efficient code",
 			Style: Style{
-				Tone:       "technical",
-				Verbosity:  "concise",
-				Humor:      0.1,
+				Tone:        "technical",
+				Verbosity:   "concise",
+				Humor:       0.1,
 				Proactivity: 0.7,
-				CodeBlocks: true,
+				CodeBlocks:  true,
 			},
 			TrustLevel: TrustTrusted,
 			TrustScore: 75,
@@ -327,11 +327,11 @@ func DefaultPersonas() []Persona {
 			Name:        "reviewer",
 			Description: "Code review specialist focused on quality, security, and best practices",
 			Style: Style{
-				Tone:       "formal",
-				Verbosity:  "detailed",
-				Humor:      0,
+				Tone:        "formal",
+				Verbosity:   "detailed",
+				Humor:       0,
 				Proactivity: 0.3,
-				CodeBlocks: true,
+				CodeBlocks:  true,
 			},
 			TrustLevel: TrustStandard,
 			TrustScore: 60,
@@ -341,11 +341,11 @@ func DefaultPersonas() []Persona {
 			Name:        "planner",
 			Description: "Strategic planner that breaks down complex tasks and designs solutions",
 			Style: Style{
-				Tone:       "friendly",
-				Verbosity:  "detailed",
-				Humor:      0.2,
+				Tone:        "friendly",
+				Verbosity:   "detailed",
+				Humor:       0.2,
 				Proactivity: 0.9,
-				Headers:    true,
+				Headers:     true,
 			},
 			TrustLevel: TrustTrusted,
 			TrustScore: 80,
@@ -355,11 +355,11 @@ func DefaultPersonas() []Persona {
 			Name:        "debugger",
 			Description: "Debugging specialist that systematically traces and fixes issues",
 			Style: Style{
-				Tone:       "technical",
-				Verbosity:  "moderate",
-				Humor:      0.05,
+				Tone:        "technical",
+				Verbosity:   "moderate",
+				Humor:       0.05,
 				Proactivity: 0.8,
-				CodeBlocks: true,
+				CodeBlocks:  true,
 			},
 			TrustLevel: TrustTrusted,
 			TrustScore: 70,
@@ -369,12 +369,12 @@ func DefaultPersonas() []Persona {
 			Name:        "explainer",
 			Description: "Teacher-like persona that explains concepts clearly with examples",
 			Style: Style{
-				Tone:       "friendly",
-				Verbosity:  "detailed",
-				Humor:      0.3,
+				Tone:        "friendly",
+				Verbosity:   "detailed",
+				Humor:       0.3,
 				Proactivity: 0.4,
-				Headers:    true,
-				CodeBlocks: true,
+				Headers:     true,
+				CodeBlocks:  true,
 			},
 			TrustLevel: TrustStandard,
 			TrustScore: 65,

@@ -36,12 +36,12 @@ func TestLinearClient_FetchTasks(t *testing.T) {
 							"key":  "ENG",
 							"name": "Engineering",
 						},
-						"parent":  nil,
-						"team":    map[string]string{"key": "ENG"},
-						"url":     "https://linear.app/issue/ENG-101",
+						"parent":    nil,
+						"team":      map[string]string{"key": "ENG"},
+						"url":       "https://linear.app/issue/ENG-101",
 						"createdAt": "2024-01-15T10:30:00Z",
 						"updatedAt": "2024-01-16T14:00:00Z",
-						"dueDate":  "2024-02-01",
+						"dueDate":   "2024-02-01",
 					},
 					{
 						"id":          "uuid-2",
@@ -113,16 +113,22 @@ func TestLinearClient_FetchTasks(t *testing.T) {
 		Identifier:  "ENG-101",
 		Title:       "Implement auth",
 		Description: "Add OAuth2",
-		State: struct{ Name string `json:"name"` }{"In Progress"},
-		Priority:    2,
+		State: struct {
+			Name string `json:"name"`
+		}{"In Progress"},
+		Priority: 2,
 		Assignee: &struct {
 			Email       string `json:"email"`
 			DisplayName string `json:"displayName"`
 		}{Email: "dev@example.com", DisplayName: "Developer"},
 		Labels: struct {
-			Nodes []struct{ Name string `json:"name"` } `json:"nodes"`
+			Nodes []struct {
+				Name string `json:"name"`
+			} `json:"nodes"`
 		}{
-			Nodes: []struct{ Name string `json:"name"` }{{Name: "backend"}, {Name: "security"}},
+			Nodes: []struct {
+				Name string `json:"name"`
+			}{{Name: "backend"}, {Name: "security"}},
 		},
 		Project: &struct {
 			Key  string `json:"key"`
@@ -168,8 +174,8 @@ func TestLinearClient_CreateTask(t *testing.T) {
 			"issueCreate": map[string]interface{}{
 				"success": true,
 				"issue": map[string]string{
-					"id":          "uuid-new",
-					"identifier":  "ENG-200",
+					"id":         "uuid-new",
+					"identifier": "ENG-200",
 				},
 			},
 		},
@@ -287,12 +293,18 @@ func TestLinearIssueToTask_NoAssignee(t *testing.T) {
 		ID:         "uuid-3",
 		Identifier: "ENG-300",
 		Title:      "Unassigned task",
-		State:      struct{ Name string `json:"name"` }{"Backlog"},
-		Priority:   0,
-		Labels:     struct{ Nodes []struct{ Name string `json:"name"` } `json:"nodes"` }{},
-		URL:        "https://linear.app/issue/ENG-300",
-		CreatedAt:  "2024-06-01T00:00:00Z",
-		UpdatedAt:  "2024-06-01T00:00:00Z",
+		State: struct {
+			Name string `json:"name"`
+		}{"Backlog"},
+		Priority: 0,
+		Labels: struct {
+			Nodes []struct {
+				Name string `json:"name"`
+			} `json:"nodes"`
+		}{},
+		URL:       "https://linear.app/issue/ENG-300",
+		CreatedAt: "2024-06-01T00:00:00Z",
+		UpdatedAt: "2024-06-01T00:00:00Z",
 	})
 
 	if task.Assignee != "" {

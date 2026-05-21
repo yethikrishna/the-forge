@@ -92,7 +92,7 @@ func (n *NotionClient) FetchTasks(ctx context.Context, conn *Connection, filters
 	}
 	for _, label := range filters.Labels {
 		notionFilters = append(notionFilters, map[string]interface{}{
-			"property": "Tags",
+			"property":     "Tags",
 			"multi_select": map[string]interface{}{"contains": label},
 		})
 	}

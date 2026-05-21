@@ -32,7 +32,7 @@ const (
 
 // Tracer traces process execution events.
 type Tracer struct {
-	events []Event
+	events  []Event
 	running bool
 }
 

@@ -20,10 +20,10 @@ func createTestDir(t *testing.T, files map[string]string) string {
 
 func TestDetectGoProject(t *testing.T) {
 	dir := createTestDir(t, map[string]string{
-		"go.mod":         "module github.com/example/project\n\ngo 1.23\n",
-		"main.go":        "package main\nfunc main() {}\n",
-		"main_test.go":   "package main\nimport \"testing\"\nfunc TestMain(t *testing.T) {}\n",
-		"Dockerfile":     "FROM golang:1.23\n",
+		"go.mod":       "module github.com/example/project\n\ngo 1.23\n",
+		"main.go":      "package main\nfunc main() {}\n",
+		"main_test.go": "package main\nimport \"testing\"\nfunc TestMain(t *testing.T) {}\n",
+		"Dockerfile":   "FROM golang:1.23\n",
 	})
 
 	d := NewDetector(dir)
@@ -68,7 +68,7 @@ func TestDetectPythonProject(t *testing.T) {
 
 func TestDetectNodeProject(t *testing.T) {
 	dir := createTestDir(t, map[string]string{
-		"package.json": `{"name": "test", "scripts": {"build": "tsc"}}`,
+		"package.json":  `{"name": "test", "scripts": {"build": "tsc"}}`,
 		"tsconfig.json": `{"compilerOptions": {"target": "es2020"}}`,
 	})
 
@@ -173,7 +173,7 @@ func TestDetectTests(t *testing.T) {
 
 func TestDetectTestsFromDir(t *testing.T) {
 	dir := createTestDir(t, map[string]string{
-		"go.mod":       "module test\n",
+		"go.mod": "module test\n",
 	})
 	os.MkdirAll(filepath.Join(dir, "testdata"), 0755)
 
@@ -236,9 +236,9 @@ func TestFormatConfig(t *testing.T) {
 
 func TestMultiProject(t *testing.T) {
 	dir := createTestDir(t, map[string]string{
-		"go.mod":         "module test\n",
-		"package.json":   `{"name": "test"}`,
-		"main.go":        "package main\n",
+		"go.mod":       "module test\n",
+		"package.json": `{"name": "test"}`,
+		"main.go":      "package main\n",
 	})
 
 	d := NewDetector(dir)

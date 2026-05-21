@@ -34,18 +34,18 @@ const (
 
 // Span is a recording of a single operation.
 type Span struct {
-	TraceID   string            `json:"trace_id"`
-	SpanID    string            `json:"span_id"`
-	ParentID  string            `json:"parent_id,omitempty"`
-	Name      string            `json:"name"`
-	Kind      SpanKind          `json:"kind"`
-	Status    SpanStatus        `json:"status"`
-	Start     time.Time         `json:"start"`
-	End       time.Time         `json:"end,omitempty"`
-	Attrs     map[string]string `json:"attrs,omitempty"`
-	Events    []Event           `json:"events,omitempty"`
-	Service   string            `json:"service"`
-	Resource  map[string]string `json:"resource,omitempty"`
+	TraceID  string            `json:"trace_id"`
+	SpanID   string            `json:"span_id"`
+	ParentID string            `json:"parent_id,omitempty"`
+	Name     string            `json:"name"`
+	Kind     SpanKind          `json:"kind"`
+	Status   SpanStatus        `json:"status"`
+	Start    time.Time         `json:"start"`
+	End      time.Time         `json:"end,omitempty"`
+	Attrs    map[string]string `json:"attrs,omitempty"`
+	Events   []Event           `json:"events,omitempty"`
+	Service  string            `json:"service"`
+	Resource map[string]string `json:"resource,omitempty"`
 }
 
 // Event is a timed event within a span.
@@ -90,13 +90,13 @@ func NewTracer(service string, exporter Exporter) *Tracer {
 // Start starts a new span.
 func (t *Tracer) Start(ctx context.Context, name string, opts ...SpanOption) (context.Context, *Span) {
 	span := &Span{
-		TraceID: generateTraceID(),
-		SpanID:  generateSpanID(),
-		Name:    name,
-		Kind:    KindInternal,
-		Start:   time.Now().UTC(),
-		Attrs:   make(map[string]string),
-		Service: t.service,
+		TraceID:  generateTraceID(),
+		SpanID:   generateSpanID(),
+		Name:     name,
+		Kind:     KindInternal,
+		Start:    time.Now().UTC(),
+		Attrs:    make(map[string]string),
+		Service:  t.service,
 		Resource: copyMap(t.resource),
 	}
 

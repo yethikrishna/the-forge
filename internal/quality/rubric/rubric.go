@@ -15,26 +15,26 @@ import (
 
 // Rubric defines a set of criteria for grading agent output.
 type Rubric struct {
-	ID          string       `json:"id"`
-	Name        string       `json:"name"`
-	Description string       `json:"description"`
-	Criteria    []Criterion  `json:"criteria"`
-	PassThreshold float64    `json:"pass_threshold"`
-	MaxScore    float64      `json:"max_score"`
-	CreatedAt   time.Time    `json:"created_at"`
-	UpdatedAt   time.Time    `json:"updated_at"`
+	ID            string      `json:"id"`
+	Name          string      `json:"name"`
+	Description   string      `json:"description"`
+	Criteria      []Criterion `json:"criteria"`
+	PassThreshold float64     `json:"pass_threshold"`
+	MaxScore      float64     `json:"max_score"`
+	CreatedAt     time.Time   `json:"created_at"`
+	UpdatedAt     time.Time   `json:"updated_at"`
 }
 
 // Criterion is a single grading criterion.
 type Criterion struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Weight      float64  `json:"weight"`
-	MaxScore    float64  `json:"max_score"`
-	Levels      []Level  `json:"levels"`
-	Required    bool     `json:"required"`
-	Category    string   `json:"category"`
+	ID          string  `json:"id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Weight      float64 `json:"weight"`
+	MaxScore    float64 `json:"max_score"`
+	Levels      []Level `json:"levels"`
+	Required    bool    `json:"required"`
+	Category    string  `json:"category"`
 }
 
 // Level defines a scoring level for a criterion.
@@ -46,38 +46,38 @@ type Level struct {
 
 // Grade is the result of grading output against a rubric.
 type Grade struct {
-	ID           string         `json:"id"`
-	RubricID     string         `json:"rubric_id"`
-	AgentID      string         `json:"agent_id"`
-	SessionID    string         `json:"session_id"`
-	Output       string         `json:"output"`
+	ID           string           `json:"id"`
+	RubricID     string           `json:"rubric_id"`
+	AgentID      string           `json:"agent_id"`
+	SessionID    string           `json:"session_id"`
+	Output       string           `json:"output"`
 	Scores       []CriterionScore `json:"scores"`
-	TotalScore   float64        `json:"total_score"`
-	MaxScore     float64        `json:"max_score"`
-	Percentage   float64        `json:"percentage"`
-	Passed       bool           `json:"passed"`
-	Feedback     string         `json:"feedback,omitempty"`
-	GradedAt     time.Time      `json:"graded_at"`
-	TriggerRerun bool           `json:"trigger_rerun"`
+	TotalScore   float64          `json:"total_score"`
+	MaxScore     float64          `json:"max_score"`
+	Percentage   float64          `json:"percentage"`
+	Passed       bool             `json:"passed"`
+	Feedback     string           `json:"feedback,omitempty"`
+	GradedAt     time.Time        `json:"graded_at"`
+	TriggerRerun bool             `json:"trigger_rerun"`
 }
 
 // CriterionScore is the score for a single criterion.
 type CriterionScore struct {
-	CriterionID string  `json:"criterion_id"`
-	CriterionName string `json:"criterion_name"`
-	Score        float64 `json:"score"`
-	MaxScore     float64 `json:"max_score"`
-	Percentage   float64 `json:"percentage"`
-	Level        string  `json:"level"`
-	Notes        string  `json:"notes,omitempty"`
-	Passed       bool    `json:"passed"`
+	CriterionID   string  `json:"criterion_id"`
+	CriterionName string  `json:"criterion_name"`
+	Score         float64 `json:"score"`
+	MaxScore      float64 `json:"max_score"`
+	Percentage    float64 `json:"percentage"`
+	Level         string  `json:"level"`
+	Notes         string  `json:"notes,omitempty"`
+	Passed        bool    `json:"passed"`
 }
 
 // Grader grades agent output against rubrics.
 type Grader struct {
-	rubrics map[string]*Rubric
-	grades  map[string]*Grade
-	mu      sync.RWMutex
+	rubrics  map[string]*Rubric
+	grades   map[string]*Grade
+	mu       sync.RWMutex
 	storeDir string
 }
 
@@ -376,7 +376,7 @@ func (g *Grader) Stats() GraderStats {
 	defer g.mu.RUnlock()
 
 	stats := GraderStats{
-		TotalGrades: len(g.grades),
+		TotalGrades:  len(g.grades),
 		TotalRubrics: len(g.rubrics),
 	}
 
@@ -399,10 +399,10 @@ func (g *Grader) Stats() GraderStats {
 
 // GraderStats holds grader statistics.
 type GraderStats struct {
-	TotalGrades  int     `json:"total_grades"`
-	TotalRubrics int     `json:"total_rubrics"`
-	Passed       int     `json:"passed"`
-	Failed       int     `json:"failed"`
+	TotalGrades   int     `json:"total_grades"`
+	TotalRubrics  int     `json:"total_rubrics"`
+	Passed        int     `json:"passed"`
+	Failed        int     `json:"failed"`
 	AvgPercentage float64 `json:"avg_percentage"`
 }
 

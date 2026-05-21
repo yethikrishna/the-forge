@@ -10,8 +10,8 @@ import (
 
 func TestIsLikelySecret(t *testing.T) {
 	tests := []struct {
-		line      string
-		isSecret  bool
+		line     string
+		isSecret bool
 	}{
 		{`api_key = "sk-abc123"`, true},
 		{`api_key = os.Getenv("API_KEY")`, false},
@@ -57,8 +57,8 @@ func TestIsDebugStatement(t *testing.T) {
 
 func TestHasBareErrorReturn(t *testing.T) {
 	tests := []struct {
-		line  string
-		bare  bool
+		line string
+		bare bool
 	}{
 		{"return err", true},
 		{"return nil, err", true},
@@ -281,9 +281,9 @@ func TestReviewSerialization(t *testing.T) {
 		Comments: []Comment{
 			{File: "a.go", Line: 10, Severity: SevWarning, Message: "Debug statement", Rule: "no-debug"},
 		},
-		Score:     90,
-		Approved:  true,
-		Summary:   "1 warning",
+		Score:    90,
+		Approved: true,
+		Summary:  "1 warning",
 	}
 
 	data, err := json.MarshalIndent(review, "", "  ")

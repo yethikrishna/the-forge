@@ -121,7 +121,7 @@ func TestJaegerExport(t *testing.T) {
 
 	now := time.Now().UTC()
 	store.Store(StoredSpan{
-		TraceID:  "t1", SpanID: "s1", Name: "forge.run", Status: "ok",
+		TraceID: "t1", SpanID: "s1", Name: "forge.run", Status: "ok",
 		Service: "forge", Start: now, End: now.Add(50 * time.Millisecond), Duration: 50 * time.Millisecond,
 	})
 

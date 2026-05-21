@@ -9,8 +9,8 @@ import (
 	"syscall"
 
 	"github.com/forge/sword/internal/aibridge"
-	forgeslog "github.com/forge/sword/internal/slog"
 	"github.com/forge/sword/internal/duration/timer"
+	forgeslog "github.com/forge/sword/internal/slog"
 	"github.com/spf13/cobra"
 )
 

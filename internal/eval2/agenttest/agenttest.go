@@ -94,21 +94,21 @@ const (
 
 // Result is the outcome of running a single test case.
 type Result struct {
-	TestCaseName string        `json:"test_case"`
-	Status       Status        `json:"status"`
-	Duration     time.Duration `json:"duration"`
-	Response     string        `json:"response"`
+	TestCaseName string         `json:"test_case"`
+	Status       Status         `json:"status"`
+	Duration     time.Duration  `json:"duration"`
+	Response     string         `json:"response"`
 	Assertions   []AssertResult `json:"assertions"`
-	Error        string        `json:"error,omitempty"`
+	Error        string         `json:"error,omitempty"`
 }
 
 // Status is the pass/fail/skip state of a test result.
 type Status string
 
 const (
-	StatusPass Status = "pass"
-	StatusFail Status = "fail"
-	StatusSkip Status = "skip"
+	StatusPass  Status = "pass"
+	StatusFail  Status = "fail"
+	StatusSkip  Status = "skip"
 	StatusError Status = "error"
 )
 
@@ -135,14 +135,14 @@ type Suite struct {
 
 // SuiteResult is the aggregate outcome of running a full suite.
 type SuiteResult struct {
-	SuiteName  string   `json:"suite"`
-	Total      int      `json:"total"`
-	Passed     int      `json:"passed"`
-	Failed     int      `json:"failed"`
-	Skipped    int      `json:"skipped"`
-	Errored    int      `json:"errored"`
-	Duration   time.Duration `json:"duration"`
-	Results    []Result `json:"results"`
+	SuiteName string        `json:"suite"`
+	Total     int           `json:"total"`
+	Passed    int           `json:"passed"`
+	Failed    int           `json:"failed"`
+	Skipped   int           `json:"skipped"`
+	Errored   int           `json:"errored"`
+	Duration  time.Duration `json:"duration"`
+	Results   []Result      `json:"results"`
 }
 
 // Summary returns a one-line summary of the suite result.

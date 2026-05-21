@@ -57,7 +57,7 @@ func TestMatchPattern(t *testing.T) {
 		{"node_modules", "node_modules", true},
 		{"file.tmp", "*.tmp", true},
 		{"file.go", "*.tmp", false},
-		{".gitignore", ".git", true},  // prefix match
+		{".gitignore", ".git", true}, // prefix match
 		{"test.txt", "", false},
 		{"file.swp", "*.swp", true},
 	}

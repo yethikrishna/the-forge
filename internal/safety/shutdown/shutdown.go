@@ -19,34 +19,34 @@ import (
 
 // State represents persistable application state.
 type State struct {
-	Version     string                 `json:"version"`
-	ProcessID   int                    `json:"pid"`
-	StartedAt   time.Time              `json:"started_at"`
-	ShutdownAt  time.Time              `json:"shutdown_at,omitempty"`
-	ActiveAgents []AgentState          `json:"active_agents,omitempty"`
-	ActiveSessions []SessionState      `json:"active_sessions,omitempty"`
-	Connections []ConnectionState       `json:"connections,omitempty"`
-	Custom      map[string]interface{} `json:"custom,omitempty"`
+	Version        string                 `json:"version"`
+	ProcessID      int                    `json:"pid"`
+	StartedAt      time.Time              `json:"started_at"`
+	ShutdownAt     time.Time              `json:"shutdown_at,omitempty"`
+	ActiveAgents   []AgentState           `json:"active_agents,omitempty"`
+	ActiveSessions []SessionState         `json:"active_sessions,omitempty"`
+	Connections    []ConnectionState      `json:"connections,omitempty"`
+	Custom         map[string]interface{} `json:"custom,omitempty"`
 }
 
 // AgentState represents a running agent's persistable state.
 type AgentState struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Status      string                 `json:"status"` // running, paused, stopping
-	StartedAt   time.Time              `json:"started_at"`
-	LastAction  string                 `json:"last_action,omitempty"`
-	Context     map[string]interface{} `json:"context,omitempty"`
+	ID         string                 `json:"id"`
+	Name       string                 `json:"name"`
+	Status     string                 `json:"status"` // running, paused, stopping
+	StartedAt  time.Time              `json:"started_at"`
+	LastAction string                 `json:"last_action,omitempty"`
+	Context    map[string]interface{} `json:"context,omitempty"`
 }
 
 // SessionState represents a running session's state.
 type SessionState struct {
-	ID          string    `json:"id"`
-	AgentID     string    `json:"agent_id"`
-	StartedAt   time.Time `json:"started_at"`
-	LastActive  time.Time `json:"last_active"`
-	Prompt      string    `json:"prompt,omitempty"`
-	TurnCount   int       `json:"turn_count"`
+	ID         string    `json:"id"`
+	AgentID    string    `json:"agent_id"`
+	StartedAt  time.Time `json:"started_at"`
+	LastActive time.Time `json:"last_active"`
+	Prompt     string    `json:"prompt,omitempty"`
+	TurnCount  int       `json:"turn_count"`
 }
 
 // ConnectionState represents an active connection.

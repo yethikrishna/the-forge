@@ -360,5 +360,3 @@ func TestListEmpty(t *testing.T) {
 		t.Errorf("expected 0 checkpoints, got %d", len(checkpoints))
 	}
 }
-
-

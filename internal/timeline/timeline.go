@@ -20,12 +20,12 @@ import (
 type EventType string
 
 const (
-	EventStart    EventType = "start"
-	EventEnd      EventType = "end"
-	EventAction   EventType = "action"
-	EventDecision EventType = "decision"
-	EventError    EventType = "error"
-	EventInfo     EventType = "info"
+	EventStart     EventType = "start"
+	EventEnd       EventType = "end"
+	EventAction    EventType = "action"
+	EventDecision  EventType = "decision"
+	EventError     EventType = "error"
+	EventInfo      EventType = "info"
 	EventMilestone EventType = "milestone"
 )
 
@@ -44,14 +44,14 @@ type Event struct {
 
 // Span represents a time span (start → end).
 type Span struct {
-	ID        string        `json:"id"`
-	AgentID   string        `json:"agent_id"`
-	Name      string        `json:"name"`
-	Start     time.Time     `json:"start"`
-	End       time.Time     `json:"end,omitempty"`
-	Duration  time.Duration `json:"duration,omitempty"`
-	Events    []Event       `json:"events"`
-	Active    bool          `json:"active"`
+	ID       string        `json:"id"`
+	AgentID  string        `json:"agent_id"`
+	Name     string        `json:"name"`
+	Start    time.Time     `json:"start"`
+	End      time.Time     `json:"end,omitempty"`
+	Duration time.Duration `json:"duration,omitempty"`
+	Events   []Event       `json:"events"`
+	Active   bool          `json:"active"`
 }
 
 // Timeline manages agent activity timelines.
@@ -229,12 +229,12 @@ func (t *Timeline) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"events":       len(t.events),
-		"spans":        len(t.spans),
-		"active_spans": activeSpans,
+		"events":         len(t.events),
+		"spans":          len(t.spans),
+		"active_spans":   activeSpans,
 		"total_duration": totalDuration.String(),
-		"by_type":      byType,
-		"by_agent":     byAgent,
+		"by_type":        byType,
+		"by_agent":       byAgent,
 	}
 }
 

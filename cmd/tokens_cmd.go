@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/tokentracker"
+	"github.com/spf13/cobra"
 )
 
 var tokensCmd = &cobra.Command{
@@ -14,14 +14,14 @@ var tokensCmd = &cobra.Command{
 }
 
 var (
-	ttDir      string
-	ttAgent    string
-	ttModel    string
-	ttInput    int
-	ttOutput   int
-	ttMaxCost  float64
+	ttDir       string
+	ttAgent     string
+	ttModel     string
+	ttInput     int
+	ttOutput    int
+	ttMaxCost   float64
 	ttMaxTokens int
-	ttPeriod   string
+	ttPeriod    string
 )
 
 func init() {

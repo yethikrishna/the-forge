@@ -285,4 +285,3 @@ func TestLoadExistingPersonas(t *testing.T) {
 		t.Errorf("Expected 'Pre-existing', got %q", retrieved.Name)
 	}
 }
-

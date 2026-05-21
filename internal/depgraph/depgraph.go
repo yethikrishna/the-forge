@@ -17,23 +17,23 @@ import (
 type NodeType string
 
 const (
-	NodeTask     NodeType = "task"
-	NodeArtifact NodeType = "artifact"
+	NodeTask      NodeType = "task"
+	NodeArtifact  NodeType = "artifact"
 	NodeKnowledge NodeType = "knowledge"
-	NodeAgent    NodeType = "agent"
-	NodeModel    NodeType = "model"
-	NodeTool     NodeType = "tool"
+	NodeAgent     NodeType = "agent"
+	NodeModel     NodeType = "model"
+	NodeTool      NodeType = "tool"
 )
 
 // EdgeType represents the type of dependency edge.
 type EdgeType string
 
 const (
-	EdgeDependsOn  EdgeType = "depends_on"
-	EdgeProduces   EdgeType = "produces"
-	EdgeConsumes   EdgeType = "consumes"
-	EdgeBlocks     EdgeType = "blocks"
-	EdgeTriggers   EdgeType = "triggers"
+	EdgeDependsOn EdgeType = "depends_on"
+	EdgeProduces  EdgeType = "produces"
+	EdgeConsumes  EdgeType = "consumes"
+	EdgeBlocks    EdgeType = "blocks"
+	EdgeTriggers  EdgeType = "triggers"
 )
 
 // Node represents a node in the dependency graph.
@@ -48,11 +48,11 @@ type Node struct {
 
 // Edge represents a directed edge in the dependency graph.
 type Edge struct {
-	From     string   `json:"from"`
-	To       string   `json:"to"`
-	Type     EdgeType `json:"type"`
-	Weight   float64  `json:"weight,omitempty"`
-	Label    string   `json:"label,omitempty"`
+	From   string   `json:"from"`
+	To     string   `json:"to"`
+	Type   EdgeType `json:"type"`
+	Weight float64  `json:"weight,omitempty"`
+	Label  string   `json:"label,omitempty"`
 }
 
 // Graph represents a dependency graph.
@@ -334,12 +334,12 @@ func (g *Graph) DetectCycles() [][]string {
 
 // ImpactAnalysis returns the impact of removing or changing a node.
 type ImpactReport struct {
-	NodeID       string   `json:"node_id"`
-	DirectDeps   []string `json:"direct_deps"`
-	DirectDependents []string `json:"direct_dependents"`
-	TransitiveDeps []string `json:"transitive_deps"`
+	NodeID               string   `json:"node_id"`
+	DirectDeps           []string `json:"direct_deps"`
+	DirectDependents     []string `json:"direct_dependents"`
+	TransitiveDeps       []string `json:"transitive_deps"`
 	TransitiveDependents []string `json:"transitive_dependents"`
-	ImpactScore  float64  `json:"impact_score"` // 0-10
+	ImpactScore          float64  `json:"impact_score"` // 0-10
 }
 
 // Impact returns the impact analysis for a node.
@@ -444,14 +444,14 @@ func (g *Graph) Orphans() []string {
 
 // Stats returns graph statistics.
 type GraphStats struct {
-	Nodes       int     `json:"nodes"`
-	Edges       int     `json:"edges"`
+	Nodes       int              `json:"nodes"`
+	Edges       int              `json:"edges"`
 	NodeTypes   map[NodeType]int `json:"node_types"`
 	EdgeTypes   map[EdgeType]int `json:"edge_types"`
-	AvgDegree   float64 `json:"avg_degree"`
-	MaxDepth    int     `json:"max_depth"`
-	HasCycles   bool    `json:"has_cycles"`
-	OrphanCount int     `json:"orphan_count"`
+	AvgDegree   float64          `json:"avg_degree"`
+	MaxDepth    int              `json:"max_depth"`
+	HasCycles   bool             `json:"has_cycles"`
+	OrphanCount int              `json:"orphan_count"`
 }
 
 // Stats returns statistics about the graph.

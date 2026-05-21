@@ -48,11 +48,11 @@ type Node struct {
 type Graph struct {
 	mu       sync.RWMutex
 	nodes    map[int]*Node
-	links    map[int]map[int][]int  // level -> nodeID -> neighborIDs
+	links    map[int]map[int][]int // level -> nodeID -> neighborIDs
 	maxLevel int
-	m        int     // Max connections per layer
-	mMax0    int     // Max connections at layer 0
-	efSearch int     // Search width
+	m        int // Max connections per layer
+	mMax0    int // Max connections at layer 0
+	efSearch int // Search width
 	dist     DistanceFunc
 	dims     int
 	rng      *rand.Rand
@@ -60,11 +60,11 @@ type Graph struct {
 
 // Config holds HNSW configuration.
 type Config struct {
-	M        int           // Max connections per layer (default 16)
-	MMax0    int           // Max connections at layer 0 (default 2*M)
-	EfSearch int           // Search width (default 200)
-	Distance DistanceFunc  // Distance function (default Euclidean)
-	Dims     int           // Vector dimensions
+	M        int          // Max connections per layer (default 16)
+	MMax0    int          // Max connections at layer 0 (default 2*M)
+	EfSearch int          // Search width (default 200)
+	Distance DistanceFunc // Distance function (default Euclidean)
+	Dims     int          // Vector dimensions
 }
 
 // DefaultConfig returns sensible defaults.

@@ -160,10 +160,10 @@ func TestRegionInGroup(t *testing.T) {
 
 func TestFormatPolicy(t *testing.T) {
 	p := &Policy{
-		Name:          "EU Only",
-		PrimaryRegion: RegionEUCentral,
+		Name:           "EU Only",
+		PrimaryRegion:  RegionEUCentral,
 		AllowedRegions: []Region{RegionEUCentral, RegionEUWest},
-		Strict:        true,
+		Strict:         true,
 	}
 	output := FormatPolicy(p)
 	if !strings.Contains(output, "EU Only") {

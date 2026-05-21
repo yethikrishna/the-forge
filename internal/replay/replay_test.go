@@ -338,4 +338,3 @@ func TestEventsBetween(t *testing.T) {
 		t.Errorf("expected 2 events between seq 2-3, got %d", len(events))
 	}
 }
-

@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/agenthandoff"
+	"github.com/spf13/cobra"
 )
 
 var handoffCmd = &cobra.Command{
@@ -14,12 +14,12 @@ var handoffCmd = &cobra.Command{
 }
 
 var (
-	handoffDir        string
-	handoffFrom       string
-	handoffTo         string
-	handoffTask       string
-	handoffStatus     string
-	handoffProgress   float64
+	handoffDir      string
+	handoffFrom     string
+	handoffTo       string
+	handoffTask     string
+	handoffStatus   string
+	handoffProgress float64
 )
 
 func init() {

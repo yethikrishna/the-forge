@@ -18,14 +18,14 @@ import (
 
 // Step is a single step in a playbook.
 type Step struct {
-	Index     int               `json:"index"`
-	Title     string            `json:"title"`
-	Action    string            `json:"action"`
-	Target    string            `json:"target,omitempty"`
-	Result    string            `json:"result,omitempty"`
-	Success   bool              `json:"success"`
-	Duration  time.Duration     `json:"duration"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
+	Index    int               `json:"index"`
+	Title    string            `json:"title"`
+	Action   string            `json:"action"`
+	Target   string            `json:"target,omitempty"`
+	Result   string            `json:"result,omitempty"`
+	Success  bool              `json:"success"`
+	Duration time.Duration     `json:"duration"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // Playbook is a generated playbook from a session.

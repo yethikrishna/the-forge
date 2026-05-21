@@ -300,7 +300,7 @@ Examples:
   forge prompt analyze "Review this code for bugs"
   forge prompt analyze -f prompt.txt
   forge prompt analyze -f prompt.txt --compare-models`,
-			Args:  cobra.MaximumNArgs(1),
+			Args: cobra.MaximumNArgs(1),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				var text string
 
@@ -394,7 +394,7 @@ Examples:
   forge prompt test regression.json
   forge prompt test --response "Hello world" regression.json
   forge prompt test --dry-run regression.json`,
-			Args:  cobra.ExactArgs(1),
+			Args: cobra.ExactArgs(1),
 			RunE: func(cmd *cobra.Command, args []string) error {
 				suite, err := prompttest.LoadTestSuite(args[0])
 				if err != nil {

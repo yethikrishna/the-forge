@@ -39,7 +39,7 @@ type ModelConfig struct {
 
 // ChatMessage represents a message in a chat conversation.
 type ChatMessage struct {
-	Role    string `json:"role"`    // system, user, assistant
+	Role    string `json:"role"` // system, user, assistant
 	Content string `json:"content"`
 	Name    string `json:"name,omitempty"`
 }
@@ -55,11 +55,11 @@ type ChatRequest struct {
 
 // ChatResponse is a non-streaming response from the LLM.
 type ChatResponse struct {
-	ID        string       `json:"id"`
-	Model     string       `json:"model"`
-	Choices   []Choice     `json:"choices"`
-	Usage     Usage        `json:"usage"`
-	CreatedAt time.Time    `json:"created_at"`
+	ID        string    `json:"id"`
+	Model     string    `json:"model"`
+	Choices   []Choice  `json:"choices"`
+	Usage     Usage     `json:"usage"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // Choice represents a response choice.
@@ -78,7 +78,7 @@ type Usage struct {
 
 // StreamChunk represents a streaming response chunk.
 type StreamChunk struct {
-	ID      string       `json:"id"`
+	ID      string        `json:"id"`
 	Choices []ChunkChoice `json:"choices"`
 }
 
@@ -250,11 +250,11 @@ func (c *Client) setHeaders(req *http.Request) {
 
 // ModelPricing contains pricing info for models.
 type ModelPricing struct {
-	Provider       Provider `json:"provider"`
-	Model          string   `json:"model"`
-	InputPer1M     float64  `json:"input_per_1m"`     // Price per 1M input tokens
-	OutputPer1M    float64  `json:"output_per_1m"`    // Price per 1M output tokens
-	ContextWindow  int      `json:"context_window"`   // Max context tokens
+	Provider      Provider `json:"provider"`
+	Model         string   `json:"model"`
+	InputPer1M    float64  `json:"input_per_1m"`   // Price per 1M input tokens
+	OutputPer1M   float64  `json:"output_per_1m"`  // Price per 1M output tokens
+	ContextWindow int      `json:"context_window"` // Max context tokens
 }
 
 // KnownModels returns pricing for known models.

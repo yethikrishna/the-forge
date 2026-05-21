@@ -37,44 +37,44 @@ type FaultConfig struct {
 	Target      Target        `json:"target"`
 	Probability float64       `json:"probability"` // 0.0-1.0
 	Duration    time.Duration `json:"duration"`
-	Delay       time.Duration `json:"delay"`       // for latency faults
-	ErrorCode   int           `json:"error_code"`   // for error faults
+	Delay       time.Duration `json:"delay"`      // for latency faults
+	ErrorCode   int           `json:"error_code"` // for error faults
 	Active      bool          `json:"active"`
 	CreatedAt   time.Time     `json:"created_at"`
 }
 
 // Experiment is a chaos experiment.
 type Experiment struct {
-	ID           string        `json:"id"`
-	Name         string        `json:"name"`
-	Description  string        `json:"description"`
-	Faults       []FaultConfig `json:"faults"`
-	SteadyState  []SteadyCheck `json:"steady_state"`
-	Hypothesis   string        `json:"hypothesis"`
-	Duration     time.Duration `json:"duration"`
-	Status       string        `json:"status"` // pending, running, completed, failed
-	StartedAt    *time.Time    `json:"started_at,omitempty"`
-	FinishedAt   *time.Time    `json:"finished_at,omitempty"`
-	Results      *ExperimentResult `json:"results,omitempty"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Faults      []FaultConfig     `json:"faults"`
+	SteadyState []SteadyCheck     `json:"steady_state"`
+	Hypothesis  string            `json:"hypothesis"`
+	Duration    time.Duration     `json:"duration"`
+	Status      string            `json:"status"` // pending, running, completed, failed
+	StartedAt   *time.Time        `json:"started_at,omitempty"`
+	FinishedAt  *time.Time        `json:"finished_at,omitempty"`
+	Results     *ExperimentResult `json:"results,omitempty"`
 }
 
 // SteadyCheck verifies the system is in a steady state.
 type SteadyCheck struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	CheckFunc   string `json:"check_func"` // function name to call
-	Threshold   float64 `json:"threshold"`
-	Tolerated   bool   `json:"tolerated"` // if true, failure is tolerated
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	CheckFunc string  `json:"check_func"` // function name to call
+	Threshold float64 `json:"threshold"`
+	Tolerated bool    `json:"tolerated"` // if true, failure is tolerated
 }
 
 // ExperimentResult holds experiment results.
 type ExperimentResult struct {
-	SteadyStateHeld bool              `json:"steady_state_held"`
-	FaultsInjected  int               `json:"faults_injected"`
-	FaultsSucceeded int               `json:"faults_succeeded"`
-	RecoveryTime    time.Duration     `json:"recovery_time"`
-	ObservedEffects []ObservedEffect  `json:"observed_effects"`
-	LessonsLearned  []string          `json:"lessons_learned"`
+	SteadyStateHeld bool             `json:"steady_state_held"`
+	FaultsInjected  int              `json:"faults_injected"`
+	FaultsSucceeded int              `json:"faults_succeeded"`
+	RecoveryTime    time.Duration    `json:"recovery_time"`
+	ObservedEffects []ObservedEffect `json:"observed_effects"`
+	LessonsLearned  []string         `json:"lessons_learned"`
 }
 
 // ObservedEffect records what happened during the experiment.
@@ -88,11 +88,11 @@ type ObservedEffect struct {
 
 // ChaosEngine runs chaos experiments.
 type ChaosEngine struct {
-	experiments map[string]*Experiment
-	faults      map[string]*FaultConfig
+	experiments  map[string]*Experiment
+	faults       map[string]*FaultConfig
 	activeFaults map[string]time.Time // fault ID -> activation time
-	rng         *rand.Rand
-	mu          sync.RWMutex
+	rng          *rand.Rand
+	mu           sync.RWMutex
 }
 
 // NewChaosEngine creates a new chaos engine.
@@ -303,8 +303,8 @@ func (ce *ChaosEngine) Stats() ChaosStats {
 
 	stats := ChaosStats{
 		TotalExperiments: len(ce.experiments),
-		TotalFaults:     len(ce.faults),
-		ActiveFaults:    len(ce.activeFaults),
+		TotalFaults:      len(ce.faults),
+		ActiveFaults:     len(ce.activeFaults),
 	}
 
 	for _, e := range ce.experiments {
@@ -323,12 +323,12 @@ func (ce *ChaosEngine) Stats() ChaosStats {
 
 // ChaosStats holds chaos engineering statistics.
 type ChaosStats struct {
-	TotalExperiments    int `json:"total_experiments"`
+	TotalExperiments     int `json:"total_experiments"`
 	CompletedExperiments int `json:"completed_experiments"`
-	RunningExperiments  int `json:"running_experiments"`
-	FailedExperiments   int `json:"failed_experiments"`
-	TotalFaults         int `json:"total_faults"`
-	ActiveFaults        int `json:"active_faults"`
+	RunningExperiments   int `json:"running_experiments"`
+	FailedExperiments    int `json:"failed_experiments"`
+	TotalFaults          int `json:"total_faults"`
+	ActiveFaults         int `json:"active_faults"`
 }
 
 // KillSwitch immediately deactivates all faults.

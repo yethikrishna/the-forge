@@ -16,9 +16,9 @@ import (
 type Algorithm string
 
 const (
-	AlgoTokenBucket    Algorithm = "token_bucket"
-	AlgoSlidingWindow  Algorithm = "sliding_window"
-	AlgoFixedWindow    Algorithm = "fixed_window"
+	AlgoTokenBucket   Algorithm = "token_bucket"
+	AlgoSlidingWindow Algorithm = "sliding_window"
+	AlgoFixedWindow   Algorithm = "fixed_window"
 )
 
 // Scope defines the scope of a rate limit.
@@ -34,15 +34,15 @@ const (
 
 // Limit defines a rate limit configuration.
 type Limit struct {
-	ID         string    `json:"id"`
-	Name       string    `json:"name"`
-	Scope      Scope     `json:"scope"`
-	Algorithm  Algorithm `json:"algorithm"`
-	Rate       float64   `json:"rate"`        // Requests per second (token bucket) or per window
-	Burst      int       `json:"burst"`        // Max burst size (token bucket)
-	WindowSec  int       `json:"window_sec"`   // Window duration (fixed/sliding)
-	MaxInWindow int      `json:"max_in_window"` // Max requests per window
-	Enabled    bool      `json:"enabled"`
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Scope       Scope     `json:"scope"`
+	Algorithm   Algorithm `json:"algorithm"`
+	Rate        float64   `json:"rate"`          // Requests per second (token bucket) or per window
+	Burst       int       `json:"burst"`         // Max burst size (token bucket)
+	WindowSec   int       `json:"window_sec"`    // Window duration (fixed/sliding)
+	MaxInWindow int       `json:"max_in_window"` // Max requests per window
+	Enabled     bool      `json:"enabled"`
 }
 
 // BucketState tracks the state of a token bucket.
@@ -59,28 +59,28 @@ type WindowState struct {
 
 // Request represents a rate-limited request.
 type Request struct {
-	ScopeKey  string    `json:"scope_key"`  // e.g., agent ID, model name
+	ScopeKey  string    `json:"scope_key"` // e.g., agent ID, model name
 	Timestamp time.Time `json:"timestamp"`
 	Cost      float64   `json:"cost"` // Optional cost (for token-based limits)
 }
 
 // Decision represents the result of a rate limit check.
 type Decision struct {
-	Allowed    bool      `json:"allowed"`
-	Limit      Limit     `json:"limit"`
-	Remaining  float64   `json:"remaining"`
+	Allowed    bool       `json:"allowed"`
+	Limit      Limit      `json:"limit"`
+	Remaining  float64    `json:"remaining"`
 	ResetAt    *time.Time `json:"reset_at,omitempty"`
-	RetryAfter string    `json:"retry_after,omitempty"`
-	Reason     string    `json:"reason,omitempty"`
+	RetryAfter string     `json:"retry_after,omitempty"`
+	Reason     string     `json:"reason,omitempty"`
 }
 
 // Manager manages rate limits.
 type Manager struct {
-	storeDir  string
-	limits    map[string]*Limit
-	buckets   map[string]*BucketState
-	windows   map[string]*WindowState
-	mu        sync.Mutex
+	storeDir string
+	limits   map[string]*Limit
+	buckets  map[string]*BucketState
+	windows  map[string]*WindowState
+	mu       sync.Mutex
 }
 
 // NewManager creates a new rate limit manager.
@@ -260,11 +260,11 @@ func (m *Manager) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"total_limits":  len(m.limits),
+		"total_limits":   len(m.limits),
 		"active_buckets": len(m.buckets),
 		"active_windows": len(m.windows),
-		"by_scope":      byScope,
-		"by_algorithm":  byAlgo,
+		"by_scope":       byScope,
+		"by_algorithm":   byAlgo,
 	}
 }
 

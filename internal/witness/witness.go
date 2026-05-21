@@ -11,8 +11,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -31,21 +31,21 @@ type Action struct {
 
 // Proof represents a Merkle proof for a specific action.
 type Proof struct {
-	ActionID   string   `json:"action_id"`
-	LeafHash   string   `json:"leaf_hash"`
-	RootHash   string   `json:"root_hash"`
+	ActionID    string   `json:"action_id"`
+	LeafHash    string   `json:"leaf_hash"`
+	RootHash    string   `json:"root_hash"`
 	ProofHashes []string `json:"proof_hashes"`
-	ProofDir   []bool   `json:"proof_dir"` // true = right, false = left
-	TreeSize   int      `json:"tree_size"`
-	Verified   bool     `json:"verified"`
+	ProofDir    []bool   `json:"proof_dir"` // true = right, false = left
+	TreeSize    int      `json:"tree_size"`
+	Verified    bool     `json:"verified"`
 }
 
 // Tree is a Merkle tree of witnessed actions.
 type Tree struct {
 	mu      sync.RWMutex
 	Leaves  []string `json:"leaves"`
-	Actions []Action  `json:"actions"`
-	Root    string    `json:"root"`
+	Actions []Action `json:"actions"`
+	Root    string   `json:"root"`
 	dirty   bool
 }
 

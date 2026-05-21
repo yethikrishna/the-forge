@@ -21,9 +21,9 @@ import (
 type Backend string
 
 const (
-	BackendProcess   Backend = "process"    // OS process isolation
-	BackendDocker    Backend = "docker"     // Docker container
-	BackendGVisor    Backend = "gvisor"     // gVisor sandbox
+	BackendProcess     Backend = "process"     // OS process isolation
+	BackendDocker      Backend = "docker"      // Docker container
+	BackendGVisor      Backend = "gvisor"      // gVisor sandbox
 	BackendFirecracker Backend = "firecracker" // MicroVM
 )
 
@@ -31,33 +31,33 @@ const (
 type SandboxStatus string
 
 const (
-	StatusCreated  SandboxStatus = "created"
-	StatusRunning  SandboxStatus = "running"
-	StatusStopped  SandboxStatus = "stopped"
-	StatusFailed   SandboxStatus = "failed"
-	StatusExpired  SandboxStatus = "expired"
+	StatusCreated SandboxStatus = "created"
+	StatusRunning SandboxStatus = "running"
+	StatusStopped SandboxStatus = "stopped"
+	StatusFailed  SandboxStatus = "failed"
+	StatusExpired SandboxStatus = "expired"
 )
 
 // ResourceLimits defines resource constraints.
 type ResourceLimits struct {
-	CPUCores    float64 `json:"cpu_cores"`     // Max CPU cores
-	MemoryMB    int     `json:"memory_mb"`     // Max memory in MB
-	DiskMB      int     `json:"disk_mb"`       // Max disk in MB
-	TimeoutSec  int     `json:"timeout_sec"`   // Max execution time
-	MaxFiles    int     `json:"max_files"`     // Max open files
-	MaxProcs    int     `json:"max_procs"`     // Max processes
-	NetworkOff  bool    `json:"network_off"`   // Disable network
-	ReadonlyFS  bool    `json:"readonly_fs"`   // Read-only filesystem
+	CPUCores   float64 `json:"cpu_cores"`   // Max CPU cores
+	MemoryMB   int     `json:"memory_mb"`   // Max memory in MB
+	DiskMB     int     `json:"disk_mb"`     // Max disk in MB
+	TimeoutSec int     `json:"timeout_sec"` // Max execution time
+	MaxFiles   int     `json:"max_files"`   // Max open files
+	MaxProcs   int     `json:"max_procs"`   // Max processes
+	NetworkOff bool    `json:"network_off"` // Disable network
+	ReadonlyFS bool    `json:"readonly_fs"` // Read-only filesystem
 }
 
 // NetworkPolicy defines network access rules.
 type NetworkPolicy struct {
-	AllowDNS      bool     `json:"allow_dns"`
-	AllowHTTP     bool     `json:"allow_http"`
-	AllowHTTPS    bool     `json:"allow_https"`
-	AllowedHosts  []string `json:"allowed_hosts,omitempty"`
-	BlockedHosts  []string `json:"blocked_hosts,omitempty"`
-	AllowedPorts  []int    `json:"allowed_ports,omitempty"`
+	AllowDNS     bool     `json:"allow_dns"`
+	AllowHTTP    bool     `json:"allow_http"`
+	AllowHTTPS   bool     `json:"allow_https"`
+	AllowedHosts []string `json:"allowed_hosts,omitempty"`
+	BlockedHosts []string `json:"blocked_hosts,omitempty"`
+	AllowedPorts []int    `json:"allowed_ports,omitempty"`
 }
 
 // FilesystemPolicy defines filesystem access rules.
@@ -70,28 +70,28 @@ type FilesystemPolicy struct {
 
 // Environment is a sandboxed execution environment.
 type Environment struct {
-	ID            string           `json:"id"`
-	Name          string           `json:"name"`
-	AgentID       string           `json:"agent_id"`
-	Backend       Backend          `json:"backend"`
-	Status        SandboxStatus    `json:"status"`
-	Limits        ResourceLimits   `json:"limits"`
-	Network       NetworkPolicy    `json:"network"`
-	Filesystem    FilesystemPolicy `json:"filesystem"`
-	Image         string           `json:"image,omitempty"`   // Docker image
-	WorkDir       string           `json:"work_dir,omitempty"`
-	EnvVars       map[string]string `json:"env_vars,omitempty"`
+	ID         string            `json:"id"`
+	Name       string            `json:"name"`
+	AgentID    string            `json:"agent_id"`
+	Backend    Backend           `json:"backend"`
+	Status     SandboxStatus     `json:"status"`
+	Limits     ResourceLimits    `json:"limits"`
+	Network    NetworkPolicy     `json:"network"`
+	Filesystem FilesystemPolicy  `json:"filesystem"`
+	Image      string            `json:"image,omitempty"` // Docker image
+	WorkDir    string            `json:"work_dir,omitempty"`
+	EnvVars    map[string]string `json:"env_vars,omitempty"`
 
 	// Runtime stats
-	Pid           int        `json:"pid,omitempty"`
-	CPUUsage      float64    `json:"cpu_usage,omitempty"`
-	MemoryUsageMB int        `json:"memory_usage_mb,omitempty"`
-	ExitCode      int        `json:"exit_code,omitempty"`
+	Pid           int     `json:"pid,omitempty"`
+	CPUUsage      float64 `json:"cpu_usage,omitempty"`
+	MemoryUsageMB int     `json:"memory_usage_mb,omitempty"`
+	ExitCode      int     `json:"exit_code,omitempty"`
 
-	CreatedAt     time.Time  `json:"created_at"`
-	StartedAt     *time.Time `json:"started_at,omitempty"`
-	StoppedAt     *time.Time `json:"stopped_at,omitempty"`
-	Duration      string     `json:"duration,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+	StartedAt *time.Time `json:"started_at,omitempty"`
+	StoppedAt *time.Time `json:"stopped_at,omitempty"`
+	Duration  string     `json:"duration,omitempty"`
 }
 
 // Manager manages sandboxed environments.
@@ -129,9 +129,9 @@ func DefaultLimits() ResourceLimits {
 // DefaultNetworkPolicy returns a restrictive network policy.
 func DefaultNetworkPolicy() NetworkPolicy {
 	return NetworkPolicy{
-		AllowDNS:   true,
-		AllowHTTP:  false,
-		AllowHTTPS: true,
+		AllowDNS:     true,
+		AllowHTTP:    false,
+		AllowHTTPS:   true,
 		AllowedHosts: []string{"api.openai.com", "api.anthropic.com"},
 	}
 }
@@ -335,8 +335,8 @@ func (m *Manager) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"total":     len(m.envs),
-		"by_status": byStatus,
+		"total":      len(m.envs),
+		"by_status":  byStatus,
 		"by_backend": byBackend,
 	}
 }
@@ -446,24 +446,24 @@ func hasCommand(name string) bool {
 
 // Config is a simplified sandbox configuration for the exec command.
 type Config struct {
-	Language    Language        `json:"language"`
-	Code        string          `json:"code"`
-	Timeout     time.Duration   `json:"timeout"`
-	MemoryLimit int64           `json:"memory_limit_mb"`
-	NetworkOff  bool            `json:"network_off"`
-	Network     bool            `json:"network"`
-	WorkDir     string          `json:"work_dir"`
-	Env         []string        `json:"env,omitempty"`
+	Language    Language      `json:"language"`
+	Code        string        `json:"code"`
+	Timeout     time.Duration `json:"timeout"`
+	MemoryLimit int64         `json:"memory_limit_mb"`
+	NetworkOff  bool          `json:"network_off"`
+	Network     bool          `json:"network"`
+	WorkDir     string        `json:"work_dir"`
+	Env         []string      `json:"env,omitempty"`
 }
 
 // Result is the result of a sandboxed execution.
 type Result struct {
-	ExitCode   int       `json:"exit_code"`
-	Stdout     string    `json:"stdout"`
-	Stderr     string    `json:"stderr"`
+	ExitCode   int           `json:"exit_code"`
+	Stdout     string        `json:"stdout"`
+	Stderr     string        `json:"stderr"`
 	Duration   time.Duration `json:"duration"`
-	TimedOut   bool      `json:"timed_out"`
-	MemoryUsed int       `json:"memory_used_mb"`
+	TimedOut   bool          `json:"timed_out"`
+	MemoryUsed int           `json:"memory_used_mb"`
 }
 
 // New creates a new sandbox executor from a Config.

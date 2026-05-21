@@ -35,8 +35,8 @@ const (
 
 // Transition defines a valid state change.
 type Transition struct {
-	From State   `json:"from"`
-	To   State   `json:"to"`
+	From State `json:"from"`
+	To   State `json:"to"`
 }
 
 // Event records a state transition.
@@ -139,22 +139,22 @@ func IsActive(s State) bool {
 
 // AgentState tracks the current state of an agent.
 type AgentState struct {
-	AgentID   string        `json:"agent_id"`
-	State     State         `json:"state"`
-	EnteredAt time.Time     `json:"entered_at"`
-	PrevState State         `json:"prev_state,omitempty"`
-	Reason    string        `json:"reason,omitempty"`
-	Retries   int           `json:"retries"`
-	MaxRetries int          `json:"max_retries"`
-	Timeouts  TimeoutConfig `json:"timeouts,omitempty"`
+	AgentID    string        `json:"agent_id"`
+	State      State         `json:"state"`
+	EnteredAt  time.Time     `json:"entered_at"`
+	PrevState  State         `json:"prev_state,omitempty"`
+	Reason     string        `json:"reason,omitempty"`
+	Retries    int           `json:"retries"`
+	MaxRetries int           `json:"max_retries"`
+	Timeouts   TimeoutConfig `json:"timeouts,omitempty"`
 }
 
 // Manager manages lifecycle states for multiple agents.
 type Manager struct {
-	mu     sync.RWMutex
-	agents map[string]*AgentState
-	events []Event
-	dir    string // persistence directory
+	mu        sync.RWMutex
+	agents    map[string]*AgentState
+	events    []Event
+	dir       string // persistence directory
 	maxEvents int
 }
 

@@ -15,28 +15,28 @@ import (
 
 // AgentStatus represents an agent's state for the overview.
 type AgentStatus struct {
-	Name      string    `json:"name"`
-	Status    string    `json:"status"` // running, idle, error, stopped
-	Model     string    `json:"model"`
-	LastUsed  time.Time `json:"last_used"`
-	Actions   int       `json:"actions"`
+	Name     string    `json:"name"`
+	Status   string    `json:"status"` // running, idle, error, stopped
+	Model    string    `json:"model"`
+	LastUsed time.Time `json:"last_used"`
+	Actions  int       `json:"actions"`
 }
 
 // CostEntry represents cost info for the overview.
 type CostEntry struct {
-	TodayUSD float64 `json:"today_usd"`
-	MonthUSD float64 `json:"month_usd"`
-	BudgetUSD float64 `json:"budget_usd"`
-	TokensToday int   `json:"tokens_today"`
+	TodayUSD    float64 `json:"today_usd"`
+	MonthUSD    float64 `json:"month_usd"`
+	BudgetUSD   float64 `json:"budget_usd"`
+	TokensToday int     `json:"tokens_today"`
 }
 
 // SessionEntry represents a session in the overview.
 type SessionEntry struct {
-	ID        string    `json:"id"`
-	Agent     string    `json:"agent"`
-	CreatedAt time.Time `json:"created_at"`
-	LastActive time.Time `json:"last_active"`
-	MessageCount int    `json:"message_count"`
+	ID           string    `json:"id"`
+	Agent        string    `json:"agent"`
+	CreatedAt    time.Time `json:"created_at"`
+	LastActive   time.Time `json:"last_active"`
+	MessageCount int       `json:"message_count"`
 }
 
 // Alert represents an alert in the overview.
@@ -48,21 +48,21 @@ type Alert struct {
 
 // Overview is the complete status dashboard.
 type Overview struct {
-	GeneratedAt time.Time     `json:"generated_at"`
-	Version     string        `json:"version"`
-	Uptime      string        `json:"uptime"`
-	Agents      []AgentStatus `json:"agents"`
-	Cost        CostEntry     `json:"cost"`
-	Sessions    []SessionEntry `json:"sessions"`
-	Alerts      []Alert       `json:"alerts"`
-	QuickActions []QuickAction `json:"quick_actions"`
-	Health      HealthStatus  `json:"health"`
+	GeneratedAt  time.Time      `json:"generated_at"`
+	Version      string         `json:"version"`
+	Uptime       string         `json:"uptime"`
+	Agents       []AgentStatus  `json:"agents"`
+	Cost         CostEntry      `json:"cost"`
+	Sessions     []SessionEntry `json:"sessions"`
+	Alerts       []Alert        `json:"alerts"`
+	QuickActions []QuickAction  `json:"quick_actions"`
+	Health       HealthStatus   `json:"health"`
 }
 
 // HealthStatus is the overall health.
 type HealthStatus struct {
-	Status  string `json:"status"` // healthy, degraded, critical
-	Score   int    `json:"score"`  // 0-100
+	Status  string   `json:"status"` // healthy, degraded, critical
+	Score   int      `json:"score"`  // 0-100
 	Details []string `json:"details"`
 }
 
@@ -93,14 +93,14 @@ func NewCollector(forgeDir, version string) *Collector {
 // Collect gathers all overview data.
 func (c *Collector) Collect() *Overview {
 	ov := &Overview{
-		GeneratedAt: time.Now(),
-		Version:     c.version,
-		Uptime:      c.getUptime(),
-		Agents:      c.getAgents(),
-		Cost:        c.getCost(),
-		Sessions:    c.getSessions(),
-		Alerts:      c.getAlerts(),
-		Health:      c.getHealth(),
+		GeneratedAt:  time.Now(),
+		Version:      c.version,
+		Uptime:       c.getUptime(),
+		Agents:       c.getAgents(),
+		Cost:         c.getCost(),
+		Sessions:     c.getSessions(),
+		Alerts:       c.getAlerts(),
+		Health:       c.getHealth(),
 		QuickActions: c.getQuickActions(),
 	}
 	return ov

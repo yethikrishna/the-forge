@@ -20,31 +20,31 @@ import (
 
 // AgentInstance represents a running agent process
 type AgentInstance struct {
-	Name     string
-	Type     string
-	Port     int
-	Model    string
-	Cmd      *exec.Cmd
-	Running  bool
-	Jailed   bool
-	mu       sync.Mutex
+	Name    string
+	Type    string
+	Port    int
+	Model   string
+	Cmd     *exec.Cmd
+	Running bool
+	Jailed  bool
+	mu      sync.Mutex
 }
 
 // AgentOrchestrator manages multiple agent instances
 type AgentOrchestrator struct {
-	agents    map[string]*AgentInstance
-	mu        sync.RWMutex
-	ctx       context.Context
-	cancel    context.CancelFunc
-	verbose   bool
+	agents  map[string]*AgentInstance
+	mu      sync.RWMutex
+	ctx     context.Context
+	cancel  context.CancelFunc
+	verbose bool
 }
 
 func NewAgentOrchestrator(ctx context.Context, verbose bool) *AgentOrchestrator {
 	ctx, cancel := context.WithCancel(ctx)
 	return &AgentOrchestrator{
-		agents: make(map[string]*AgentInstance),
-		ctx:    ctx,
-		cancel: cancel,
+		agents:  make(map[string]*AgentInstance),
+		ctx:     ctx,
+		cancel:  cancel,
 		verbose: verbose,
 	}
 }
@@ -357,7 +357,9 @@ Examples:
 					http.Error(w, "POST only", http.StatusMethodNotAllowed)
 					return
 				}
-				var body struct{ Content string `json:"content"` }
+				var body struct {
+					Content string `json:"content"`
+				}
 				if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 					http.Error(w, err.Error(), http.StatusBadRequest)
 					return

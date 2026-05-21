@@ -18,12 +18,12 @@ var assetsFS embed.FS
 
 // Stats holds dashboard statistics.
 type Stats struct {
-	ActiveAgents  int     `json:"active_agents"`
-	PendingTasks  int     `json:"pending_tasks"`
-	CompletedToday int    `json:"completed_today"`
-	SessionCost   float64 `json:"session_cost"`
-	QueueDepth    int     `json:"queue_depth"`
-	CanaryStatus  string  `json:"canary_status"`
+	ActiveAgents   int     `json:"active_agents"`
+	PendingTasks   int     `json:"pending_tasks"`
+	CompletedToday int     `json:"completed_today"`
+	SessionCost    float64 `json:"session_cost"`
+	QueueDepth     int     `json:"queue_depth"`
+	CanaryStatus   string  `json:"canary_status"`
 }
 
 // AgentInfo represents agent info for the dashboard.
@@ -65,8 +65,8 @@ type DataProvider interface {
 
 // MemoryProvider is an in-memory data provider for testing.
 type MemoryProvider struct {
-	mu    sync.RWMutex
-	stats Stats
+	mu     sync.RWMutex
+	stats  Stats
 	agents []AgentInfo
 	tasks  []TaskInfo
 	log    []LogEntry
@@ -76,12 +76,12 @@ type MemoryProvider struct {
 func NewMemoryProvider() *MemoryProvider {
 	return &MemoryProvider{
 		stats: Stats{
-			ActiveAgents:  3,
-			PendingTasks:  7,
+			ActiveAgents:   3,
+			PendingTasks:   7,
 			CompletedToday: 42,
-			SessionCost:   2.34,
-			QueueDepth:    12,
-			CanaryStatus:  "running",
+			SessionCost:    2.34,
+			QueueDepth:     12,
+			CanaryStatus:   "running",
 		},
 		agents: []AgentInfo{
 			{ID: "agent-001", Name: "coder", Type: "coder", Status: "running", Tasks: 15, Cost: 1.20, LastActivity: time.Now()},

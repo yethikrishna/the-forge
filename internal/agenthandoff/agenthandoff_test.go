@@ -27,7 +27,7 @@ func TestCreateHandoff(t *testing.T) {
 		Artifacts: []Artifact{
 			{Type: "file", Name: "api.go", Path: "api/api.go", Summary: "API skeleton with routes"},
 		},
-		PendingItems: []string{"Add POST handler", "Add PUT handler", "Write integration tests"},
+		PendingItems:   []string{"Add POST handler", "Add PUT handler", "Write integration tests"},
 		LessonsLearned: []string{"Use middleware for auth validation"},
 	}
 
@@ -208,8 +208,8 @@ func TestBuildContext(t *testing.T) {
 		Task:      "Implement user API",
 		Progress:  0.5,
 		Confidence: Confidence{
-			Overall: 0.8,
-			Reasons: []string{"design is clear"},
+			Overall:       0.8,
+			Reasons:       []string{"design is clear"},
 			Uncertainties: []string{"auth approach"},
 		},
 		Artifacts: []Artifact{
@@ -218,8 +218,8 @@ func TestBuildContext(t *testing.T) {
 		Decisions: []Decision{
 			{Topic: "Database", Choice: "PostgreSQL", Rationale: "team standard", Confidence: 0.9},
 		},
-		PendingItems: []string{"Write handlers", "Add tests"},
-		Blockers:     []string{"Waiting for DB schema approval"},
+		PendingItems:   []string{"Write handlers", "Add tests"},
+		Blockers:       []string{"Waiting for DB schema approval"},
 		LessonsLearned: []string{"Keep handlers thin"},
 	}
 

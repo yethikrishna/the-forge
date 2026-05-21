@@ -18,11 +18,11 @@ import (
 type PluginStatus string
 
 const (
-	PluginLoaded    PluginStatus = "loaded"
-	PluginRunning   PluginStatus = "running"
-	PluginStopped   PluginStatus = "stopped"
-	PluginError     PluginStatus = "error"
-	PluginDisabled  PluginStatus = "disabled"
+	PluginLoaded   PluginStatus = "loaded"
+	PluginRunning  PluginStatus = "running"
+	PluginStopped  PluginStatus = "stopped"
+	PluginError    PluginStatus = "error"
+	PluginDisabled PluginStatus = "disabled"
 )
 
 // Plugin defines a WASM plugin.
@@ -39,12 +39,12 @@ type Plugin struct {
 	TimeoutSec  int          `json:"timeout_sec"`
 
 	// Runtime
-	LoadedAt    *time.Time `json:"loaded_at,omitempty"`
-	LastRunAt   *time.Time `json:"last_run_at,omitempty"`
-	RunCount    int        `json:"run_count"`
-	ErrorCount  int        `json:"error_count"`
-	LastError   string     `json:"last_error,omitempty"`
-	TotalRunMs  int64      `json:"total_run_ms"`
+	LoadedAt   *time.Time `json:"loaded_at,omitempty"`
+	LastRunAt  *time.Time `json:"last_run_at,omitempty"`
+	RunCount   int        `json:"run_count"`
+	ErrorCount int        `json:"error_count"`
+	LastError  string     `json:"last_error,omitempty"`
+	TotalRunMs int64      `json:"total_run_ms"`
 }
 
 // HostFunction defines a function the host exposes to plugins.
@@ -58,12 +58,12 @@ type HostFunction struct {
 
 // RunResult is the result of a plugin execution.
 type RunResult struct {
-	PluginID  string        `json:"plugin_id"`
-	Success   bool          `json:"success"`
-	Output    string        `json:"output,omitempty"`
-	Error     string        `json:"error,omitempty"`
-	Duration  time.Duration `json:"duration"`
-	MemoryKB  int           `json:"memory_used_kb"`
+	PluginID string        `json:"plugin_id"`
+	Success  bool          `json:"success"`
+	Output   string        `json:"output,omitempty"`
+	Error    string        `json:"error,omitempty"`
+	Duration time.Duration `json:"duration"`
+	MemoryKB int           `json:"memory_used_kb"`
 }
 
 // Host manages WASM plugins.
@@ -288,10 +288,10 @@ func (h *Host) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"total_plugins":    len(h.plugins),
-		"total_runs":       totalRuns,
-		"by_status":        byStatus,
-		"host_functions":   len(h.functions),
+		"total_plugins":  len(h.plugins),
+		"total_runs":     totalRuns,
+		"by_status":      byStatus,
+		"host_functions": len(h.functions),
 	}
 }
 

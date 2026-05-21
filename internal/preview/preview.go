@@ -29,9 +29,9 @@ const (
 type Impact string
 
 const (
-	ImpactLow      Impact = "low"
-	ImpactMedium   Impact = "medium"
-	ImpactHigh     Impact = "high"
+	ImpactLow         Impact = "low"
+	ImpactMedium      Impact = "medium"
+	ImpactHigh        Impact = "high"
 	ImpactDestructive Impact = "destructive"
 )
 
@@ -47,21 +47,21 @@ type Change struct {
 
 // Plan is a preview of a proposed action.
 type Plan struct {
-	ID          string      `json:"id"`
-	AgentID     string      `json:"agent_id"`
-	Type        ActionType  `json:"type"`
-	Target      string      `json:"target"`
-	Description string      `json:"description"`
-	Impact      Impact      `json:"impact"`
-	Changes     []Change    `json:"changes"`
-	Reversible  bool        `json:"reversible"`
-	BackupPath  string      `json:"backup_path,omitempty"`
-	Risks       []string    `json:"risks"`
+	ID           string     `json:"id"`
+	AgentID      string     `json:"agent_id"`
+	Type         ActionType `json:"type"`
+	Target       string     `json:"target"`
+	Description  string     `json:"description"`
+	Impact       Impact     `json:"impact"`
+	Changes      []Change   `json:"changes"`
+	Reversible   bool       `json:"reversible"`
+	BackupPath   string     `json:"backup_path,omitempty"`
+	Risks        []string   `json:"risks"`
 	Alternatives []string   `json:"alternatives,omitempty"`
-	CreatedAt   time.Time   `json:"created_at"`
-	Status      string      `json:"status"` // pending, approved, rejected, modified, expired
-	ApprovedBy  string      `json:"approved_by,omitempty"`
-	Reason      string      `json:"reason,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	Status       string     `json:"status"` // pending, approved, rejected, modified, expired
+	ApprovedBy   string     `json:"approved_by,omitempty"`
+	Reason       string     `json:"reason,omitempty"`
 }
 
 // Previewer generates action previews.
@@ -94,17 +94,17 @@ func (p *Previewer) Create(agentID string, actionType ActionType, target, descri
 
 	p.nextID++
 	plan := &Plan{
-		ID:          fmt.Sprintf("plan-%d", p.nextID),
-		AgentID:     agentID,
-		Type:        actionType,
-		Target:      target,
-		Description: description,
-		Impact:      assessImpact(actionType, target),
-		Reversible:  isReversible(actionType),
-		Risks:       assessRisks(actionType, target),
+		ID:           fmt.Sprintf("plan-%d", p.nextID),
+		AgentID:      agentID,
+		Type:         actionType,
+		Target:       target,
+		Description:  description,
+		Impact:       assessImpact(actionType, target),
+		Reversible:   isReversible(actionType),
+		Risks:        assessRisks(actionType, target),
 		Alternatives: suggestAlternatives(actionType, target),
-		CreatedAt:   time.Now(),
-		Status:      "pending",
+		CreatedAt:    time.Now(),
+		Status:       "pending",
 	}
 
 	// For file operations, create a backup

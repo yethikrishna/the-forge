@@ -36,10 +36,10 @@ const (
 type Classification string
 
 const (
-	ClassPublic      Classification = "public"
-	ClassInternal    Classification = "internal"
+	ClassPublic       Classification = "public"
+	ClassInternal     Classification = "internal"
 	ClassConfidential Classification = "confidential"
-	ClassRestricted  Classification = "restricted"
+	ClassRestricted   Classification = "restricted"
 )
 
 // EntryStatus represents the lifecycle state of an entry.
@@ -62,12 +62,12 @@ type Entry struct {
 	Version        string            `json:"version,omitempty"`
 	Status         EntryStatus       `json:"status"`
 	Owner          string            `json:"owner,omitempty"`
-	Classification Classification     `json:"classification,omitempty"`
+	Classification Classification    `json:"classification,omitempty"`
 	Tags           []string          `json:"tags,omitempty"`
 	Labels         map[string]string `json:"labels,omitempty"`
-	Schema         json.RawMessage   `json:"schema,omitempty"` // Structured schema (input/output types, capabilities)
+	Schema         json.RawMessage   `json:"schema,omitempty"`       // Structured schema (input/output types, capabilities)
 	Dependencies   []string          `json:"dependencies,omitempty"` // IDs of entries this depends on
-	URI            string            `json:"uri,omitempty"` // Location (file path, URL, registry ref)
+	URI            string            `json:"uri,omitempty"`          // Location (file path, URL, registry ref)
 	Checksum       string            `json:"checksum,omitempty"`
 	CreatedAt      time.Time         `json:"created_at"`
 	UpdatedAt      time.Time         `json:"updated_at"`
@@ -90,15 +90,15 @@ type AuditLog struct {
 
 // Stats holds catalog statistics.
 type Stats struct {
-	TotalEntries       int                `json:"total_entries"`
-	EntriesByType      map[EntryType]int  `json:"entries_by_type"`
-	EntriesByStatus    map[EntryStatus]int `json:"entries_by_status"`
-	EntriesByClass     map[Classification]int `json:"entries_by_class"`
-	Namespaces         []string           `json:"namespaces"`
-	Tags               []string           `json:"all_tags"`
-	AuditLogEntries    int                `json:"audit_log_entries"`
-	OldestEntry        time.Time          `json:"oldest_entry"`
-	NewestEntry        time.Time          `json:"newest_entry"`
+	TotalEntries    int                    `json:"total_entries"`
+	EntriesByType   map[EntryType]int      `json:"entries_by_type"`
+	EntriesByStatus map[EntryStatus]int    `json:"entries_by_status"`
+	EntriesByClass  map[Classification]int `json:"entries_by_class"`
+	Namespaces      []string               `json:"namespaces"`
+	Tags            []string               `json:"all_tags"`
+	AuditLogEntries int                    `json:"audit_log_entries"`
+	OldestEntry     time.Time              `json:"oldest_entry"`
+	NewestEntry     time.Time              `json:"newest_entry"`
 }
 
 // Store manages the catalog.
@@ -460,9 +460,9 @@ func (s *Store) ExportJSON() ([]byte, error) {
 	defer s.mu.RUnlock()
 
 	export := struct {
-		Entries  []*Entry     `json:"entries"`
-		Audit    []*AuditLog  `json:"audit_log"`
-		Exported time.Time    `json:"exported"`
+		Entries  []*Entry    `json:"entries"`
+		Audit    []*AuditLog `json:"audit_log"`
+		Exported time.Time   `json:"exported"`
 	}{
 		Exported: time.Now().UTC(),
 	}

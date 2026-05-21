@@ -110,7 +110,9 @@ func TestGenerateTypeScriptProject(t *testing.T) {
 	target := filepath.Join(dir, "myts")
 
 	result, err := s.Generate("myts", TypeTypeScript, target)
-	if result.ProjectName == "" { t.Error("expected project name") }
+	if result.ProjectName == "" {
+		t.Error("expected project name")
+	}
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -145,7 +147,9 @@ func TestGenerateAPIProject(t *testing.T) {
 
 	result, err := s.Generate("myapi", TypeAPI, target)
 	if err != nil {
-	if result.ProjectName == "" { t.Error("expected project name") }
+		if result.ProjectName == "" {
+			t.Error("expected project name")
+		}
 		t.Fatal(err)
 	}
 
@@ -176,7 +180,7 @@ func TestGenerateUsesDefaultDir(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "myproj")
 
-result, err := s.Generate("myproj", TypeGo, target)
+	result, err := s.Generate("myproj", TypeGo, target)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -51,32 +51,32 @@ type Anomaly struct {
 
 // CostRecord represents a single cost record.
 type CostRecord struct {
-	AgentID    string    `json:"agent_id"`
-	Model      string    `json:"model"`
-	Amount     float64   `json:"amount"`
-	TokensIn   int       `json:"tokens_in"`
-	TokensOut  int       `json:"tokens_out"`
-	Timestamp  time.Time `json:"timestamp"`
-	SessionID  string    `json:"session_id"`
+	AgentID   string    `json:"agent_id"`
+	Model     string    `json:"model"`
+	Amount    float64   `json:"amount"`
+	TokensIn  int       `json:"tokens_in"`
+	TokensOut int       `json:"tokens_out"`
+	Timestamp time.Time `json:"timestamp"`
+	SessionID string    `json:"session_id"`
 }
 
 // BudgetConfig defines budget limits.
 type BudgetConfig struct {
-	DailyLimit   float64 `json:"daily_limit"`
-	WeeklyLimit  float64 `json:"weekly_limit"`
-	MonthlyLimit float64 `json:"monthly_limit"`
+	DailyLimit    float64 `json:"daily_limit"`
+	WeeklyLimit   float64 `json:"weekly_limit"`
+	MonthlyLimit  float64 `json:"monthly_limit"`
 	PerAgentLimit float64 `json:"per_agent_limit"`
-	HardStop     bool    `json:"hard_stop"` // Stop all agents when exceeded
+	HardStop      bool    `json:"hard_stop"` // Stop all agents when exceeded
 }
 
 // Detector detects cost anomalies.
 type Detector struct {
-	mu       sync.Mutex
-	dir      string
-	records  []CostRecord
+	mu        sync.Mutex
+	dir       string
+	records   []CostRecord
 	anomalies []Anomaly
-	budget   BudgetConfig
-	baseline map[string]baselineStats // agent → baseline
+	budget    BudgetConfig
+	baseline  map[string]baselineStats // agent → baseline
 }
 
 type baselineStats struct {
@@ -88,11 +88,11 @@ type baselineStats struct {
 // NewDetector creates a cost anomaly detector.
 func NewDetector(dir string, budget BudgetConfig) *Detector {
 	return &Detector{
-		dir:      dir,
-		records:  make([]CostRecord, 0),
+		dir:       dir,
+		records:   make([]CostRecord, 0),
 		anomalies: make([]Anomaly, 0),
-		budget:   budget,
-		baseline: make(map[string]baselineStats),
+		budget:    budget,
+		baseline:  make(map[string]baselineStats),
 	}
 }
 
@@ -352,9 +352,9 @@ func (d *Detector) Save() error {
 	}
 
 	data, err := json.MarshalIndent(struct {
-		Records   []CostRecord `json:"records"`
-		Anomalies []Anomaly    `json:"anomalies"`
-		Budget    BudgetConfig `json:"budget"`
+		Records   []CostRecord             `json:"records"`
+		Anomalies []Anomaly                `json:"anomalies"`
+		Budget    BudgetConfig             `json:"budget"`
 		Baseline  map[string]baselineStats `json:"baseline"`
 	}{
 		Records:   d.records,

@@ -114,7 +114,7 @@ The wielder and the sword are one.`,
 		roleCmd(),
 		trustCmd(),
 		scanCmd(),
-		
+
 		grammarCmd(),
 		transparentCmd(),
 		autodetectCmd(),

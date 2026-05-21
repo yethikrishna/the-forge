@@ -40,26 +40,26 @@ func DefaultTransferConfig() TransferConfig {
 
 // Transfer represents a file transfer.
 type Transfer struct {
-	ID         string
-	FileName   string
-	FileSize   int64
-	Status     TransferStatus
-	Direction  TransferDirection
-	StartedAt  time.Time
-	CompletedAt time.Time
+	ID               string
+	FileName         string
+	FileSize         int64
+	Status           TransferStatus
+	Direction        TransferDirection
+	StartedAt        time.Time
+	CompletedAt      time.Time
 	BytesTransferred int64
-	PeerAddr   string
-	config     TransferConfig
+	PeerAddr         string
+	config           TransferConfig
 }
 
 // TransferStatus indicates the state of a transfer.
 type TransferStatus string
 
 const (
-	TransferPending TransferStatus = "pending"
-	TransferActive  TransferStatus = "active"
+	TransferPending  TransferStatus = "pending"
+	TransferActive   TransferStatus = "active"
 	TransferComplete TransferStatus = "complete"
-	TransferFailed  TransferStatus = "failed"
+	TransferFailed   TransferStatus = "failed"
 )
 
 // TransferDirection indicates the direction of transfer.

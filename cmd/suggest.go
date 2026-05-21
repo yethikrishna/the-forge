@@ -38,7 +38,7 @@ Examples:
 				ErrorMessage: errorMsg,
 				ErrorType:    errorType,
 				HasError:     errorMsg != "" || errorType != "",
-				IsTest:       strings.Contains(strings.ToLower(filePath), "test") ||
+				IsTest: strings.Contains(strings.ToLower(filePath), "test") ||
 					strings.Contains(strings.ToLower(filePath), "_test") ||
 					strings.Contains(strings.ToLower(filePath), ".spec."),
 				IsConfig: strings.HasSuffix(strings.ToLower(filePath), ".yaml") ||

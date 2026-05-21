@@ -24,12 +24,12 @@ const (
 
 // LockInfo represents metadata about a held lock.
 type LockInfo struct {
-	Path      string    `json:"path"`
-	LockType  LockType  `json:"lock_type"`
-	AgentID   string    `json:"agent_id"`
-	SessionID string    `json:"session_id"`
+	Path       string    `json:"path"`
+	LockType   LockType  `json:"lock_type"`
+	AgentID    string    `json:"agent_id"`
+	SessionID  string    `json:"session_id"`
 	AcquiredAt time.Time `json:"acquired_at"`
-	PID       int       `json:"pid"`
+	PID        int       `json:"pid"`
 }
 
 // Lock represents a file lock.
@@ -42,10 +42,10 @@ type Lock struct {
 
 // Manager manages file locks for concurrent agent operations.
 type Manager struct {
-	mu       sync.Mutex
-	dir      string
-	locks    map[string]*Lock // path → lock
-	maxWait  time.Duration
+	mu      sync.Mutex
+	dir     string
+	locks   map[string]*Lock // path → lock
+	maxWait time.Duration
 }
 
 // NewManager creates a file lock manager.

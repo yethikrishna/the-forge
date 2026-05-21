@@ -17,25 +17,25 @@ import (
 
 // Trait represents an evolvable agent trait.
 type Trait struct {
-	Name     string   `json:"name"`
-	Type     string   `json:"type"`     // string, float, int, enum
-	Values   []string `json:"values"`   // for enum type
-	Min      float64  `json:"min"`      // for float/int type
-	Max      float64  `json:"max"`      // for float/int type
-	Step     float64  `json:"step"`     // for float type
-	Default  string   `json:"default"`
+	Name    string   `json:"name"`
+	Type    string   `json:"type"`   // string, float, int, enum
+	Values  []string `json:"values"` // for enum type
+	Min     float64  `json:"min"`    // for float/int type
+	Max     float64  `json:"max"`    // for float/int type
+	Step    float64  `json:"step"`   // for float type
+	Default string   `json:"default"`
 }
 
 // Genome is a set of trait values for an agent.
 type Genome struct {
-	ID       string            `json:"id"`
-	Traits   map[string]string `json:"traits"`
-	Fitness  float64           `json:"fitness"`
-	Runs     int               `json:"runs"`
-	Parent1  string            `json:"parent1,omitempty"`
-	Parent2  string            `json:"parent2,omitempty"`
-	Generation int             `json:"generation"`
-	CreatedAt time.Time        `json:"created_at"`
+	ID         string            `json:"id"`
+	Traits     map[string]string `json:"traits"`
+	Fitness    float64           `json:"fitness"`
+	Runs       int               `json:"runs"`
+	Parent1    string            `json:"parent1,omitempty"`
+	Parent2    string            `json:"parent2,omitempty"`
+	Generation int               `json:"generation"`
+	CreatedAt  time.Time         `json:"created_at"`
 }
 
 // Population is a collection of genomes.

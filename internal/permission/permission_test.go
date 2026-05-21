@@ -152,10 +152,10 @@ func TestViolationsRecorded(t *testing.T) {
 func TestSetPolicy(t *testing.T) {
 	e := NewEnforcer(t.TempDir())
 	err := e.SetPolicy(Policy{
-		SessionID:   "custom",
-		Scope:       ScopeReadOnly,
+		SessionID:      "custom",
+		Scope:          ScopeReadOnly,
 		AllowedActions: []Action{ActionRead},
-		MaxFileSize: 1024,
+		MaxFileSize:    1024,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -218,11 +218,11 @@ func TestPersistence(t *testing.T) {
 
 func TestFormatPolicy(t *testing.T) {
 	p := &Policy{
-		SessionID:     "sess-1",
-		Scope:         ScopeReadOnly,
+		SessionID:      "sess-1",
+		Scope:          ScopeReadOnly,
 		AllowedActions: []Action{ActionRead},
-		BlockedDirs:   []string{"/etc"},
-		CreatedAt:     time.Now(),
+		BlockedDirs:    []string{"/etc"},
+		CreatedAt:      time.Now(),
 	}
 
 	s := FormatPolicy(p)
@@ -271,10 +271,10 @@ func TestFileSizeLimit(t *testing.T) {
 	os.WriteFile(bigFile, make([]byte, 2048), 0644)
 
 	e.SetPolicy(Policy{
-		SessionID:     "sess-1",
-		Scope:         ScopeFull,
+		SessionID:      "sess-1",
+		Scope:          ScopeFull,
 		AllowedActions: []Action{ActionRead, ActionWrite},
-		MaxFileSize:   1024,
+		MaxFileSize:    1024,
 	})
 
 	err := e.Check("sess-1", ActionWrite, bigFile)

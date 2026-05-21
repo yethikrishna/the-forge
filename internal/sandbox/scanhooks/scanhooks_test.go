@@ -181,7 +181,7 @@ func TestFormatResult(t *testing.T) {
 		Findings: []Finding{
 			{Rule: "Test", Severity: SevMedium, Description: "Test finding"},
 		},
-		Blocked:    true,
+		Blocked:     true,
 		BlockReason: "Test block",
 	}
 

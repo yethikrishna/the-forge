@@ -26,19 +26,19 @@ const ProtocolVersion = "2025-03-26" // v2.1
 type AuthMethod string
 
 const (
-	AuthNone    AuthMethod = "none"
-	AuthToken   AuthMethod = "token"
-	AuthAPIKey  AuthMethod = "api_key"
-	AuthOAuth2  AuthMethod = "oauth2"
+	AuthNone   AuthMethod = "none"
+	AuthToken  AuthMethod = "token"
+	AuthAPIKey AuthMethod = "api_key"
+	AuthOAuth2 AuthMethod = "oauth2"
 )
 
 // AuthConfig configures gateway authentication.
 type AuthConfig struct {
-	Method    AuthMethod `json:"method"`
+	Method AuthMethod `json:"method"`
 	// Valid tokens/keys for token and api_key auth.
-	Tokens   []string   `json:"tokens,omitempty"`
+	Tokens []string `json:"tokens,omitempty"`
 	// OIDC discovery URL for oauth2.
-	OIDCURL   string    `json:"oidc_url,omitempty"`
+	OIDCURL string `json:"oidc_url,omitempty"`
 }
 
 // RateLimitConfig configures per-client rate limiting.
@@ -67,8 +67,8 @@ type AuditEntry struct {
 
 // RateLimitEntry tracks rate limit state for a client.
 type rateLimitEntry struct {
-	count     int
-	tokenCount int
+	count       int
+	tokenCount  int
 	windowStart time.Time
 }
 
@@ -76,18 +76,18 @@ type rateLimitEntry struct {
 type ValidationRule struct {
 	ToolName    string   `json:"tool_name"`
 	Required    []string `json:"required,omitempty"`
-	MaxPayload  int      `json:"max_payload,omitempty"` // max payload size in bytes
+	MaxPayload  int      `json:"max_payload,omitempty"`  // max payload size in bytes
 	AllowedArgs []string `json:"allowed_args,omitempty"` // if set, reject unknown args
 }
 
 // GatewayConfig is the full gateway configuration.
 type GatewayConfig struct {
-	Name        string            `json:"name"`
-	Version     string            `json:"version"`
-	Auth        AuthConfig        `json:"auth"`
-	RateLimit   RateLimitConfig   `json:"rate_limit"`
-	Validation  []ValidationRule  `json:"validation,omitempty"`
-	Enabled     bool              `json:"enabled"`
+	Name       string           `json:"name"`
+	Version    string           `json:"version"`
+	Auth       AuthConfig       `json:"auth"`
+	RateLimit  RateLimitConfig  `json:"rate_limit"`
+	Validation []ValidationRule `json:"validation,omitempty"`
+	Enabled    bool             `json:"enabled"`
 }
 
 // Gateway is the governed MCP proxy.
@@ -162,10 +162,10 @@ type GatewayRequest struct {
 
 // GatewayResponse is the gateway's response.
 type GatewayResponse struct {
-	Allowed   bool                   `json:"allowed"`
-	Reason    string                 `json:"reason,omitempty"`
-	RequestID string                 `json:"request_id"`
-	Headers   map[string]string      `json:"headers,omitempty"`
+	Allowed   bool              `json:"allowed"`
+	Reason    string            `json:"reason,omitempty"`
+	RequestID string            `json:"request_id"`
+	Headers   map[string]string `json:"headers,omitempty"`
 }
 
 // ProcessRequest evaluates a request through the gateway pipeline:
@@ -388,14 +388,14 @@ func (g *Gateway) GetAudit(clientID, statusCode string, limit int) []AuditEntry 
 
 // Stats returns gateway statistics.
 type GatewayStats struct {
-	TotalRequests   int                `json:"total_requests"`
-	AllowedRequests int                `json:"allowed_requests"`
-	DeniedRequests  int                `json:"denied_requests"`
-	ByStatus        map[string]int     `json:"by_status"`
-	ByMethod        map[string]int     `json:"by_method"`
-	TopClients      []ClientStat       `json:"top_clients"`
-	AvgLatency      time.Duration      `json:"avg_latency"`
-	ActiveClients   int                `json:"active_clients"`
+	TotalRequests   int            `json:"total_requests"`
+	AllowedRequests int            `json:"allowed_requests"`
+	DeniedRequests  int            `json:"denied_requests"`
+	ByStatus        map[string]int `json:"by_status"`
+	ByMethod        map[string]int `json:"by_method"`
+	TopClients      []ClientStat   `json:"top_clients"`
+	AvgLatency      time.Duration  `json:"avg_latency"`
+	ActiveClients   int            `json:"active_clients"`
 }
 
 // ClientStat is a per-client statistics entry.

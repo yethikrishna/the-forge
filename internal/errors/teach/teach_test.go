@@ -173,10 +173,10 @@ func TestTeachErrorFormatHuman(t *testing.T) {
 
 func TestTeachErrorFormatShort(t *testing.T) {
 	e := &TeachError{
-		Code:      "FORGE-E010",
-		Message:   "No API key configured",
-		Fix:       "Set the API key",
-		DocsLink:  "https://forge.dev/docs/auth",
+		Code:     "FORGE-E010",
+		Message:  "No API key configured",
+		Fix:      "Set the API key",
+		DocsLink: "https://forge.dev/docs/auth",
 	}
 
 	short := e.FormatShort()

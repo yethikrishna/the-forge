@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/promptregistry"
+	"github.com/spf13/cobra"
 )
 
 var promptRegCmd = &cobra.Command{
@@ -14,8 +14,8 @@ var promptRegCmd = &cobra.Command{
 }
 
 var (
-	prDir        string
-	prCategory   string
+	prDir      string
+	prCategory string
 )
 
 func init() {

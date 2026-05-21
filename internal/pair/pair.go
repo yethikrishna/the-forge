@@ -35,14 +35,14 @@ type Turn struct {
 
 // Session is a pair programming session.
 type Session struct {
-	ID          string    `json:"id"`
-	Name        string    `json:"name"`
-	Turns       []Turn    `json:"turns"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Status      string    `json:"status"` // active, paused, completed
-	Files       map[string]string `json:"files,omitempty"`
-	Mode        string    `json:"mode"` // drive, navigate, observe
+	ID        string            `json:"id"`
+	Name      string            `json:"name"`
+	Turns     []Turn            `json:"turns"`
+	CreatedAt time.Time         `json:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at"`
+	Status    string            `json:"status"` // active, paused, completed
+	Files     map[string]string `json:"files,omitempty"`
+	Mode      string            `json:"mode"` // drive, navigate, observe
 }
 
 // Mode determines who leads.

@@ -33,10 +33,10 @@ const (
 type ChunkStrategy string
 
 const (
-	ChunkFixed    ChunkStrategy = "fixed"    // fixed-size chunks
-	ChunkSentence ChunkStrategy = "sentence" // sentence-boundary chunks
+	ChunkFixed     ChunkStrategy = "fixed"     // fixed-size chunks
+	ChunkSentence  ChunkStrategy = "sentence"  // sentence-boundary chunks
 	ChunkParagraph ChunkStrategy = "paragraph" // paragraph-boundary chunks
-	ChunkLine     ChunkStrategy = "line"     // line-by-line
+	ChunkLine      ChunkStrategy = "line"      // line-by-line
 )
 
 // Chunk represents a piece of ingested content.
@@ -52,17 +52,17 @@ type Chunk struct {
 
 // Source represents an ingestion source.
 type Source struct {
-	ID          string       `json:"id"`
-	Name        string       `json:"name"`
-	Type        SourceType   `json:"type"`
-	Path        string       `json:"path"`        // file path, URL, or command
-	Description string       `json:"description"`
-	ChunkSize   int          `json:"chunk_size"`
+	ID            string        `json:"id"`
+	Name          string        `json:"name"`
+	Type          SourceType    `json:"type"`
+	Path          string        `json:"path"` // file path, URL, or command
+	Description   string        `json:"description"`
+	ChunkSize     int           `json:"chunk_size"`
 	ChunkStrategy ChunkStrategy `json:"chunk_strategy"`
-	Tags        []string     `json:"tags,omitempty"`
-	LastIngested time.Time    `json:"last_ingested,omitempty"`
-	ChunkCount  int          `json:"chunk_count"`
-	CreatedAt   time.Time    `json:"created_at"`
+	Tags          []string      `json:"tags,omitempty"`
+	LastIngested  time.Time     `json:"last_ingested,omitempty"`
+	ChunkCount    int           `json:"chunk_count"`
+	CreatedAt     time.Time     `json:"created_at"`
 }
 
 // Pipeline manages data ingestion.
@@ -274,10 +274,10 @@ func (p *Pipeline) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"sources":     len(p.sources),
+		"sources":      len(p.sources),
 		"total_chunks": totalChunks,
-		"total_size":  totalSize,
-		"by_type":     byType,
+		"total_size":   totalSize,
+		"by_type":      byType,
 	}
 }
 

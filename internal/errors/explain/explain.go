@@ -31,16 +31,16 @@ const (
 
 // Explanation is a structured error analysis.
 type Explanation struct {
-	Input       string     `json:"input"`
-	Category    Category   `json:"category"`
-	Language    string     `json:"language,omitempty"`
-	Summary     string     `json:"summary"`
-	RootCause   string     `json:"root_cause"`
-	Suggestion  string     `json:"suggestion"`
-	DocLink     string     `json:"doc_link,omitempty"`
-	Severity    Severity   `json:"severity"`
-	Confidence  float64    `json:"confidence"`
-	Tags        []string   `json:"tags,omitempty"`
+	Input      string   `json:"input"`
+	Category   Category `json:"category"`
+	Language   string   `json:"language,omitempty"`
+	Summary    string   `json:"summary"`
+	RootCause  string   `json:"root_cause"`
+	Suggestion string   `json:"suggestion"`
+	DocLink    string   `json:"doc_link,omitempty"`
+	Severity   Severity `json:"severity"`
+	Confidence float64  `json:"confidence"`
+	Tags       []string `json:"tags,omitempty"`
 }
 
 // Severity is the error severity level.

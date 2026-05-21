@@ -9,19 +9,19 @@ import (
 
 // WatchdogConfig configures the watchdog.
 type WatchdogConfig struct {
-	CheckInterval   time.Duration `json:"check_interval"`
-	FailureThreshold int          `json:"failure_threshold"`
-	RecoveryThreshold int         `json:"recovery_threshold"`
-	CooldownPeriod  time.Duration `json:"cooldown_period"`
+	CheckInterval     time.Duration `json:"check_interval"`
+	FailureThreshold  int           `json:"failure_threshold"`
+	RecoveryThreshold int           `json:"recovery_threshold"`
+	CooldownPeriod    time.Duration `json:"cooldown_period"`
 }
 
 // DefaultWatchdogConfig returns default config.
 func DefaultWatchdogConfig() WatchdogConfig {
 	return WatchdogConfig{
-		CheckInterval:    30 * time.Second,
-		FailureThreshold: 3,
+		CheckInterval:     30 * time.Second,
+		FailureThreshold:  3,
 		RecoveryThreshold: 2,
-		CooldownPeriod:   5 * time.Minute,
+		CooldownPeriod:    5 * time.Minute,
 	}
 }
 
@@ -35,38 +35,38 @@ type ProviderResult struct {
 
 // WatchdogProvider extends Provider with watchdog-specific fields.
 type WatchdogProvider struct {
-	Name           string         `json:"name"`
-	Status         ProviderStatus `json:"status"`
-	Priority       int            `json:"priority"`
-	Latency        time.Duration  `json:"latency"`
-	LastError      string         `json:"last_error,omitempty"`
-	SuccessCount   int            `json:"success_count"`
-	FailureCount   int            `json:"failure_count"`
-	ConsecSuccess  int            `json:"consec_success"`
-	ConsecFailure  int            `json:"consec_failure"`
-	LastSuccessAt  *time.Time     `json:"last_success_at,omitempty"`
-	LastFailureAt  *time.Time     `json:"last_failure_at,omitempty"`
+	Name          string         `json:"name"`
+	Status        ProviderStatus `json:"status"`
+	Priority      int            `json:"priority"`
+	Latency       time.Duration  `json:"latency"`
+	LastError     string         `json:"last_error,omitempty"`
+	SuccessCount  int            `json:"success_count"`
+	FailureCount  int            `json:"failure_count"`
+	ConsecSuccess int            `json:"consec_success"`
+	ConsecFailure int            `json:"consec_failure"`
+	LastSuccessAt *time.Time     `json:"last_success_at,omitempty"`
+	LastFailureAt *time.Time     `json:"last_failure_at,omitempty"`
 }
 
 // WatchdogIncident represents a tracked incident.
 type WatchdogIncident struct {
-	ID           string    `json:"id"`
-	Provider     string    `json:"provider"`
-	Status       string    `json:"status"` // open, resolved
-	StartedAt    time.Time `json:"started_at"`
+	ID           string     `json:"id"`
+	Provider     string     `json:"provider"`
+	Status       string     `json:"status"` // open, resolved
+	StartedAt    time.Time  `json:"started_at"`
 	ResolvedAt   *time.Time `json:"resolved_at,omitempty"`
-	FallbackUsed string    `json:"fallback_used,omitempty"`
-	ErrorCount   int       `json:"error_count"`
+	FallbackUsed string     `json:"fallback_used,omitempty"`
+	ErrorCount   int        `json:"error_count"`
 }
 
 // OutageReport represents a generated report.
 type OutageReport struct {
-	Status      string             `json:"status"`
-	Summary     string             `json:"summary"`
-	GeneratedAt time.Time          `json:"generated_at"`
+	Status      string              `json:"status"`
+	Summary     string              `json:"summary"`
+	GeneratedAt time.Time           `json:"generated_at"`
 	Providers   []*WatchdogProvider `json:"providers"`
 	Incidents   []*WatchdogIncident `json:"incidents"`
-	Suggestions []string           `json:"suggestions"`
+	Suggestions []string            `json:"suggestions"`
 }
 
 // StatusRecovered is an alias for StatusHealthy.

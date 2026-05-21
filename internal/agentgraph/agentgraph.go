@@ -72,13 +72,13 @@ type Edge struct {
 
 // ExecutionResult holds the result of running a graph.
 type ExecutionResult struct {
-	GraphID    string           `json:"graph_id"`
-	Status     string           `json:"status"`
-	Results    map[string]*Node `json:"results"`
-	Duration   string           `json:"duration"`
-	TotalCost  float64          `json:"total_cost"`
-	TotalTokens int             `json:"total_tokens"`
-	Error      string           `json:"error,omitempty"`
+	GraphID     string           `json:"graph_id"`
+	Status      string           `json:"status"`
+	Results     map[string]*Node `json:"results"`
+	Duration    string           `json:"duration"`
+	TotalCost   float64          `json:"total_cost"`
+	TotalTokens int              `json:"total_tokens"`
+	Error       string           `json:"error,omitempty"`
 }
 
 // NewGraph creates a new execution graph.

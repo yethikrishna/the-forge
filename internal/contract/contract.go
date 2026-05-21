@@ -28,15 +28,15 @@ const (
 
 // Endpoint represents a single API endpoint.
 type Endpoint struct {
-	Method      string            `json:"method"`       // GET, POST, PUT, DELETE, PATCH
-	Path        string            `json:"path"`
-	Summary     string            `json:"summary,omitempty"`
-	Description string            `json:"description,omitempty"`
-	Parameters  []Parameter       `json:"parameters,omitempty"`
-	RequestBody *RequestBody      `json:"request_body,omitempty"`
-	Responses   map[int]Response  `json:"responses,omitempty"`
-	Tags        []string          `json:"tags,omitempty"`
-	Deprecated  bool              `json:"deprecated,omitempty"`
+	Method      string                `json:"method"` // GET, POST, PUT, DELETE, PATCH
+	Path        string                `json:"path"`
+	Summary     string                `json:"summary,omitempty"`
+	Description string                `json:"description,omitempty"`
+	Parameters  []Parameter           `json:"parameters,omitempty"`
+	RequestBody *RequestBody          `json:"request_body,omitempty"`
+	Responses   map[int]Response      `json:"responses,omitempty"`
+	Tags        []string              `json:"tags,omitempty"`
+	Deprecated  bool                  `json:"deprecated,omitempty"`
 	Security    []map[string][]string `json:"security,omitempty"`
 }
 
@@ -69,13 +69,13 @@ type Response struct {
 
 // ContractTest represents a generated contract test.
 type ContractTest struct {
-	ID         string    `json:"id"`
-	Name       string    `json:"name"`
-	Endpoint   Endpoint  `json:"endpoint"`
-	Code       string    `json:"code"`
-	Language   string    `json:"language"`
-	Framework  string    `json:"framework"` // testing framework
-	CreatedAt  time.Time `json:"created_at"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Endpoint  Endpoint  `json:"endpoint"`
+	Code      string    `json:"code"`
+	Language  string    `json:"language"`
+	Framework string    `json:"framework"` // testing framework
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // TestResult holds the result of running a contract test.
@@ -93,7 +93,7 @@ type TestResult struct {
 
 // BreakingChange represents a detected breaking change.
 type BreakingChange struct {
-	Type        string `json:"type"` // removed_endpoint, changed_type, removed_field, etc.
+	Type        string `json:"type"`     // removed_endpoint, changed_type, removed_field, etc.
 	Severity    string `json:"severity"` // breaking, warning, info
 	Endpoint    string `json:"endpoint"`
 	Description string `json:"description"`
@@ -103,11 +103,11 @@ type BreakingChange struct {
 
 // SpecDiff holds the result of comparing two API specs.
 type SpecDiff struct {
-	AddedEndpoints    []Endpoint      `json:"added_endpoints,omitempty"`
-	RemovedEndpoints  []Endpoint      `json:"removed_endpoints,omitempty"`
-	ModifiedEndpoints []Endpoint      `json:"modified_endpoints,omitempty"`
+	AddedEndpoints    []Endpoint       `json:"added_endpoints,omitempty"`
+	RemovedEndpoints  []Endpoint       `json:"removed_endpoints,omitempty"`
+	ModifiedEndpoints []Endpoint       `json:"modified_endpoints,omitempty"`
 	BreakingChanges   []BreakingChange `json:"breaking_changes,omitempty"`
-	Summary           string          `json:"summary"`
+	Summary           string           `json:"summary"`
 }
 
 // Spec represents a parsed API specification.
@@ -121,10 +121,10 @@ type Spec struct {
 
 // Generator creates contract tests from API specs.
 type Generator struct {
-	WorkDir    string
-	Language   string
-	Framework  string
-	BaseURL    string
+	WorkDir   string
+	Language  string
+	Framework string
+	BaseURL   string
 }
 
 // NewGenerator creates a contract test generator.

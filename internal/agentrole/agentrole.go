@@ -15,47 +15,47 @@ import (
 
 // Role defines an agent's specialization and constraints.
 type Role struct {
-	Name        string            `json:"name"`
-	DisplayName string            `json:"display_name"`
-	Description string            `json:"description"`
-	Category    RoleCategory      `json:"category"`
-	Permissions []string          `json:"permissions,omitempty"`
-	Tools       []string          `json:"tools,omitempty"`
-	ModelHint   string            `json:"model_hint,omitempty"`
-	MaxTokens   int               `json:"max_tokens,omitempty"`
-	Timeout     string            `json:"timeout,omitempty"`
-	Priority    int               `json:"priority"`
-	ParentRole  string            `json:"parent_role,omitempty"`
-	Traits      []string          `json:"traits,omitempty"`
-	SystemPrompt string           `json:"system_prompt,omitempty"`
-	Constraints []string          `json:"constraints,omitempty"`
-	CostLimit   float64           `json:"cost_limit,omitempty"`
-	CreatedAt   time.Time         `json:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at"`
+	Name         string       `json:"name"`
+	DisplayName  string       `json:"display_name"`
+	Description  string       `json:"description"`
+	Category     RoleCategory `json:"category"`
+	Permissions  []string     `json:"permissions,omitempty"`
+	Tools        []string     `json:"tools,omitempty"`
+	ModelHint    string       `json:"model_hint,omitempty"`
+	MaxTokens    int          `json:"max_tokens,omitempty"`
+	Timeout      string       `json:"timeout,omitempty"`
+	Priority     int          `json:"priority"`
+	ParentRole   string       `json:"parent_role,omitempty"`
+	Traits       []string     `json:"traits,omitempty"`
+	SystemPrompt string       `json:"system_prompt,omitempty"`
+	Constraints  []string     `json:"constraints,omitempty"`
+	CostLimit    float64      `json:"cost_limit,omitempty"`
+	CreatedAt    time.Time    `json:"created_at"`
+	UpdatedAt    time.Time    `json:"updated_at"`
 }
 
 // RoleCategory groups related roles.
 type RoleCategory string
 
 const (
-	CategoryPlanning  RoleCategory = "planning"
-	CategoryCoding    RoleCategory = "coding"
-	CategoryTesting   RoleCategory = "testing"
-	CategoryReview    RoleCategory = "review"
-	CategoryOps       RoleCategory = "ops"
-	CategoryAnalysis  RoleCategory = "analysis"
-	CategoryCreative  RoleCategory = "creative"
-	CategoryCustom    RoleCategory = "custom"
+	CategoryPlanning RoleCategory = "planning"
+	CategoryCoding   RoleCategory = "coding"
+	CategoryTesting  RoleCategory = "testing"
+	CategoryReview   RoleCategory = "review"
+	CategoryOps      RoleCategory = "ops"
+	CategoryAnalysis RoleCategory = "analysis"
+	CategoryCreative RoleCategory = "creative"
+	CategoryCustom   RoleCategory = "custom"
 )
 
 // Assignment tracks a role assignment to an agent.
 type Assignment struct {
-	ID         string    `json:"id"`
-	AgentID    string    `json:"agent_id"`
-	RoleName   string    `json:"role_name"`
-	SessionID  string    `json:"session_id,omitempty"`
-	Status     string    `json:"status"`
-	AssignedAt time.Time `json:"assigned_at"`
+	ID         string     `json:"id"`
+	AgentID    string     `json:"agent_id"`
+	RoleName   string     `json:"role_name"`
+	SessionID  string     `json:"session_id,omitempty"`
+	Status     string     `json:"status"`
+	AssignedAt time.Time  `json:"assigned_at"`
 	RevokedAt  *time.Time `json:"revoked_at,omitempty"`
 }
 
@@ -94,91 +94,91 @@ func BuiltinRoles() []Role {
 			Name: "planner", DisplayName: "Planner", Description: "Breaks down tasks into steps, creates execution plans",
 			Category: CategoryPlanning, Priority: 10,
 			Tools: []string{"search", "index", "memory"}, ModelHint: "reasoning",
-			Traits: []string{"structured", "thorough", "cautious"},
+			Traits:       []string{"structured", "thorough", "cautious"},
 			SystemPrompt: "You are a planner agent. Break down the given task into clear, sequential steps. Consider dependencies, risks, and alternatives.",
-			Constraints: []string{"never modify files", "never execute code", "only produce plans"},
-			MaxTokens: 4096, CreatedAt: now, UpdatedAt: now,
+			Constraints:  []string{"never modify files", "never execute code", "only produce plans"},
+			MaxTokens:    4096, CreatedAt: now, UpdatedAt: now,
 		},
 		{
 			Name: "coder", DisplayName: "Coder", Description: "Implements code from specifications and plans",
 			Category: CategoryCoding, Priority: 8,
 			Tools: []string{"search", "index", "build", "test", "exec", "sandbox"}, ModelHint: "code",
-			Traits: []string{"precise", "efficient", "idiomatic"},
+			Traits:       []string{"precise", "efficient", "idiomatic"},
 			SystemPrompt: "You are a coder agent. Write clean, idiomatic code that follows the project's conventions. Include error handling and tests.",
-			Constraints: []string{"always run tests after changes", "follow project style guide", "no force pushes"},
-			MaxTokens: 8192, CreatedAt: now, UpdatedAt: now,
+			Constraints:  []string{"always run tests after changes", "follow project style guide", "no force pushes"},
+			MaxTokens:    8192, CreatedAt: now, UpdatedAt: now,
 		},
 		{
 			Name: "reviewer", DisplayName: "Reviewer", Description: "Reviews code for quality, security, and correctness",
 			Category: CategoryReview, Priority: 7,
 			Tools: []string{"search", "index", "diff"}, ModelHint: "analysis",
-			Traits: []string{"critical", "thorough", "constructive"},
+			Traits:       []string{"critical", "thorough", "constructive"},
 			SystemPrompt: "You are a code reviewer. Identify bugs, security issues, style violations, and suggest improvements. Be constructive, not destructive.",
-			Constraints: []string{"never modify files directly", "always explain reasoning", "rate severity of findings"},
-			MaxTokens: 4096, CreatedAt: now, UpdatedAt: now,
+			Constraints:  []string{"never modify files directly", "always explain reasoning", "rate severity of findings"},
+			MaxTokens:    4096, CreatedAt: now, UpdatedAt: now,
 		},
 		{
 			Name: "tester", DisplayName: "Tester", Description: "Writes and runs tests, verifies correctness",
 			Category: CategoryTesting, Priority: 7,
 			Tools: []string{"search", "index", "build", "test", "exec", "sandbox"}, ModelHint: "code",
-			Traits: []string{"thorough", "creative", "adversarial"},
+			Traits:       []string{"thorough", "creative", "adversarial"},
 			SystemPrompt: "You are a tester agent. Write comprehensive tests covering happy paths, edge cases, error conditions, and integration scenarios. Aim for high coverage.",
-			Constraints: []string{"always run tests after writing", "cover error paths", "no flaky tests"},
-			MaxTokens: 8192, CreatedAt: now, UpdatedAt: now,
+			Constraints:  []string{"always run tests after writing", "cover error paths", "no flaky tests"},
+			MaxTokens:    8192, CreatedAt: now, UpdatedAt: now,
 		},
 		{
 			Name: "debugger", DisplayName: "Debugger", Description: "Diagnoses and fixes bugs, analyzes failures",
 			Category: CategoryCoding, Priority: 6,
 			Tools: []string{"search", "index", "build", "test", "exec", "sandbox"}, ModelHint: "reasoning",
-			Traits: []string{"systematic", "patient", "analytical"},
+			Traits:       []string{"systematic", "patient", "analytical"},
 			SystemPrompt: "You are a debugger agent. Systematically diagnose issues by reading error messages, tracing code paths, and testing hypotheses. Fix the root cause, not the symptom.",
-			Constraints: []string{"always reproduce before fixing", "explain the root cause", "add regression tests"},
-			MaxTokens: 4096, CreatedAt: now, UpdatedAt: now,
+			Constraints:  []string{"always reproduce before fixing", "explain the root cause", "add regression tests"},
+			MaxTokens:    4096, CreatedAt: now, UpdatedAt: now,
 		},
 		{
 			Name: "analyst", DisplayName: "Analyst", Description: "Analyzes data, metrics, and patterns",
 			Category: CategoryAnalysis, Priority: 5,
 			Tools: []string{"search", "index", "cost", "memory"}, ModelHint: "analysis",
-			Traits: []string{"data-driven", "insightful", "objective"},
+			Traits:       []string{"data-driven", "insightful", "objective"},
 			SystemPrompt: "You are an analyst agent. Analyze the provided data and extract actionable insights. Present findings clearly with supporting evidence.",
-			Constraints: []string{"cite data sources", "distinguish correlation from causation", "provide confidence levels"},
-			MaxTokens: 4096, CreatedAt: now, UpdatedAt: now,
+			Constraints:  []string{"cite data sources", "distinguish correlation from causation", "provide confidence levels"},
+			MaxTokens:    4096, CreatedAt: now, UpdatedAt: now,
 		},
 		{
 			Name: "devops", DisplayName: "DevOps", Description: "Manages deployment, CI/CD, infrastructure",
 			Category: CategoryOps, Priority: 5,
 			Tools: []string{"exec", "sandbox", "jail"}, ModelHint: "ops",
-			Traits: []string{"cautious", "reliable", "automated"},
+			Traits:       []string{"cautious", "reliable", "automated"},
 			SystemPrompt: "You are a DevOps agent. Manage infrastructure, deployments, and CI/CD pipelines. Prioritize reliability and rollback safety.",
-			Constraints: []string{"always have rollback plan", "never deploy on Fridays", "test in staging first"},
-			MaxTokens: 4096, CreatedAt: now, UpdatedAt: now,
+			Constraints:  []string{"always have rollback plan", "never deploy on Fridays", "test in staging first"},
+			MaxTokens:    4096, CreatedAt: now, UpdatedAt: now,
 		},
 		{
 			Name: "architect", DisplayName: "Architect", Description: "Designs system architecture, evaluates trade-offs",
 			Category: CategoryPlanning, Priority: 9,
 			Tools: []string{"search", "index"}, ModelHint: "reasoning",
-			Traits: []string{"holistic", "pragmatic", "forward-thinking"},
+			Traits:       []string{"holistic", "pragmatic", "forward-thinking"},
 			SystemPrompt: "You are an architect agent. Design system architecture that balances simplicity, scalability, and maintainability. Document decisions with rationale.",
-			Constraints: []string{"consider scalability", "document ADRs", "evaluate alternatives"},
-			MaxTokens: 8192, CreatedAt: now, UpdatedAt: now,
+			Constraints:  []string{"consider scalability", "document ADRs", "evaluate alternatives"},
+			MaxTokens:    8192, CreatedAt: now, UpdatedAt: now,
 		},
 		{
 			Name: "documenter", DisplayName: "Documenter", Description: "Writes and maintains documentation",
 			Category: CategoryCreative, Priority: 4,
 			Tools: []string{"search", "index"}, ModelHint: "writing",
-			Traits: []string{"clear", "concise", "accurate"},
+			Traits:       []string{"clear", "concise", "accurate"},
 			SystemPrompt: "You are a documenter agent. Write clear, concise documentation. Keep it up to date with code changes. Generate README, API docs, and architecture docs.",
-			Constraints: []string{"keep docs in sync with code", "include examples", "write for the target audience"},
-			MaxTokens: 4096, CreatedAt: now, UpdatedAt: now,
+			Constraints:  []string{"keep docs in sync with code", "include examples", "write for the target audience"},
+			MaxTokens:    4096, CreatedAt: now, UpdatedAt: now,
 		},
 		{
 			Name: "security", DisplayName: "Security", Description: "Scans for vulnerabilities, enforces security policies",
 			Category: CategoryReview, Priority: 9,
 			Tools: []string{"search", "index", "sandbox", "jail"}, ModelHint: "analysis",
-			Traits: []string{"paranoid", "thorough", "proactive"},
+			Traits:       []string{"paranoid", "thorough", "proactive"},
 			SystemPrompt: "You are a security agent. Scan for vulnerabilities, enforce security policies, and identify attack surfaces. Report findings with severity and remediation steps.",
-			Constraints: []string{"never ignore findings", "provide remediation", "classify by CVSS"},
-			MaxTokens: 4096, CostLimit: 0.50, CreatedAt: now, UpdatedAt: now,
+			Constraints:  []string{"never ignore findings", "provide remediation", "classify by CVSS"},
+			MaxTokens:    4096, CostLimit: 0.50, CreatedAt: now, UpdatedAt: now,
 		},
 	}
 }
@@ -352,9 +352,9 @@ func (r *Registry) Stats() RegistryStats {
 	defer r.mu.RUnlock()
 
 	stats := RegistryStats{
-		TotalRoles:       len(r.roles),
+		TotalRoles:        len(r.roles),
 		ActiveAssignments: 0,
-		ByCategory:       make(map[RoleCategory]int),
+		ByCategory:        make(map[RoleCategory]int),
 	}
 
 	for _, role := range r.roles {
@@ -372,9 +372,9 @@ func (r *Registry) Stats() RegistryStats {
 
 // RegistryStats holds registry statistics.
 type RegistryStats struct {
-	TotalRoles       int                `json:"total_roles"`
-	ActiveAssignments int               `json:"active_assignments"`
-	ByCategory       map[RoleCategory]int `json:"by_category"`
+	TotalRoles        int                  `json:"total_roles"`
+	ActiveAssignments int                  `json:"active_assignments"`
+	ByCategory        map[RoleCategory]int `json:"by_category"`
 }
 
 // FormatRole renders a role for display.

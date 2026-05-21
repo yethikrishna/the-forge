@@ -16,15 +16,15 @@ import (
 
 // Environment represents a development environment.
 type Environment struct {
-	ID        string
-	Name      string
-	Image     string
-	Dockerfile string
-	Status    EnvironmentStatus
-	CreatedAt time.Time
+	ID          string
+	Name        string
+	Image       string
+	Dockerfile  string
+	Status      EnvironmentStatus
+	CreatedAt   time.Time
 	ContainerID string
-	Port      int
-	WorkDir   string
+	Port        int
+	WorkDir     string
 }
 
 // EnvironmentStatus indicates the state of an environment.
@@ -40,9 +40,9 @@ const (
 
 // Builder creates and manages dev environments.
 type Builder struct {
-	envDir  string
-	envs    map[string]*Environment
-	docker  bool // Whether Docker is available
+	envDir string
+	envs   map[string]*Environment
+	docker bool // Whether Docker is available
 }
 
 // NewBuilder creates a new environment builder.

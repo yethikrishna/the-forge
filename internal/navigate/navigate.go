@@ -36,43 +36,43 @@ const (
 
 // Symbol represents a code symbol (function, type, variable, etc).
 type Symbol struct {
-	ID           string            `json:"id"`
-	Name         string            `json:"name"`
-	Kind         SymbolKind        `json:"kind"`
-	Package      string            `json:"package"`
-	File         string            `json:"file"`
-	Line         int               `json:"line"`
-	EndLine      int               `json:"end_line"`
-	Signature    string            `json:"signature,omitempty"`
-	DocComment   string            `json:"doc_comment,omitempty"`
-	Receiver     string            `json:"receiver,omitempty"`     // for methods
-	Exported     bool              `json:"exported"`
-	Embedded     bool              `json:"embedded"`              // embedded interface/struct
-	Callers      []string          `json:"callers,omitempty"`     // symbol IDs that call this
-	Callees      []string          `json:"callees,omitempty"`     // symbol IDs this calls
-	Implements   []string          `json:"implements,omitempty"`  // interface IDs this type implements
-	ImplementedBy []string         `json:"implemented_by,omitempty"` // types that implement this interface
-	Tags         []string          `json:"tags,omitempty"`
-	Metadata     map[string]string `json:"metadata,omitempty"`
+	ID            string            `json:"id"`
+	Name          string            `json:"name"`
+	Kind          SymbolKind        `json:"kind"`
+	Package       string            `json:"package"`
+	File          string            `json:"file"`
+	Line          int               `json:"line"`
+	EndLine       int               `json:"end_line"`
+	Signature     string            `json:"signature,omitempty"`
+	DocComment    string            `json:"doc_comment,omitempty"`
+	Receiver      string            `json:"receiver,omitempty"` // for methods
+	Exported      bool              `json:"exported"`
+	Embedded      bool              `json:"embedded"`                 // embedded interface/struct
+	Callers       []string          `json:"callers,omitempty"`        // symbol IDs that call this
+	Callees       []string          `json:"callees,omitempty"`        // symbol IDs this calls
+	Implements    []string          `json:"implements,omitempty"`     // interface IDs this type implements
+	ImplementedBy []string          `json:"implemented_by,omitempty"` // types that implement this interface
+	Tags          []string          `json:"tags,omitempty"`
+	Metadata      map[string]string `json:"metadata,omitempty"`
 }
 
 // Reference represents a reference to a symbol at a specific location.
 type Reference struct {
-	SymbolID  string `json:"symbol_id"`
-	File      string `json:"file"`
-	Line      int    `json:"line"`
-	Column    int    `json:"column"`
-	Kind      string `json:"kind"` // "definition", "call", "import", "type_assert", "embed"
-	Context   string `json:"context,omitempty"` // surrounding line text
+	SymbolID string `json:"symbol_id"`
+	File     string `json:"file"`
+	Line     int    `json:"line"`
+	Column   int    `json:"column"`
+	Kind     string `json:"kind"`              // "definition", "call", "import", "type_assert", "embed"
+	Context  string `json:"context,omitempty"` // surrounding line text
 }
 
 // NavigationResult represents a navigation query result.
 type NavigationResult struct {
-	Query     string     `json:"query"`
-	Matches   []Match    `json:"matches"`
+	Query     string        `json:"query"`
+	Matches   []Match       `json:"matches"`
 	Duration  time.Duration `json:"duration"`
-	Total     int        `json:"total"`
-	Truncated bool       `json:"truncated"`
+	Total     int           `json:"total"`
+	Truncated bool          `json:"truncated"`
 }
 
 // Match represents a matched symbol with relevance scoring.
@@ -86,7 +86,7 @@ type Match struct {
 type CallPath struct {
 	From  string   `json:"from"`
 	To    string   `json:"to"`
-	Path  []string `json:"path"`  // ordered symbol IDs
+	Path  []string `json:"path"` // ordered symbol IDs
 	Depth int      `json:"depth"`
 }
 
@@ -94,15 +94,15 @@ type CallPath struct {
 type Index struct {
 	mu       sync.RWMutex
 	dir      string
-	symbols  map[string]*Symbol    // id -> symbol
-	byName   map[string][]*Symbol  // name -> symbols (name can be overloaded)
-	byFile   map[string][]*Symbol  // file -> symbols
+	symbols  map[string]*Symbol       // id -> symbol
+	byName   map[string][]*Symbol     // name -> symbols (name can be overloaded)
+	byFile   map[string][]*Symbol     // file -> symbols
 	byKind   map[SymbolKind][]*Symbol // kind -> symbols
-	byPkg    map[string][]*Symbol  // package -> symbols
-	refs     map[string][]*Reference // symbol_id -> references
-	graph    map[string][]string    // caller_id -> callee_ids (call graph)
-	revGraph map[string][]string    // callee_id -> caller_ids (reverse call graph)
-	fileHash map[string]string     // file -> content hash (for incremental updates)
+	byPkg    map[string][]*Symbol     // package -> symbols
+	refs     map[string][]*Reference  // symbol_id -> references
+	graph    map[string][]string      // caller_id -> callee_ids (call graph)
+	revGraph map[string][]string      // callee_id -> caller_ids (reverse call graph)
+	fileHash map[string]string        // file -> content hash (for incremental updates)
 }
 
 // NewIndex creates a new navigation index.
@@ -405,12 +405,12 @@ func (idx *Index) Stats() IndexStats {
 	defer idx.mu.RUnlock()
 
 	stats := IndexStats{
-		SymbolCount:   len(idx.symbols),
-		FileCount:     len(idx.byFile),
-		PackageCount:  len(idx.byPkg),
+		SymbolCount:    len(idx.symbols),
+		FileCount:      len(idx.byFile),
+		PackageCount:   len(idx.byPkg),
 		ReferenceCount: 0,
-		EdgeCount:     0,
-		ByKind:        make(map[SymbolKind]int),
+		EdgeCount:      0,
+		ByKind:         make(map[SymbolKind]int),
 	}
 
 	for _, refs := range idx.refs {
@@ -611,8 +611,8 @@ func (idx *Index) ExportMarkdown() string {
 
 // Navigator provides high-level navigation operations.
 type Navigator struct {
-	idx    *Index
-	dir    string
+	idx *Index
+	dir string
 }
 
 // NewNavigator creates a new code navigator.
@@ -656,10 +656,10 @@ func (n *Navigator) FindReferences(ctx context.Context, query string) (*Navigati
 	}
 
 	return &NavigationResult{
-		Query:   query,
-		Matches: matches,
+		Query:    query,
+		Matches:  matches,
 		Duration: time.Since(start),
-		Total:   len(matches),
+		Total:    len(matches),
 	}, nil
 }
 
@@ -686,10 +686,10 @@ func (n *Navigator) FindCallers(ctx context.Context, query string) (*NavigationR
 	}
 
 	return &NavigationResult{
-		Query:   query,
-		Matches: matches,
+		Query:    query,
+		Matches:  matches,
 		Duration: time.Since(start),
-		Total:   len(matches),
+		Total:    len(matches),
 	}, nil
 }
 

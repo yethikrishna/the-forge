@@ -179,8 +179,8 @@ func TestGovernanceStackFullFlow(t *testing.T) {
 	}
 
 	assessment, err := governStore.Assess(govern.ReportConfig{
-		Name:       "Governance Integration Test Assessment",
-		Framework:  "SOC2",
+		Name:      "Governance Integration Test Assessment",
+		Framework: "SOC2",
 		Categories: []govern.Category{
 			govern.CatSecurity,
 			govern.CatCompliance,

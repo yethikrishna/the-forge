@@ -18,26 +18,26 @@ import (
 type ChangeType string
 
 const (
-	ChangeAdded   ChangeType = "added"
+	ChangeAdded    ChangeType = "added"
 	ChangeModified ChangeType = "modified"
-	ChangeRemoved ChangeType = "removed"
+	ChangeRemoved  ChangeType = "removed"
 )
 
 // Change represents a single configuration change.
 type Change struct {
-	Key      string     `json:"key"`
+	Key      string      `json:"key"`
 	OldValue interface{} `json:"old_value,omitempty"`
 	NewValue interface{} `json:"new_value,omitempty"`
-	Type     ChangeType `json:"type"`
+	Type     ChangeType  `json:"type"`
 }
 
 // ReloadResult holds the result of a configuration reload.
 type ReloadResult struct {
-	Timestamp time.Time `json:"timestamp"`
-	Changes   []Change  `json:"changes"`
-	Success   bool      `json:"success"`
-	Error     string    `json:"error,omitempty"`
-	RolledBack bool     `json:"rolled_back"`
+	Timestamp  time.Time `json:"timestamp"`
+	Changes    []Change  `json:"changes"`
+	Success    bool      `json:"success"`
+	Error      string    `json:"error,omitempty"`
+	RolledBack bool      `json:"rolled_back"`
 }
 
 // Validator validates configuration before applying.
@@ -296,10 +296,10 @@ func (w *Watcher) Reload() (*ReloadResult, error) {
 		// Rollback
 		w.config = oldConfig
 		result := &ReloadResult{
-			Timestamp: time.Now(),
-			Changes:   changes,
-			Success:   false,
-			Error:     err.Error(),
+			Timestamp:  time.Now(),
+			Changes:    changes,
+			Success:    false,
+			Error:      err.Error(),
 			RolledBack: true,
 		}
 		w.history = append(w.history, *result)

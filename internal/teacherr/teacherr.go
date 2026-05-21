@@ -12,10 +12,10 @@ import (
 // TeachError is an error that includes fix suggestions and docs links.
 type TeachError struct {
 	Err        error  `json:"error"`
-	Code       string `json:"code"`        // e.g. "E001"
-	Suggestion string `json:"suggestion"`  // how to fix
-	DocsLink   string `json:"docs_link"`   // where to learn more
-	Example    string `json:"example"`      // correct usage example
+	Code       string `json:"code"`       // e.g. "E001"
+	Suggestion string `json:"suggestion"` // how to fix
+	DocsLink   string `json:"docs_link"`  // where to learn more
+	Example    string `json:"example"`    // correct usage example
 }
 
 func (e *TeachError) Error() string {
@@ -52,12 +52,12 @@ func Wrap(err error, code, suggestion, docsLink, example string) *TeachError {
 
 // Rule is a pattern matching rule for teaching errors.
 type Rule struct {
-	Pattern     string `json:"pattern"`     // regex pattern
-	Code        string `json:"code"`        // error code
-	Suggestion  string `json:"suggestion"`  // fix suggestion
-	DocsLink    string `json:"docs_link"`   // docs URL
-	Example     string `json:"example"`     // correct example
-	Category    string `json:"category"`    // go, python, config, etc.
+	Pattern    string `json:"pattern"`    // regex pattern
+	Code       string `json:"code"`       // error code
+	Suggestion string `json:"suggestion"` // fix suggestion
+	DocsLink   string `json:"docs_link"`  // docs URL
+	Example    string `json:"example"`    // correct example
+	Category   string `json:"category"`   // go, python, config, etc.
 }
 
 // Interpreter matches errors to teaching rules.

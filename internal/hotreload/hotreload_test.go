@@ -3,9 +3,9 @@ package hotreload
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
-	"fmt"
 	"sync/atomic"
 	"testing"
 	"time"

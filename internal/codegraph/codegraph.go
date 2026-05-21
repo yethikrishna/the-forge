@@ -17,59 +17,59 @@ import (
 type NodeType string
 
 const (
-	NodeFunction    NodeType = "function"
-	NodeMethod      NodeType = "method"
-	NodeTypeDef     NodeType = "type"
-	NodeInterface   NodeType = "interface"
-	NodePackage     NodeType = "package"
-	NodeFile        NodeType = "file"
-	NodeVariable    NodeType = "variable"
-	NodeConstant    NodeType = "constant"
-	NodeStruct      NodeType = "struct"
-	NodeEnum        NodeType = "enum"
-	NodeModule      NodeType = "module"
+	NodeFunction  NodeType = "function"
+	NodeMethod    NodeType = "method"
+	NodeTypeDef   NodeType = "type"
+	NodeInterface NodeType = "interface"
+	NodePackage   NodeType = "package"
+	NodeFile      NodeType = "file"
+	NodeVariable  NodeType = "variable"
+	NodeConstant  NodeType = "constant"
+	NodeStruct    NodeType = "struct"
+	NodeEnum      NodeType = "enum"
+	NodeModule    NodeType = "module"
 )
 
 // EdgeType represents the type of relationship between nodes.
 type EdgeType string
 
 const (
-	EdgeCalls       EdgeType = "calls"
-	EdgeImplements  EdgeType = "implements"
-	EdgeImports     EdgeType = "imports"
-	EdgeContains    EdgeType = "contains"
-	EdgeDepends     EdgeType = "depends_on"
-	EdgeReferences  EdgeType = "references"
-	EdgeInherits    EdgeType = "inherits"
-	EdgeOverrides   EdgeType = "overrides"
-	EdgeReturns     EdgeType = "returns"
-	EdgeUses        EdgeType = "uses"
+	EdgeCalls      EdgeType = "calls"
+	EdgeImplements EdgeType = "implements"
+	EdgeImports    EdgeType = "imports"
+	EdgeContains   EdgeType = "contains"
+	EdgeDepends    EdgeType = "depends_on"
+	EdgeReferences EdgeType = "references"
+	EdgeInherits   EdgeType = "inherits"
+	EdgeOverrides  EdgeType = "overrides"
+	EdgeReturns    EdgeType = "returns"
+	EdgeUses       EdgeType = "uses"
 )
 
 // Node represents a code entity in the graph.
 type Node struct {
-	ID          string            `json:"id"`
-	Type        NodeType          `json:"type"`
-	Name        string            `json:"name"`
-	Package     string            `json:"package,omitempty"`
-	File        string            `json:"file,omitempty"`
-	Line        int               `json:"line,omitempty"`
-	Signature   string            `json:"signature,omitempty"`
-	Doc         string            `json:"doc,omitempty"`
-	Exported    bool              `json:"exported"`
-	Metadata    map[string]string `json:"metadata,omitempty"`
-	CreatedAt   time.Time         `json:"created_at"`
+	ID        string            `json:"id"`
+	Type      NodeType          `json:"type"`
+	Name      string            `json:"name"`
+	Package   string            `json:"package,omitempty"`
+	File      string            `json:"file,omitempty"`
+	Line      int               `json:"line,omitempty"`
+	Signature string            `json:"signature,omitempty"`
+	Doc       string            `json:"doc,omitempty"`
+	Exported  bool              `json:"exported"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
+	CreatedAt time.Time         `json:"created_at"`
 }
 
 // Edge represents a relationship between two nodes.
 type Edge struct {
-	Source    string   `json:"source"`
-	Target    string   `json:"target"`
-	Type      EdgeType `json:"type"`
-	Weight    float64  `json:"weight"`
-	File      string   `json:"file,omitempty"`
-	Line      int      `json:"line,omitempty"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
+	Source   string            `json:"source"`
+	Target   string            `json:"target"`
+	Type     EdgeType          `json:"type"`
+	Weight   float64           `json:"weight"`
+	File     string            `json:"file,omitempty"`
+	Line     int               `json:"line,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 // Graph is the code knowledge graph.
@@ -86,10 +86,10 @@ type Graph struct {
 func NewGraph(storeDir string) *Graph {
 	os.MkdirAll(storeDir, 0o755)
 	g := &Graph{
-		nodes:   make(map[string]*Node),
-		edges:   make([]Edge, 0),
-		adjList: make(map[string][]Edge),
-		revAdj:  make(map[string][]Edge),
+		nodes:    make(map[string]*Node),
+		edges:    make([]Edge, 0),
+		adjList:  make(map[string][]Edge),
+		revAdj:   make(map[string][]Edge),
 		storeDir: storeDir,
 	}
 	g.load()
@@ -260,10 +260,10 @@ func (g *Graph) ImpactAnalysis(nodeID string, maxDepth int) *ImpactReport {
 
 // ImpactReport is the result of an impact analysis.
 type ImpactReport struct {
-	SourceID     string        `json:"source_id"`
-	Timestamp    time.Time     `json:"timestamp"`
-	Direct       []ImpactNode  `json:"direct"`
-	Indirect     []ImpactNode  `json:"indirect"`
+	SourceID      string       `json:"source_id"`
+	Timestamp     time.Time    `json:"timestamp"`
+	Direct        []ImpactNode `json:"direct"`
+	Indirect      []ImpactNode `json:"indirect"`
 	TotalAffected int          `json:"total_affected"`
 }
 
@@ -376,10 +376,10 @@ func (g *Graph) Stats() GraphStats {
 
 // GraphStats holds graph statistics.
 type GraphStats struct {
-	NodeCount int               `json:"node_count"`
-	EdgeCount int               `json:"edge_count"`
-	ByType    map[NodeType]int  `json:"by_type"`
-	ByEdge    map[EdgeType]int  `json:"by_edge"`
+	NodeCount int              `json:"node_count"`
+	EdgeCount int              `json:"edge_count"`
+	ByType    map[NodeType]int `json:"by_type"`
+	ByEdge    map[EdgeType]int `json:"by_edge"`
 }
 
 // Save persists the graph to disk.

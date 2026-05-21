@@ -234,9 +234,9 @@ func TestUseCount(t *testing.T) {
 	reg, _ := NewRegistry(dir)
 
 	p := &Prompt{
-		Name:     "test",
-		Category: "test",
-		Template: "Hello {{.name}}",
+		Name:      "test",
+		Category:  "test",
+		Template:  "Hello {{.name}}",
 		Variables: []Variable{{Name: "name", Required: true}},
 	}
 	reg.Register(p)

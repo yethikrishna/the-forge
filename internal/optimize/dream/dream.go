@@ -19,37 +19,37 @@ import (
 type DreamPhase string
 
 const (
-	PhaseAnalyze    DreamPhase = "analyze"     // Analyze past sessions
-	PhaseOptimize   DreamPhase = "optimize"    // Optimize prompts and routing
-	PhasePrune      DreamPhase = "prune"       // Prune stale memory
-	PhaseIndex      DreamPhase = "index"       // Pre-index recent changes
-	PhaseReport     DreamPhase = "report"      // Generate dream report
+	PhaseAnalyze  DreamPhase = "analyze"  // Analyze past sessions
+	PhaseOptimize DreamPhase = "optimize" // Optimize prompts and routing
+	PhasePrune    DreamPhase = "prune"    // Prune stale memory
+	PhaseIndex    DreamPhase = "index"    // Pre-index recent changes
+	PhaseReport   DreamPhase = "report"   // Generate dream report
 )
 
 // Pattern represents a recurring pattern found in agent sessions.
 type Pattern struct {
-	ID          string   `json:"id"`
-	Type        string   `json:"type"` // error, success, cost, latency, quality
-	Description string   `json:"description"`
-	Frequency   int      `json:"frequency"`
-	Impact      string   `json:"impact"` // high, medium, low
-	Suggestion  string   `json:"suggestion,omitempty"`
+	ID          string    `json:"id"`
+	Type        string    `json:"type"` // error, success, cost, latency, quality
+	Description string    `json:"description"`
+	Frequency   int       `json:"frequency"`
+	Impact      string    `json:"impact"` // high, medium, low
+	Suggestion  string    `json:"suggestion,omitempty"`
 	FirstSeen   time.Time `json:"first_seen"`
 	LastSeen    time.Time `json:"last_seen"`
 }
 
 // Optimization represents a suggested or applied optimization.
 type Optimization struct {
-	ID          string    `json:"id"`
-	Type        string    `json:"type"` // prompt, routing, cost, memory
-	Target      string    `json:"target"` // what's being optimized
-	Before      string    `json:"before,omitempty"`
-	After       string    `json:"after,omitempty"`
-	Suggestion  string    `json:"suggestion,omitempty"`
-	Savings     string    `json:"savings,omitempty"` // estimated savings
-	Applied     bool      `json:"applied"`
-	Confidence  float64   `json:"confidence"` // 0-1
-	CreatedAt   time.Time `json:"created_at"`
+	ID         string    `json:"id"`
+	Type       string    `json:"type"`   // prompt, routing, cost, memory
+	Target     string    `json:"target"` // what's being optimized
+	Before     string    `json:"before,omitempty"`
+	After      string    `json:"after,omitempty"`
+	Suggestion string    `json:"suggestion,omitempty"`
+	Savings    string    `json:"savings,omitempty"` // estimated savings
+	Applied    bool      `json:"applied"`
+	Confidence float64   `json:"confidence"` // 0-1
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 // DreamReport is the output of a dream session.
@@ -69,16 +69,16 @@ type DreamReport struct {
 
 // Session represents a past agent session for analysis.
 type Session struct {
-	ID         string    `json:"id"`
-	Agent      string    `json:"agent"`
-	Model      string    `json:"model"`
-	Task       string    `json:"task"`
-	Success    bool      `json:"success"`
-	CostUSD    float64   `json:"cost_usd"`
+	ID         string        `json:"id"`
+	Agent      string        `json:"agent"`
+	Model      string        `json:"model"`
+	Task       string        `json:"task"`
+	Success    bool          `json:"success"`
+	CostUSD    float64       `json:"cost_usd"`
 	Duration   time.Duration `json:"duration"`
-	Error      string    `json:"error,omitempty"`
-	CreatedAt  time.Time `json:"created_at"`
-	TokensUsed int64     `json:"tokens_used"`
+	Error      string        `json:"error,omitempty"`
+	CreatedAt  time.Time     `json:"created_at"`
+	TokensUsed int64         `json:"tokens_used"`
 }
 
 // Store manages dream reports and session history.

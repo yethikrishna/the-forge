@@ -17,14 +17,14 @@ import (
 type RitualType string
 
 const (
-	RitualDailyStandup  RitualType = "daily_standup"
-	RitualWeeklyReview  RitualType = "weekly_review"
-	RitualMonthlyAudit  RitualType = "monthly_audit"
-	RitualSprintRetros  RitualType = "sprint_retrospective"
-	RitualHealthCheck   RitualType = "health_check"
-	RitualCostReview    RitualType = "cost_review"
-	RitualSecurityScan  RitualType = "security_scan"
-	RitualCustom        RitualType = "custom"
+	RitualDailyStandup RitualType = "daily_standup"
+	RitualWeeklyReview RitualType = "weekly_review"
+	RitualMonthlyAudit RitualType = "monthly_audit"
+	RitualSprintRetros RitualType = "sprint_retrospective"
+	RitualHealthCheck  RitualType = "health_check"
+	RitualCostReview   RitualType = "cost_review"
+	RitualSecurityScan RitualType = "security_scan"
+	RitualCustom       RitualType = "custom"
 )
 
 // Recurrence defines how often a ritual runs.
@@ -51,58 +51,58 @@ const (
 type StepStatus string
 
 const (
-	StepPending   StepStatus = "pending"
-	StepRunning   StepStatus = "running"
-	StepDone      StepStatus = "done"
-	StepSkipped   StepStatus = "skipped"
-	StepFailed    StepStatus = "failed"
+	StepPending StepStatus = "pending"
+	StepRunning StepStatus = "running"
+	StepDone    StepStatus = "done"
+	StepSkipped StepStatus = "skipped"
+	StepFailed  StepStatus = "failed"
 )
 
 // RitualStep is a single step in a ritual.
 type RitualStep struct {
-	Index       int                    `json:"index"`
-	Title       string                 `json:"title"`
-	Description string                 `json:"description"`
-	Action      string                 `json:"action"` // command, prompt, check
-	Command     string                 `json:"command,omitempty"`
-	Prompt      string                 `json:"prompt,omitempty"`
-	Timeout     time.Duration          `json:"timeout,omitempty"`
-	Status      StepStatus             `json:"status"`
-	Output      string                 `json:"output,omitempty"`
-	StartedAt   time.Time              `json:"started_at,omitempty"`
-	CompletedAt time.Time              `json:"completed_at,omitempty"`
-	Metadata    map[string]string      `json:"metadata,omitempty"`
+	Index       int               `json:"index"`
+	Title       string            `json:"title"`
+	Description string            `json:"description"`
+	Action      string            `json:"action"` // command, prompt, check
+	Command     string            `json:"command,omitempty"`
+	Prompt      string            `json:"prompt,omitempty"`
+	Timeout     time.Duration     `json:"timeout,omitempty"`
+	Status      StepStatus        `json:"status"`
+	Output      string            `json:"output,omitempty"`
+	StartedAt   time.Time         `json:"started_at,omitempty"`
+	CompletedAt time.Time         `json:"completed_at,omitempty"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
 // Ritual is a recurring agent workflow.
 type Ritual struct {
-	ID          string            `json:"id"`
-	Name        string            `json:"name"`
-	Type        RitualType        `json:"type"`
-	Recurrence  Recurrence        `json:"recurrence"`
-	Status      RitualStatus      `json:"status"`
-	Description string            `json:"description"`
-	Steps       []RitualStep      `json:"steps"`
-	AgentID     string            `json:"agent_id"`
-	Tags        []string          `json:"tags,omitempty"`
-	CronExpr    string            `json:"cron_expr,omitempty"` // for custom recurrence
-	NextRunAt   time.Time         `json:"next_run_at,omitempty"`
-	LastRunAt   time.Time         `json:"last_run_at,omitempty"`
-	LastRunID   string            `json:"last_run_id,omitempty"`
-	CreatedAt   time.Time         `json:"created_at"`
-	UpdatedAt   time.Time         `json:"updated_at"`
-	NotifyOn    []string          `json:"notify_on,omitempty"` // channels to notify
+	ID          string       `json:"id"`
+	Name        string       `json:"name"`
+	Type        RitualType   `json:"type"`
+	Recurrence  Recurrence   `json:"recurrence"`
+	Status      RitualStatus `json:"status"`
+	Description string       `json:"description"`
+	Steps       []RitualStep `json:"steps"`
+	AgentID     string       `json:"agent_id"`
+	Tags        []string     `json:"tags,omitempty"`
+	CronExpr    string       `json:"cron_expr,omitempty"` // for custom recurrence
+	NextRunAt   time.Time    `json:"next_run_at,omitempty"`
+	LastRunAt   time.Time    `json:"last_run_at,omitempty"`
+	LastRunID   string       `json:"last_run_id,omitempty"`
+	CreatedAt   time.Time    `json:"created_at"`
+	UpdatedAt   time.Time    `json:"updated_at"`
+	NotifyOn    []string     `json:"notify_on,omitempty"` // channels to notify
 }
 
 // Run represents a single execution of a ritual.
 type Run struct {
-	ID          string       `json:"id"`
-	RitualID    string       `json:"ritual_id"`
-	StartedAt   time.Time    `json:"started_at"`
-	CompletedAt time.Time    `json:"completed_at,omitempty"`
-	Steps       []RitualStep `json:"steps"`
-	Status      StepStatus   `json:"status"`
-	Output      string       `json:"output,omitempty"`
+	ID          string        `json:"id"`
+	RitualID    string        `json:"ritual_id"`
+	StartedAt   time.Time     `json:"started_at"`
+	CompletedAt time.Time     `json:"completed_at,omitempty"`
+	Steps       []RitualStep  `json:"steps"`
+	Status      StepStatus    `json:"status"`
+	Output      string        `json:"output,omitempty"`
 	Duration    time.Duration `json:"duration,omitempty"`
 }
 

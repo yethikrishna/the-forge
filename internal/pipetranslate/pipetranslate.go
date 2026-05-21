@@ -13,12 +13,12 @@ import (
 
 // Pipeline represents a forge.yaml pipeline definition.
 type Pipeline struct {
-	Name        string       `yaml:"name" json:"name"`
-	Description string       `yaml:"description,omitempty" json:"description,omitempty"`
-	Steps       []Step       `yaml:"steps" json:"steps"`
-	CostCap     string       `yaml:"cost_cap,omitempty" json:"cost_cap,omitempty"`
-	Timeout     string       `yaml:"timeout,omitempty" json:"timeout,omitempty"`
-	Model       string       `yaml:"model,omitempty" json:"model,omitempty"`
+	Name        string `yaml:"name" json:"name"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty"`
+	Steps       []Step `yaml:"steps" json:"steps"`
+	CostCap     string `yaml:"cost_cap,omitempty" json:"cost_cap,omitempty"`
+	Timeout     string `yaml:"timeout,omitempty" json:"timeout,omitempty"`
+	Model       string `yaml:"model,omitempty" json:"model,omitempty"`
 }
 
 // Step represents a single step in a pipeline.
@@ -195,11 +195,11 @@ func (t *Translator) generateFromDescription(desc string) *Pipeline {
 	// Check for testing pattern
 	if containsAny(lower, []string{"test", "testing", "write tests", "generate tests"}) {
 		steps = append(steps, Step{
-			Name:     "test",
-			Agent:    "tester",
-			Prompt:   "Write comprehensive tests for the code",
+			Name:      "test",
+			Agent:     "tester",
+			Prompt:    "Write comprehensive tests for the code",
 			DependsOn: dependsOn(steps),
-			Tools:    []string{"git", "read", "write", "exec"},
+			Tools:     []string{"git", "read", "write", "exec"},
 		})
 	}
 
@@ -539,7 +539,6 @@ func (t *Translator) GetTemplate(name string) (*Pipeline, error) {
 	}
 	return clonePipeline(p), nil
 }
-
 
 // PipelineToYAML exports the pipelineToYAML function for external use.
 func PipelineToYAML(p *Pipeline) string {

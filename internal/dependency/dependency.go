@@ -38,11 +38,11 @@ type Node struct {
 
 // Edge represents a dependency between two nodes.
 type Edge struct {
-	From      string `json:"from"`      // Dependent
-	To        string `json:"to"`        // Dependency
-	Label     string `json:"label,omitempty"`
-	Required  bool   `json:"required"`  // Hard vs soft dependency
-	Version   string `json:"version,omitempty"`
+	From     string `json:"from"` // Dependent
+	To       string `json:"to"`   // Dependency
+	Label    string `json:"label,omitempty"`
+	Required bool   `json:"required"` // Hard vs soft dependency
+	Version  string `json:"version,omitempty"`
 }
 
 // Graph is the full dependency graph.

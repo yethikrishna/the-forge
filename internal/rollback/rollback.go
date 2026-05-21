@@ -29,13 +29,13 @@ const (
 
 // State represents a state snapshot.
 type State struct {
-	ID          string            `json:"id"`
-	Description string            `json:"description"`
-	Timestamp   time.Time         `json:"timestamp"`
-	AgentID     string            `json:"agent_id"`
-	Data        json.RawMessage   `json:"data"`
-	Checksum    string            `json:"checksum,omitempty"`
-	Tags        []string          `json:"tags,omitempty"`
+	ID          string          `json:"id"`
+	Description string          `json:"description"`
+	Timestamp   time.Time       `json:"timestamp"`
+	AgentID     string          `json:"agent_id"`
+	Data        json.RawMessage `json:"data"`
+	Checksum    string          `json:"checksum,omitempty"`
+	Tags        []string        `json:"tags,omitempty"`
 }
 
 // Operation represents a reversible operation.

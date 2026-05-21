@@ -43,49 +43,49 @@ const (
 
 // Check represents a single diagnostic check.
 type Check struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Category    Category `json:"category"`
-	Status      Status   `json:"status"`
-	Duration    time.Duration `json:"duration"`
-	Message     string   `json:"message,omitempty"`
-	Detail      string   `json:"detail,omitempty"`
-	Suggestion  string   `json:"suggestion,omitempty"`
-	Critical    bool     `json:"critical"`
+	ID         string        `json:"id"`
+	Name       string        `json:"name"`
+	Category   Category      `json:"category"`
+	Status     Status        `json:"status"`
+	Duration   time.Duration `json:"duration"`
+	Message    string        `json:"message,omitempty"`
+	Detail     string        `json:"detail,omitempty"`
+	Suggestion string        `json:"suggestion,omitempty"`
+	Critical   bool          `json:"critical"`
 }
 
 // Report represents a complete self-test report.
 type Report struct {
-	Timestamp  time.Time `json:"timestamp"`
-	Version    string    `json:"version"`
-	GoVersion  string    `json:"go_version"`
-	OS         string    `json:"os"`
-	Arch       string    `json:"arch"`
-	Hostname   string    `json:"hostname"`
-	Checks     []*Check  `json:"checks"`
-	Summary    *Summary  `json:"summary"`
-	Passed     bool      `json:"passed"`
+	Timestamp time.Time `json:"timestamp"`
+	Version   string    `json:"version"`
+	GoVersion string    `json:"go_version"`
+	OS        string    `json:"os"`
+	Arch      string    `json:"arch"`
+	Hostname  string    `json:"hostname"`
+	Checks    []*Check  `json:"checks"`
+	Summary   *Summary  `json:"summary"`
+	Passed    bool      `json:"passed"`
 }
 
 // Summary holds aggregated results.
 type Summary struct {
-	Total   int            `json:"total"`
-	Pass    int            `json:"pass"`
-	Warn    int            `json:"warn"`
-	Fail    int            `json:"fail"`
-	Skip    int            `json:"skip"`
-	Timeout int            `json:"timeout"`
+	Total      int              `json:"total"`
+	Pass       int              `json:"pass"`
+	Warn       int              `json:"warn"`
+	Fail       int              `json:"fail"`
+	Skip       int              `json:"skip"`
+	Timeout    int              `json:"timeout"`
 	ByCategory map[Category]int `json:"by_category,omitempty"`
 	Duration   time.Duration    `json:"duration"`
 }
 
 // Runner executes diagnostic checks.
 type Runner struct {
-	mu       sync.Mutex
-	checks   []CheckFunc
-	timeout  time.Duration
-	version  string
-	baseDir  string
+	mu      sync.Mutex
+	checks  []CheckFunc
+	timeout time.Duration
+	version string
+	baseDir string
 }
 
 // CheckFunc is a function that performs a diagnostic check.

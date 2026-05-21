@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/forge/sword/internal/snapshot"
+	"github.com/spf13/cobra"
 )
 
 var snapCmd = &cobra.Command{
@@ -15,9 +15,9 @@ var snapCmd = &cobra.Command{
 }
 
 var (
-	snapDir    string
-	snapType   string
-	snapDesc   string
+	snapDir     string
+	snapType    string
+	snapDesc    string
 	snapProject string
 )
 

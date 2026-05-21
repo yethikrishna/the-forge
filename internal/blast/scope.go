@@ -34,28 +34,28 @@ type Change struct {
 
 // Impact represents something affected by a change.
 type Impact struct {
-	Path        string      `json:"path"`
-	Package     string      `json:"package"`
-	Level       ImpactLevel `json:"level"`
-	Reason      string      `json:"reason"`
-	Depth       int         `json:"depth"` // 0=direct, 1=indirect, etc.
+	Path    string      `json:"path"`
+	Package string      `json:"package"`
+	Level   ImpactLevel `json:"level"`
+	Reason  string      `json:"reason"`
+	Depth   int         `json:"depth"` // 0=direct, 1=indirect, etc.
 }
 
 // ScopeResult holds the scope analysis result.
 type ScopeResult struct {
-	Changes    []Change `json:"changes"`
-	Impacts    []Impact `json:"impacts"`
-	Stats      ScopeStats `json:"stats"`
+	Changes []Change   `json:"changes"`
+	Impacts []Impact   `json:"impacts"`
+	Stats   ScopeStats `json:"stats"`
 }
 
 // ScopeStats holds scope analysis statistics.
 type ScopeStats struct {
-	ChangedFiles    int `json:"changed_files"`
-	ChangedPackages int `json:"changed_packages"`
-	ImpactedFiles   int `json:"impacted_files"`
+	ChangedFiles     int `json:"changed_files"`
+	ChangedPackages  int `json:"changed_packages"`
+	ImpactedFiles    int `json:"impacted_files"`
 	ImpactedPackages int `json:"impacted_packages"`
-	MaxDepth        int `json:"max_depth"`
-	TestFiles       int `json:"test_files"`
+	MaxDepth         int `json:"max_depth"`
+	TestFiles        int `json:"test_files"`
 }
 
 // Analyzer performs scope analysis.
@@ -126,11 +126,11 @@ func (a *Analyzer) Analyze(changes []Change) *ScopeResult {
 				continue
 			}
 			result.Impacts = append(result.Impacts, Impact{
-				Path:   tf,
+				Path:    tf,
 				Package: c.Package,
-				Level:  ImpactTest,
-				Reason: fmt.Sprintf("tests for %s", c.Package),
-				Depth:  0,
+				Level:   ImpactTest,
+				Reason:  fmt.Sprintf("tests for %s", c.Package),
+				Depth:   0,
 			})
 			seenFiles[tf] = true
 		}
@@ -188,8 +188,8 @@ func (a *Analyzer) Stats() map[string]interface{} {
 	}
 
 	return map[string]interface{}{
-		"packages":       len(a.importGraph),
-		"total_imports":  totalImports,
+		"packages":      len(a.importGraph),
+		"total_imports": totalImports,
 	}
 }
 

@@ -27,14 +27,14 @@ const (
 
 // Confidence represents how confident the source agent is about the handoff.
 type Confidence struct {
-	Overall   float64  `json:"overall"`    // 0-1
-	Reasons   []string `json:"reasons"`
+	Overall       float64  `json:"overall"` // 0-1
+	Reasons       []string `json:"reasons"`
 	Uncertainties []string `json:"uncertainties,omitempty"`
 }
 
 // Artifact represents a piece of work transferred during handoff.
 type Artifact struct {
-	Type    string `json:"type"`    // "file", "code", "decision", "insight", "todo"
+	Type    string `json:"type"` // "file", "code", "decision", "insight", "todo"
 	Name    string `json:"name"`
 	Content string `json:"content"`
 	Path    string `json:"path,omitempty"` // for file artifacts
@@ -43,52 +43,52 @@ type Artifact struct {
 
 // HandoffRequest represents a request to transfer work to another agent.
 type HandoffRequest struct {
-	ID           string      `json:"id"`
-	FromAgent    string      `json:"from_agent"`
-	ToAgent      string      `json:"to_agent"`
-	CreatedAt    time.Time   `json:"created_at"`
-	ExpiresAt    time.Time   `json:"expires_at,omitempty"`
-	Status       HandoffStatus `json:"status"`
-	Task         string      `json:"task"`
-	Summary      string      `json:"summary"`
-	Context      string      `json:"context"`       // free-form context about current state
-	Progress     float64     `json:"progress"`      // 0-1, how far along the task is
-	Confidence   Confidence  `json:"confidence"`
-	Artifacts    []Artifact  `json:"artifacts"`
-	Decisions    []Decision  `json:"decisions"`
-	PendingItems []string    `json:"pending_items"`  // what still needs to be done
-	Blockers     []string    `json:"blockers"`       // things blocking progress
-	LessonsLearned []string  `json:"lessons_learned"` // insights from the source agent
-	Tags         []string    `json:"tags"`
-	Metadata     map[string]string `json:"metadata,omitempty"`
+	ID             string            `json:"id"`
+	FromAgent      string            `json:"from_agent"`
+	ToAgent        string            `json:"to_agent"`
+	CreatedAt      time.Time         `json:"created_at"`
+	ExpiresAt      time.Time         `json:"expires_at,omitempty"`
+	Status         HandoffStatus     `json:"status"`
+	Task           string            `json:"task"`
+	Summary        string            `json:"summary"`
+	Context        string            `json:"context"`  // free-form context about current state
+	Progress       float64           `json:"progress"` // 0-1, how far along the task is
+	Confidence     Confidence        `json:"confidence"`
+	Artifacts      []Artifact        `json:"artifacts"`
+	Decisions      []Decision        `json:"decisions"`
+	PendingItems   []string          `json:"pending_items"`   // what still needs to be done
+	Blockers       []string          `json:"blockers"`        // things blocking progress
+	LessonsLearned []string          `json:"lessons_learned"` // insights from the source agent
+	Tags           []string          `json:"tags"`
+	Metadata       map[string]string `json:"metadata,omitempty"`
 }
 
 // Decision represents a decision made during agent execution.
 type Decision struct {
-	ID          string   `json:"id"`
-	Topic       string   `json:"topic"`
-	Choice      string   `json:"choice"`
-	Rationale   string   `json:"rationale"`
-	Alternatives []string `json:"alternatives,omitempty"`
-	Confidence  float64  `json:"confidence"`
-	Timestamp   time.Time `json:"timestamp"`
+	ID           string    `json:"id"`
+	Topic        string    `json:"topic"`
+	Choice       string    `json:"choice"`
+	Rationale    string    `json:"rationale"`
+	Alternatives []string  `json:"alternatives,omitempty"`
+	Confidence   float64   `json:"confidence"`
+	Timestamp    time.Time `json:"timestamp"`
 }
 
 // HandoffResponse represents the receiving agent's response.
 type HandoffResponse struct {
-	RequestID   string        `json:"request_id"`
-	AgentID     string        `json:"agent_id"`
-	Accepted    bool          `json:"accepted"`
-	Reason      string        `json:"reason,omitempty"`
-	Clarifications []string   `json:"clarifications,omitempty"`
-	AcceptedAt  time.Time     `json:"accepted_at"`
+	RequestID      string    `json:"request_id"`
+	AgentID        string    `json:"agent_id"`
+	Accepted       bool      `json:"accepted"`
+	Reason         string    `json:"reason,omitempty"`
+	Clarifications []string  `json:"clarifications,omitempty"`
+	AcceptedAt     time.Time `json:"accepted_at"`
 }
 
 // Store manages handoff requests with persistence.
 type Store struct {
-	mu       sync.RWMutex
-	dir      string
-	requests map[string]*HandoffRequest
+	mu        sync.RWMutex
+	dir       string
+	requests  map[string]*HandoffRequest
 	responses map[string]*HandoffResponse
 }
 
@@ -98,8 +98,8 @@ func NewStore(dir string) (*Store, error) {
 		return nil, fmt.Errorf("create handoff dir: %w", err)
 	}
 	s := &Store{
-		dir:      dir,
-		requests: make(map[string]*HandoffRequest),
+		dir:       dir,
+		requests:  make(map[string]*HandoffRequest),
 		responses: make(map[string]*HandoffResponse),
 	}
 	s.load()
@@ -209,11 +209,11 @@ func (s *Store) Accept(id, agentID string, clarifications []string) error {
 
 	req.Status = StatusAccepted
 	s.responses[id] = &HandoffResponse{
-		RequestID:     id,
-		AgentID:       agentID,
-		Accepted:      true,
+		RequestID:      id,
+		AgentID:        agentID,
+		Accepted:       true,
 		Clarifications: clarifications,
-		AcceptedAt:    time.Now(),
+		AcceptedAt:     time.Now(),
 	}
 	return s.save(req)
 }

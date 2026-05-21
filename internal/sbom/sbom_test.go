@@ -156,13 +156,13 @@ func TestToJSON(t *testing.T) {
 func TestExport(t *testing.T) {
 	dir := t.TempDir()
 	sbom := &SBOM{
-		ID:        "test-id",
-		Name:      "test-project",
-		Version:   "1.0.0",
-		Format:    FormatSPDX,
-		CreatedAt: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		ID:         "test-id",
+		Name:       "test-project",
+		Version:    "1.0.0",
+		Format:     FormatSPDX,
+		CreatedAt:  time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
 		Components: []Component{},
-		TotalDeps: 0,
+		TotalDeps:  0,
 	}
 
 	// Export as SPDX
@@ -196,8 +196,8 @@ func TestExport(t *testing.T) {
 
 func TestSummary(t *testing.T) {
 	sbom := &SBOM{
-		Name:      "test-project",
-		Version:   "1.0.0",
+		Name:    "test-project",
+		Version: "1.0.0",
 		Components: []Component{
 			{Name: "dep1", Version: "1.0", Type: "library"},
 			{Name: "myapp", Version: "1.0.0", Type: "application"},

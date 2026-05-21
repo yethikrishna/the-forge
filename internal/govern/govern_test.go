@@ -58,8 +58,8 @@ func TestAssess(t *testing.T) {
 	}
 
 	config := ReportConfig{
-		Name:      "Q1 Governance Review",
-		TenantID:  "tenant-1",
+		Name:     "Q1 Governance Review",
+		TenantID: "tenant-1",
 	}
 
 	a, err := s.Assess(config, scores, findings)
@@ -93,7 +93,7 @@ func TestAssessWithCustomWeights(t *testing.T) {
 	s := tempGovernStore(t)
 
 	scores := map[Category]int{
-		CatSecurity: 100,
+		CatSecurity:   100,
 		CatCompliance: 50,
 	}
 	weights := map[Category]float64{

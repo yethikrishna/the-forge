@@ -158,9 +158,9 @@ func TestStats(t *testing.T) {
 
 func TestRenderContract(t *testing.T) {
 	c := &covenant.Contract{
-		Name:        "safe-agent",
-		AgentID:     "agent-1",
-		Active:      true,
+		Name:    "safe-agent",
+		AgentID: "agent-1",
+		Active:  true,
 		Obligations: []covenant.Obligation{
 			{Type: covenant.ObligationMustNot, Description: "no delete", Severity: covenant.SeverityCritical},
 		},

@@ -19,9 +19,9 @@ import (
 type Protocol string
 
 const (
-	ProtocolMCP Protocol = "mcp"   // Model Context Protocol
-	ProtocolA2A Protocol = "a2a"   // Agent-to-Agent Protocol
-	ProtocolACP Protocol = "acp"   // Agent Client Protocol
+	ProtocolMCP Protocol = "mcp" // Model Context Protocol
+	ProtocolA2A Protocol = "a2a" // Agent-to-Agent Protocol
+	ProtocolACP Protocol = "acp" // Agent Client Protocol
 )
 
 // AllProtocols returns all supported protocols.
@@ -31,17 +31,17 @@ func AllProtocols() []Protocol {
 
 // Message represents a protocol-agnostic message.
 type Message struct {
-	ID          string                 `json:"id"`
-	Source      Protocol               `json:"source"`
-	Target      Protocol               `json:"target"`
-	Type        string                 `json:"type"` // request, response, notification, error
-	Method      string                 `json:"method"`
-	Params      map[string]interface{} `json:"params,omitempty"`
-	Result      interface{}            `json:"result,omitempty"`
-	Error       *MessageError          `json:"error,omitempty"`
-	Metadata    map[string]string      `json:"metadata,omitempty"`
-	Timestamp   time.Time              `json:"timestamp"`
-	Converted   bool                   `json:"converted"`
+	ID        string                 `json:"id"`
+	Source    Protocol               `json:"source"`
+	Target    Protocol               `json:"target"`
+	Type      string                 `json:"type"` // request, response, notification, error
+	Method    string                 `json:"method"`
+	Params    map[string]interface{} `json:"params,omitempty"`
+	Result    interface{}            `json:"result,omitempty"`
+	Error     *MessageError          `json:"error,omitempty"`
+	Metadata  map[string]string      `json:"metadata,omitempty"`
+	Timestamp time.Time              `json:"timestamp"`
+	Converted bool                   `json:"converted"`
 }
 
 // MessageError represents an error in a message.
@@ -57,7 +57,7 @@ type ConversionRule struct {
 	SourceType  string   `json:"source_type"` // request, response, notification
 	MethodMap   string   `json:"method_map"`  // source_method -> target_method
 	Transform   string   `json:"transform"`   // jq-style transform expression
-	Description string  `json:"description"`
+	Description string   `json:"description"`
 }
 
 // Bridge translates messages between protocols.
