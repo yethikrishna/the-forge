@@ -154,53 +154,71 @@ Same org, same context, any device:
 
 Continuity isn't cloud sync. It's **permanent presence**.
 
-## The Technical Architecture
+## The Product — One Brand, Three Codebases
+
+Forge is ONE product. The user never sees "OpenClaw" or "Suna" — they see **Forge**.
+
+- Suna's frontend, mobile app, sandbox UI, marketplace → **rebranded as Forge UI**
+- OpenClaw's CLI, cron, sessions, browser, channels, skills, nodes → **rebranded as Forge Engine**
+- Forge's novel org/memory/quality layer → **woven through both**
+
+`curl -fsSL https://getforge.dev | bash` installs everything. `forge` CLI for terminal users. `https://forge.local` for web UI. Same org, same brain, same data. Three codebases, one product, one brand.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        Forge OS                             │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │                   Organization Layer                  │  │
-│  │  Divisions · Roles · Hand-offs · Escalations · Goals │  │
-│  └──────────────────────┬───────────────────────────────┘  │
-│                         │                                   │
-│  ┌──────────────────────▼───────────────────────────────┐  │
-│  │                 Communication Layer                    │  │
-│  │  Channels · DMs · Standups · Reports · Alerts        │  │
-│  └──────────────────────┬───────────────────────────────┘  │
-│                         │                                   │
-│  ┌──────────────────────▼───────────────────────────────┐  │
-│  │                  Intelligence Layer                    │  │
-│  │  Memory · Learning · Time · Quality · Ambition        │  │
-│  └──────────────────────┬───────────────────────────────┘  │
-│                         │                                   │
-│  ┌──────────────────────▼───────────────────────────────┐  │
-│  │                  Integration Layer                     │  │
-│  │  Browser · OAuth · APIs · Email · Payments · Phone    │  │
-│  └──────────────────────┬───────────────────────────────┘  │
-│                         │                                   │
-│  ┌──────────────────────▼───────────────────────────────┐  │
-│  │                  Runtime Layer                         │  │
-│  │  Coder/coder · Workspaces · PTY · Tailnet · Sandbox  │  │
-│  │  Mux · Blink · Transfer · Desktop · Git-as-NFS       │  │
-│  └──────────────────────┬───────────────────────────────┘  │
-│                         │                                   │
-│  ┌──────────────────────▼───────────────────────────────┐  │
-│  │                   Core (Go)                            │  │
-│  │  CLI · HTTP API · SSE · SQLite · Cobra                │  │
-│  └──────────────────────────────────────────────────────┘  │
-│                                                             │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │              Knowledge Base (Persistent)               │  │
-│  │  Project Memory · Org Memory · Skill Memory · History │  │
-│  └──────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                        FORGE                                │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │           FORGE UI (from Suna, rebranded)              │  │
+│  │  Web dashboard · Mobile app · Sandbox UI               │  │
+│  │  Skill marketplace · 60+ skills · 3000+ integrations   │  │
+│  │  Agent workspace · Linux sandbox                        │  │
+│  └────────────────────┬───────────────────────────────────┘  │
+│                       │                                      │
+│  ┌────────────────────▼───────────────────────────────────┐  │
+│  │           FORGE ORG (novel — we build this)            │  │
+│  │  Divisions · Roles · Hand-offs · Escalations           │  │
+│  │  Channels · DMs · Standups · Reports · Alerts          │  │
+│  │  Memory · Learning · Time · Quality · Ambition         │  │
+│  │  Trust · Cost · Compliance · Feedback · Scaling        │  │
+│  │  Experimentation · Visibility · Alignment              │  │
+│  │  + all 56 gaps closed                                  │  │
+│  └────────────────────┬───────────────────────────────────┘  │
+│                       │                                      │
+│  ┌────────────────────▼───────────────────────────────────┐  │
+│  │           FORGE ENGINE (from OpenClaw, rebranded)      │  │
+│  │  CLI · Cron · Sessions · Browser control               │  │
+│  │  Channels (Slack/Discord/Telegram/WhatsApp)             │  │
+│  │  Skills · Memory files · Node pairing                  │  │
+│  │  Process management · Canvas                           │  │
+│  │  Coder/coder: Workspaces · PTY · Tailnet · Sandbox     │  │
+│  │  Mux · Blink · Transfer · Desktop · Git-as-NFS         │  │
+│  └────────────────────────────────────────────────────────┘  │
+│                                                              │
+│  ┌────────────────────────────────────────────────────────┐  │
+│  │           FORGE KNOWLEDGE BASE (persistent)             │  │
+│  │  Project Memory · Org Memory · Skill Memory · History  │  │
+│  │  Agent Expertise · Institutional Learning               │  │
+│  └────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-## The Forge CLI (User-Facing)
+**How the three codebases become one product:**
+
+1. **Suna's TypeScript/React frontend** is forked and rebranded as Forge UI. Same sandbox, same marketplace, same mobile app — but the org layer is woven into every screen. You don't just see "agents" — you see divisions, channels, goals, activity, costs.
+
+2. **OpenClaw's Go/Node runtime** is forked and rebranded as Forge Engine. Same CLI commands (`forge` not `openclaw`), same cron, same sessions, same browser control, same channel integrations — but the org layer drives scheduling, memory, and quality gates.
+
+3. **Forge's novel Go/TS layer** is built fresh. It sits between the UI and the engine, providing the organizational intelligence that neither Suna nor OpenClaw has. Imported by both the frontend (for dashboards, org views) and the backend (for enforcement, coordination, memory).
+
+## The Forge CLI + Web UI
+
+### CLI (Forge Engine — from OpenClaw, rebranded)
 
 ```bash
+# Install
+curl -fsSL https://getforge.dev | bash
+
 # Organization management
 forge org init                    # Create a new AI organization
 forge org status                  # What's happening right now
@@ -237,10 +255,12 @@ forge activity                    # What happened recently
 forge cost                        # Resource and cost tracking
 forge audit                       # Full audit trail
 
-# Real-world integration
+# Real-world integration (from OpenClaw connections)
 forge connect gmail               # OAuth connect to Gmail
 forge connect github              # OAuth connect to GitHub  
 forge connect slack               # Connect to Slack workspace
+forge connect whatsapp            # Connect WhatsApp
+forge connect telegram            # Connect Telegram
 forge browse                      # Open browser for manual intervention
 
 # Workspace (Coder/coder substrate)
@@ -260,6 +280,31 @@ forge commit                      # AI-powered commit
 forge memory search <query>       # Search organizational memory
 forge memory teach <agent> <skill> # Teach an agent a skill
 forge memory onboard <agent>      # Agent goes through orientation
+
+# Skills (from Suna marketplace + OpenClaw skills)
+forge skill list                  # Available skills
+forge skill install <name>        # Install a skill
+forge skill publish                # Publish your skill to marketplace
+
+# Mobile (from Suna mobile app, rebranded)
+forge mobile                      # Open mobile companion app
+```
+
+### Web UI (Forge UI — from Suna frontend, rebranded)
+
+```
+https://forge.local
+
+Dashboard:    Real-time org status, who's working on what, blockers, at-risk
+Divisions:    Each division with its agents, tasks, and status
+Agents:       All agents, their state, skills, certifications, history
+Chat:         Talk to your org or individual agents
+Memory:       Browse and search organizational knowledge
+Goals:        Current goals, progress, timelines
+Activity:     Full audit trail of every action
+Cost:         Burn rate, budgets, optimization suggestions
+Skills:       Browse and install from marketplace
+Integrations: Connect to real-world services (Gmail, GitHub, Slack, etc.)
 ```
 
 ## The Market
@@ -379,45 +424,24 @@ The first 25 gaps are structural and operational. These are the gaps you only se
 
 ## The Technology Stack
 
-Forge is built by melting in three open-source foundations:
+Forge melts in three open-source foundations into one product:
 
-| Layer | What | Source | Why |
-|-------|------|--------|-----|
-| **Execution substrate** | CLI, terminal, cron, sessions, browser control, channel integrations, skills, memory files, node pairing | **OpenClaw** | Battle-tested runtime for AI agents. Already runs our org. The machine the agents live on. |
-| **User experience** | Frontend, sandbox UI, mobile, skill marketplace, 60+ built-in skills, 3000+ integrations, persistent Linux sandbox | **Suna (kortix-ai/suna)** | Best open-source agent UX. TypeScript frontend, Docker sandbox, the workspace agents see. |
-| **The novel layer** | Org structure, divisions, inter-agent communication, quality gates, time consciousness, memory continuity, apprenticeship, self-organization, goal decomposition, cost tracking, compliance, feedback loops, trust verification | **Forge (what we build)** | The things that DON'T EXIST anywhere. The organizational operating system. |
+| Layer | What | Source | Becomes | Why |
+|-------|------|--------|---------|-----|
+| **Execution** | CLI, terminal, cron, sessions, browser, channels, skills, memory, nodes | **OpenClaw** | **Forge Engine** | Battle-tested runtime. Already runs our org. The machine agents live on. |
+| **Experience** | Frontend, sandbox UI, mobile, marketplace, 60+ skills, 3000+ integrations | **Suna** | **Forge UI** | Best open-source agent UX. The workspace agents see. |
+| **Organization** | Divisions, communication, memory, quality, time, ambition, learning, trust, cost, compliance, feedback, scaling, alignment | **Forge (we build)** | **Forge Org** | The things that DON'T EXIST anywhere. The organizational OS. |
 
-The key insight: OpenClaw and Suna solve the execution and experience layers. Nobody solves the organizational layer. That's Forge's moat.
+The key insight: OpenClaw and Suna are execution and experience. Nobody solves organization. That's Forge's moat.
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                          Forge OS                            │
-│                                                              │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │           FORGE LAYER (we build this)                  │  │
-│  │  Org · Comm · Memory · Quality · Time · Ambition      │  │
-│  │  Learning · Trust · Cost · Compliance · Feedback       │  │
-│  │  Experimentation · Scaling · Visibility · Alignment    │  │
-│  └────────────────────┬───────────────────────────────────┘  │
-│                       │                                      │
-│  ┌────────────────────▼───────────────────────────────────┐  │
-│  │           OPENCLAW LAYER (execution)                   │  │
-│  │  CLI · Cron · Sessions · Browser · Channels · Skills  │  │
-│  │  Memory files · Node pairing · Process management      │  │
-│  └────────────────────┬───────────────────────────────────┘  │
-│                       │                                      │
-│  ┌────────────────────▼───────────────────────────────────┐  │
-│  │           SUNA LAYER (experience)                      │  │
-│  │  Frontend · Sandbox UI · Mobile · Marketplace          │  │
-│  │  60+ Skills · 3000+ Integrations · Linux sandbox       │  │
-│  └────────────────────────────────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────┘
-```
+The user never sees the seams. They install Forge, they use Forge, they run a company with Forge.
 
 ## Why This Wins
 
-Suna has 19.8K stars and still misses the point. They built the machine but not the company. OpenClaw runs our 25-agent org but still requires a human to manage it. LangChain, CrewAI, AutoGen — all frameworks for building agents, not for running companies.
+Suna has 19.8K stars and built the machine but not the company. OpenClaw runs our 25-agent org but requires a human to manage it. LangChain, CrewAI, AutoGen — frameworks for building agents, not running companies.
 
-Forge optimizes the **organization**, not the agent. The compound advantage isn't one smart agent — it's a coordinated, remembering, learning, self-organizing team that gets smarter over time.
+Forge takes what both got right (execution + experience) and adds the missing layer: **organization**. The result isn't three tools — it's one product where the seams are invisible.
 
-The execution layer (OpenClaw) and experience layer (Suna) are commoditized. The organizational layer is greenfield. That's the moat. That's the category. That's the future.
+The compound advantage isn't one smart agent — it's a coordinated, remembering, learning, self-organizing team that gets smarter over time.
+
+Execution (OpenClaw) and experience (Suna) are commoditized. Organization is greenfield. That's the moat. That's the category. That's the future.
