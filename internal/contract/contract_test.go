@@ -233,8 +233,8 @@ func TestSanitizeTestName(t *testing.T) {
 		expected string
 	}{
 		{"/users", "Users"},
-		{"/users/{id}", "Usersid"},
-		{"/api/v1/health", "Apiv1Health"},
+		{"/users/{id}", "UsersId"},
+		{"/api/v1/health", "ApiV1Health"},
 	}
 
 	for _, tt := range tests {

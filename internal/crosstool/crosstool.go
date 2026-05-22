@@ -156,7 +156,7 @@ func (cb *CrossBridge) Register(toolType ToolType, config interface{}) (*ToolInf
 	}
 
 	cb.tools[toolType] = info
-	cb.save()
+	cb.saveLocked()
 	return info, nil
 }
 
@@ -170,7 +170,7 @@ func (cb *CrossBridge) Unregister(toolType ToolType) error {
 	}
 	delete(cb.tools, toolType)
 	delete(cb.configs, string(toolType))
-	cb.save()
+	cb.saveLocked()
 	return nil
 }
 
@@ -250,8 +250,19 @@ func (cb *CrossBridge) SendTo(ctx context.Context, target ToolType, method strin
 	if len(cb.history) > cb.maxHist {
 		cb.history = cb.history[len(cb.history)-cb.maxHist:]
 	}
+	// Snapshot data under lock so save() doesn't race with SendTo.
+	tools := make(map[ToolType]ToolInfo)
+	for k, v := range cb.tools {
+		tools[k] = *v
+	}
+	history := make([]BridgeMessage, len(cb.history))
+	copy(history, cb.history)
+	configs := make(map[string]interface{})
+	for k, v := range cb.configs {
+		configs[k] = v
+	}
 	cb.mu.Unlock()
-	cb.save()
+	cb.saveFrom(tools, history, configs)
 
 	return &msg, err
 }
@@ -466,14 +477,46 @@ func (cb *CrossBridge) load() {
 	}
 }
 
+// saveLocked snapshots current state and writes to disk.
+// Caller must hold cb.mu (either read or write lock).
+func (cb *CrossBridge) saveLocked() {
+	tools := make(map[ToolType]ToolInfo)
+	for k, v := range cb.tools {
+		tools[k] = *v
+	}
+	history := make([]BridgeMessage, len(cb.history))
+	copy(history, cb.history)
+	configs := make(map[string]interface{})
+	for k, v := range cb.configs {
+		configs[k] = v
+	}
+	cb.saveFrom(tools, history, configs)
+}
+
 func (cb *CrossBridge) save() {
-	data, _ := json.MarshalIndent(cb.tools, "", "  ")
+	cb.mu.RLock()
+	tools := make(map[ToolType]ToolInfo)
+	for k, v := range cb.tools {
+		tools[k] = *v
+	}
+	history := make([]BridgeMessage, len(cb.history))
+	copy(history, cb.history)
+	configs := make(map[string]interface{})
+	for k, v := range cb.configs {
+		configs[k] = v
+	}
+	cb.mu.RUnlock()
+	cb.saveFrom(tools, history, configs)
+}
+
+func (cb *CrossBridge) saveFrom(tools map[ToolType]ToolInfo, history []BridgeMessage, configs map[string]interface{}) {
+	data, _ := json.MarshalIndent(tools, "", "  ")
 	os.WriteFile(filepath.Join(cb.dir, "tools.json"), data, 0644)
 
-	hdata, _ := json.MarshalIndent(cb.history, "", "  ")
+	hdata, _ := json.MarshalIndent(history, "", "  ")
 	os.WriteFile(filepath.Join(cb.dir, "history.json"), hdata, 0644)
 
-	cdata, _ := json.MarshalIndent(cb.configs, "", "  ")
+	cdata, _ := json.MarshalIndent(configs, "", "  ")
 	os.WriteFile(filepath.Join(cb.dir, "configs.json"), cdata, 0644)
 }
 

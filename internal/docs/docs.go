@@ -446,14 +446,14 @@ func (g *Generator) parseFileExports(path string) []ExportInfo {
 			continue
 		}
 
-		// Skip comments and non-exported lines
-		if trimmed[0] < 'A' || trimmed[0] > 'Z' {
+		// Detect exported declarations (func, type, var, const)
+		words := strings.Fields(trimmed)
+		if len(words) < 2 {
 			continue
 		}
 
-		// Detect exported declarations
-		words := strings.Fields(trimmed)
-		if len(words) < 2 {
+		// Only process declaration keywords
+		if words[0] != "func" && words[0] != "type" && words[0] != "var" && words[0] != "const" {
 			continue
 		}
 

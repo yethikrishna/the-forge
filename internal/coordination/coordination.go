@@ -17,20 +17,20 @@ import (
 type DependencyType string
 
 const (
-	DepBlocks   DependencyType = "blocks"   // A blocks B
-	DepNeeds    DependencyType = "needs"    // A needs output from B
+	DepBlocks    DependencyType = "blocks"    // A blocks B
+	DepNeeds     DependencyType = "needs"     // A needs output from B
 	DepConflicts DependencyType = "conflicts" // A conflicts with B
-	DepRelated  DependencyType = "related"  // A is related to B (informational)
+	DepRelated   DependencyType = "related"   // A is related to B (informational)
 )
 
 // DependencyState tracks dependency resolution.
 type DependencyState string
 
 const (
-	DepPending   DependencyState = "pending"
-	DepResolved  DependencyState = "resolved"
-	DepBroken    DependencyState = "broken"
-	DepObsolete  DependencyState = "obsolete"
+	DepPending  DependencyState = "pending"
+	DepResolved DependencyState = "resolved"
+	DepBroken   DependencyState = "broken"
+	DepObsolete DependencyState = "obsolete"
 )
 
 // Dependency represents a relationship between two work items.
@@ -51,77 +51,77 @@ type Dependency struct {
 type StuckStatus string
 
 const (
-	StuckNone         StuckStatus = "none"
-	StuckWaiting      StuckStatus = "waiting"      // waiting on dependency
-	StuckError        StuckStatus = "error"        // hit error, can't proceed
-	StuckAmbiguous    StuckStatus = "ambiguous"    // unclear what to do
-	StuckResource     StuckStatus = "resource"     // resource unavailable
-	StuckApproval     StuckStatus = "approval"     // waiting for approval
+	StuckNone      StuckStatus = "none"
+	StuckWaiting   StuckStatus = "waiting"   // waiting on dependency
+	StuckError     StuckStatus = "error"     // hit error, can't proceed
+	StuckAmbiguous StuckStatus = "ambiguous" // unclear what to do
+	StuckResource  StuckStatus = "resource"  // resource unavailable
+	StuckApproval  StuckStatus = "approval"  // waiting for approval
 )
 
 // StuckEvent records an agent getting stuck.
 type StuckEvent struct {
-	ID          string      `json:"id"`
-	AgentID     string      `json:"agent_id"`
-	DivisionID  string      `json:"division_id,omitempty"`
-	Status      StuckStatus `json:"status"`
-	TaskID      string      `json:"task_id,omitempty"`
-	Reason      string      `json:"reason"`
-	Duration    time.Duration `json:"duration"` // how long stuck
-	CreatedAt   time.Time   `json:"created_at"`
-	ResolvedAt  *time.Time  `json:"resolved_at,omitempty"`
-	Resolution  string      `json:"resolution,omitempty"`
-	Escalated   bool        `json:"escalated"`
+	ID         string        `json:"id"`
+	AgentID    string        `json:"agent_id"`
+	DivisionID string        `json:"division_id,omitempty"`
+	Status     StuckStatus   `json:"status"`
+	TaskID     string        `json:"task_id,omitempty"`
+	Reason     string        `json:"reason"`
+	Duration   time.Duration `json:"duration"` // how long stuck
+	CreatedAt  time.Time     `json:"created_at"`
+	ResolvedAt *time.Time    `json:"resolved_at,omitempty"`
+	Resolution string        `json:"resolution,omitempty"`
+	Escalated  bool          `json:"escalated"`
 }
 
 // ChangeType categorizes a change.
 type ChangeType string
 
 const (
-	ChangeCode      ChangeType = "code"
-	ChangeConfig    ChangeType = "config"
-	ChangeAPI       ChangeType = "api"
-	ChangeSchema    ChangeType = "schema"
-	ChangeDeploy    ChangeType = "deploy"
-	ChangeInfra     ChangeType = "infrastructure"
+	ChangeCode   ChangeType = "code"
+	ChangeConfig ChangeType = "config"
+	ChangeAPI    ChangeType = "api"
+	ChangeSchema ChangeType = "schema"
+	ChangeDeploy ChangeType = "deploy"
+	ChangeInfra  ChangeType = "infrastructure"
 )
 
 // ChangeStatus tracks the change lifecycle.
 type ChangeStatus string
 
 const (
-	ChangeProposed  ChangeStatus = "proposed"
-	ChangeReview    ChangeStatus = "review"
-	ChangeApproved  ChangeStatus = "approved"
-	ChangeApplied   ChangeStatus = "applied"
+	ChangeProposed   ChangeStatus = "proposed"
+	ChangeReview     ChangeStatus = "review"
+	ChangeApproved   ChangeStatus = "approved"
+	ChangeApplied    ChangeStatus = "applied"
 	ChangeRolledBack ChangeStatus = "rolled_back"
-	ChangeRejected  ChangeStatus = "rejected"
+	ChangeRejected   ChangeStatus = "rejected"
 )
 
 // Change represents a coordinated change across agents.
 type Change struct {
-	ID           string       `json:"id"`
-	Type         ChangeType   `json:"type"`
-	Title        string       `json:"title"`
-	Description  string       `json:"description,omitempty"`
-	AgentID      string       `json:"agent_id"`
-	DivisionID   string       `json:"division_id"`
-	Status       ChangeStatus `json:"status"`
-	AffectedAgents []string   `json:"affected_agents,omitempty"`
-	AffectedResources []string `json:"affected_resources,omitempty"`
-	Reviewers    []string     `json:"reviewers,omitempty"`
-	ApprovedBy   []string     `json:"approved_by,omitempty"`
-	Risk         string       `json:"risk"` // low, medium, high
-	CreatedAt    time.Time    `json:"created_at"`
-	AppliedAt    *time.Time   `json:"applied_at,omitempty"`
+	ID                string       `json:"id"`
+	Type              ChangeType   `json:"type"`
+	Title             string       `json:"title"`
+	Description       string       `json:"description,omitempty"`
+	AgentID           string       `json:"agent_id"`
+	DivisionID        string       `json:"division_id"`
+	Status            ChangeStatus `json:"status"`
+	AffectedAgents    []string     `json:"affected_agents,omitempty"`
+	AffectedResources []string     `json:"affected_resources,omitempty"`
+	Reviewers         []string     `json:"reviewers,omitempty"`
+	ApprovedBy        []string     `json:"approved_by,omitempty"`
+	Risk              string       `json:"risk"` // low, medium, high
+	CreatedAt         time.Time    `json:"created_at"`
+	AppliedAt         *time.Time   `json:"applied_at,omitempty"`
 }
 
 // StuckThreshold configures when an agent is considered stuck.
 type StuckThreshold struct {
-	WaitingDuration  time.Duration `json:"waiting_duration"`
+	WaitingDuration    time.Duration `json:"waiting_duration"`
 	NoProgressDuration time.Duration `json:"no_progress_duration"`
-	AutoEscalate     bool          `json:"auto_escalate"`
-	EscalateToDivHead bool         `json:"escalate_to_div_head"`
+	AutoEscalate       bool          `json:"auto_escalate"`
+	EscalateToDivHead  bool          `json:"escalate_to_div_head"`
 }
 
 // DefaultStuckThreshold returns sensible defaults.
@@ -279,7 +279,7 @@ func (t *Tracker) DetectStuck() []*StuckEvent {
 	for agentID, state := range t.agentState {
 		timeSinceProgress := now.Sub(state.LastProgress)
 
-		var status StuckStatus
+		var status StuckStatus = StuckNone
 		var reason string
 
 		if timeSinceProgress > t.threshold.NoProgressDuration {
@@ -521,9 +521,9 @@ func (t *Tracker) ListChanges(status ChangeStatus, divisionID string) []*Change 
 // --- Persistence ---
 
 type coordData struct {
-	Dependencies map[string]*Dependency `json:"dependencies"`
-	StuckEvents  map[string]*StuckEvent `json:"stuck_events"`
-	Changes      map[string]*Change     `json:"changes"`
+	Dependencies map[string]*Dependency      `json:"dependencies"`
+	StuckEvents  map[string]*StuckEvent      `json:"stuck_events"`
+	Changes      map[string]*Change          `json:"changes"`
 	AgentState   map[string]*agentCoordState `json:"agent_state"`
 }
 

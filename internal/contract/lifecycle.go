@@ -16,14 +16,14 @@ import (
 type ContractStatus string
 
 const (
-	ContractDraft     ContractStatus = "draft"
+	ContractDraft       ContractStatus = "draft"
 	ContractNegotiating ContractStatus = "negotiating"
-	ContractSigned    ContractStatus = "signed"
-	ContractActive    ContractStatus = "active"
-	ContractRenewed   ContractStatus = "renewed"
-	ContractTerminated ContractStatus = "terminated"
-	ContractExpired   ContractStatus = "expired"
-	ContractBreached  ContractStatus = "breached"
+	ContractSigned      ContractStatus = "signed"
+	ContractActive      ContractStatus = "active"
+	ContractRenewed     ContractStatus = "renewed"
+	ContractTerminated  ContractStatus = "terminated"
+	ContractExpired     ContractStatus = "expired"
+	ContractBreached    ContractStatus = "breached"
 )
 
 // Party represents a contract party.
@@ -52,24 +52,24 @@ type Section struct {
 
 // Contract is a live contract.
 type Contract struct {
-	ID          string         `json:"id"`
-	Title       string         `json:"title"`
-	Type        string         `json:"type"`
-	TemplateID  string         `json:"template_id,omitempty"`
-	Parties     []Party        `json:"parties"`
-	Sections    []Section      `json:"sections"`
-	Status      ContractStatus `json:"status"`
-	Value       float64        `json:"value,omitempty"`
-	Currency    string         `json:"currency,omitempty"`
-	StartDate   *time.Time     `json:"start_date,omitempty"`
-	EndDate     *time.Time     `json:"end_date,omitempty"`
-	AutoRenew   bool           `json:"auto_renew"`
-	RenewalDays int            `json:"renewal_days,omitempty"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	SignedAt    *time.Time     `json:"signed_at,omitempty"`
-	TerminatedAt *time.Time    `json:"terminated_at,omitempty"`
-	TerminationReason string   `json:"termination_reason,omitempty"`
+	ID                 string             `json:"id"`
+	Title              string             `json:"title"`
+	Type               string             `json:"type"`
+	TemplateID         string             `json:"template_id,omitempty"`
+	Parties            []Party            `json:"parties"`
+	Sections           []Section          `json:"sections"`
+	Status             ContractStatus     `json:"status"`
+	Value              float64            `json:"value,omitempty"`
+	Currency           string             `json:"currency,omitempty"`
+	StartDate          *time.Time         `json:"start_date,omitempty"`
+	EndDate            *time.Time         `json:"end_date,omitempty"`
+	AutoRenew          bool               `json:"auto_renew"`
+	RenewalDays        int                `json:"renewal_days,omitempty"`
+	CreatedAt          time.Time          `json:"created_at"`
+	UpdatedAt          time.Time          `json:"updated_at"`
+	SignedAt           *time.Time         `json:"signed_at,omitempty"`
+	TerminatedAt       *time.Time         `json:"terminated_at,omitempty"`
+	TerminationReason  string             `json:"termination_reason,omitempty"`
 	NegotiationHistory []NegotiationEntry `json:"negotiation_history,omitempty"`
 }
 
@@ -85,10 +85,10 @@ type NegotiationEntry struct {
 
 // Store manages contracts.
 type Store struct {
-	mu         sync.RWMutex
-	templates  map[string]*ContractTemplate
-	contracts  map[string]*Contract
-	path       string
+	mu        sync.RWMutex
+	templates map[string]*ContractTemplate
+	contracts map[string]*Contract
+	path      string
 }
 
 // NewStore creates a new contract store.
@@ -162,20 +162,20 @@ func (s *Store) CreateFromTemplate(title, type_ string, parties []Party, templat
 
 	now := time.Now().UTC()
 	c := &Contract{
-		ID:        genID("contract"),
-		Title:     title,
-		Type:      type_,
+		ID:         genID("contract"),
+		Title:      title,
+		Type:       type_,
 		TemplateID: templateID,
-		Parties:   parties,
-		Sections:  sections,
-		Status:    ContractDraft,
-		Value:     value,
-		Currency:  currency,
-		StartDate: start,
-		EndDate:   end,
-		AutoRenew: autoRenew,
-		CreatedAt: now,
-		UpdatedAt: now,
+		Parties:    parties,
+		Sections:   sections,
+		Status:     ContractDraft,
+		Value:      value,
+		Currency:   currency,
+		StartDate:  start,
+		EndDate:    end,
+		AutoRenew:  autoRenew,
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}
 
 	s.contracts[c.ID] = c
@@ -339,7 +339,9 @@ func (s *Store) GetExpiring(within time.Duration) []*Contract {
 }
 
 func (s *Store) persist() {
-	if s.path == "" { return }
+	if s.path == "" {
+		return
+	}
 	data := struct {
 		Templates map[string]*ContractTemplate `json:"templates"`
 		Contracts map[string]*Contract         `json:"contracts"`
@@ -350,16 +352,24 @@ func (s *Store) persist() {
 }
 
 func (s *Store) load() {
-	if s.path == "" { return }
+	if s.path == "" {
+		return
+	}
 	raw, err := os.ReadFile(s.path)
-	if err != nil { return }
+	if err != nil {
+		return
+	}
 	var data struct {
 		Templates map[string]*ContractTemplate `json:"templates"`
 		Contracts map[string]*Contract         `json:"contracts"`
 	}
 	if json.Unmarshal(raw, &data) == nil {
-		if data.Templates != nil { s.templates = data.Templates }
-		if data.Contracts != nil { s.contracts = data.Contracts }
+		if data.Templates != nil {
+			s.templates = data.Templates
+		}
+		if data.Contracts != nil {
+			s.contracts = data.Contracts
+		}
 	}
 }
 

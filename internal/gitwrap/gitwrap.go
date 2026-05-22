@@ -215,7 +215,16 @@ func (r *Repo) Pull(remote, branch string) error {
 
 // Branch returns the current branch name.
 func (r *Repo) Branch() (string, error) {
-	return r.run("rev-parse", "--abbrev-ref", "HEAD")
+	out, err := r.run("rev-parse", "--abbrev-ref", "HEAD")
+	if err != nil {
+		// No commits yet — report the default branch name.
+		// Try symbolic-ref first, then fall back to "main".
+		if ref, rerr := r.run("symbolic-ref", "--short", "HEAD"); rerr == nil {
+			return ref, nil
+		}
+		return "main", nil
+	}
+	return out, nil
 }
 
 // IsClean returns true if the working directory is clean.

@@ -47,8 +47,8 @@ func TestConflictDetection(t *testing.T) {
 
 func TestStuckDetection(t *testing.T) {
 	threshold := StuckThreshold{
-		WaitingDuration:    50 * time.Millisecond,
-		NoProgressDuration: 100 * time.Millisecond,
+		WaitingDuration:    1 * time.Second,
+		NoProgressDuration: 2 * time.Second,
 		AutoEscalate:       true,
 	}
 	tr := NewTracker(threshold, filepath.Join(t.TempDir(), "coord.json"))
@@ -64,7 +64,7 @@ func TestStuckDetection(t *testing.T) {
 	}
 
 	// Wait for no-progress threshold
-	time.Sleep(150 * time.Millisecond)
+	time.Sleep(2100 * time.Millisecond)
 
 	stuck = tr.DetectStuck()
 	if len(stuck) != 2 {

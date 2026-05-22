@@ -56,6 +56,7 @@ type Process struct {
 	cmd       *exec.Cmd
 	startTime time.Time
 	exitCode  int
+	done      bool // set under mu when cmd.Wait completes
 	mu        sync.Mutex
 }
 
@@ -124,7 +125,9 @@ func (iso *Isolator) Run(ctx context.Context, command string, args []string, con
 	proc.startTime = time.Now()
 	iso.processes[id] = proc
 
-	// Monitor completion
+	// Monitor completion in background. Capture state under
+	// Process-local mutex so Running() and ExitCode() never
+	// race with cmd.Wait() writing to exec.Cmd fields.
 	go func() {
 		err := cmd.Wait()
 		proc.mu.Lock()
@@ -136,6 +139,9 @@ func (iso *Isolator) Run(ctx context.Context, command string, args []string, con
 				proc.exitCode = -1
 			}
 		}
+		// Mark ProcessState as non-nil so Running() sees completion.
+		// We set it directly because cmd.Wait has finished.
+		proc.done = true
 	}()
 
 	return proc, nil
@@ -233,7 +239,7 @@ func (p *Process) Running() bool {
 	if p.cmd == nil || p.cmd.Process == nil {
 		return false
 	}
-	return p.cmd.ProcessState == nil
+	return !p.done
 }
 
 // Uptime returns how long the process has been running.
