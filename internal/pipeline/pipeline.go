@@ -9,8 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/forge/sword/internal/auditlog"
 	"github.com/forge/sword/internal/cost"
 	"github.com/forge/sword/internal/pretty"
+	"github.com/forge/sword/internal/qualitygate"
+	"github.com/forge/sword/internal/trust"
 )
 
 // StepStatus represents the status of a pipeline step.
@@ -90,12 +93,16 @@ func (d *DefaultApprovalHandler) RequestApproval(_ context.Context, _ Step, _ st
 
 // Executor runs pipelines.
 type Executor struct {
-	runner   AgentRunner
-	approver ApprovalHandler
-	tracker  *cost.Tracker
-	project  string
-	onStep   func(step Step, status StepStatus)
-	mu       sync.Mutex
+	runner      AgentRunner
+	approver    ApprovalHandler
+	tracker     *cost.Tracker
+	project     string
+	onStep      func(step Step, status StepStatus)
+	qualityGate *qualitygate.QualityGateSystem
+	pipelineID  string // quality gate pipeline ID to use
+	trustMgr    *trust.Manager
+	auditLog    *auditlog.Logger
+	mu          sync.Mutex
 }
 
 // NewExecutor creates a new pipeline executor.
@@ -134,6 +141,25 @@ func WithProject(name string) ExecutorOption {
 // WithStepCallback sets a callback for step status changes.
 func WithStepCallback(fn func(Step, StepStatus)) ExecutorOption {
 	return func(e *Executor) { e.onStep = fn }
+}
+
+// WithQualityGate wires the quality gate system to the executor.
+// pipelineID is the gate pipeline to run before marking a step complete.
+func WithQualityGate(qg *qualitygate.QualityGateSystem, pipelineID string) ExecutorOption {
+	return func(e *Executor) {
+		e.qualityGate = qg
+		e.pipelineID = pipelineID
+	}
+}
+
+// WithTrustManager wires the trust manager to the executor.
+func WithTrustManager(tm *trust.Manager) ExecutorOption {
+	return func(e *Executor) { e.trustMgr = tm }
+}
+
+// WithAuditLog wires an audit logger to the executor.
+func WithAuditLog(al *auditlog.Logger) ExecutorOption {
+	return func(e *Executor) { e.auditLog = al }
 }
 
 // Execute runs a pipeline and returns the result.
@@ -320,6 +346,60 @@ func (e *Executor) runStep(ctx context.Context, step Step, outputs map[string]st
 	sr.Output = output
 	e.emitCallback(step, StatusCompleted)
 
+	// Quality gate: evaluate before marking complete
+	if e.qualityGate != nil && e.pipelineID != "" {
+		workID := fmt.Sprintf("work-%s-%d", step.Name, time.Now().UnixNano())
+		work := &qualitygate.WorkItem{
+			ID:          workID,
+			Type:        "code",
+			Author:      step.Agent,
+			Payload:     map[string]interface{}{"output": output, "reviewed": false},
+			SubmittedAt: time.Now().UTC(),
+			Stage:       step.Name,
+		}
+
+		eval, err := e.qualityGate.Evaluate(ctx, e.pipelineID, work)
+		if err == nil && eval.Status == "failed" {
+			// Quality gate blocked — step fails
+			sr.Status = StatusFailed
+			sr.Error = fmt.Sprintf("quality gate failed: %s", e.gateFailReason(eval))
+			e.emitCallback(step, StatusFailed)
+
+			// Update trust score: quality gate failure → trust drops
+			if e.trustMgr != nil {
+				e.trustMgr.RecordTestResult(step.Agent, false)
+			}
+
+			// Audit log
+			if e.auditLog != nil {
+				e.auditLog.Log(
+					auditlog.SeverityWarning,
+					auditlog.CatAgent,
+					step.Agent,
+					"quality_gate_failed",
+					step.Name,
+					sr.Error,
+				)
+			}
+			return sr
+		}
+
+		// Gate passed — update trust positively
+		if e.trustMgr != nil {
+			e.trustMgr.RecordTestResult(step.Agent, true)
+		}
+		if e.auditLog != nil {
+			e.auditLog.Log(
+				auditlog.SeverityInfo,
+				auditlog.CatAgent,
+				step.Agent,
+				"quality_gate_passed",
+				step.Name,
+				"",
+			)
+		}
+	}
+
 	// Track cost
 	if e.tracker != nil {
 		e.tracker.RecordUnchecked(step.Agent, "pipeline", step.Model, 0, 0, e.project, step.Name)
@@ -346,6 +426,22 @@ func (e *Executor) emitCallback(step Step, status StepStatus) {
 		e.mu.Unlock()
 		fn(step, status)
 	}
+}
+
+// gateFailReason extracts a human-readable reason from a failed gate evaluation.
+func (e *Executor) gateFailReason(eval *qualitygate.GateEvaluation) string {
+	for _, r := range eval.Results {
+		if r.Status == qualitygate.StatusFailed {
+			if r.Message != "" {
+				return r.Message
+			}
+			if r.Evidence != "" {
+				return r.Evidence
+			}
+			return string(r.Status)
+		}
+	}
+	return "quality threshold not met"
 }
 
 // FormatResult formats a pipeline result for terminal display.
