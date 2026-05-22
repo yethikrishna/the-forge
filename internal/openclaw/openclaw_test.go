@@ -632,3 +632,82 @@ func TestBrowserSnapshot(t *testing.T) {
 		t.Errorf("expected Example, got %s", snap.Title)
 	}
 }
+
+func TestBridgeRetryOnServer(t *testing.T) {
+	attempts := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		if attempts < 3 {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	}))
+	defer srv.Close()
+
+	b, _ := NewBridge(BridgeConfig{GatewayURL: srv.URL})
+	defer b.Close()
+
+	var result map[string]string
+	err := b.GetJSON(context.Background(), "/test", &result)
+	if err != nil {
+		t.Fatalf("expected success after retries, got: %v", err)
+	}
+	if attempts != 3 {
+		t.Errorf("expected 3 attempts, got %d", attempts)
+	}
+}
+
+func TestBridgeNoRetryOnClientError(t *testing.T) {
+	attempts := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		w.WriteHeader(http.StatusBadRequest)
+	}))
+	defer srv.Close()
+
+	b, _ := NewBridge(BridgeConfig{GatewayURL: srv.URL})
+	defer b.Close()
+
+	err := b.GetJSON(context.Background(), "/test", nil)
+	if err == nil {
+		t.Error("expected error for 400")
+	}
+	if attempts != 1 {
+		t.Errorf("expected 1 attempt (no retry on 4xx), got %d", attempts)
+	}
+}
+
+func TestBridgeRetryExhausted(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	defer srv.Close()
+
+	b, _ := NewBridge(BridgeConfig{GatewayURL: srv.URL})
+	defer b.Close()
+
+	err := b.GetJSON(context.Background(), "/test", nil)
+	if err == nil {
+		t.Error("expected error after retries exhausted")
+	}
+}
+
+func TestBridgeContextCancellation(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(5 * time.Second) // slow response
+	}))
+	defer srv.Close()
+
+	b, _ := NewBridge(BridgeConfig{GatewayURL: srv.URL})
+	defer b.Close()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	err := b.GetJSON(ctx, "/test", nil)
+	if err == nil {
+		t.Error("expected error from context cancellation")
+	}
+}

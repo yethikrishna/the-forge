@@ -96,7 +96,7 @@ func (b *Bridge) WorkspaceDir() string {
 	return b.cfg.WorkspaceDir
 }
 
-// doRequest performs an HTTP request against the OpenClaw gateway.
+// doRequest performs an HTTP request against the OpenClaw gateway with retry.
 func (b *Bridge) doRequest(ctx context.Context, method, path string, body interface{}) (*http.Response, error) {
 	b.mu.RLock()
 	if b.closed {
@@ -105,24 +105,53 @@ func (b *Bridge) doRequest(ctx context.Context, method, path string, body interf
 	}
 	b.mu.RUnlock()
 
-	var reqBody strings.Reader
-	if body != nil {
-		data, err := json.Marshal(body)
-		if err != nil {
-			return nil, fmt.Errorf("marshal request body: %w", err)
+	var lastErr error
+	maxRetries := 3
+
+	for attempt := 0; attempt < maxRetries; attempt++ {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(time.Duration(attempt*100) * time.Millisecond):
+			}
 		}
-		reqBody = *strings.NewReader(string(data))
+
+		var reqBody strings.Reader
+		if body != nil {
+			data, err := json.Marshal(body)
+			if err != nil {
+				return nil, fmt.Errorf("marshal request body: %w", err)
+			}
+			reqBody = *strings.NewReader(string(data))
+		}
+
+		req, err := http.NewRequestWithContext(ctx, method, b.cfg.GatewayURL+path, &reqBody)
+		if err != nil {
+			return nil, fmt.Errorf("create request: %w", err)
+		}
+		req.Header.Set("Content-Type", "application/json")
+		if b.cfg.GatewayToken != "" {
+			req.Header.Set("Authorization", "Bearer "+b.cfg.GatewayToken)
+		}
+
+		resp, err := b.client.Do(req)
+		if err != nil {
+			lastErr = err
+			continue // retry on network errors
+		}
+
+		// Don't retry client errors (4xx), only server errors (5xx)
+		if resp.StatusCode >= 500 {
+			resp.Body.Close()
+			lastErr = fmt.Errorf("openclaw gateway %s: HTTP %d", path, resp.StatusCode)
+			continue
+		}
+
+		return resp, nil
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, b.cfg.GatewayURL+path, &reqBody)
-	if err != nil {
-		return nil, fmt.Errorf("create request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if b.cfg.GatewayToken != "" {
-		req.Header.Set("Authorization", "Bearer "+b.cfg.GatewayToken)
-	}
-	return b.client.Do(req)
+	return nil, fmt.Errorf("openclaw gateway %s: failed after %d retries: %w", path, maxRetries, lastErr)
 }
 
 // GetJSON performs a GET request and decodes the JSON response.
