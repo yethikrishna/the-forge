@@ -68,6 +68,14 @@
 | Communication | `internal/relay/`, `internal/eventbus/`, `internal/notify/` | Inter-agent messaging, pub/sub, notifications |
 | Learning | `internal/optimize/`, `internal/experiment/`, `internal/dream/` | Agent tuning, A/B experiments, offline improvement |
 | Execution | `internal/sandbox/`, `internal/pipeline/`, `internal/workflow/` | Sandboxed runs, DAG pipelines, multi-step workflows |
+| Org Core | `internal/org/`, `internal/comm/`, `internal/ambition/` | Org structure, channels, goal tracking, standups |
+| Civilization | `internal/civilization/`, `internal/banking/`, `internal/patent/` | Inter-org protocol, finance, IP management |
+| Coordination | `internal/coordination/`, `internal/contract/`, `internal/ethics/` | Cross-agent work, contracts, values |
+| Founder | `internal/founder/`, `internal/supplychain/` | Solo founder tools, vendor management |
+| Quality Gate | `internal/qualitygate/`, `internal/timegate/` | Enforced quality, time consciousness |
+| Learning | `internal/apprenticeship/`, `internal/orglearn/`, `internal/selforg/` | Agent onboarding, org learning, auto-restructure |
+| Feedback | `internal/feedback/`, `internal/alignment/`, `internal/stuck/` | Production signals, drift detection, stuck agents |
+| Scaling | `internal/scaling/`, `internal/change/`, `internal/multires/` | Org scaling, change coordination, multi-res comms |
 
 ## Data Flow
 
@@ -101,8 +109,9 @@ User → forge CLI / Forge UI
 
 ## Current State (May 2026)
 
-- **205K lines** of Go
+- **222K lines** of Go (151K production + 71K tests)
+- **5,368 functions** across production code
 - **199 internal packages**
 - **172 CLI commands**
-- **Build: clean. Vet: clean.**
+- **Build: clean. Vet: clean. Tests: passing.**
 - Go 1.26.3, module `github.com/forge/sword`

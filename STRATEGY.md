@@ -1,113 +1,151 @@
-# The Forge — Competitive Strategy
+# The Forge — Strategy (v2)
 
-> Execution is commoditized. Organization is the moat.
+> Execution is commoditized. Organization is the moat. Civilization is the ceiling.
 
-## The Landscape (May 2026)
+*Updated: 2026-05-22 00:32 UTC*
+
+## Project State
+
+- **222K lines** of Go (151K production + 71K tests)
+- **5,368 functions** across 199 packages
+- **172 CLI commands**
+- Build: clean. Vet: clean. Tests: passing.
+- Go 1.26.3, latest security patches applied
+
+## Competitive Landscape (May 2026)
 
 ```
-                    ORGANIZATION LAYER
-                    (nobody is here)
-                    ▲
-                    │
-     ┌──────────────┼──────────────┐
-     │              │              │
-     │         FORGE IS           │
-     │         HERE               │
-     │              │              │
-     ├──────────────┼──────────────┤
-     │              │              │
-EXPERIENCE    EXECUTION      FRAMEWORKS
-  LAYER         LAYER          LAYER
-     │              │              │
-  Suna         OpenClaw       LangGraph
-  Dify         Claude Code    CrewAI
-  Twin.so      Cursor         AutoGen
-  Warp Oz      Aider          LangChain
-  Copilot      Codex          Semantic Kernel
+                    ORGANIZATION LAYER          CIVILIZATION LAYER
+                    (nobody is here)            (nobody imagines this)
+                    ▲                           ▲
+                    │                           │
+     ┌──────────────┼───────────────┐           │
+     │         FORGE IS             │     FORGE IS ALSO
+     │         HERE                 │     HERE
+     ├──────────────┼───────────────┤           │
+     │              │               │           │
+EXPERIENCE    EXECUTION       FRAMEWORKS        │
+  LAYER         LAYER          LAYER            │
+     │              │               │           │
+  Suna         OpenClaw       LangGraph         │
+  Dify         Claude Code    CrewAI            │
+  Twin.so      Cursor         AutoGen           │
+  Warp Oz      Aider          LangChain         │
+  Copilot      Codex          Semantic Kernel   │
 ```
 
-## Competitor Analysis
+## Competitor Deep Dive
 
-### 1. Suna (19.8K stars, standalone)
-**What they have**: Best open-source agent UX. Sandbox, marketplace, mobile app, 60+ skills, 3000+ integrations.
-**What they lack**: Organizational structure. Agents run independently. No quality gates, no cost management, no compliance, no org memory.
-**Forge's answer**: We USE Suna's experience layer. We don't compete with it. Our org layer wraps their execution.
+### 1. Cursor ($9.9B, $500M ARR) — HIGHEST THREAT
+**Strengths**: Distribution, IDE integration, multi-repo reasoning, Automations.
+**Weaknesses**: Closed source. No multi-agent coordination. No org structure. No cost transparency. Lock-in.
+**Counter**: Self-hosted. Governance-first. Org structure. Local models. No lock-in.
+**Kill vector**: Position as "what you use after Cursor stops being enough." Teams outgrow Cursor.
 
-### 2. OpenClaw (our runtime, standalone)
-**What it has**: Battle-tested agent runtime. CLI, cron, sessions, browser, channels, skills, nodes. Runs our 25-agent org today.
-**What it lacks**: No organizational intelligence. No divisions, no quality gates, no budgets, no compliance. Requires a human to manage the org.
-**Forge's answer**: We USE OpenClaw as our execution substrate. Forge Engine IS OpenClaw, rebranded.
+### 2. GitHub Copilot (20M users) — HIGH THREAT
+**Strengths**: Largest user base. GitHub native. Agent HQ (multi-agent) coming.
+**Weaknesses**: Usage-based billing June 2026 = price sensitivity opening. No self-hosted. No org structure.
+**Counter**: Cost transparency tool (`forge cost import --copilot`). Local model presets. Org structure.
+**Kill vector**: Cost migration. Show teams spending $200/dev/month they could spend $20 with Forge + local.
 
-### 3. LangGraph (126K stars)
-**What they have**: Production-grade graph-based agent orchestration. Per-node timeouts, DeltaChannel, massive community.
-**What they lack**: Python-only. No organizational structure. No cost management. No compliance. No persistent memory beyond session. Framework, not product.
-**Forge's answer**: Go binary, not Python library. Org structure, not graph structure. Product, not framework.
+### 3. LangGraph (126K stars) — MEDIUM THREAT
+**Strengths**: Production-grade graph orchestration. Massive Python community.
+**Weaknesses**: Python-only. No org structure. No persistent memory. Framework, not product.
+**Counter**: Go binary. Org structure. Product, not framework. `forge bridge langgraph` for interop.
 
-### 4. CrewAI (45K+ stars)
-**What they have**: Role-based agent teams. "Crew" concept similar to our divisions.
-**What they lack**: Python-only. No persistent memory. No cost management. No quality gates. No real-time monitoring. Framework, not product.
-**Forge's answer**: Persistent memory. Real cost tracking. Quality enforcement. Binary, not import.
+### 4. AutoGen 1.0 GA (Microsoft) — MEDIUM THREAT
+**Strengths**: Microsoft backing. Event-driven. Enterprise credibility.
+**Weaknesses**: Azure-dependent. No org intelligence. No cost governance.
+**Counter**: Cloud-agnostic. Self-hosted. Governance built-in.
 
-### 5. AutoGen (Microsoft, GA)
-**What they have**: Microsoft backing. Event-driven architecture. Enterprise credibility.
-**What they lack**: Azure-dependent. No org structure. No cost optimization. No governance layer.
-**Forge's answer**: Cloud-agnostic. Self-hosted. Org-first. Governance built-in.
+### 5. CrewAI (45K stars) — LOW THREAT
+**Strengths**: Role-based teams ("crew" ≈ division).
+**Weaknesses**: Python-only. No persistent memory. No cost management. Framework, not product.
+**Counter**: They may add org features — we're years ahead. Maintain lead through execution.
 
-### 6. Cursor ($9.9B valuation, $500M ARR)
-**What they have**: The dominant AI coding IDE. Multi-repo reasoning. Automations.
-**What they lack**: Closed source. Single IDE. No multi-agent coordination. No cost transparency. No governance.
-**Forge's answer**: Open source. Any IDE via LSP/ACP. Multi-agent org. Full cost transparency. Governance first.
+### 6. Suna (19.8K stars) — PARTNER, NOT COMPETITOR
+**Strategy**: Use their experience layer. Don't compete with it. Forge adds the org layer they lack.
+**Relationship**: Suna = factory floor. Forge = company.
 
-### 7. GitHub Copilot (20M users)
-**What they have**: Largest user base. IDE integration. GitHub native.
-**What they lack**: Usage-based billing (coming June 2026, creates price sensitivity). No multi-agent. No self-hosted. No organizational structure.
-**Forge's answer**: Cost transparency. Self-hosted. Local models. Org structure. Cost migration tool.
+### 7. OpenClaw — OUR RUNTIME
+**Strategy**: Forge Engine IS OpenClaw, rebranded. We add org intelligence to the battle-tested runtime.
 
-### 8. Dify (massive traction)
-**What they have**: Low-code agent builder. Great UX. Visual workflows.
-**What they lack**: No org structure. No compliance. No cost management. Visual-only, limited CLI.
-**Forge's answer**: CLI-first. Compliance built-in. Cost tracking. Org structure. Study their UX for our observer dashboard.
+### 8. Dify — WATCH
+**Strengths**: Low-code agent builder. Great UX.
+**Strategy**: Study UX for observer dashboard. Don't compete on visual builders.
 
-## The Moat
+## The Forge Moat (7 Defensible Layers)
 
-Execution (running agents) is commoditized. Experience (pretty dashboards) is commoditized. Nobody has built the organization layer.
+1. **Org structure as product** — Divisions, roles, handoffs, quality gates. No competitor has this. 6 months minimum to replicate.
 
-Forge's defensible moat:
+2. **Institutional memory** — Four-tier compounding knowledge system. Not a context window — an organizational brain. 12+ months to replicate.
 
-1. **Org structure as product** — Divisions, roles, handoffs, quality gates. No competitor has this.
-2. **Institutional memory** — Knowledge that compounds across sessions, agents, and time. No competitor has this.
-3. **Cost governance** — Per-agent budgets, division caps, org optimization, immutable ledger. No competitor has this.
-4. **Compliance infrastructure** — Legal gates, audit trails, responsibility chains, consent management. No competitor has this.
-5. **Feedback loops** — Production signals → org learning → better decisions. No competitor has this.
-6. **Trust infrastructure** — Cryptographic proof, trust scores, consent gates. No competitor has this.
-7. **Self-organization** — Org restructures itself based on workload. No competitor has this.
+3. **Cost governance** — Per-agent budgets, division caps, immutable ledger, auto-optimization. No competitor has this. Requires deep integration.
 
-Each of these alone is valuable. Together, they create a compound moat that's very hard to replicate.
+4. **Compliance infrastructure** — Legal gates, audit trails, responsibility chains, consent management. Enterprise differentiator. 18+ months to replicate.
 
-## Positioning Statement
+5. **Feedback loops** — Production signals → org learning → better decisions. Requires org structure as prerequisite. Circular moat.
 
-**For solo founders and small teams who want to build and run an AI-powered company, Forge is the organizational operating system that makes agents work together like a real company — with quality gates, cost governance, institutional memory, and compliance built-in.**
+6. **Trust infrastructure** — Cryptographic proof, trust scores, consent gates, immutable ledger. Security-first. Hard to bolt on.
 
-Unlike agent frameworks (LangGraph, CrewAI) that require you to build orchestration yourself, and unlike agent tools (Cursor, Copilot) that run individual agents without coordination, Forge gives you a complete AI organization out of the box.
+7. **Civilization layer** — Inter-org protocol, reputation, diplomacy, federation. No competitor even imagines this. 2+ year moat.
 
-## Category Creation
+Each layer reinforces the others. This isn't 7 features — it's one compound moat where each layer makes the others harder to replicate.
 
-Forge isn't competing in "agent orchestration" or "AI coding tools." It's creating a new category: **AI Organization Infrastructure**.
+## Category Definition
 
-The类比:
+Forge isn't in "agent orchestration" or "AI coding tools." It creates: **AI Organization Infrastructure**.
+
 - Docker → Container Runtime
-- Kubernetes → Container Orchestration
+- Kubernetes → Container Orchestration  
 - **Forge → AI Organization Infrastructure**
 
-Just as Kubernetes didn't compete with Docker (it used Docker), Forge doesn't compete with Suna or OpenClaw (it uses them both). Forge adds the layer above: organizational intelligence.
+K8s didn't compete with Docker (it used Docker). Forge doesn't compete with Suna/OpenClaw (it uses both). Forge adds the layer above.
 
-## Go-to-Market Strategy
+## Forge vs Suna Positioning
+
+**Suna** is the machine. **Forge** is the company.
+
+| Suna (the machine) | Forge (the company) |
+|---|---|
+| Runs agents | Manages the org that agents live in |
+| Individual task execution | Coordinated division labor |
+| Per-session memory | Compounding institutional knowledge |
+| No quality enforcement | Quality gates that block bad work |
+| No cost awareness | Per-agent budgets, division caps |
+| No compliance | Legal gates, audit trails |
+| No coordination | Division channels, handoffs, escalations |
+| No growth path | Self-organization, scaling, civilization |
+
+A factory without a company is just machines in a room. A company without a factory is an org chart. Forge gives you both.
+
+## Forge + Anvil Synergy
+
+Forge deploys Anvil. Forge manages the Anvil org. Anvil uses Forge for AI infrastructure.
+
+```
+Forge Org
+├── Engineering Division
+│   ├── Agent: Build Anvil features
+│   ├── Agent: Review Anvil PRs
+│   └── Agent: Deploy Anvil releases
+├── Operations Division
+│   ├── Agent: Monitor Anvil uptime
+│   └── Agent: Respond to Anvil incidents
+├── Research Division
+│   └── Agent: Evaluate new AI models for Anvil
+└── Anvil itself runs as a Forge-managed service
+```
+
+Anvil is Forge's first customer. Forge dogfoods itself by running the org that builds Anvil.
+
+## Go-to-Market
 
 ### Wedge: Solo Founder
-"Start a company with one command." `forge org init` → full AI org running in 60 seconds.
+"Start a company with one command." `forge org init` → full AI org in 60 seconds.
 
 ### Expansion: Small Teams
-"Your team just got 50 AI employees." Add humans to the org alongside agents.
+"Your team just got 50 AI employees." Add humans alongside agents.
 
 ### Enterprise: Governance
 "The only AI platform with compliance built-in." Audit trails, cost governance, legal gates.
@@ -115,14 +153,55 @@ Just as Kubernetes didn't compete with Docker (it used Docker), Forge doesn't co
 ### Platform: Ecosystem
 "Run your entire business on Forge." Marketplace, Agent-as-a-Service, Forge Cloud.
 
-## Competitive Watchlist
+## Revenue Model
 
-| Competitor | Threat Level | Counter-Strategy |
-|-----------|-------------|-----------------|
-| Cursor | HIGH (distribution) | Self-hosted, governance, no lock-in |
-| Copilot | HIGH (distribution) | Cost transparency, local models, org structure |
-| LangGraph | MEDIUM (community) | Product > framework, Go > Python, org > graph |
-| AutoGen | MEDIUM (enterprise) | Cloud-agnostic, self-hosted, governance |
-| CrewAI | LOW (convergence risk) | They may add org features — we're years ahead |
-| Dify | LOW (different market) | Study UX, don't compete on visual builders |
-| Warp Oz | LOW (new entrant) | Monitor, no cloud dependency counter |
+| Tier | Price | Features |
+|------|-------|----------|
+| **OSS** | Free | Full CLI, local models, single-user org |
+| **Pro** | $20/mo | Cloud sync, priority routing, analytics, team features |
+| **Enterprise** | Per-seat annual | SSO, RBAC, compliance automation, SLA |
+| **Cloud** | Usage-based | Hosted org, managed agents, marketplace fees |
+
+## Strategic Priorities (Next 90 Days)
+
+### Week 1-2: Working Product
+- End-to-end org bootstrap
+- Quality gate pipeline
+- Dashboard with real data
+- 60-second demo video
+
+### Week 3-4: Production Hardening
+- Cost budget enforcement
+- Compliance gates active
+- Feedback loop wiring
+- CLI grammar audit
+
+### Month 2: Growth
+- Documentation website
+- Plugin marketplace MVP
+- Comparison pages (SEO)
+- Conference talk submissions
+
+### Month 3: Ecosystem
+- Forge Cloud (hosted)
+- Agent-as-a-Service
+- Marketplace with 10+ community agents
+- Enterprise pilot program
+
+## Anti-Strategy
+
+We explicitly do NOT:
+- Compete with Cursor/Copilot on IDE features
+- Build visual pipeline builders (yet)
+- Target K8s/Terraform operators (yet)
+- Chase every AI hype cycle
+- Build WASM plugins (Go plugins first)
+- Do ForgeConf (need 5K community first)
+
+## The Bottom Line
+
+Execution and experience are commodities. Organization and civilization are greenfield.
+
+Nobody has built the org layer. Nobody has imagined the civilization layer. Forge owns both. The moat compounds with every feature built on top of these foundations.
+
+The question isn't whether AI organizations will exist. The question is who builds the infrastructure for them. That's Forge.

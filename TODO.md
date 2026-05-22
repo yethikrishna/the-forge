@@ -1,6 +1,6 @@
 # TODO.md — The Forge Development Tracker
 
-## Phase 10: Architecture Coherence Sprint (2026-05-21)
+## Phase 11: Pipeline Wiring Sprint (2026-05-22)
 
 ### Architecture Docs ✅
 - [x] `docs/architecture/OVERVIEW.md` — Full stack diagram, package map, data flow, design principles
@@ -11,31 +11,69 @@
 - [x] `docs/architecture/COMPLIANCE-ARCHITECTURE.md` — 4-layer compliance stack (responsibility → audit → policy → legal gates)
 - [x] `docs/architecture/FORGE-VS-SUNA.md` — Forge vs Suna positioning: Suna = machine, Forge = company
 - [x] `docs/architecture/FORGE-ANVIL-SYNERGY.md` — Forge deploys Anvil, manages Anvil org, Anvil uses Forge for AI
+- [x] `docs/architecture/MEMORY-ARCHITECTURE.md` — Four-tier memory, compounding pipeline, immutable ledger
 
-### End-to-End Pipeline Wiring (P0)
-- [ ] **Org bootstrap flow** — `forge org init` creates real division structure, agents, channels, cost tracking
-- [ ] **Quality gate pipeline** — code → review → quality score → block if < threshold → update trust → record in genealogy
-- [ ] **60-second demo** — record end-to-end org creation + task execution + quality gate + deploy
+### P0 — End-to-End Working Product (48 hours)
+- [ ] **Org bootstrap pipeline** — `forge org init` → real divisions, agents, channels, cost tracking, org memory seed
+  - Wire: `cmd/org.go` → `internal/org/` → `internal/comm/` → `internal/openclaw/session.go`
+  - Wire: `internal/cost/` initialization per division
+  - Wire: `internal/openclaw/memory.go` seed with default org values
+  - Verify: `forge org status` shows real data
+- [ ] **Quality gate pipeline** — code → review → quality score → block if < threshold → update trust
+  - Wire: `internal/qualitygate/` → `internal/review/` → `internal/guard/` → `internal/trust/`
+  - Wire: `internal/genealogy/` records gate results
+  - Wire: blocking gate on merge, advisory on PR creation
+  - Verify: agent submits below-threshold code → merge blocked → trust decreases
+- [ ] **Dashboard real data** — wire WebSocket to live subsystems
+  - Wire: `internal/dashboard/` ← `internal/costlive/` (real spend)
+  - Wire: `internal/dashboard/` ← `internal/org/` (real agent status)
+  - Wire: `internal/dashboard/` ← `internal/trust/` (real quality scores)
+  - Verify: dashboard updates in real-time as agents work
+- [ ] **60-second demo video** — record and publish
+  - `forge org init` → agents working → quality gate → deploy → dashboard
+  - <90 seconds, zero errors
 
-### Product Connectivity (P1)
-- [ ] **Dashboard real data** — wire WebSocket to cost tracker, agent status, quality scores, division health
-- [ ] **Cost budget enforcement** — guard cost_cap triggers model downgrade, division cap redistribution
-- [ ] **Memory compounding** — auto-store outcomes, onboarding reads org memory, dream processes accumulation
+### P1 — Production Wiring (72 hours)
+- [ ] **Cost budget enforcement** — guard cost_cap → model downgrade → ledger record
+  - Wire: `internal/guard/` cost_cap → `internal/cost/` → `internal/tokentracker/`
+  - Wire: model downgrade at 80% budget
+  - Wire: `internal/ledger/` records enforcement
+  - Verify: agent hits cap → model downgrades → dashboard shows utilization
+- [ ] **Memory compounding pipeline** — task complete → store → dream → compound
+  - Wire: task completion → `internal/openclaw/memory.go` auto-store
+  - Wire: `internal/orglearn/` pattern extraction
+  - Wire: `internal/optimize/` nightly dream processing
+  - Verify: task completes → new agent reads prior knowledge → acts on it
+- [ ] **Compliance enforcement** — policy engine blocks violations in execution flow
+  - Wire: `internal/policy/` → `internal/compliance/` → `internal/consent/`
+  - Wire: blocked actions → `internal/auditlog/`
+  - Wire: consent gate before data classification changes
+  - Verify: agent attempts violation → blocked → logged → human notified
+- [ ] **Feedback loop wiring** — correlator routes signals to subsystems
+  - Wire: `internal/feedback/` → `internal/correlator/` → `internal/trust/`
+  - Wire: cost anomaly → trust update
+  - Wire: stuck agent → escalation → division head notification
+  - Wire: quality drop → tighten quality gates
+  - Verify: agent stuck 30min → timeout → escalation
 
-### Production Readiness (P2)
-- [ ] **Compliance enforcement** — policy engine blocks violations, consent gate fires on data changes
-- [ ] **Feedback loop live** — correlator → trust update, stuck escalation, quality tightening, memory storage
-- [ ] **CLI grammar audit** — `forge <noun> <verb>` consistency across all 172 commands, remove duplicates
-
-### Growth (P3)
+### P2 — Product Polish (this week)
+- [ ] **CLI grammar audit** — `forge <noun> <verb>` consistency, `--output=json` on every command
+- [ ] **Payment E2E wiring** — `internal/integration/payment.go` → `internal/banking/` → `internal/cost/`
 - [ ] **Documentation website** — command reference, quickstart, comparisons, architecture guide
-- [ ] **Plugin marketplace MVP** — git-based registry, publish/install/version
 
-### Architecture Review Findings
-- No stubs detected — all packages have real implementations
-- Gaps are in pipeline wiring, not individual package implementation
-- 205K lines, 199 packages, 172 commands, 186 test files
+### P3 — Growth (next 2 weeks)
+- [ ] **Plugin marketplace MVP** — git-based registry, publish/install/version
+- [ ] **Comparison pages** — vs Cursor, vs Copilot, vs LangGraph, vs CrewAI, vs AutoGen
+- [ ] **Conference talk submissions** — GopherCon, AI Engineer Summit
+
+### Architecture Review (2026-05-22)
+- **No stubs detected** — all 199 packages have real implementations
+- **5,368 functions** across production code
+- **71K lines of tests** (47% of production code)
+- **222K total lines** Go
 - Build/Vet/Tests: Clean
+- Gap is pipeline wiring, not implementation
+- All new org/civilization packages reviewed and approved
 
 ---
 
