@@ -1,5 +1,61 @@
 # TODO.md — The Forge Development Tracker
 
+## Phase 12: R&D Innovation Sprint (2026-05-22)
+
+### New Prototypes ✅
+- [x] `internal/succession/succession.go` — Knowledge Transfer Protocol (018)
+  - DistillationEngine extracts patterns from task history
+  - KnowledgeCapsule with versioning, signing, integrity hashing
+  - InstitutionalBank preserves collective knowledge across generations
+  - ContinuityVerifier tests successors on known tasks
+  - SuccessionManager orchestrates full transfer lifecycle
+- [x] `internal/costconscience/costconscience.go` — Cost Consciousness Engine (019)
+  - Value signals (critical/high/medium/low/waste) with ROI multipliers
+  - 4-level budget model (task → agent → division → org)
+  - Automatic model downgrade at soft/hard caps
+  - Waste detection and reporting
+  - ROI leaderboard and optimization suggestions
+- [x] `internal/evidenceledger/evidenceledger.go` — Trust Verification Chain (020)
+  - Hash-linked evidence chain (blockchain for agent trust)
+  - Multi-type evidence (output, hash, URL, metric, witness, screenshot, signature)
+  - Independent verification protocol
+  - Tamper detection and chain integrity verification
+  - Per-agent trust scores derived from evidence
+- [x] `internal/experimentlab/experimentlab.go` — Structured Experimentation (021)
+  - Stage-gate process (Proposed → Approved → Running → Measuring → Analyzing → Concluded)
+  - Portfolio allocation (40% safe, 30% growth, 20% moonshot, 10% wild)
+  - Automatic kill criteria (duration, cost, confidence thresholds)
+  - Lessons graduated to org knowledge from all outcomes
+  - Experiment genealogy and follow-up tracking
+- [x] `internal/legalgate/legalgate.go` — Legal Compliance Gates (022)
+  - Policy engine with 10 default policies (GDPR, financial, IP, data handling, etc.)
+  - Risk classification (none → low → medium → high → critical)
+  - Gate decisions: approved, blocked, escalated, deferred, exempted
+  - Role-based approval workflow (legal, human, division_head)
+  - Emergency exemption with retroactive audit
+  - Full compliance audit trail
+
+### Research Docs ✅
+- [x] `docs/research/018-knowledge-transfer.md`
+- [x] `docs/research/019-cost-consciousness.md`
+- [x] `docs/research/020-trust-verification.md`
+- [x] `docs/research/021-structured-experimentation.md`
+- [x] `docs/research/022-legal-compliance-gates.md`
+
+### R&D TODOs
+- [ ] Wire succession trigger into agent lifecycle events
+- [ ] Wire cost conscience into session creation (model grade enforcement)
+- [ ] Wire evidence ledger into every tool call
+- [ ] Wire experiment lab into R&D division workflows
+- [ ] Wire legal gates into external actions (email, API, deployment)
+- [ ] Build cost dashboard with burn rate projection
+- [ ] Build compliance dashboard with risk heat map
+- [ ] Build experiment portfolio visualization
+- [ ] Add cross-model knowledge transfer (GPT → Claude capsule format)
+- [ ] Add jurisdiction-aware compliance policies
+- [ ] Build statistical significance testing for experiments
+- [ ] Implement waste pattern learning (auto-skip low-value steps)
+
 ## Phase 11: Pipeline Wiring Sprint (2026-05-22)
 
 ### Architecture Docs ✅
