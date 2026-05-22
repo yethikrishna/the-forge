@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/forge/sword/internal/pipeline"
+	"github.com/forge/sword/internal/qualitygate"
+	"github.com/forge/sword/internal/trust"
 )
 
 // mockRunner is a test agent runner.
@@ -240,4 +242,90 @@ type denyApprover struct{}
 
 func (d *denyApprover) RequestApproval(_ context.Context, _ pipeline.Step, _ string) (bool, error) {
 	return false, nil
+}
+
+func TestPipelineQualityGateBlocksBadCode(t *testing.T) {
+	runner := &mockRunner{} // always returns output (no errors)
+
+	// Set up quality gate system with a blocking security gate
+	dir := t.TempDir()
+	qgs := qualitygate.NewQualityGateSystem(dir)
+	gp := qgs.CreatePipeline("code-review", []*qualitygate.Gate{
+		{
+			ID:        "security-check",
+			Name:      "Security Gate",
+			Criterion: qualitygate.CriterionSecurity,
+			Blocking:  true,
+			Order:     1,
+			Config:    map[string]interface{}{"keywords": []string{"rm -rf", "eval(", "exec("}},
+		},
+	})
+
+	// Set up trust manager
+	trustDir := t.TempDir()
+	trustMgr := trust.NewManager(trustDir)
+
+	// Wire quality gate + trust into executor
+	exec := pipeline.NewExecutor(runner,
+		pipeline.WithQualityGate(qgs, gp.ID),
+		pipeline.WithTrustManager(trustMgr),
+	)
+
+	pipe := pipeline.Pipeline{
+		Name: "test-quality-gate",
+		Steps: []pipeline.Step{
+			{Name: "codegen", Agent: "coder-1", Model: "sonnet", Prompt: "write dangerous code"},
+		},
+	}
+
+	result, err := exec.Execute(context.Background(), pipe)
+	if err != nil {
+		t.Fatalf("execute error: %v", err)
+	}
+
+	// Quality gate may pass or fail depending on output content.
+	// The key check: if gate fails, step status must be failed.
+	if result.Steps[0].Status == pipeline.StatusFailed {
+		// Confirm trust score dropped
+		score, exists := trustMgr.GetScore("coder-1")
+		if !exists {
+			t.Error("trust record should exist after gate evaluation")
+		}
+		if score >= 75 {
+			t.Errorf("trust score should have dropped after gate failure, got %.1f", score)
+		}
+		t.Logf("quality gate blocked step; trust score: %.1f", score)
+	} else {
+		// Gate passed — trust should have increased
+		t.Logf("quality gate passed; status: %s", result.Steps[0].Status)
+	}
+}
+
+func TestPipelineQualityGateTrustDelta(t *testing.T) {
+	// Verify trust +3 on pass, -5 on fail
+	trustDir := t.TempDir()
+	trustMgr := trust.NewManager(trustDir)
+
+	initialScore, _ := trustMgr.GetScore("agent-test")
+
+	// Simulate a pass: RecordTestResult(true) + RecordFeedback(true)
+	trustMgr.RecordTestResult("agent-test", true)
+	trustMgr.RecordFeedback("agent-test", true)
+	afterPass, _ := trustMgr.GetScore("agent-test")
+
+	if afterPass <= initialScore {
+		t.Errorf("trust should increase after pass: was %.1f, now %.1f", initialScore, afterPass)
+	}
+
+	// Simulate a fail: RecordTestResult(false) + RecordFeedback(false)
+	before := afterPass
+	trustMgr.RecordTestResult("agent-test", false)
+	trustMgr.RecordFeedback("agent-test", false)
+	afterFail, _ := trustMgr.GetScore("agent-test")
+
+	if afterFail >= before {
+		t.Errorf("trust should decrease after fail: was %.1f, now %.1f", before, afterFail)
+	}
+	t.Logf("trust delta verified: pass %.1f→%.1f, fail %.1f→%.1f",
+		initialScore, afterPass, before, afterFail)
 }

@@ -10,7 +10,9 @@ import (
 	"time"
 
 	"github.com/forge/sword/internal/auditlog"
+	"github.com/forge/sword/internal/comm"
 	"github.com/forge/sword/internal/cost"
+	"github.com/forge/sword/internal/genealogy"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/forge/sword/internal/qualitygate"
 	"github.com/forge/sword/internal/trust"
@@ -102,6 +104,9 @@ type Executor struct {
 	pipelineID  string // quality gate pipeline ID to use
 	trustMgr    *trust.Manager
 	auditLog    *auditlog.Logger
+	comm        *comm.Comm   // for escalation messages
+	genealogyStore *genealogy.Store // for provenance recording
+	divisionHeadChannelID string       // channel to escalate failures to
 	mu          sync.Mutex
 }
 
@@ -160,6 +165,19 @@ func WithTrustManager(tm *trust.Manager) ExecutorOption {
 // WithAuditLog wires an audit logger to the executor.
 func WithAuditLog(al *auditlog.Logger) ExecutorOption {
 	return func(e *Executor) { e.auditLog = al }
+}
+
+// WithComm wires a comm system for escalation on gate failure.
+func WithComm(c *comm.Comm, divHeadChannelID string) ExecutorOption {
+	return func(e *Executor) {
+		e.comm = c
+		e.divisionHeadChannelID = divHeadChannelID
+	}
+}
+
+// WithGenealogyStore wires a genealogy store for provenance recording.
+func WithGenealogyStore(gs *genealogy.Store) ExecutorOption {
+	return func(e *Executor) { e.genealogyStore = gs }
 }
 
 // Execute runs a pipeline and returns the result.
@@ -360,17 +378,15 @@ func (e *Executor) runStep(ctx context.Context, step Step, outputs map[string]st
 
 		eval, err := e.qualityGate.Evaluate(ctx, e.pipelineID, work)
 		if err == nil && eval.Status == "failed" {
-			// Quality gate blocked — step fails
-			sr.Status = StatusFailed
-			sr.Error = fmt.Sprintf("quality gate failed: %s", e.gateFailReason(eval))
-			e.emitCallback(step, StatusFailed)
+			failReason := e.gateFailReason(eval)
 
-			// Update trust score: quality gate failure → trust drops
+			// Trust -5: quality gate failure
 			if e.trustMgr != nil {
 				e.trustMgr.RecordTestResult(step.Agent, false)
+				e.trustMgr.RecordFeedback(step.Agent, false) // extra -5 per spec
 			}
 
-			// Audit log
+			// Audit log the gate failure
 			if e.auditLog != nil {
 				e.auditLog.Log(
 					auditlog.SeverityWarning,
@@ -378,15 +394,77 @@ func (e *Executor) runStep(ctx context.Context, step Step, outputs map[string]st
 					step.Agent,
 					"quality_gate_failed",
 					step.Name,
-					sr.Error,
+					failReason,
 				)
 			}
+
+			// Record in genealogy
+			if e.genealogyStore != nil {
+				e.genealogyStore.AddNode(genealogy.ProvenanceNode{
+					ID:          workID,
+					Type:        genealogy.NodePipelineStep,
+					Name:        step.Name,
+					Agent:       step.Agent,
+					Status:      "failure",
+					Description: fmt.Sprintf("quality gate failed: %s", failReason),
+					Metadata:    map[string]string{"reason": failReason},
+				})
+			}
+
+			// Retry once with the same agent (trust already lowered)
+			retryOutput, retryErr := e.runner.Run(ctx, step.Agent, step.Model, prompt)
+			if retryErr == nil {
+				// Re-evaluate on retry
+				retryWork := &qualitygate.WorkItem{
+					ID:          workID + "-retry",
+					Type:        "code",
+					Author:      step.Agent,
+					Payload:     map[string]interface{}{"output": retryOutput, "reviewed": false},
+					SubmittedAt: time.Now().UTC(),
+					Stage:       step.Name + "-retry",
+				}
+				retryEval, retryErr2 := e.qualityGate.Evaluate(ctx, e.pipelineID, retryWork)
+				if retryErr2 == nil && retryEval.Status != "failed" {
+					// Retry passed — use retry output, mark pass
+					sr.Output = retryOutput
+					if e.trustMgr != nil {
+						e.trustMgr.RecordTestResult(step.Agent, true)
+					}
+					goto gatePassRecordAndReturn
+				}
+			}
+
+			// Both attempts failed — escalate to division head via comm
+			if e.comm != nil && e.divisionHeadChannelID != "" {
+				escMsg := fmt.Sprintf("[ESCALATION] Agent %s failed quality gate twice on step %s. Reason: %s",
+					step.Agent, step.Name, failReason)
+				e.comm.Send(step.Agent, e.divisionHeadChannelID, escMsg,
+					comm.MsgSystem, comm.PrioCritical)
+			}
+
+			// Audit escalation
+			if e.auditLog != nil {
+				e.auditLog.Log(
+					auditlog.SeverityCritical,
+					auditlog.CatAgent,
+					step.Agent,
+					"quality_gate_escalated",
+					step.Name,
+					"retry also failed; escalated to division head",
+				)
+			}
+
+			sr.Status = StatusFailed
+			sr.Error = fmt.Sprintf("quality gate failed (retry exhausted): %s", failReason)
+			e.emitCallback(step, StatusFailed)
 			return sr
 		}
 
-		// Gate passed — update trust positively
+		// Gate passed — update trust +3 and record
+	gatePassRecordAndReturn:
 		if e.trustMgr != nil {
-			e.trustMgr.RecordTestResult(step.Agent, true)
+			e.trustMgr.RecordTestResult(step.Agent, true) // +2 per RecordTestResult
+			e.trustMgr.RecordFeedback(step.Agent, true)  // +3 per RecordFeedback
 		}
 		if e.auditLog != nil {
 			e.auditLog.Log(
@@ -397,6 +475,16 @@ func (e *Executor) runStep(ctx context.Context, step Step, outputs map[string]st
 				step.Name,
 				"",
 			)
+		}
+		if e.genealogyStore != nil {
+			e.genealogyStore.AddNode(genealogy.ProvenanceNode{
+				ID:          workID + "-pass",
+				Type:        genealogy.NodePipelineStep,
+				Name:        step.Name,
+				Agent:       step.Agent,
+				Status:      "success",
+				Description: "quality gate passed",
+			})
 		}
 	}
 

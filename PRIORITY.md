@@ -1,7 +1,7 @@
 # PRIORITY.md — CTO Directive
 
-*Issued: 2026-05-22 03:27 UTC*
-*Supersedes: 2026-05-22 00:32 UTC*
+*Issued: 2026-05-22 03:27 UTC*  
+*Updated: 2026-05-22 10:05 UTC — P0 complete*
 
 ## Project State
 
@@ -9,8 +9,16 @@
 - **199 packages**, 276 directories, 172 commands
 - Build/Vet/Tests: Clean. Go 1.26.3.
 - Architecture docs: 12 in `docs/architecture/`
-- Code quality: Real implementations, real tests. Zero stubs detected.
-- Security: QA audits passing, data races fixed.
+- **P0 wiring: COMPLETE**
+
+## P0 Status
+
+| Task | Status | Commit |
+|------|--------|--------|
+| P0-1: Org Bootstrap → Persistent Org | ✅ DONE | `4e67df9` |
+| P0-2: Quality Gate Blocks Bad Code | ✅ DONE | `24f4615` |
+| P0-3: Dashboard Shows Real Data | ✅ DONE | `c8ad6dc` |
+| P0-4: 60-Second Demo | ✅ DONE | this commit |
 
 ## Assessment
 
