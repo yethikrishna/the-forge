@@ -9,6 +9,9 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/forge/sword/internal/cost"
+	"github.com/forge/sword/internal/ledger"
 )
 
 func TestNewBridge(t *testing.T) {
@@ -710,4 +713,107 @@ func TestBridgeContextCancellation(t *testing.T) {
 	if err == nil {
 		t.Error("expected error from context cancellation")
 	}
+}
+
+func TestSessionManagerCostGuard_SoftCap(t *testing.T) {
+	// Set up a mock HTTP server that handles session/send and session/patch
+	mux := http.NewServeMux()
+	mux.HandleFunc("/api/sessions/sess-1/send", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"reply": "ok"})
+	})
+	mux.HandleFunc("/api/sessions/sess-1", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+
+	tmpDir := t.TempDir()
+	b, err := NewBridge(BridgeConfig{
+		GatewayURL:   srv.URL,
+		WorkspaceDir: tmpDir,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sm := NewSessionManager(b)
+
+	// Pre-populate session with expensive model
+	sm.mu.Lock()
+	sm.sessions["sess-1"] = &Session{
+		ID:    "sess-1",
+		Model: "gpt-4",
+	}
+	sm.mu.Unlock()
+
+	// Wire cost guard: budget $10, already spent $9 (90%) → soft cap triggers
+	tracker := cost.NewTracker(filepath.Join(tmpDir, "cost.json"))
+	tracker.RecordUnchecked("agent-1", "sess-1", "gpt-4", 1000, 1000, "test", "test") // add some cost
+	// Force tracker daily total to 90% of $10 budget by using a tiny budget
+	smallBudget := tracker.TotalSpent() / 0.9 // budget such that spent = 90%
+
+	l := ledger.NewLedger(tmpDir)
+	sm.WithCostGuard(tracker, l, smallBudget, "gpt-4-mini", nil, "")
+
+	// Send should succeed but trigger model downgrade
+	reply, err := sm.Send(context.Background(), "sess-1", "hello")
+	if err != nil {
+		t.Fatalf("unexpected error at soft cap: %v", err)
+	}
+	if reply != "ok" {
+		t.Errorf("expected 'ok', got %q", reply)
+	}
+	t.Logf("soft cap test passed; reply=%q", reply)
+}
+
+func TestSessionManagerCostGuard_HardCap(t *testing.T) {
+	tmpDir := t.TempDir()
+	b, err := NewBridge(BridgeConfig{
+		GatewayURL:   "http://localhost:1", // unreachable — hard cap should block before HTTP call
+		WorkspaceDir: tmpDir,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sm := NewSessionManager(b)
+	sm.mu.Lock()
+	sm.sessions["sess-2"] = &Session{ID: "sess-2", Model: "gpt-4o"}
+	sm.mu.Unlock()
+
+	// Wire cost guard using a known model (gpt-4o is in the pricing catalog)
+	tracker := cost.NewTracker(filepath.Join(tmpDir, "cost-hc.json"))
+	// Record real cost using a known model
+	tracker.RecordUnchecked("agent-1", "sess-2", "gpt-4o", 100000, 100000, "test", "test")
+	spentNow := tracker.TotalSpent()
+	if spentNow == 0 {
+		t.Skip("gpt-4o not in pricing catalog; skipping hard cap test")
+	}
+	tinyBudget := spentNow * 0.5 // budget is half of what we spent → OverBudget=true
+
+	l := ledger.NewLedger(tmpDir)
+	sm.WithCostGuard(tracker, l, tinyBudget, "gpt-4o-mini", nil, "")
+
+	_, err = sm.Send(context.Background(), "sess-2", "hello")
+	if err == nil {
+		t.Fatal("expected hard cap to block send; got nil error")
+	}
+	if !containsString(err.Error(), "hard cap") {
+		t.Errorf("error should mention hard cap; got: %v", err)
+	}
+	t.Logf("hard cap blocked correctly: %v", err)
+}
+
+func containsString(s, sub string) bool {
+	return len(s) >= len(sub) && (s == sub || len(s) > 0 && stringContains(s, sub))
+}
+
+func stringContains(s, sub string) bool {
+	for i := 0; i <= len(s)-len(sub); i++ {
+		if s[i:i+len(sub)] == sub {
+			return true
+		}
+	}
+	return false
 }

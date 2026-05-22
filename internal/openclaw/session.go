@@ -8,6 +8,10 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/forge/sword/internal/comm"
+	"github.com/forge/sword/internal/cost"
+	"github.com/forge/sword/internal/ledger"
 )
 
 // SessionState represents the current state of a session.
@@ -53,6 +57,13 @@ type SessionManager struct {
 	bridge   *Bridge
 	mu       sync.RWMutex
 	sessions map[string]*Session
+	// Cost guard wiring
+	costTracker *cost.Tracker
+	costLedger  *ledger.Ledger
+	divBudget   float64      // division cost budget in USD
+	downgradeModel string    // fallback model for 80% soft cap
+	comm        *comm.Comm
+	divHeadChannelID string  // channel to notify on hard cap
 }
 
 // NewSessionManager creates a new session manager.
@@ -61,6 +72,21 @@ func NewSessionManager(bridge *Bridge) *SessionManager {
 		bridge:   bridge,
 		sessions: make(map[string]*Session),
 	}
+}
+
+// WithCostGuard wires a cost tracker and ledger into the session manager.
+// divBudget is the total USD budget for this division/session pool.
+// downgradeModel is the cheaper model to switch to at 80% usage.
+// comm and divHeadChannelID are used to notify on hard cap.
+func (sm *SessionManager) WithCostGuard(tracker *cost.Tracker, l *ledger.Ledger, divBudget float64, downgradeModel string, c *comm.Comm, divHeadChannelID string) {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	sm.costTracker = tracker
+	sm.costLedger = l
+	sm.divBudget = divBudget
+	sm.downgradeModel = downgradeModel
+	sm.comm = c
+	sm.divHeadChannelID = divHeadChannelID
 }
 
 // Create starts a new session.
@@ -175,7 +201,49 @@ func (o SessionListOpts) matches(s *Session) bool {
 }
 
 // Send sends a message into a session and waits for the agent response.
+// Before sending, it enforces the cost budget:
+//   - 80% of budget: downgrade to cheaper model (soft cap)
+//   - 100% of budget: stop + notify division head (hard cap)
 func (sm *SessionManager) Send(ctx context.Context, sessionID, message string) (string, error) {
+	// W03: Cost guard — check budget before every Send()
+	if sm.costTracker != nil && sm.divBudget > 0 {
+		status := sm.costTracker.CheckBudget("daily", sm.divBudget, 0)
+
+		// 100% hard cap: stop session + notify division head
+		if status.OverBudget {
+			// Immutable ledger entry
+			if sm.costLedger != nil {
+				sm.costLedger.RecordAction(sessionID, sessionID, "hard_cap_enforced",
+					"send_blocked", 0)
+			}
+			// Notify division head
+			if sm.comm != nil && sm.divHeadChannelID != "" {
+				notice := fmt.Sprintf("[HARD CAP] Session %s blocked: budget $%.2f exhausted (spent $%.2f)",
+					sessionID, status.Budget, status.Spent)
+				sm.comm.Send(sessionID, sm.divHeadChannelID, notice,
+					comm.MsgSystem, comm.PrioCritical)
+			}
+			return "", fmt.Errorf("session %s blocked: budget hard cap reached ($%.2f spent of $%.2f)",
+				sessionID, status.Spent, status.Budget)
+		}
+
+		// 80% soft cap: downgrade model
+		if status.ShouldWarn && sm.downgradeModel != "" {
+			sm.mu.RLock()
+			s, ok := sm.sessions[sessionID]
+			sm.mu.RUnlock()
+			if ok && s.Model != sm.downgradeModel {
+				// Downgrade the model for this session
+				_ = sm.SetModel(ctx, sessionID, sm.downgradeModel)
+				// Immutable ledger entry
+				if sm.costLedger != nil {
+					sm.costLedger.RecordAction(sessionID, sessionID, "soft_cap_downgrade",
+						"model_downgraded_to_"+sm.downgradeModel, 0)
+				}
+			}
+		}
+	}
+
 	payload := map[string]interface{}{
 		"message": message,
 	}
