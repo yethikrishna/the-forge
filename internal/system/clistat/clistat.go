@@ -5,6 +5,7 @@ package clistat
 import (
 	"fmt"
 	"runtime"
+	"sync"
 	"time"
 )
 
@@ -55,6 +56,7 @@ type Snapshot struct {
 
 // Tracker periodically collects stats.
 type Tracker struct {
+	mu        sync.RWMutex
 	interval  time.Duration
 	snapshots []Snapshot
 	stopCh    chan struct{}
@@ -77,11 +79,14 @@ func (t *Tracker) Start() {
 			case <-ticker.C:
 				var m runtime.MemStats
 				runtime.ReadMemStats(&m)
-				t.snapshots = append(t.snapshots, Snapshot{
+				snap := Snapshot{
 					Time:   time.Now(),
 					Alloc:  m.Alloc,
 					Gorout: runtime.NumGoroutine(),
-				})
+				}
+				t.mu.Lock()
+				t.snapshots = append(t.snapshots, snap)
+				t.mu.Unlock()
 			case <-t.stopCh:
 				ticker.Stop()
 				return
@@ -97,12 +102,21 @@ func (t *Tracker) Stop() {
 
 // Snapshots returns all collected snapshots.
 func (t *Tracker) Snapshots() []Snapshot {
-	return t.snapshots
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+	result := make([]Snapshot, len(t.snapshots))
+	copy(result, t.snapshots)
+	return result
 }
 
 // Summary returns a summary of collected stats.
 func (t *Tracker) Summary() string {
-	if len(t.snapshots) == 0 {
+	t.mu.RLock()
+	snaps := make([]Snapshot, len(t.snapshots))
+	copy(snaps, t.snapshots)
+	t.mu.RUnlock()
+
+	if len(snaps) == 0 {
 		return "no snapshots collected"
 	}
 
@@ -113,7 +127,7 @@ func (t *Tracker) Summary() string {
 	maxGorout = 0
 	minGorout = int(^uint(0) >> 1)
 
-	for _, s := range t.snapshots {
+	for _, s := range snaps {
 		if s.Alloc > maxAlloc {
 			maxAlloc = s.Alloc
 		}
@@ -129,7 +143,7 @@ func (t *Tracker) Summary() string {
 	}
 
 	return fmt.Sprintf("Snapshots: %d | Memory: %s-%s | Goroutines: %d-%d",
-		len(t.snapshots),
+		len(snaps),
 		FormatBytes(minAlloc), FormatBytes(maxAlloc),
 		minGorout, maxGorout)
 }

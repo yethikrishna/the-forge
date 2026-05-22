@@ -2,6 +2,7 @@ package correlator
 
 import (
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -215,12 +216,21 @@ func TestCompoundIssue(t *testing.T) {
 
 // mockTrust implements TrustUpdater for testing.
 type mockTrust struct {
+	mu       sync.Mutex
 	tests    []bool
 	feedback []bool
 }
 
-func (m *mockTrust) RecordTestResult(agentID string, passed bool) { m.tests = append(m.tests, passed) }
-func (m *mockTrust) RecordFeedback(agentID string, positive bool) { m.feedback = append(m.feedback, positive) }
+func (m *mockTrust) RecordTestResult(agentID string, passed bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.tests = append(m.tests, passed)
+}
+func (m *mockTrust) RecordFeedback(agentID string, positive bool) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.feedback = append(m.feedback, positive)
+}
 
 func TestWireToTrustOnCorrelation(t *testing.T) {
 	dir := t.TempDir()
@@ -248,16 +258,23 @@ func TestWireToTrustOnCorrelation(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// W10: cost_anomaly / runaway_cost → RecordFeedback(false) i.e. trust drop
-	if len(mt.feedback) == 0 && len(mt.tests) == 0 {
+	mt.mu.Lock()
+	feedbackCopy := make([]bool, len(mt.feedback))
+	copy(feedbackCopy, mt.feedback)
+	testsCopy := make([]bool, len(mt.tests))
+	copy(testsCopy, mt.tests)
+	mt.mu.Unlock()
+
+	if len(feedbackCopy) == 0 && len(testsCopy) == 0 {
 		// Correlation may not have triggered if pattern wasn't matched — log and skip
 		t.Log("no trust updates triggered (pattern may not match); verify correlator patterns")
 		return
 	}
 
-	for _, fb := range mt.feedback {
+	for _, fb := range feedbackCopy {
 		if fb {
 			t.Error("expected negative feedback on cost anomaly correlation")
 		}
 	}
-	t.Logf("W10 trust wiring: %d test results, %d feedback signals", len(mt.tests), len(mt.feedback))
+	t.Logf("W10 trust wiring: %d test results, %d feedback signals", len(testsCopy), len(feedbackCopy))
 }

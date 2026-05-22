@@ -116,6 +116,18 @@ func (s *Store) Save() error {
 	return os.WriteFile(s.filePath, data, 0644)
 }
 
+// AddMarketCycle appends a market cycle safely under lock and persists.
+func (s *Store) AddMarketCycle(c MarketCycle) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.MarketCycles = append(s.MarketCycles, c)
+	data, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(s.filePath, data, 0644)
+}
+
 // IdentifyCycle classifies a market cycle phase from indicators.
 func IdentifyCycle(indicators map[string]float64) MarketCycle {
 	phase := "stable"

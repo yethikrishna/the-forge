@@ -172,7 +172,7 @@ func TestConcurrency(t *testing.T) {
 	done := make(chan bool, 10)
 	for i := 0; i < 10; i++ {
 		go func() {
-			s.MarketCycles = append(s.MarketCycles, MarketCycle{Phase: "expansion"})
+			s.AddMarketCycle(MarketCycle{Phase: "expansion"})
 			_ = s.Save()
 			done <- true
 		}()

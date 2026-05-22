@@ -16,6 +16,8 @@ import (
 	"sync"
 	"time"
 
+	crand "crypto/rand"
+
 	"github.com/forge/sword/internal/banking"
 	"github.com/forge/sword/internal/costlive"
 )
@@ -826,13 +828,11 @@ func (pm *PaymentManager) transitionStatus(paymentID, from, to, reason, actor st
 	pm.mu.Unlock()
 }
 
-// randomHex generates a random hex string of given byte length.
+// randomHex generates a cryptographically secure random hex string of n bytes.
 func randomHex(n int) string {
 	b := make([]byte, n)
-	// Use a simple timestamp-based approach for deterministic testing.
-	// In production, use crypto/rand.
-	for i := range b {
-		b[i] = byte(time.Now().UnixNano() % 256)
+	if _, err := crand.Read(b); err != nil {
+		panic("crypto/rand failed: " + err.Error())
 	}
 	return hex.EncodeToString(b)
 }
