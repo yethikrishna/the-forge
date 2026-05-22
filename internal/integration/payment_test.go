@@ -8,6 +8,9 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/forge/sword/internal/banking"
+	"github.com/forge/sword/internal/costlive"
 )
 
 func newTestManager() *PaymentManager {
@@ -510,5 +513,51 @@ func TestPaymentMultipleRefunds(t *testing.T) {
 	got, _ := pm.Get(p.ID)
 	if got.Status != PaymentPartiallyRef {
 		t.Fatalf("Expected partially_refunded after first partial, got %s", got.Status)
+	}
+}
+
+func TestPaymentChargeRecordsToBankingAndCostLive(t *testing.T) {
+	pm := newTestManager()
+
+	// Set up banking
+	bankDir := t.TempDir()
+	b := banking.NewBank(bankDir + "/bank.json")
+	acct, err := b.CreateAccount("cost-tracking", banking.AccountOperating, "USD", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pm.WithBank(b, acct.ID)
+
+	// Set up costlive tracker
+	ltDir := t.TempDir()
+	lt, err := costlive.NewLiveTracker(ltDir, 100.0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pm.WithCostTracker(lt)
+
+	// Charge $25
+	p, err := pm.Charge(25.0, "LLM API usage", map[string]string{"model": "gpt-4o"})
+	if err != nil {
+		t.Fatalf("charge error: %v", err)
+	}
+	if p.Status != PaymentCompleted {
+		t.Fatalf("expected completed, got %s", p.Status)
+	}
+
+	// Verify banking transaction recorded
+	txns := b.ListTransactions("api_cost", 10)
+	if len(txns) == 0 {
+		t.Error("expected banking transaction after charge")
+	} else {
+		t.Logf("banking transaction recorded: $%.2f %s", txns[0].Amount, txns[0].Description)
+	}
+
+	// Verify costlive shows the spend
+	stats := lt.Stats()
+	if stats.TodayCost == 0 {
+		t.Error("expected costlive to reflect payment charge")
+	} else {
+		t.Logf("costlive today total cost: $%.4f", stats.TodayCost)
 	}
 }

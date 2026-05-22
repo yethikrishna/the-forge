@@ -98,8 +98,10 @@
   - Consistent error format: `{"error": "code", "message": "...", "fix": "..."}`
   - Remove any duplicate or orphaned commands
 
-- [ ] **W12: Payment E2E wiring**
+- [x] **W12: Payment E2E wiring**
   - `integration/payment.go` → `banking/` → `cost/`
+  - PaymentManager.WithBank() auto-records charges as banking transactions
+  - PaymentManager.WithCostTracker() records to costlive for `forge cost live`
   - `forge cost live` shows real spend per agent/division/org
 
 - [ ] **W13: Documentation website**

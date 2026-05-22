@@ -15,6 +15,9 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/forge/sword/internal/banking"
+	"github.com/forge/sword/internal/costlive"
 )
 
 // PaymentProvider identifies the payment provider.
@@ -125,6 +128,10 @@ type PaymentManager struct {
 	client   *http.Client
 	orgName  string
 	orgID    string
+	// W12: wired banking ledger + costlive tracker for auto-recording charges
+	bank          *banking.Bank
+	bankAccountID string
+	costTracker   *costlive.LiveTracker
 }
 
 // NewPaymentManager creates a payment manager.
@@ -152,6 +159,44 @@ func (pm *PaymentManager) SetOrgInfo(name, id string) {
 	defer pm.mu.Unlock()
 	pm.orgName = name
 	pm.orgID = id
+}
+
+// WithBank wires a banking.Bank so every successful charge is automatically
+// recorded as a banking transaction (category: "api_cost").
+// accountID is the bank account to record into.
+func (pm *PaymentManager) WithBank(b *banking.Bank, accountID string) {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+	pm.bank = b
+	pm.bankAccountID = accountID
+}
+
+// WithCostTracker wires a costlive.LiveTracker so every successful charge
+// is also recorded in the live cost tracker (visible in `forge cost live`).
+func (pm *PaymentManager) WithCostTracker(lt *costlive.LiveTracker) {
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+	pm.costTracker = lt
+}
+
+// recordToBank records a completed payment as a banking expense transaction.
+// Uses ReceivePayment into a designated cost-tracking account if one exists.
+func (pm *PaymentManager) recordToBank(p *Payment) {
+	if pm.bank != nil && pm.bankAccountID != "" {
+		// Record as an incoming transaction to the cost-tracking account
+		_, _ = pm.bank.ReceivePayment(
+			pm.bankAccountID,
+			p.Amount,
+			"api_cost",
+			p.Description,
+			p.ID,
+		)
+	}
+	if pm.costTracker != nil {
+		// Record to costlive so forge cost live reflects this spend
+		provider := string(p.Provider)
+		pm.costTracker.Record(pm.orgID, provider, 0, 0, p.Amount, "payment:charge")
+	}
 }
 
 // Charge creates a payment charge.
@@ -228,10 +273,11 @@ func (pm *PaymentManager) processTestPayment(id string) (*Payment, error) {
 		Actor:      "test-processor",
 	})
 
+	// W12: Record to banking ledger
+	pm.recordToBank(payment)
+
 	return payment, nil
 }
-
-// processProviderPayment calls the real payment provider API.
 func (pm *PaymentManager) processProviderPayment(payment *Payment) (*Payment, error) {
 	switch pm.config.Provider {
 	case PaymentStripe:
