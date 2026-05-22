@@ -72,6 +72,9 @@ type Engine struct {
 	nextID       int
 	corrID       int
 	mu           sync.RWMutex
+	// OnCorrelation fires when a new correlation is detected.
+	// Called with the first agent ID in the event group and the correlation.
+	OnCorrelation func(agentID string, c *Correlation)
 }
 
 // NewEngine creates a correlation engine.
@@ -144,6 +147,8 @@ func (e *Engine) autoCorrelate(eventID string) {
 		pattern, desc, confidence, severity := e.detectPattern(related)
 		if pattern != "" {
 			e.corrID++
+			// Determine the agent ID from the triggering event
+			agentID := evt.AgentID
 			corr := &Correlation{
 				ID:          fmt.Sprintf("corr-%d", e.corrID),
 				Events:      related,
@@ -155,6 +160,11 @@ func (e *Engine) autoCorrelate(eventID string) {
 				Timestamp:   time.Now(),
 			}
 			e.correlations[corr.ID] = corr
+			// Fire trust-update hook without holding the full engine lock
+			if e.OnCorrelation != nil {
+				cb := e.OnCorrelation
+				go cb(agentID, corr)
+			}
 		}
 	}
 }
@@ -338,4 +348,36 @@ func FormatCorrelation(c *Correlation) string {
 	}
 	return fmt.Sprintf("[%s] %s (confidence: %.0f%%)\n  Pattern: %s\n  Events: %d | Sources: %s\n",
 		c.Severity, c.Description, c.Confidence*100, c.Pattern, len(c.Events), strings.Join(sources, ", "))
+}
+
+// TrustUpdater is the minimal interface required to update agent trust scores.
+type TrustUpdater interface {
+	RecordTestResult(agentID string, passed bool)
+	RecordFeedback(agentID string, positive bool)
+}
+
+// WireToTrust sets up the OnCorrelation hook to translate correlation signals
+// into trust score deltas per the W10 rules:
+//   - error_spike     → -5 (RecordTestResult false + RecordFeedback false)
+//   - cost_anomaly    → -3 (RecordFeedback false)
+//   - quality_drop    → -3 (RecordFeedback false)
+//   - stuck           → no change (escalated separately)
+//   - success/recover → +3 (RecordTestResult true)
+func (e *Engine) WireToTrust(tm TrustUpdater) {
+	e.OnCorrelation = func(agentID string, c *Correlation) {
+		if agentID == "" {
+			return
+		}
+		switch c.Pattern {
+		case "error_spike", "error-spike":
+			tm.RecordTestResult(agentID, false)
+			tm.RecordFeedback(agentID, false)
+		case "cost_anomaly", "cost-anomaly", "runaway_cost":
+			tm.RecordFeedback(agentID, false)
+		case "quality_drop", "quality-drop":
+			tm.RecordFeedback(agentID, false)
+		case "success", "recovered", "recovery":
+			tm.RecordTestResult(agentID, true)
+		}
+	}
 }

@@ -13,6 +13,8 @@ import (
 	"github.com/forge/sword/internal/comm"
 	"github.com/forge/sword/internal/cost"
 	"github.com/forge/sword/internal/genealogy"
+	"github.com/forge/sword/internal/guard"
+	"github.com/forge/sword/internal/memory"
 	"github.com/forge/sword/internal/pretty"
 	"github.com/forge/sword/internal/qualitygate"
 	"github.com/forge/sword/internal/trust"
@@ -32,16 +34,18 @@ const (
 
 // Step represents a single step in a pipeline.
 type Step struct {
-	Name      string            `yaml:"name" json:"name"`
-	Agent     string            `yaml:"agent" json:"agent"`
-	Model     string            `yaml:"model" json:"model"`
-	Prompt    string            `yaml:"prompt" json:"prompt"`
-	Input     string            `yaml:"input" json:"input"`
-	Output    string            `yaml:"output" json:"output"`
-	Approval  bool              `yaml:"approval" json:"approval"`
-	Env       map[string]string `yaml:"env" json:"env"`
-	Timeout   string            `yaml:"timeout" json:"timeout"`
-	DependsOn []string          `yaml:"depends_on" json:"depends_on"`
+	Name           string            `yaml:"name" json:"name"`
+	Agent          string            `yaml:"agent" json:"agent"`
+	Model          string            `yaml:"model" json:"model"`
+	Prompt         string            `yaml:"prompt" json:"prompt"`
+	Input          string            `yaml:"input" json:"input"`
+	Output         string            `yaml:"output" json:"output"`
+	Approval       bool              `yaml:"approval" json:"approval"`
+	Env            map[string]string `yaml:"env" json:"env"`
+	Timeout        string            `yaml:"timeout" json:"timeout"`
+	DependsOn      []string          `yaml:"depends_on" json:"depends_on"`
+	ExternalAction string            `yaml:"external_action" json:"external_action"` // e.g. "email", "api_call", "deploy", "data_export"
+	ActionTarget   string            `yaml:"action_target" json:"action_target"`     // target for the external action
 }
 
 // Pipeline is a named sequence of steps.
@@ -107,6 +111,8 @@ type Executor struct {
 	comm        *comm.Comm   // for escalation messages
 	genealogyStore *genealogy.Store // for provenance recording
 	divisionHeadChannelID string       // channel to escalate failures to
+	memoryStore *memory.Store // for task outcome storage
+	guard       *guard.Guard  // compliance gate for external actions
 	mu          sync.Mutex
 }
 
@@ -178,6 +184,20 @@ func WithComm(c *comm.Comm, divHeadChannelID string) ExecutorOption {
 // WithGenealogyStore wires a genealogy store for provenance recording.
 func WithGenealogyStore(gs *genealogy.Store) ExecutorOption {
 	return func(e *Executor) { e.genealogyStore = gs }
+}
+
+// WithMemoryStore wires a memory store so task outcomes are stored for
+// cross-agent learning. On every step completion the step result is stored
+// with agent, outcome, model, and duration tags.
+func WithMemoryStore(ms *memory.Store) ExecutorOption {
+	return func(e *Executor) { e.memoryStore = ms }
+}
+
+// WithGuard wires a compliance guard that checks every step action before
+// execution. Steps with a non-empty ExternalAction field are evaluated;
+// blocked steps fail immediately with the guard's reason.
+func WithGuard(g *guard.Guard) ExecutorOption {
+	return func(e *Executor) { e.guard = g }
 }
 
 // Execute runs a pipeline and returns the result.
@@ -326,6 +346,32 @@ func (e *Executor) runStep(ctx context.Context, step Step, outputs map[string]st
 			var cancel context.CancelFunc
 			ctx, cancel = context.WithTimeout(ctx, d)
 			defer cancel()
+		}
+	}
+
+	// W09: Compliance guard — check external actions before execution
+	if e.guard != nil && step.ExternalAction != "" {
+		action := guard.Action{
+			AgentID:  step.Agent,
+			Type:     step.ExternalAction,
+			Target:   step.ActionTarget,
+			Content:  prompt,
+			Metadata: map[string]string{"step": step.Name, "pipeline": "pipeline"},
+		}
+		verdict := e.guard.Check(action)
+		if !verdict.Allowed {
+			if e.auditLog != nil {
+				e.auditLog.Log(auditlog.SeverityWarning, auditlog.CatAgent, step.Agent,
+					"compliance_blocked", step.Name, verdict.Reason)
+			}
+			sr.Status = StatusFailed
+			sr.Error = fmt.Sprintf("compliance gate blocked %s: %s", step.ExternalAction, verdict.Reason)
+			e.emitCallback(step, StatusFailed)
+			return sr
+		}
+		// Apply sanitized content if guard modified it
+		if verdict.Modified {
+			prompt = verdict.NewContent
 		}
 	}
 
@@ -491,6 +537,31 @@ func (e *Executor) runStep(ctx context.Context, step Step, outputs map[string]st
 	// Track cost
 	if e.tracker != nil {
 		e.tracker.RecordUnchecked(step.Agent, "pipeline", step.Model, 0, 0, e.project, step.Name)
+	}
+
+	// W08: Store task outcome in memory for cross-agent learning
+	if e.memoryStore != nil {
+		tags := []string{"pipeline", "step:" + step.Name, "agent:" + step.Agent}
+		if sr.Status == StatusCompleted {
+			tags = append(tags, "outcome:success")
+		} else {
+			tags = append(tags, "outcome:failure")
+		}
+		if step.Model != "" {
+			tags = append(tags, "model:"+step.Model)
+		}
+		e.memoryStore.Store(
+			step.Agent,
+			"pipeline",
+			fmt.Sprintf("step=%s status=%s duration=%s", step.Name, sr.Status, sr.Duration),
+			tags,
+			map[string]string{
+				"step":   step.Name,
+				"status": string(sr.Status),
+				"agent":  step.Agent,
+				"model":  step.Model,
+			},
+		)
 	}
 
 	return sr

@@ -9,7 +9,7 @@
 
 ### P0 — Working Pipeline (48 hours)
 
-- [ ] **W01: Org bootstrap persists to SQLite**
+- [x] **W01: Org bootstrap persists to SQLite**
   - `cmd/org.go` init command calls `org.New()` with `persistPath`
   - Creates 4 default divisions: engineering, operations, research, security
   - Hires 4 division head agents
@@ -17,17 +17,17 @@
   - `forge org status` reads from persisted state
   - **Verify**: `forge org init && forge org status` shows real data after process restart
 
-- [ ] **W02: Division channels initialized on bootstrap**
+- [x] **W02: Division channels initialized on bootstrap**
   - `org.init` triggers `comm.CreateChannel()` per division
   - Channel IDs stored in division metadata
   - `forge channel <division>` shows division channel
 
-- [ ] **W03: Cost tracking initialized per division**
+- [x] **W03: Cost tracking initialized per division**
   - `org.init` triggers `cost.NewTracker()` per division
   - Division budget allocated from org total
   - `forge cost summary` shows per-division breakdown
 
-- [ ] **W04: Quality gate integrated into pipeline executor**
+- [x] **W04: Quality gate integrated into pipeline executor**
   - `pipeline.Executor` calls `qualitygate.Evaluate()` after each step
   - Score < threshold → step fails
   - Failed step → retry with higher-trust agent (if available)
@@ -36,22 +36,23 @@
   - Trust score updated: pass +3, fail -5
   - **Verify**: Agent produces garbage code → pipeline rejects → trust drops
 
-- [ ] **W05: Dashboard WebSocket wired to real subsystems**
+- [x] **W05: Dashboard WebSocket wired to real subsystems**
   - `dashboard/websocket.go` subscribes to:
     - `costlive/` for real-time spend
     - `org/` for agent status changes (via eventbus)
     - `trust/` for trust score updates
     - `correlator/` for signal alerts
   - Remove all mock data from dashboard handlers
+  - LiveProvider wired via StartWatcher (5s interval push)
   - **Verify**: Start org → dashboard shows real agents, real costs, real quality
 
-- [ ] **W06: 60-second demo recorded**
+- [x] **W06: 60-second demo recorded**
   - Script: org init → agents working → quality gate catches bad code → dashboard
   - Publish as asciinema + markdown walkthrough
 
 ### P1 — Production Enforcement (72 hours)
 
-- [ ] **W07: Cost budget enforcement in execution path**
+- [x] **W07: Cost budget enforcement in execution path**
   - `guard.CheckBudget()` called before `openclaw.Send()`
   - 80% soft cap: `guard.EnforceSoftCap()` → model downgrade via session update
   - 100% hard cap: `guard.EnforceHardCap()` → session stop
@@ -59,7 +60,7 @@
   - Division head notified on hard cap via `comm.Send()`
   - **Verify**: Agent hits 80% → model changes. Hits 100% → stops.
 
-- [ ] **W08: Memory auto-store on task completion**
+- [x] **W08: Memory auto-store on task completion**
   - Pipeline step completion → `memory.Store()` with:
     - Task type, outcome, quality score, cost, duration
     - Agent ID, division ID, timestamp
@@ -67,17 +68,18 @@
   - `forge dream` nightly → `orglearn.ExtractPatterns()` from accumulated memory
   - **Verify**: Agent A does task → Agent B reads A's learnings → uses them
 
-- [ ] **W09: Compliance gate in execution path**
+- [x] **W09: Compliance gate in execution path**
   - `compliance.Evaluate()` called before external actions:
     - Email send → PII check
     - API call → scope check
     - Deployment → approval check
     - Data export → classification check
   - Blocked action → `auditlog.Record()` + `notify.Send(human)`
+  - Step.ExternalAction field routes to guard.Check() before runner.Run()
   - **Verify**: Agent exports user data → blocked → logged → human notified
 
-- [ ] **W10: Feedback signals update trust scores**
-  - `correlator` output → `trust.Update(agentID, delta)`
+- [x] **W10: Feedback signals update trust scores**
+  - `correlator` output → `trust.Update(agentID, delta)` via `Engine.WireToTrust()`
   - Rules:
     - Error spike → -5
     - Cost anomaly → -3

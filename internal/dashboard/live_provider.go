@@ -1,6 +1,7 @@
 package dashboard
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -227,4 +228,31 @@ func (p *LiveProvider) QualityStats() map[string]interface{} {
 		"pipeline_count": len(pipelines),
 		"pipelines":      fmt.Sprintf("%d configured", len(pipelines)),
 	}
+}
+
+// SetHub updates the WebSocket hub used for broadcasting state changes.
+// Call this after creating the dashboard Server to use the Server's hub.
+func (p *LiveProvider) SetHub(hub *WebSocketHub) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.hub = hub
+}
+
+// StartWatcher starts a background goroutine that pushes state updates at
+// the given interval. This wires real-time changes from org/cost/trust to
+// connected WebSocket clients without requiring an eventbus subscription.
+// Call after SetHub(). Stop by cancelling the provided context.
+func (p *LiveProvider) StartWatcher(ctx context.Context, interval time.Duration) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				p.PushStateUpdate()
+			}
+		}
+	}()
 }
