@@ -3,10 +3,12 @@ package suna
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 )
 
 // Bridge tests
@@ -96,8 +98,8 @@ func TestSandboxCreate(t *testing.T) {
 	sm := NewSandboxManager(b)
 
 	sb, err := sm.Create(context.Background(), SandboxConfig{
-		Name:    "test-sb",
-		AgentID: "agent-1",
+		Name:    fmt.Sprintf("test-sb-%d", time.Now().UnixNano()),
+		AgentID: fmt.Sprintf("agent-%d", time.Now().UnixNano()),
 		Image:   "alpine:latest",
 		Resources: SandboxResources{
 			CPUCores:    1.0,
@@ -109,7 +111,7 @@ func TestSandboxCreate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create: %v", err)
 	}
-	defer sm.Remove(context.Background(), "test-sb")
+	defer sm.Remove(context.Background(), sb.Name)
 
 	if sb.State != SandboxRunning {
 		t.Errorf("expected running, got %s", sb.State)

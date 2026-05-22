@@ -144,7 +144,20 @@ func TestApplyMissingRequiredVar(t *testing.T) {
 	tmpDir := t.TempDir()
 	r := NewRegistry("")
 
-	_, err := r.Apply("go-api", filepath.Join(tmpDir, "project"), map[string]string{})
+	// Register a template with a required var that has no default
+	r.Save(&Template{
+		ID:   "test-required",
+		Name: "Test Required",
+		Type: TypeCustom,
+		Vars: []Var{
+			{Name: "api_key", Description: "API key", Required: true},
+		},
+		Files: []TemplateFile{
+			{Path: "config.txt", Content: "key={{.api_key}}", Mode: 0644},
+		},
+	})
+
+	_, err := r.Apply("test-required", filepath.Join(tmpDir, "project"), map[string]string{})
 	if err == nil {
 		t.Error("expected error for missing required variable")
 	}

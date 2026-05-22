@@ -3,7 +3,11 @@
 package transfer
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -277,55 +281,133 @@ func (r *Receiver) Receive(listenAddr, secret string) (*TransferInfo, error) {
 }
 
 // encryption helpers
+//
+// AES-256-GCM provides authenticated encryption: confidentiality + integrity.
+// Each chunk is encrypted independently with a unique nonce derived from
+// the key hash and a counter, preventing nonce reuse across chunks.
 
 func deriveKey(secret string) []byte {
-	key := make([]byte, 32)
-	copy(key, []byte(secret))
-	if len(secret) > 32 {
-		key = []byte(secret[:32])
-	}
-	return key
+	h := sha256.Sum256([]byte(secret))
+	return h[:]
 }
 
 type encryptedWriter struct {
-	key    []byte
+	aead  cipher.AEAD
 	writer io.Writer
+	buf    []byte
+	nonce  [12]byte
+	ctr    uint32
 }
 
 func newEncryptedWriter(w io.Writer, secret string) (*encryptedWriter, error) {
-	return &encryptedWriter{key: deriveKey(secret), writer: w}, nil
+	key := deriveKey(secret)
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, fmt.Errorf("aes cipher: %w", err)
+	}
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("gcm: %w", err)
+	}
+	return &encryptedWriter{
+		aead:  aead,
+		writer: w,
+		buf:    make([]byte, 0, ChunkSize+aead.Overhead()+4), // len prefix + ciphertext + tag
+	}, nil
 }
 
 func (ew *encryptedWriter) Write(p []byte) (int, error) {
-	encrypted := make([]byte, len(p))
-	for i, b := range p {
-		encrypted[i] = b ^ ew.key[i%len(ew.key)]
+	// Encrypt the chunk: write [4-byte length][nonce][ciphertext+tag]
+	ew.incrementNonce()
+
+	ciphertext := ew.aead.Seal(nil, ew.nonce[:], p, nil)
+
+	// Length prefix: 4 bytes big-endian = len(nonce) + len(ciphertext)
+	frameLen := uint32(len(ew.nonce) + len(ciphertext))
+	lenBuf := make([]byte, 4)
+	binary.BigEndian.PutUint32(lenBuf, frameLen)
+
+	if _, err := ew.writer.Write(lenBuf); err != nil {
+		return 0, err
 	}
-	return ew.writer.Write(encrypted)
+	if _, err := ew.writer.Write(ew.nonce[:]); err != nil {
+		return 0, err
+	}
+	if _, err := ew.writer.Write(ciphertext); err != nil {
+		return 0, err
+	}
+
+	return len(p), nil
+}
+
+func (ew *encryptedWriter) incrementNonce() {
+	ew.ctr++
+	binary.LittleEndian.PutUint32(ew.nonce[8:12], ew.ctr)
 }
 
 type encryptedReader struct {
-	key   []byte
+	aead  cipher.AEAD
 	reader io.Reader
+	nonce  [12]byte
+	ctr    uint32
 }
 
 func newEncryptedReader(r io.Reader, secret string) (*encryptedReader, error) {
-	return &encryptedReader{key: deriveKey(secret), reader: r}, nil
+	key := deriveKey(secret)
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, fmt.Errorf("aes cipher: %w", err)
+	}
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, fmt.Errorf("gcm: %w", err)
+	}
+	return &encryptedReader{
+		aead:  aead,
+		reader: r,
+	}, nil
 }
 
 func (er *encryptedReader) Read(p []byte) (int, error) {
-	n, err := er.reader.Read(p)
-	if n > 0 {
-		for i := 0; i < n; i++ {
-			p[i] = p[i] ^ er.key[i%len(er.key)]
-		}
+	// Read length prefix
+	lenBuf := make([]byte, 4)
+	if _, err := io.ReadFull(er.reader, lenBuf); err != nil {
+		return 0, err
 	}
-	return n, err
+	frameLen := binary.BigEndian.Uint32(lenBuf)
+	if frameLen > uint32(ChunkSize+er.aead.Overhead()+12) {
+		return 0, fmt.Errorf("encrypted frame too large: %d", frameLen)
+	}
+
+	// Read frame (nonce + ciphertext)
+	frame := make([]byte, frameLen)
+	if _, err := io.ReadFull(er.reader, frame); err != nil {
+		return 0, err
+	}
+
+	// Split nonce and ciphertext
+	if len(frame) < 12 {
+		return 0, fmt.Errorf("encrypted frame too short")
+	}
+	nonce := frame[:12]
+	ciphertext := frame[12:]
+
+	// Decrypt
+	plaintext, err := er.aead.Open(nil, nonce, ciphertext, nil)
+	if err != nil {
+		return 0, fmt.Errorf("decrypt: %w", err)
+	}
+
+	copy(p, plaintext)
+	return len(plaintext), nil
 }
 
 // GenerateSecret creates a random transfer secret.
 func GenerateSecret() string {
 	b := make([]byte, 32)
-	rand.Read(b)
+	if _, err := rand.Read(b); err != nil {
+		// Fallback: should never happen
+		panic("crypto/rand failed: " + err.Error())
+	}
 	return hex.EncodeToString(b)
 }

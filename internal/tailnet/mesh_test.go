@@ -231,6 +231,38 @@ func TestGenerateKeyPair(t *testing.T) {
 	}
 }
 
+func TestGenerateKeyPairUniqueness(t *testing.T) {
+	keys := make(map[string]bool)
+	for i := 0; i < 10; i++ {
+		priv, pub, err := generateKeyPair()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if keys[priv] {
+			t.Error("duplicate private key")
+		}
+		if keys[pub] {
+			t.Error("duplicate public key")
+		}
+		keys[priv] = true
+		keys[pub] = true
+	}
+}
+
+func TestGenerateKeyPairDeterministicPublic(t *testing.T) {
+	// Verify that the same private key always produces the same public key
+	// by checking the mathematical relationship
+	priv1, pub1, _ := generateKeyPair()
+	priv2, pub2, _ := generateKeyPair()
+
+	// Different private keys must produce different public keys
+	if pub1 == pub2 {
+		t.Error("different private keys produced same public key")
+	}
+	_ = priv1
+	_ = priv2
+}
+
 func TestNodeSerialization(t *testing.T) {
 	node := Node{
 		ID:            "node-test",

@@ -3,11 +3,14 @@
 package integration
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -283,15 +286,100 @@ func providerAuthURL(p OAuthProvider) string {
 }
 
 func exchangeCode(cfg OAuthConfig, code string) (*Token, error) {
-	// In production, this makes an HTTP POST to the token endpoint
-	// For the runtime layer, we return a simulated token
+	tokenURL := cfg.TokenURL
+	if tokenURL == "" {
+		tokenURL = providerTokenURL(cfg.Provider)
+	}
+	if tokenURL == "" {
+		return nil, fmt.Errorf("oauth: no token URL for provider %s", cfg.Provider)
+	}
+
+	// Build the token exchange request per RFC 6749 §4.1.3
+	payload := strings.NewReader(strings.Join([]string{
+		"grant_type=authorization_code",
+		"code=" + url.QueryEscape(code),
+		"redirect_uri=" + url.QueryEscape(cfg.RedirectURL),
+		"client_id=" + url.QueryEscape(cfg.ClientID),
+		"client_secret=" + url.QueryEscape(cfg.ClientSecret),
+	}, "&"))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, payload)
+	if err != nil {
+		return nil, fmt.Errorf("oauth: create token request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept", "application/json")
+
+	// GitHub also accepts application/json but returns JSON regardless with the Accept header
+	if cfg.Provider == OAuthGitHub {
+		req.Header.Set("Accept", "application/json")
+	}
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("oauth: token exchange request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("oauth: read token response: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("oauth: token exchange failed (HTTP %d): %s", resp.StatusCode, string(body))
+	}
+
+	var tokenResp struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+		TokenType    string `json:"token_type"`
+		ExpiresIn    int    `json:"expires_in"`
+		Scope        string `json:"scope"`
+		IDToken      string `json:"id_token"`
+		Error        string `json:"error"`
+		ErrorDesc    string `json:"error_description"`
+	}
+	if err := json.Unmarshal(body, &tokenResp); err != nil {
+		return nil, fmt.Errorf("oauth: parse token response: %w", err)
+	}
+	if tokenResp.Error != "" {
+		return nil, fmt.Errorf("oauth: %s: %s", tokenResp.Error, tokenResp.ErrorDesc)
+	}
+
+	expiry := time.Now().Add(time.Hour) // default 1h
+	if tokenResp.ExpiresIn > 0 {
+		expiry = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+	}
+
 	return &Token{
-		AccessToken:  "simulated-access-token",
-		RefreshToken: "simulated-refresh-token",
-		TokenType:    "Bearer",
-		Expiry:       time.Now().Add(time.Hour),
-		Scope:        strings.Join(cfg.Scopes, " "),
+		AccessToken:  tokenResp.AccessToken,
+		RefreshToken: tokenResp.RefreshToken,
+		TokenType:    tokenResp.TokenType,
+		Expiry:       expiry,
+		Scope:        tokenResp.Scope,
 	}, nil
+}
+
+func providerTokenURL(p OAuthProvider) string {
+	switch p {
+	case OAuthGoogle:
+		return "https://oauth2.googleapis.com/token"
+	case OAuthGitHub:
+		return "https://github.com/login/oauth/access_token"
+	case OAuthSlack:
+		return "https://slack.com/api/oauth.v2.access"
+	case OAuthDiscord:
+		return "https://discord.com/api/oauth2/token"
+	case OAuthMicrosoft:
+		return "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+	default:
+		return ""
+	}
 }
 
 func generateState() string {

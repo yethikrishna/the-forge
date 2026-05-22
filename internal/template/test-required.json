@@ -1,0 +1,24 @@
+{
+  "id": "test-required",
+  "name": "Test Required",
+  "type": "custom",
+  "version": "",
+  "description": "",
+  "files": [
+    {
+      "path": "config.txt",
+      "content": "key={{.api_key}}",
+      "mode": 420,
+      "exec": false,
+      "optional": false
+    }
+  ],
+  "vars": [
+    {
+      "name": "api_key",
+      "description": "API key",
+      "required": true
+    }
+  ],
+  "created_at": "0001-01-01T00:00:00Z"
+}

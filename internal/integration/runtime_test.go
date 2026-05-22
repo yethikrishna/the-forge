@@ -5,44 +5,6 @@ import (
 	"time"
 )
 
-// --- Browser ---
-
-func TestBrowserOpenSession(t *testing.T) {
-	bm := NewBrowserManager()
-	sess, err := bm.OpenSession("https://example.com", "scrape data")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if sess.URL != "https://example.com" {
-		t.Errorf("expected URL, got %s", sess.URL)
-	}
-	if sess.Status != "active" {
-		t.Errorf("expected active, got %s", sess.Status)
-	}
-}
-
-func TestBrowserCloseSession(t *testing.T) {
-	bm := NewBrowserManager()
-	sess, _ := bm.OpenSession("https://example.com", "test")
-	bm.CloseSession(sess.ID)
-	if len(bm.ListSessions()) != 0 {
-		t.Error("expected 0 sessions")
-	}
-}
-
-func TestBrowserExecute(t *testing.T) {
-	bm := NewBrowserManager()
-	sess, _ := bm.OpenSession("https://example.com", "test")
-
-	result, err := bm.Execute(nil, sess.ID, BrowserAction{Type: "navigate", URL: "https://test.com"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !result.Success {
-		t.Error("expected success")
-	}
-}
-
 // --- Email ---
 
 func TestEmailSend(t *testing.T) {

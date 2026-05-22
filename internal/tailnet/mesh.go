@@ -13,6 +13,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/crypto/curve25519"
 	"sync"
 	"time"
 )
@@ -285,17 +287,24 @@ func (m *Mesh) loadPrivateKey() string {
 }
 
 func generateKeyPair() (private, public string, err error) {
-	key := make([]byte, 32)
-	if _, err := rand.Read(key); err != nil {
+	// Generate a Curve25519 private key using the standard approach:
+	// 32 random bytes clamped per RFC 7748 §6.1
+	var privateKey [32]byte
+	if _, err := rand.Read(privateKey[:]); err != nil {
 		return "", "", err
 	}
-	private = hex.EncodeToString(key)
 
-	pub := make([]byte, 32)
-	for i := range key {
-		pub[i] = key[i] ^ 0xFF
-	}
-	public = hex.EncodeToString(pub)
+	// Clamp the private key (same as WireGuard does)
+	privateKey[0] &= 248
+	privateKey[31] &= 127
+	privateKey[31] |= 64
+
+	// Compute the public key using curve25519 scalar multiplication
+	var pubKey [32]byte
+	curve25519.ScalarBaseMult(&pubKey, &privateKey)
+
+	private = hex.EncodeToString(privateKey[:])
+	public = hex.EncodeToString(pubKey[:])
 	return private, public, nil
 }
 

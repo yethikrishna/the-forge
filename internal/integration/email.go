@@ -2,8 +2,11 @@
 package integration
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net/smtp"
+	"strings"
 	"sync"
 	"time"
 )
@@ -60,7 +63,7 @@ func NewEmailManager(config EmailConfig) *EmailManager {
 	}
 }
 
-// Send creates and queues an email for sending.
+// Send sends an email via SMTP. If SMTP is not configured, it queues locally.
 func (em *EmailManager) Send(to []string, subject, body string) (*EmailMessage, error) {
 	if len(to) == 0 {
 		return nil, fmt.Errorf("email: recipients required")
@@ -78,11 +81,99 @@ func (em *EmailManager) Send(to []string, subject, body string) (*EmailMessage, 
 		Date:    time.Now(),
 	}
 
+	if em.config.SMTPHost != "" {
+		if err := em.sendSMTP(msg); err != nil {
+			return nil, fmt.Errorf("email: SMTP send failed: %w", err)
+		}
+	}
+
 	em.mu.Lock()
 	em.outbox = append(em.outbox, msg)
 	em.mu.Unlock()
 
 	return msg, nil
+}
+
+// sendSMTP delivers the message via SMTP.
+func (em *EmailManager) sendSMTP(msg *EmailMessage) error {
+	host := em.config.SMTPHost
+	port := em.config.SMTPPort
+	if port == 0 {
+		port = 587
+	}
+	addr := fmt.Sprintf("%s:%d", host, port)
+
+	// Build the email message in RFC 2822 format
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("From: %s\r\n", msg.From))
+	sb.WriteString(fmt.Sprintf("To: %s\r\n", strings.Join(msg.To, ", ")))
+	if len(msg.CC) > 0 {
+		sb.WriteString(fmt.Sprintf("Cc: %s\r\n", strings.Join(msg.CC, ", ")))
+	}
+	sb.WriteString(fmt.Sprintf("Subject: %s\r\n", msg.Subject))
+	sb.WriteString(fmt.Sprintf("Date: %s\r\n", msg.Date.Format(time.RFC1123Z)))
+	sb.WriteString("MIME-Version: 1.0\r\n")
+	if msg.HTML != "" {
+		boundary := "forge-boundary-" + msg.ID
+		sb.WriteString(fmt.Sprintf("Content-Type: multipart/alternative; boundary=%s\r\n", boundary))
+		sb.WriteString("\r\n")
+		sb.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+		sb.WriteString("Content-Type: text/plain; charset=utf-8\r\n\r\n")
+		sb.WriteString(msg.Body)
+		sb.WriteString("\r\n")
+		sb.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+		sb.WriteString("Content-Type: text/html; charset=utf-8\r\n\r\n")
+		sb.WriteString(msg.HTML)
+		sb.WriteString("\r\n")
+		sb.WriteString(fmt.Sprintf("--%s--\r\n", boundary))
+	} else {
+		sb.WriteString("Content-Type: text/plain; charset=utf-8\r\n\r\n")
+		sb.WriteString(msg.Body)
+	}
+
+	body := sb.String()
+
+	// Authenticate and send
+	auth := smtp.PlainAuth("", em.config.Username, em.config.Password, host)
+
+	if em.config.UseTLS || port == 465 {
+		// Direct TLS connection (port 465)
+		tlsConfig := &tls.Config{ServerName: host}
+		conn, err := tls.Dial("tcp", addr, tlsConfig)
+		if err != nil {
+			return fmt.Errorf("tls dial %s: %w", addr, err)
+		}
+		defer conn.Close()
+
+		client, err := smtp.NewClient(conn, host)
+		if err != nil {
+			return fmt.Errorf("smtp client: %w", err)
+		}
+		defer client.Close()
+
+		if err := client.Auth(auth); err != nil {
+			return fmt.Errorf("smtp auth: %w", err)
+		}
+		if err := client.Mail(msg.From); err != nil {
+			return fmt.Errorf("smtp mail from: %w", err)
+		}
+		for _, rcpt := range msg.To {
+			if err := client.Rcpt(rcpt); err != nil {
+				return fmt.Errorf("smtp rcpt to %s: %w", rcpt, err)
+			}
+		}
+		w, err := client.Data()
+		if err != nil {
+			return fmt.Errorf("smtp data: %w", err)
+		}
+		if _, err := w.Write([]byte(body)); err != nil {
+			return fmt.Errorf("smtp write: %w", err)
+		}
+		return w.Close()
+	}
+
+	// STARTTLS (port 587 or 25)
+	return smtp.SendMail(addr, auth, msg.From, msg.To, []byte(body))
 }
 
 // SendWithCC sends an email with CC recipients.

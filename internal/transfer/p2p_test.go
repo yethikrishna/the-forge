@@ -1,6 +1,7 @@
 package transfer
 
 import (
+	"bytes"
 	"encoding/json"
 	"net"
 	"os"
@@ -202,5 +203,122 @@ func TestGenerateSecret(t *testing.T) {
 	}
 	if len(s1) != 64 { // 32 bytes hex
 		t.Errorf("expected 64 chars, got %d", len(s1))
+	}
+}
+
+func TestEncryptedRoundTrip(t *testing.T) {
+	secret := "test-aes-gcm-secret"
+	original := []byte("Hello, AES-256-GCM encrypted transfer!")
+
+	// Encrypt
+	var encrypted bytes.Buffer
+	ew, err := newEncryptedWriter(&encrypted, secret)
+	if err != nil {
+		t.Fatalf("newEncryptedWriter: %v", err)
+	}
+	if _, err := ew.Write(original); err != nil {
+		t.Fatalf("Write: %v", err)
+	}
+
+	// Verify encrypted data is different from plaintext
+	if bytes.Equal(encrypted.Bytes(), original) {
+		t.Error("encrypted data should differ from plaintext")
+	}
+
+	// Decrypt
+	er, err := newEncryptedReader(&encrypted, secret)
+	if err != nil {
+		t.Fatalf("newEncryptedReader: %v", err)
+	}
+	decrypted := make([]byte, len(original)+100) // extra room for overhead
+	n, err := er.Read(decrypted)
+	if err != nil {
+		t.Fatalf("Read: %v", err)
+	}
+
+	if !bytes.Equal(decrypted[:n], original) {
+		t.Errorf("round-trip failed: got %q, want %q", decrypted[:n], original)
+	}
+}
+
+func TestEncryptedMultipleChunks(t *testing.T) {
+	secret := "multi-chunk-secret"
+
+	var encrypted bytes.Buffer
+	ew, _ := newEncryptedWriter(&encrypted, secret)
+
+	chunks := [][]byte{
+		[]byte("chunk one data"),
+		[]byte("chunk two more data"),
+		[]byte("final chunk!"),
+	}
+
+	for _, chunk := range chunks {
+		if _, err := ew.Write(chunk); err != nil {
+			t.Fatalf("Write chunk: %v", err)
+		}
+	}
+
+	// Decrypt each chunk back
+	er, _ := newEncryptedReader(&encrypted, secret)
+	for i, expected := range chunks {
+		buf := make([]byte, 1024)
+		n, err := er.Read(buf)
+		if err != nil {
+			t.Fatalf("Read chunk %d: %v", i, err)
+		}
+		if !bytes.Equal(buf[:n], expected) {
+			t.Errorf("chunk %d: got %q, want %q", i, buf[:n], expected)
+		}
+	}
+}
+
+func TestEncryptedWrongKey(t *testing.T) {
+	original := []byte("secret message")
+
+	var encrypted bytes.Buffer
+	ew, _ := newEncryptedWriter(&encrypted, "correct-key")
+	ew.Write(original)
+
+	// Try to decrypt with wrong key
+	er, _ := newEncryptedReader(&encrypted, "wrong-key")
+	buf := make([]byte, 1024)
+	_, err := er.Read(buf)
+	if err == nil {
+		t.Error("expected error decrypting with wrong key")
+	}
+}
+
+func TestEncryptedEmptyData(t *testing.T) {
+	secret := "empty-data-secret"
+
+	var encrypted bytes.Buffer
+	ew, _ := newEncryptedWriter(&encrypted, secret)
+	ew.Write([]byte{})
+
+	er, _ := newEncryptedReader(&encrypted, secret)
+	buf := make([]byte, 1024)
+	n, err := er.Read(buf)
+	if err != nil {
+		t.Fatalf("unexpected error for empty plaintext: %v", err)
+	}
+	if n != 0 {
+		t.Errorf("expected 0 bytes from empty plaintext, got %d", n)
+	}
+}
+
+func TestDeriveKey(t *testing.T) {
+	k1 := deriveKey("password")
+	k2 := deriveKey("password")
+	if !bytes.Equal(k1, k2) {
+		t.Error("same input should produce same key")
+	}
+	if len(k1) != 32 {
+		t.Errorf("expected 32-byte key, got %d", len(k1))
+	}
+
+	k3 := deriveKey("different")
+	if bytes.Equal(k1, k3) {
+		t.Error("different inputs should produce different keys")
 	}
 }
