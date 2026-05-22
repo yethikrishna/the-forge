@@ -117,7 +117,7 @@ func TestEmailMarkRead(t *testing.T) {
 
 // --- Payment ---
 
-func TestPaymentCharge(t *testing.T) {
+func TestPaymentChargeRuntime(t *testing.T) {
 	pm := NewPaymentManager(PaymentConfig{Provider: PaymentStripe, TestMode: true})
 	pay, err := pm.Charge(29.99, "Pro plan", nil)
 	if err != nil {
@@ -131,10 +131,10 @@ func TestPaymentCharge(t *testing.T) {
 	}
 }
 
-func TestPaymentRefund(t *testing.T) {
+func TestPaymentRefundRuntime(t *testing.T) {
 	pm := NewPaymentManager(PaymentConfig{TestMode: true})
 	pay, _ := pm.Charge(10, "Test", nil)
-	refunded, err := pm.Refund(pay.ID)
+	refunded, err := pm.Refund(pay.ID, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +143,7 @@ func TestPaymentRefund(t *testing.T) {
 	}
 }
 
-func TestPaymentNegativeAmount(t *testing.T) {
+func TestPaymentNegativeAmountRuntime(t *testing.T) {
 	pm := NewPaymentManager(PaymentConfig{})
 	_, err := pm.Charge(-5, "Bad", nil)
 	if err == nil {
@@ -151,7 +151,7 @@ func TestPaymentNegativeAmount(t *testing.T) {
 	}
 }
 
-func TestPaymentOverLimit(t *testing.T) {
+func TestPaymentOverLimitRuntime(t *testing.T) {
 	pm := NewPaymentManager(PaymentConfig{})
 	_, err := pm.Charge(15000, "Big", nil)
 	if err == nil {
