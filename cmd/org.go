@@ -4,8 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 	"text/tabwriter"
 
+	"github.com/forge/sword/internal/comm"
+	"github.com/forge/sword/internal/cost"
 	"github.com/forge/sword/internal/org"
 	"github.com/spf13/cobra"
 )
@@ -31,6 +35,29 @@ func orgCmd() *cobra.Command {
 				fmt.Fprintf(os.Stderr, "bootstrap error: %v\n", err)
 				os.Exit(1)
 			}
+
+			// W02: Create a comm channel per division
+			commPath := filepath.Join(filepath.Dir(dataPath), "comm.json")
+			commsys := comm.New(commPath)
+			for _, d := range result.Divisions {
+				headIDs := []string{}
+				if d.HeadAgentID != "" {
+					headIDs = append(headIDs, d.HeadAgentID)
+				}
+				chName := "div-" + strings.ToLower(d.Name)
+				_, chErr := commsys.CreateChannel(chName, d.ID, "division",
+					"Primary channel for "+d.Name+" division", headIDs)
+				if chErr != nil {
+					fmt.Fprintf(os.Stderr, "warn: channel create for %s: %v\n", d.Name, chErr)
+				}
+			}
+
+			// W03: Create a cost tracker per division
+			for _, d := range result.Divisions {
+				trackerPath := filepath.Join(filepath.Dir(dataPath), "cost-"+strings.ToLower(d.Name)+".json")
+				cost.NewTracker(trackerPath) // initialises and persists the tracker
+			}
+
 			status := o.GetStatus()
 			fmt.Printf("Initialized organization: %s (version %d)\n", status.OrgName, status.Version)
 			fmt.Printf("Divisions:\n")
@@ -41,6 +68,8 @@ func orgCmd() *cobra.Command {
 			for _, a := range result.Agents {
 				fmt.Printf("  %s (%s) in %s\n", a.Name, a.Role, a.DivisionID)
 			}
+			channels := commsys.ListChannels("")
+			fmt.Printf("Channels created: %d\n", len(channels))
 			fmt.Printf("Data persisted to: %s\n", dataPath)
 		},
 	})

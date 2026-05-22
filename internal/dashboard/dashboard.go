@@ -156,6 +156,7 @@ func (m *MemoryProvider) AddLog(level, message string) {
 type Server struct {
 	provider DataProvider
 	addr     string
+	hub      *WebSocketHub
 	server   *http.Server
 }
 
@@ -164,10 +165,18 @@ func NewServer(addr string, provider DataProvider) *Server {
 	if provider == nil {
 		provider = NewMemoryProvider()
 	}
+	hub := NewWebSocketHub()
+	go hub.Run()
 	return &Server{
 		provider: provider,
 		addr:     addr,
+		hub:      hub,
 	}
+}
+
+// Hub returns the WebSocket hub for broadcasting state updates.
+func (s *Server) Hub() *WebSocketHub {
+	return s.hub
 }
 
 // Start starts the dashboard server.
@@ -179,6 +188,11 @@ func (s *Server) Start() error {
 	mux.HandleFunc("/api/v1/agents", s.handleAgents)
 	mux.HandleFunc("/api/v1/tasks", s.handleTasks)
 	mux.HandleFunc("/api/v1/log", s.handleLog)
+
+	// WebSocket endpoint — pushes real-time state updates
+	mux.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		ServeWebSocket(s.hub, w, r)
+	})
 
 	// Serve embedded assets
 	assetsSub, err := fs.Sub(assetsFS, "assets")
