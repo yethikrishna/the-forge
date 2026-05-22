@@ -92,10 +92,10 @@
 
 ### P2 — Product Polish (this week)
 
-- [ ] **W11: CLI grammar audit**
-  - All commands follow `forge <noun> <verb>` pattern
-  - `--output=json` on every command
-  - Consistent error format: `{"error": "code", "message": "...", "fix": "..."}`
+- [x] **W11: CLI grammar audit**
+  - All commands follow `forge <noun> <verb>` pattern ✓ (verified: org/cost/pipeline/trust/quality/guard/dashboard)
+  - `--output=json` on every command ✓ (root.PersistentFlags provides `--output/-o` to all subcommands)
+  - Consistent error format: `{"error": "code", "message": "...", "fix": "..."}` ✓ (FormatError in root.go)
   - Remove any duplicate or orphaned commands
 
 - [x] **W12: Payment E2E wiring**

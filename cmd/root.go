@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/forge/sword/internal/output"
 	"github.com/spf13/cobra"
@@ -213,4 +214,20 @@ func getOutputFormat() output.Format {
 		return output.FormatDefault
 	}
 	return f
+}
+
+// ErrorResponse is the standard error format for all Forge CLI commands.
+// When --output=json is set, errors should use this structure.
+type ErrorResponse struct {
+	Error   string `json:"error"`
+	Message string `json:"message"`
+	Fix     string `json:"fix,omitempty"`
+}
+
+// FormatError returns a consistently formatted error for JSON output.
+// Use when outputFormat == "json" and a command encounters an error.
+func FormatError(code, message, fix string) []byte {
+	er := ErrorResponse{Error: code, Message: message, Fix: fix}
+	b, _ := json.Marshal(er)
+	return b
 }
