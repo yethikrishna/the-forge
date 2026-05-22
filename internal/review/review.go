@@ -465,16 +465,20 @@ func (r *Reviewer) getDiffStats(targetRef string) (DiffStats, error) {
 // --- heuristic checkers ---
 
 func isLikelySecret(line string) bool {
+	lower := strings.ToLower(line)
+
+	// Standalone PEM private key headers are always secrets
+	if strings.Contains(lower, "-----begin ") && strings.Contains(lower, "private key") {
+		return true
+	}
+
 	secretPatterns := []string{
 		"api_key", "apikey", "secret_key", "secretkey",
 		"private_key", "password", "passwd",
 		"aws_secret", "access_token",
 		"Bearer ", "Authorization:",
-		"-----BEGIN RSA",
-		"-----BEGIN PRIVATE",
 	}
 
-	lower := strings.ToLower(line)
 	for _, pattern := range secretPatterns {
 		if strings.Contains(lower, strings.ToLower(pattern)) {
 			// Check if it looks like an assignment or header with a value
@@ -486,7 +490,7 @@ func isLikelySecret(line string) bool {
 				} else if idx := strings.Index(line, ":"); idx >= 0 {
 					value = strings.TrimSpace(line[idx+1:])
 				}
-				if value != "" && value != `""` && value != "''" && value != "nil" && value != "null" && !strings.HasPrefix(value, "os.") && !strings.HasPrefix(value, "env.") {
+				if value != "" && value != `""` && value != "''" && value != "nil" && value != "null" && !strings.HasPrefix(value, "os.") && !strings.HasPrefix(value, "env.") && !strings.HasPrefix(value, "process.") {
 					return true
 				}
 			}
@@ -497,6 +501,10 @@ func isLikelySecret(line string) bool {
 
 func isDebugStatement(line string) bool {
 	trimmed := strings.TrimSpace(line)
+	// Skip comment-only lines
+	if strings.HasPrefix(trimmed, "//") || strings.HasPrefix(trimmed, "/*") || strings.HasPrefix(trimmed, "*") {
+		return false
+	}
 	debugPatterns := []string{
 		"fmt.Println(", "fmt.Printf(", "fmt.Print(",
 		"console.log(", "console.debug(",

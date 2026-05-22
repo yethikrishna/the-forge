@@ -281,6 +281,20 @@ func (s *Session) IsActive() bool {
 	return s.State == SessionActive
 }
 
+// GetState returns the current session state under lock.
+func (s *Session) GetState() SessionState {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.State
+}
+
+// Dimensions returns the current terminal dimensions under lock.
+func (s *Session) Dimensions() (uint16, uint16) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.Cols, s.Rows
+}
+
 // Uptime returns the session duration.
 func (s *Session) Uptime() time.Duration {
 	return time.Since(s.StartedAt)

@@ -28,11 +28,26 @@ type Task struct {
 	DependsOn   []string               `json:"depends_on,omitempty"`
 	MaxRetries  int                    `json:"max_retries"`
 	State       TaskState              `json:"state"`
+	stateMu     sync.RWMutex
 	Result      *TaskResult            `json:"result,omitempty"`
 	CreatedAt   time.Time              `json:"created_at"`
 	StartedAt   *time.Time             `json:"started_at,omitempty"`
 	FinishedAt  *time.Time             `json:"finished_at,omitempty"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// GetState returns the current task state under lock.
+func (t *Task) GetState() TaskState {
+	t.stateMu.RLock()
+	defer t.stateMu.RUnlock()
+	return t.State
+}
+
+// SetState updates the task state under lock.
+func (t *Task) SetState(s TaskState) {
+	t.stateMu.Lock()
+	defer t.stateMu.Unlock()
+	t.State = s
 }
 
 // TaskState represents the state of a task.
@@ -207,7 +222,7 @@ func (s *Spawner) SpawnMany(ctx context.Context, tasks []TaskSpec) ([]*Task, err
 func (s *Spawner) Execute(ctx context.Context, task *Task) *TaskResult {
 	now := time.Now().UTC()
 	task.StartedAt = &now
-	task.State = TaskRunning
+	task.SetState(TaskRunning)
 
 	for _, h := range s.hooks {
 		h.OnTaskStarted(task)
@@ -246,7 +261,7 @@ func (s *Spawner) Execute(ctx context.Context, task *Task) *TaskResult {
 
 	// Check context
 	if ctx.Err() != nil {
-		task.State = TaskFailed
+		task.SetState(TaskFailed)
 		result.Error = ctx.Err().Error()
 		for _, h := range s.hooks {
 			h.OnTaskFailed(task, ctx.Err())
@@ -254,7 +269,7 @@ func (s *Spawner) Execute(ctx context.Context, task *Task) *TaskResult {
 		return result
 	}
 
-	task.State = TaskCompleted
+	task.SetState(TaskCompleted)
 	for _, h := range s.hooks {
 		h.OnTaskCompleted(task, result)
 	}
@@ -275,7 +290,7 @@ func (s *Spawner) ExecuteParallel(ctx context.Context, tasks []*Task) []*TaskRes
 	// Check budget
 	if s.config.CostBudget > 0 && s.totalCost > s.config.CostBudget {
 		for i, t := range tasks {
-			t.State = TaskCancelled
+			t.SetState(TaskCancelled)
 			results[i] = &TaskResult{Error: "budget exceeded"}
 		}
 		return results
@@ -294,15 +309,13 @@ func (s *Spawner) ExecuteParallel(ctx context.Context, tasks []*Task) []*TaskRes
 			for _, depID := range t.DependsOn {
 				if dep, ok := byID[depID]; ok {
 					for {
-						s.mu.RLock()
-						state := dep.State
-						s.mu.RUnlock()
+						state := dep.GetState()
 						if state == TaskCompleted || state == TaskFailed || state == TaskCancelled {
 							break
 						}
 						select {
 						case <-ctx.Done():
-							t.State = TaskCancelled
+							t.SetState(TaskCancelled)
 							results[idx] = &TaskResult{Error: "cancelled"}
 							return
 						case <-time.After(100 * time.Millisecond):
@@ -333,8 +346,8 @@ func (s *Spawner) Cancel(taskID string) error {
 		return fmt.Errorf("task %s not found", taskID)
 	}
 
-	if task.State == TaskRunning {
-		task.State = TaskCancelled
+	if task.GetState() == TaskRunning || task.GetState() == TaskPending || task.GetState() == TaskQueued {
+		task.SetState(TaskCancelled)
 	}
 	return nil
 }
@@ -346,8 +359,9 @@ func (s *Spawner) CancelAll() int {
 
 	count := 0
 	for _, task := range s.tasks {
-		if task.State == TaskPending || task.State == TaskQueued {
-			task.State = TaskCancelled
+		st := task.GetState()
+		if st == TaskPending || st == TaskQueued {
+			task.SetState(TaskCancelled)
 			count++
 		}
 	}

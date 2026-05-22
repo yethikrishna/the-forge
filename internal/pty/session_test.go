@@ -36,8 +36,8 @@ func TestSessionStartAndClose(t *testing.T) {
 	if sess.ID == "" {
 		t.Error("expected non-empty ID")
 	}
-	if sess.State != SessionActive {
-		t.Errorf("expected active, got %s", sess.State)
+	if sess.GetState() != SessionActive {
+		t.Errorf("expected active, got %s", sess.GetState())
 	}
 	if sess.Cols != 80 || sess.Rows != 24 {
 		t.Errorf("expected 80x24, got %dx%d", sess.Cols, sess.Rows)
@@ -93,8 +93,9 @@ func TestSessionResize(t *testing.T) {
 		t.Fatalf("Resize failed: %v", err)
 	}
 
-	if sess.Cols != 120 || sess.Rows != 40 {
-		t.Errorf("expected 120x40, got %dx%d", sess.Cols, sess.Rows)
+	c, r := sess.Dimensions()
+	if c != 120 || r != 40 {
+		t.Errorf("expected 120x40, got %dx%d", c, r)
 	}
 }
 
@@ -210,8 +211,9 @@ func TestSessionDefaults(t *testing.T) {
 		t.Fatalf("Start with empty config failed: %v", err)
 	}
 
-	if sess.Cols != 80 || sess.Rows != 24 {
-		t.Errorf("expected default 80x24, got %dx%d", sess.Cols, sess.Rows)
+	c, r := sess.Dimensions()
+	if c != 80 || r != 24 {
+		t.Errorf("expected default 80x24, got %dx%d", c, r)
 	}
 
 	sm.Close(sess.ID)
