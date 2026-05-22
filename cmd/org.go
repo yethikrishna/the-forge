@@ -26,8 +26,22 @@ func orgCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			o := org.New(args[0], "human", dataPath)
+			result, err := o.Bootstrap()
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "bootstrap error: %v\n", err)
+				os.Exit(1)
+			}
 			status := o.GetStatus()
 			fmt.Printf("Initialized organization: %s (version %d)\n", status.OrgName, status.Version)
+			fmt.Printf("Divisions:\n")
+			for _, d := range result.Divisions {
+				fmt.Printf("  [%s] %s — budget $%.0f\n", d.Type, d.Name, d.Budget)
+			}
+			fmt.Printf("Head Agents:\n")
+			for _, a := range result.Agents {
+				fmt.Printf("  %s (%s) in %s\n", a.Name, a.Role, a.DivisionID)
+			}
+			fmt.Printf("Data persisted to: %s\n", dataPath)
 		},
 	})
 

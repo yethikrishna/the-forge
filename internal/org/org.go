@@ -8,6 +8,7 @@ package org
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"os"
 	"path/filepath"
 	"sort"
@@ -1072,4 +1073,105 @@ func (o *Org) load() {
 
 func generateID(prefix string) string {
 	return fmt.Sprintf("%s-%d", prefix, time.Now().UnixNano())
+}
+
+// BootstrapResult holds the result of bootstrapping an org.
+type BootstrapResult struct {
+	Divisions []*Division
+	Agents    []*Agent
+}
+
+// Bootstrap creates the standard 4-division org structure with head agents and cost budgets.
+// Idempotent: if divisions already exist, does nothing.
+func (o *Org) Bootstrap() (*BootstrapResult, error) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	// Idempotent check — skip if already bootstrapped
+	if len(o.divisions) >= 4 {
+		var divs []*Division
+		for _, d := range o.divisions {
+			divs = append(divs, d)
+		}
+		return &BootstrapResult{Divisions: divs}, nil
+	}
+
+	type divSpec struct {
+		name      string
+		divType   DivisionType
+		budget    float64
+		headName  string
+		headRole  string
+		skills    []string
+	}
+
+	specs := []divSpec{
+		{
+			name:     "Engineering",
+			divType:  DivEngineering,
+			budget:   500.0,
+			headName: "Arch-1",
+			headRole: "Principal Engineer",
+			skills:   []string{"golang", "architecture", "code-review", "testing"},
+		},
+		{
+			name:     "Research",
+			divType:  DivResearch,
+			budget:   300.0,
+			headName: "Research-Lead-1",
+			headRole: "Research Lead",
+			skills:   []string{"analysis", "synthesis", "strategy", "benchmarking"},
+		},
+		{
+			name:     "Operations",
+			divType:  DivOperations,
+			budget:   200.0,
+			headName: "Ops-Lead-1",
+			headRole: "Operations Lead",
+			skills:   []string{"monitoring", "deployment", "incident-response", "cost-management"},
+		},
+		{
+			name:     "Security",
+			divType:  DivSecurity,
+			budget:   200.0,
+			headName: "SecLead-1",
+			headRole: "Security Lead",
+			skills:   []string{"vulnerability-scanning", "compliance", "audit", "pen-testing"},
+		},
+	}
+
+	result := &BootstrapResult{}
+
+	for _, spec := range specs {
+		// Create division
+		div, err := o.createDivisionUnlocked(spec.name, spec.divType, spec.budget)
+		if err != nil {
+			return nil, fmt.Errorf("create division %s: %w", spec.name, err)
+		}
+		result.Divisions = append(result.Divisions, div)
+
+		// Hire head agent
+		agentID := generateID("agt")
+		agent := &Agent{
+			ID:         agentID,
+			Name:       spec.headName,
+			Role:       spec.headRole,
+			DivisionID: div.ID,
+			Status:     StatusActive,
+			Skills:     spec.skills,
+			Seniority:  "head",
+			HiredAt:    time.Now().UTC(),
+			LastActive: time.Now().UTC(),
+			Metadata:   map[string]string{"channel": "div-" + strings.ToLower(spec.name)},
+		}
+		o.agents[agentID] = agent
+		div.Agents = append(div.Agents, agentID)
+		div.HeadAgentID = agentID
+		result.Agents = append(result.Agents, agent)
+	}
+
+	// Seed org memory defaults via metadata on the org
+	o.org.Version++
+	o.persist()
+	return result, nil
 }
